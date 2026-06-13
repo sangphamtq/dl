@@ -6,7 +6,7 @@ description: Hệ thống thiết kế & nguyên tắc giao diện cho website t
 # Design Skill — Website du lịch (tối giản, biên tập, ảnh làm chủ)
 
 Hướng dẫn thị giác cho dự án. Đọc trước khi làm UI. Stack: **Next.js 16 + Tailwind v4 +
-shadcn/ui (style `base-nova`, base color `neutral`)**. Mô hình dữ liệu/route xem `CLAUDE.md`.
+shadcn/ui (style `new-york`, base color `neutral`, dựng trên Radix UI)**. Mô hình dữ liệu/route xem `CLAUDE.md`.
 
 ## 1. Triết lý thiết kế
 
@@ -99,11 +99,15 @@ Dùng biến semantic của shadcn trong `globals.css` (`bg-background`, `text-f
   cái shadcn đã có.
 - Component ở `src/components/ui/` **được phép sửa** (là code dự án). Component ghép của dự
   án (ListingCard, PlaceHero…) đặt ở `src/components/` (ngoài `ui/`).
-- Style `base-nova` dựng trên **Base UI**: primitive nhận prop **`render`** để đổi thẻ gốc
-  (KHÔNG phải `asChild` như Radix). Ghép class bằng **`cn()`** từ `@/lib/utils`.
+- Style `new-york` dựng trên **Radix UI**: đổi thẻ gốc bằng prop **`asChild`** (vd
+  `<TooltipTrigger asChild><button/>`). Ghép class bằng **`cn()`** từ `@/lib/utils`.
 - Icon: **lucide-react**, kích thước theo context (`size-4`/`size-5`), màu `currentColor`.
-- Biến thể nút: `default` (primary teal) cho hành động chính; `outline`/`ghost` cho phụ;
+- Biến thể nút: `default` (primary emerald) cho hành động chính; `outline`/`ghost` cho phụ;
   `link` cho liên kết. Một màn hình **chỉ một** primary action nổi bật.
+- **Link nhìn như nút:** ưu tiên `buttonVariants` cho liên kết —
+  `<Link className={cn(buttonVariants({ variant, size }), "...")}>` (render `<a>` đúng ngữ
+  nghĩa). Hoặc `<Button asChild><Link/></Button>`. Menu item navigable:
+  `<DropdownMenuItem asChild><Link/></DropdownMenuItem>`.
 
 ## 6. Accessibility & chất lượng
 

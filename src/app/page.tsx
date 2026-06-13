@@ -1,9 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Compass, MapPin } from "lucide-react";
-import { auth, signOut } from "@/auth";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { auth } from "@/auth";
+import { buttonVariants } from "@/components/ui/button";
+import { SiteHeader } from "@/components/site/site-header";
 
 const FEATURED = [
   {
@@ -39,40 +39,10 @@ const FEATURED = [
 export default async function Home() {
   const session = await auth();
   const user = session?.user;
-  const initial = (user?.name ?? user?.email ?? "?").charAt(0).toUpperCase();
 
   return (
     <div className="flex flex-1 flex-col">
-      {/* Header */}
-      <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-          <Link
-            href="/"
-            className="flex items-center gap-2 font-semibold tracking-tight"
-          >
-            <Compass className="size-5 text-primary" aria-hidden />
-            <span>Hành Trình Việt</span>
-          </Link>
-          <div className="flex items-center gap-3">
-            <Avatar className="size-9">
-              {user?.image && (
-                <AvatarImage src={user.image} alt={user.name ?? "Avatar"} />
-              )}
-              <AvatarFallback>{initial}</AvatarFallback>
-            </Avatar>
-            <form
-              action={async () => {
-                "use server";
-                await signOut({ redirectTo: "/login" });
-              }}
-            >
-              <Button type="submit" variant="ghost" size="sm">
-                Đăng xuất
-              </Button>
-            </form>
-          </div>
-        </div>
-      </header>
+      <SiteHeader />
 
       <main className="flex-1">
         {/* Hero */}
@@ -100,14 +70,13 @@ export default async function Home() {
                   nào — tất cả trong một hành trình.
                 </p>
                 <div className="mt-7">
-                  <Button
-                    size="lg"
-                    nativeButton={false}
-                    render={<Link href="/diem-den/ha-giang" />}
+                  <Link
+                    href="/diem-den/ha-giang"
+                    className={buttonVariants({ size: "lg" })}
                   >
                     Bắt đầu khám phá
                     <ArrowRight className="size-4" aria-hidden />
-                  </Button>
+                  </Link>
                 </div>
               </div>
             </div>

@@ -199,24 +199,25 @@ AdminFields {
 ### Ảnh / media (`Image`)
 
 Tách ảnh thành entity riêng (thay cho mảng URL `images[]`) để gắn được caption, nguồn,
-alt, thứ tự. Một entity nội dung có nhiều `Image`; dùng **owner đa hình** (cùng kiểu với
-`PostRef`) để một bảng `Image` phục vụ mọi chủ sở hữu:
+alt, thứ tự. Một entity nội dung có nhiều `Image`.
+
+**Triển khai trong Prisma — exclusive arc (FK thật, không đa hình).** Vì đã có Postgres +
+Prisma, dùng **nhiều khóa ngoại nullable** trên `Image` (`placeId?`, `activityId?`,
+`spotId?`, … `postId?`), **đúng MỘT** trong số đó được set cho mỗi ảnh. Lợi hơn đa hình:
+có quan hệ thật (`place.images`), `onDelete: Cascade`, `include` type-safe.
 
 ```
 Image {
-  id, url,
-  alt?,          // alt text (a11y + SEO)
-  caption?,      // chú thích hiển thị
-  credit?,       // nguồn/tác giả ảnh
-  order: number, // thứ tự trong gallery (0 = đầu)
-  isCover: boolean,  // ảnh bìa (đúng 1 ảnh/owner nên là cover)
-  ownerType: 'place'|'activity'|'spot'|'specialty'|'eatery'|'accommodation'|'transport'|'post',
-  ownerId
+  id, url, alt?, caption?, credit?,
+  order: number,     // thứ tự gallery (0 = đầu)
+  isCover: boolean,  // ảnh bìa (đúng 1 ảnh/owner)
+  // exclusive arc — đúng 1 FK được set:
+  placeId? activityId? spotId? specialtyId? eateryId? accommodationId? transportId? postId?
 }
 ```
-- Ảnh bìa = `isCover = true` (hoặc fallback ảnh `order` nhỏ nhất nếu không đặt cover).
-- Nhược điểm đa hình giống `PostRef`: không có FK DB tới owner → kiểm ở tầng app. Nếu sau
-  này cần FK chặt, đổi sang quan hệ ảnh riêng từng bảng. Hiện ưu tiên gọn → dùng đa hình.
+- Ảnh bìa = `isCover = true` (fallback ảnh `order` nhỏ nhất nếu không đặt cover).
+- Ràng buộc "đúng 1 FK" kiểm ở tầng app (Postgres không ép kiểu này gọn). `PostRef` dùng
+  cùng kiểu exclusive arc.
 
 ### URL (App Router, SEO bằng slug)
 
@@ -285,20 +286,18 @@ Post {
 - **Tác giả & phân quyền:** `authorId` → `User`. Chỉ `User.role` ∈ {`admin`, `editor`} mới
   tạo/sửa/xuất bản bài. ⇒ cần **persist User + role** trong DB (xem *Phụ thuộc* bên dưới).
 - **Liên kết M:N tới Place/Listing:** một bài có thể gắn nhiều `Place` **và** nhiều
-  `Listing` (vd "Top 10 quán ăn Hạ Long" → gắn các `Eatery`). Vì `Listing` trải trên 6
-  bảng, dùng **một bảng nối đa hình** thay vì 6–7 bảng nối riêng:
+  `Listing` (vd "Top 10 quán ăn Hạ Long" → gắn các `Eatery`). Dùng bảng nối `PostRef` theo
+  kiểu **exclusive arc** (FK thật, giống `Image`):
 
 ```
 PostRef {
-  postId,
-  targetType: 'place'|'activity'|'spot'|'specialty'|'eatery'|'accommodation',
-  targetId   // không gồm 'transport' (không có trang để dẫn tới)
+  id, postId, order,
+  // exclusive arc — đúng 1 FK target được set (KHÔNG gồm transport: không có trang):
+  placeId? activityId? spotId? specialtyId? eateryId? accommodationId?
 }
 ```
-  - Ưu: 1 bảng; thêm loại mới không phải đổi schema; truy vấn "bài liên quan tới X" dễ.
-  - Nhược: **không** có khóa ngoại DB tới target → toàn vẹn dữ liệu phải kiểm ở tầng ứng dụng.
-  - Nếu sau này cần type-safe tuyệt đối, tách thành bảng nối riêng từng loại (`PostPlace`,
-    `PostEatery`…). Hiện ưu tiên gọn → dùng đa hình.
+  - FK thật tới từng loại → `onDelete: Cascade`, `include` type-safe, không cần kiểm tồn tại thủ công.
+  - Ràng buộc "đúng 1 target" kiểm ở tầng app.
 
 - **URL:** `/blog` (danh sách) · `/blog/[postSlug]` (chi tiết). Có thể lọc theo `category`/`tags`.
 
@@ -312,9 +311,11 @@ PostRef {
 - **Next.js 16** (App Router, React Server Components) + **React 19**
 - **TypeScript** (strict), alias import `@/*` → `src/*`
 - **Tailwind CSS v4**
-- **shadcn/ui** (style `base-nova`, base color `neutral`) — component dán vào
-  `src/components/ui/`, dựng trên **Base UI** (`@base-ui/react`); icon dùng **lucide-react**
-- **Auth.js (NextAuth v5)** — đăng nhập Google OAuth
+- **shadcn/ui** (style `new-york`, base color `neutral`) — component dán vào
+  `src/components/ui/`, dựng trên **Radix UI** (package hợp nhất `radix-ui`); icon dùng **lucide-react**
+- **Prisma 7 + PostgreSQL** — ORM; client mới sinh ra `src/generated/prisma` (đã gitignore),
+  kết nối qua driver adapter `@prisma/adapter-pg`. `DATABASE_URL` trong `.env`.
+- **Auth.js (NextAuth v5)** — đăng nhập Google OAuth (adapter Prisma sẽ gắn khi có DB chạy)
 - **pnpm** là package manager **bắt buộc** (môi trường KHÔNG có npm/npx)
 
 ## Lệnh thường dùng
@@ -327,10 +328,18 @@ pnpm lint             # ESLint
 pnpm exec tsc --noEmit  # kiểm tra type, không xuất file
 pnpm add <pkg>        # thêm dependency (KHÔNG dùng npm install)
 pnpm dlx shadcn@latest add <component>   # thêm component shadcn (vd: input, dialog, dropdown-menu)
+
+# Prisma
+pnpm exec prisma generate      # sinh lại client (sau khi đổi schema)
+pnpm exec prisma migrate dev    # tạo & áp migration (cần DATABASE_URL trỏ tới Postgres chạy)
+pnpm exec prisma studio         # GUI xem/sửa dữ liệu
+pnpm exec prisma dev            # chạy Postgres local (Prisma Postgres) cho dev
+pnpm set-role <email> [role]    # đặt vai trò user (user|editor|admin; mặc định admin)
 ```
 
 Lưu ý pnpm: project dùng `pnpm-workspace.yaml` với `allowBuilds` để cho phép build
-`sharp`, `unrs-resolver`. Khi thêm package có native build mới, có thể cần khai báo ở đó.
+`sharp`, `unrs-resolver`, `prisma`, `@prisma/engines`. Khi thêm package có native build
+mới, có thể cần khai báo ở đó.
 
 ## Cấu trúc thư mục
 
@@ -338,15 +347,29 @@ Lưu ý pnpm: project dùng `pnpm-workspace.yaml` với `allowBuilds` để cho 
 src/
 ├── app/                         # App Router: routes, layouts, pages
 │   ├── login/page.tsx           # trang đăng nhập (Google) — dùng Card + Button
+│   ├── cms/                      # CMS (admin/editor): layout sidebar + dashboard + trang con
+│   │   ├── layout.tsx            #   shell: topbar + sidebar (guard staff lớp 2)
+│   │   ├── page.tsx              #   dashboard (stat cards từ DB)
+│   │   └── <mục>/page.tsx        #   places, activities, ..., users, settings (đa số placeholder)
 │   ├── api/auth/[...nextauth]/  # route handlers của Auth.js
 │   ├── layout.tsx               # root layout
 │   ├── globals.css              # Tailwind v4 + biến CSS theme của shadcn
 │   └── page.tsx                 # trang chủ (đang được bảo vệ) — Card + Avatar + Button
-├── components/ui/               # component shadcn (button, card, avatar, ...)
+├── components/ui/               # component shadcn (button, card, avatar, dropdown, sheet, sidebar, ...)
+├── components/site/             # chrome public: site-header, user-menu, mobile-nav
+├── components/cms/              # chrome CMS: AppSidebar (dùng shadcn `sidebar`), placeholder
+├── hooks/use-mobile.ts          # hook responsive (shadcn sidebar dùng)
 ├── lib/utils.ts                 # helper cn() (clsx + tailwind-merge)
-├── auth.ts                      # cấu hình NextAuth (providers, callbacks)
-└── proxy.ts                     # bảo vệ route + redirect (xem lưu ý bên dưới)
+├── lib/prisma.ts                # Prisma client singleton (import từ đây, KHÔNG new PrismaClient)
+├── generated/prisma/            # Prisma client đã sinh (gitignore — chạy `prisma generate`)
+├── types/next-auth.d.ts         # augment Session/JWT thêm id + role
+├── auth.config.ts               # cấu hình NextAuth EDGE-SAFE (providers, callbacks) — KHÔNG adapter
+├── auth.ts                      # NextAuth đầy đủ: authConfig + Prisma adapter (Node)
+└── proxy.ts                     # bảo vệ route + gate /cms (dùng authConfig, edge-safe)
 
+scripts/set-role.ts              # CLI đặt role cho user (pnpm set-role)
+prisma/schema.prisma             # schema CSDL (nguồn chân lý của mô hình dữ liệu)
+prisma.config.ts                 # cấu hình Prisma (đọc DATABASE_URL từ .env)
 components.json                  # cấu hình shadcn (style, alias, base color)
 ```
 
@@ -359,8 +382,20 @@ components.json                  # cấu hình shadcn (style, alias, base color)
   event handler, hook trình duyệt). Truy vấn dữ liệu nên làm ở Server Component.
 - **Đăng nhập/đăng xuất** dùng **server action** gọi `signIn`/`signOut` từ `@/auth`,
   không gọi API client trực tiếp. Auth.js v5 tự đọc biến `AUTH_GOOGLE_ID/SECRET`.
-- **Biến môi trường** đặt trong `.env.local` (đã gitignore). Không commit secret.
-  Có `AUTH_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`.
+- **Auth split config (BẮT BUỘC giữ):** `auth.config.ts` edge-safe (providers + callbacks,
+  KHÔNG import Prisma) dùng cho `proxy.ts`; `auth.ts` thêm `PrismaAdapter(prisma)` +
+  `session: { strategy: "jwt" }` dùng ở server component/route handler. Đừng import
+  `@/auth` (có adapter) vào `proxy.ts` — sẽ vỡ edge runtime.
+- **Vai trò & phân quyền:** `User.role` ∈ {`user`, `editor`, `admin`}. Role nhét vào JWT
+  khi đăng nhập (callback `jwt`) → đọc qua `session.user.role`. **CMS `/cms`** chỉ cho
+  `admin`/`editor` (chặn ở `proxy.ts` + kiểm lại trong page). Đặt admin: user đăng nhập 1
+  lần (tạo bản ghi `User`) → `pnpm set-role <email> admin` → đăng xuất/đăng nhập lại để
+  JWT cập nhật role mới.
+- **Biến môi trường:** secret auth ở `.env.local` (`AUTH_SECRET`, `AUTH_GOOGLE_ID/SECRET`);
+  `DATABASE_URL` ở `.env` (Prisma đọc qua `prisma.config.ts`). Cả hai đã gitignore — không commit.
+- **Database/Prisma:** luôn import `prisma` từ `@/lib/prisma` (singleton), không `new
+  PrismaClient()` rải rác. Sau khi sửa `schema.prisma` → chạy `prisma generate` (và
+  `migrate dev` khi có DB). Schema là **nguồn chân lý**; mô hình trong tài liệu này phải khớp nó.
 - **Slug tiếng Việt không dấu, nối bằng `-`** (vd: `ha-giang`, `pho-co-hoi-an`) cho URL
   và tra cứu. Tách riêng `name` (có dấu, để hiển thị) với `slug`. Slug listing **duy nhất
   trong từng loại** (gắn địa danh khi trùng); tránh đụng các **tiền tố dành riêng** (xem
@@ -370,17 +405,17 @@ components.json                  # cấu hình shadcn (style, alias, base color)
   (`.claude/skills/design/SKILL.md`) — hệ thống thiết kế tối giản/biên tập, ảnh làm chủ.
 - **UI dùng shadcn/ui.** Ưu tiên thêm component qua `pnpm dlx shadcn@latest add <tên>`
   thay vì tự viết từ đầu; component nằm ở `src/components/ui/` và **được phép sửa trực tiếp**
-  (đây là code của dự án, không phải package). Style hiện tại là `base-nova` (dựng trên Base
-  UI): primitive nhận prop `render` để đổi thẻ gốc (không phải `asChild`). Gộp class bằng
-  `cn()` từ `@/lib/utils`. Icon lấy từ `lucide-react`. Màu/spacing dùng biến theme trong
-  `globals.css` (vd `bg-primary`, `text-muted-foreground`) thay vì màu cứng.
+  (đây là code của dự án, không phải package). Style hiện tại là `new-york` (dựng trên
+  **Radix UI**): đổi thẻ gốc bằng prop **`asChild`** (vd `<DropdownMenuTrigger asChild><button/>`,
+  `<SidebarMenuButton asChild><Link/>`). Gộp class bằng `cn()` từ `@/lib/utils`. Icon lấy từ
+  `lucide-react`. Màu/spacing dùng biến theme trong `globals.css` (vd `bg-primary`,
+  `text-muted-foreground`) thay vì màu cứng.
 - Trước khi báo "đã xong", chạy `pnpm exec tsc --noEmit` và `pnpm lint` để chắc không lỗi.
 
 ## Phạm vi hiện tại
 
-Đã có: scaffold dự án + đăng nhập Google + shadcn/ui (button, card, avatar; trang login &
-trang chủ đã dùng). **Chưa có**: database, entity `Place` + các
-`Listing`, blog (`Post`), persist `User` + `role`, trang danh sách/chi tiết. Hướng phát
-triển tiếp theo — khi xây dựng, bám sát mô hình & thuật ngữ ở "Mô hình dữ liệu cốt lõi"
-và mục "Blog". Bước nền tảng kế tiếp: **dựng database (Prisma) + Auth.js adapter** vì blog
-yêu cầu lưu user/tác giả.
+Đã có: scaffold + đăng nhập Google + shadcn/ui + **Prisma đã migrate lên Postgres (Neon)**
++ **Auth.js Prisma adapter đã gắn** (login persist `User`/`Account`, role trong JWT) +
+**CMS `/cms`** gate theo role + script `pnpm set-role`. **Chưa có**: seed dữ liệu mẫu;
+các trang nội dung (Place/Listing/blog) công khai + CRUD trong CMS. Bước kế tiếp: seed vài
+tỉnh/điểm đến + dựng trang danh sách Place, rồi CRUD trong `/cms`.

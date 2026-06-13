@@ -1,0 +1,528 @@
+// Schema CSDL — website thông tin du lịch.
+// Mô hình & quy ước: xem CLAUDE.md ("Mô hình dữ liệu cốt lõi").
+// Engine: PostgreSQL (hỗ trợ native enum + String[]).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum PlaceKind {
+  province // Tỉnh
+  destination // Điểm đến lớn
+}
+
+enum PublishStatus {
+  draft
+  published
+}
+
+/// Mức giá tương đối: budget=$ · moderate=$$ · premium=$$$ · luxury=$$$$
+enum PriceRange {
+  budget
+  moderate
+  premium
+  luxury
+}
+
+enum SpotCategory {
+  beach
+  mountain
+  waterfall
+  lake
+  cave
+  temple
+  viewpoint
+  village
+  island
+  park
+  other
+}
+
+enum EateryCategory {
+  local
+  seafood
+  streetfood
+  vegetarian
+  cafe
+  bbq
+  other
+}
+
+enum AccommodationCategory {
+  hotel
+  homestay
+  resort
+  hostel
+  guesthouse
+  villa
+}
+
+enum ActivityCategory {
+  adventure
+  nature
+  culture
+  relax
+  water
+  food
+  other
+}
+
+enum TransportDirection {
+  getTo // đến nơi từ bên ngoài
+  getAround // di chuyển tại chỗ
+}
+
+enum TransportMode {
+  car
+  bus
+  train
+  plane
+  boat
+  motorbike
+  taxi
+  grab
+  bike
+  walk
+  cyclo
+  shuttle
+  other
+}
+
+enum UserRole {
+  user
+  editor
+  admin
+}
+
+// ============================================================
+// AUTH (NextAuth v5 / Prisma adapter) + role
+// ============================================================
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  role          UserRole  @default(user)
+
+  accounts Account[]
+  sessions Session[]
+  posts    Post[] // bài blog do user này viết
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ============================================================
+// PLACE — gộp Tỉnh + Điểm đến lớn (tự tham chiếu cha-con)
+// Ràng buộc (app-level): province ⇒ parentId=null;
+// destination ⇒ parent là province. Giữ đúng 2 mức.
+// ============================================================
+
+model Place {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  name        String
+  kind        PlaceKind
+  description String?
+
+  parentId String?
+  parent   Place?  @relation("PlaceTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children Place[] @relation("PlaceTree")
+
+  // Listing con (gắn qua placeId)
+  activities     Activity[]
+  spots          Spot[]
+  specialties    Specialty[]
+  eateries       Eatery[]
+  accommodations Accommodation[]
+  transports     Transport[]
+
+  images   Image[]
+  postRefs PostRef[]
+
+  tags String[] @default([])
+
+  // AdminFields
+  status      PublishStatus @default(draft)
+  publishedAt DateTime?
+  isFeatured  Boolean       @default(false)
+  order       Int?
+  popularity  Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([kind])
+  @@index([parentId])
+  @@index([status])
+}
+
+// ============================================================
+// LISTINGS
+// ============================================================
+
+model Activity {
+  id          String            @id @default(cuid())
+  slug        String            @unique
+  name        String
+  description String?
+  category    ActivityCategory?
+
+  // Đơn vị khai thác / đặt chỗ (inline, không tách entity Provider)
+  operatorName String?
+  bookingUrl   String?
+  phone        String?
+  website      String?
+  priceRange   PriceRange?
+
+  placeId String
+  place   Place  @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  spots Spot[] @relation("ActivitySpots") // M:N
+
+  images   Image[]
+  postRefs PostRef[]
+
+  tags        String[]      @default([])
+  status      PublishStatus @default(draft)
+  publishedAt DateTime?
+  isFeatured  Boolean       @default(false)
+  order       Int?
+  popularity  Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([placeId])
+  @@index([category])
+  @@index([status])
+}
+
+model Spot {
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  name        String
+  description String?
+  category    SpotCategory?
+
+  // PlaceableFields (cơ sở thực địa)
+  address      String?
+  lat          Float?
+  lng          Float?
+  openingHours String?
+  phone        String?
+  website      String?
+  bookingUrl   String?
+  priceRange   PriceRange?
+
+  placeId String
+  place   Place  @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  activities Activity[] @relation("ActivitySpots") // M:N
+
+  images   Image[]
+  postRefs PostRef[]
+
+  tags        String[]      @default([])
+  status      PublishStatus @default(draft)
+  publishedAt DateTime?
+  isFeatured  Boolean       @default(false)
+  order       Int?
+  popularity  Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([placeId])
+  @@index([category])
+  @@index([status])
+}
+
+model Specialty {
+  id          String  @id @default(cuid())
+  slug        String  @unique
+  name        String
+  description String?
+
+  placeId String
+  place   Place  @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  eateries Eatery[] @relation("SpecialtyEateries") // M:N
+
+  images   Image[]
+  postRefs PostRef[]
+
+  tags        String[]      @default([])
+  status      PublishStatus @default(draft)
+  publishedAt DateTime?
+  isFeatured  Boolean       @default(false)
+  order       Int?
+  popularity  Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([placeId])
+  @@index([status])
+}
+
+model Eatery {
+  id          String          @id @default(cuid())
+  slug        String          @unique
+  name        String
+  description String?
+  category    EateryCategory?
+
+  // PlaceableFields
+  address      String?
+  lat          Float?
+  lng          Float?
+  openingHours String?
+  phone        String?
+  website      String?
+  bookingUrl   String?
+  priceRange   PriceRange?
+
+  placeId String
+  place   Place  @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  specialties Specialty[] @relation("SpecialtyEateries") // M:N
+
+  images   Image[]
+  postRefs PostRef[]
+
+  tags        String[]      @default([])
+  status      PublishStatus @default(draft)
+  publishedAt DateTime?
+  isFeatured  Boolean       @default(false)
+  order       Int?
+  popularity  Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([placeId])
+  @@index([category])
+  @@index([status])
+}
+
+model Accommodation {
+  id          String                 @id @default(cuid())
+  slug        String                 @unique
+  name        String
+  description String?
+  category    AccommodationCategory?
+
+  // PlaceableFields
+  address      String?
+  lat          Float?
+  lng          Float?
+  openingHours String?
+  phone        String?
+  website      String?
+  bookingUrl   String?
+  priceRange   PriceRange?
+
+  placeId String
+  place   Place  @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  images   Image[]
+  postRefs PostRef[]
+
+  tags        String[]      @default([])
+  status      PublishStatus @default(draft)
+  publishedAt DateTime?
+  isFeatured  Boolean       @default(false)
+  order       Int?
+  popularity  Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([placeId])
+  @@index([category])
+  @@index([status])
+}
+
+// Transport: hiển thị INLINE trên trang Place — không slug, không trang chi tiết,
+// không là đích PostRef. Vẫn lưu DB và có thể có ảnh.
+model Transport {
+  id          String             @id @default(cuid())
+  name        String
+  description String?
+  direction   TransportDirection
+  mode        TransportMode
+
+  fromName   String? // chỉ getTo
+  duration   String?
+  distanceKm Float?
+  priceFrom  Int?
+  priceTo    Int?
+  currency   String? @default("VND")
+
+  operatorName String?
+  bookingUrl   String?
+
+  placeId String
+  place   Place  @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  images Image[]
+
+  status      PublishStatus @default(draft)
+  publishedAt DateTime?
+  order       Int?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([placeId])
+  @@index([direction])
+  @@index([status])
+}
+
+// ============================================================
+// IMAGE — một ảnh thuộc đúng MỘT chủ sở hữu (exclusive arc:
+// đúng một trong các FK dưới đây được set). Cascade theo chủ.
+// ============================================================
+
+model Image {
+  id      String  @id @default(cuid())
+  url     String
+  alt     String?
+  caption String?
+  credit  String?
+  order   Int     @default(0)
+  isCover Boolean @default(false)
+
+  placeId         String?
+  place           Place?         @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  activityId      String?
+  activity        Activity?      @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  spotId          String?
+  spot            Spot?          @relation(fields: [spotId], references: [id], onDelete: Cascade)
+  specialtyId     String?
+  specialty       Specialty?     @relation(fields: [specialtyId], references: [id], onDelete: Cascade)
+  eateryId        String?
+  eatery          Eatery?        @relation(fields: [eateryId], references: [id], onDelete: Cascade)
+  accommodationId String?
+  accommodation   Accommodation? @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
+  transportId     String?
+  transport       Transport?     @relation(fields: [transportId], references: [id], onDelete: Cascade)
+  postId          String?
+  post            Post?          @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([placeId])
+  @@index([activityId])
+  @@index([spotId])
+  @@index([specialtyId])
+  @@index([eateryId])
+  @@index([accommodationId])
+  @@index([transportId])
+  @@index([postId])
+}
+
+// ============================================================
+// BLOG
+// ============================================================
+
+model Post {
+  id       String  @id @default(cuid())
+  slug     String  @unique
+  title    String
+  excerpt  String?
+  content  String // Markdown/MDX
+  category String? // phân loại bài (editorial, để linh hoạt): cam-nang | am-thuc | ...
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
+
+  refs   PostRef[]
+  images Image[]
+
+  tags        String[]      @default([])
+  status      PublishStatus @default(draft)
+  publishedAt DateTime?
+  isFeatured  Boolean       @default(false)
+  order       Int?
+  popularity  Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([authorId])
+  @@index([status])
+}
+
+// PostRef — liên kết bài viết tới Place/Listing (đích có trang).
+// Exclusive arc: đúng một trong các FK target được set. (Không gồm Transport.)
+model PostRef {
+  id     String @id @default(cuid())
+  postId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  order  Int    @default(0)
+
+  placeId         String?
+  place           Place?         @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  activityId      String?
+  activity        Activity?      @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  spotId          String?
+  spot            Spot?          @relation(fields: [spotId], references: [id], onDelete: Cascade)
+  specialtyId     String?
+  specialty       Specialty?     @relation(fields: [specialtyId], references: [id], onDelete: Cascade)
+  eateryId        String?
+  eatery          Eatery?        @relation(fields: [eateryId], references: [id], onDelete: Cascade)
+  accommodationId String?
+  accommodation   Accommodation? @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@index([placeId])
+  @@index([activityId])
+  @@index([spotId])
+  @@index([specialtyId])
+  @@index([eateryId])
+  @@index([accommodationId])
+}
