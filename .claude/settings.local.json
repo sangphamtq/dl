@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm -v)",
+      "Bash(npx -v)",
+      "Bash(pnpm -v)",
+      "Bash(pnpm dlx *)",
+      "Bash(pnpm add *)",
+      "Bash(pnpm exec *)",
+      "Bash(echo \"=== exit: $? ===\")",
+      "Bash(pnpm install *)",
+      "Bash(curl -s -o /dev/null -w \"status=%{http_code} redirect=%{redirect_url}\\\\n\" http://localhost:3000/)",
+      "Bash(tail -25 /tmp/next-dev.log)",
+      "Read(//private/tmp/**)",
+      "Bash(pkill -f \"next dev\")",
+      "Bash(pkill -f \"next-server\")",
+      "Bash(curl -s http://localhost:3000/login)",
+      "Bash(curl -s http://localhost:3000/api/auth/providers)"
+    ]
+  }
+}
