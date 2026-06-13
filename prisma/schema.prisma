@@ -173,6 +173,7 @@ model Place {
   slug        String    @unique
   name        String
   kind        PlaceKind
+  tagline     String? // câu slogan ngắn hiển thị dưới tên (khác description)
   description String?
 
   parentId String?
@@ -187,8 +188,9 @@ model Place {
   accommodations Accommodation[]
   transports     Transport[]
 
-  images   Image[]
-  postRefs PostRef[]
+  images    Image[]
+  postRefs  PostRef[]
+  viewStats PlaceViewStat[] // lượt xem theo ngày (để lọc trending)
 
   tags String[] @default([])
 
@@ -197,13 +199,27 @@ model Place {
   publishedAt DateTime?
   isFeatured  Boolean       @default(false)
   order       Int?
-  popularity  Int           @default(0)
+  popularity  Int           @default(0) // điểm tổng hợp (chưa dùng) — xem viewCount cho lượt xem thật
+  viewCount   Int           @default(0) // tổng lượt xem all-time (tự tăng mỗi truy cập)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
   @@index([kind])
   @@index([parentId])
   @@index([status])
+}
+
+// Lượt xem Place gộp theo ngày: 1 dòng / place / ngày.
+// "trending N ngày" = sum(count) where date >= today - N. Gọn & lọc theo thời gian được.
+model PlaceViewStat {
+  id      String   @id @default(cuid())
+  placeId String
+  place   Place    @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  date    DateTime @db.Date
+  count   Int      @default(0)
+
+  @@unique([placeId, date])
+  @@index([date])
 }
 
 // ============================================================

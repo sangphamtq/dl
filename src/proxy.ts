@@ -11,25 +11,26 @@ const STAFF_ROLES = ["admin", "editor"];
 export default auth((req) => {
   const { pathname, origin } = req.nextUrl;
   const isLoggedIn = !!req.auth;
-  const isOnLogin = pathname === "/login";
   const role = req.auth?.user?.role;
+  const isStaff = STAFF_ROLES.includes(role ?? "");
 
-  // Chưa đăng nhập → đẩy về /login (trừ chính trang login).
-  if (!isLoggedIn && !isOnLogin) {
-    const loginUrl = new URL("/login", origin);
-    loginUrl.searchParams.set("callbackUrl", pathname);
-    return Response.redirect(loginUrl);
+  // Trang /login: đã đăng nhập rồi thì về trang chủ; còn lại cho vào.
+  if (pathname === "/login") {
+    if (isLoggedIn) return Response.redirect(new URL("/", origin));
+    return;
   }
 
-  // Đã đăng nhập mà vào /login → về trang chủ.
-  if (isLoggedIn && isOnLogin) {
-    return Response.redirect(new URL("/", origin));
+  // Khu CMS /cms: cần đăng nhập + là staff (admin/editor).
+  if (pathname.startsWith("/cms")) {
+    if (!isLoggedIn) {
+      const loginUrl = new URL("/login", origin);
+      loginUrl.searchParams.set("callbackUrl", pathname);
+      return Response.redirect(loginUrl);
+    }
+    if (!isStaff) return Response.redirect(new URL("/", origin));
   }
 
-  // Khu CMS /cms: chỉ staff (admin/editor).
-  if (pathname.startsWith("/cms") && !STAFF_ROLES.includes(role ?? "")) {
-    return Response.redirect(new URL("/", origin));
-  }
+  // Mọi route khác (trang chủ, /diem-den, /blog…) đều công khai.
 });
 
 export const config = {
