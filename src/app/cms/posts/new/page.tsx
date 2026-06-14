@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { PostForm } from "../post-form";
+import { getRefOptions } from "../ref-options";
 
-export default function NewPostPage() {
+export default async function NewPostPage() {
+  const refOptions = await getRefOptions();
   return (
     <div className="mx-auto max-w-4xl p-6 sm:p-8">
       <Link
@@ -18,7 +20,7 @@ export default function NewPostPage() {
       </p>
 
       <div className="mt-4">
-        <PostForm mode="create" />
+        <PostForm mode="create" refOptions={refOptions} />
       </div>
     </div>
   );

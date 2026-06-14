@@ -17,7 +17,31 @@ export type PostFormInput = {
   content: string;
   category: string; // "" = none
   tags: string;
+  refs: string[]; // "type:id" — liên kết tới Place/Listing (PostRef)
 };
+
+// type token → cột FK trên PostRef (exclusive arc; KHÔNG gồm transport).
+const REF_FK: Record<string, string> = {
+  place: "placeId",
+  activity: "activityId",
+  spot: "spotId",
+  specialty: "specialtyId",
+  eatery: "eateryId",
+  accommodation: "accommodationId",
+};
+
+// "type:id"[] → data tạo PostRef (giữ thứ tự chọn).
+function refCreateData(
+  refs: string[],
+): Prisma.PostRefUncheckedCreateWithoutPostInput[] {
+  const out: Prisma.PostRefUncheckedCreateWithoutPostInput[] = [];
+  refs.forEach((r, i) => {
+    const [type, id] = r.split(":");
+    const fk = REF_FK[type];
+    if (fk && id) out.push({ order: i, [fk]: id } as Prisma.PostRefUncheckedCreateWithoutPostInput);
+  });
+  return out;
+}
 
 export type ActionResult = { ok: true; id: string } | { ok: false; error: string };
 
@@ -71,7 +95,9 @@ export async function createPost(input: PostFormInput): Promise<ActionResult> {
   const authorId = await requireStaffId();
   const res = await normalize(input);
   if ("error" in res) return { ok: false, error: res.error };
-  const post = await prisma.post.create({ data: { ...res.data, authorId } });
+  const post = await prisma.post.create({
+    data: { ...res.data, authorId, refs: { create: refCreateData(input.refs) } },
+  });
   revalidatePath("/cms/posts");
   return { ok: true, id: post.id };
 }
@@ -83,7 +109,13 @@ export async function updatePost(
   await requireStaffId();
   const res = await normalize(input, id);
   if ("error" in res) return { ok: false, error: res.error };
-  await prisma.post.update({ where: { id }, data: res.data });
+  await prisma.post.update({
+    where: { id },
+    data: {
+      ...res.data,
+      refs: { deleteMany: {}, create: refCreateData(input.refs) },
+    },
+  });
   revalidatePath("/cms/posts");
   revalidatePath(`/cms/posts/${id}`);
   revalidatePath(`/cms/posts/${id}/edit`);

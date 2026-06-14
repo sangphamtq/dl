@@ -5,6 +5,25 @@ import { prisma } from "@/lib/prisma";
 import { FormSection } from "@/components/cms/form-section";
 import { ListingImages } from "@/components/cms/listing-images";
 import { PostForm, type PostFormValues } from "../../post-form";
+import { getRefOptions } from "../../ref-options";
+
+// PostRef → "type:id" để nạp vào multi-select.
+function refToken(r: {
+  placeId: string | null;
+  activityId: string | null;
+  spotId: string | null;
+  specialtyId: string | null;
+  eateryId: string | null;
+  accommodationId: string | null;
+}): string | null {
+  if (r.placeId) return `place:${r.placeId}`;
+  if (r.activityId) return `activity:${r.activityId}`;
+  if (r.spotId) return `spot:${r.spotId}`;
+  if (r.specialtyId) return `specialty:${r.specialtyId}`;
+  if (r.eateryId) return `eatery:${r.eateryId}`;
+  if (r.accommodationId) return `accommodation:${r.accommodationId}`;
+  return null;
+}
 
 export default async function EditPostPage({
   params,
@@ -13,7 +32,7 @@ export default async function EditPostPage({
 }) {
   const { id } = await params;
 
-  const [post, images] = await Promise.all([
+  const [post, images, refOptions] = await Promise.all([
     prisma.post.findUnique({
       where: { id },
       select: {
@@ -24,6 +43,17 @@ export default async function EditPostPage({
         content: true,
         category: true,
         tags: true,
+        refs: {
+          orderBy: { order: "asc" },
+          select: {
+            placeId: true,
+            activityId: true,
+            spotId: true,
+            specialtyId: true,
+            eateryId: true,
+            accommodationId: true,
+          },
+        },
       },
     }),
     prisma.image.findMany({
@@ -31,6 +61,7 @@ export default async function EditPostPage({
       orderBy: [{ isCover: "desc" }, { order: "asc" }],
       select: { id: true, url: true, alt: true, isCover: true },
     }),
+    getRefOptions(),
   ]);
 
   if (!post) notFound();
@@ -42,6 +73,7 @@ export default async function EditPostPage({
     content: post.content,
     category: post.category ?? "",
     tags: post.tags.join(", "),
+    refs: post.refs.map(refToken).filter((x): x is string => x !== null),
   };
 
   return (
@@ -58,7 +90,12 @@ export default async function EditPostPage({
       </h1>
 
       <div className="mt-4">
-        <PostForm mode="edit" postId={post.id} initial={initial} />
+        <PostForm
+          mode="edit"
+          postId={post.id}
+          refOptions={refOptions}
+          initial={initial}
+        />
       </div>
 
       <div className="border-t">

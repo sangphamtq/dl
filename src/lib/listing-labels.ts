@@ -33,6 +33,15 @@ export const EATERY_CATEGORY_LABELS: Record<string, string> = {
   other: "Khác",
 };
 
+export const ACCOMMODATION_CATEGORY_LABELS: Record<string, string> = {
+  hotel: "Khách sạn",
+  homestay: "Homestay",
+  resort: "Resort",
+  hostel: "Hostel",
+  guesthouse: "Nhà nghỉ",
+  villa: "Villa",
+};
+
 export const MEAL_LABELS: Record<string, string> = {
   breakfast: "Sáng",
   lunch: "Trưa",
@@ -45,6 +54,15 @@ export const DIFFICULTY_LABELS: Record<string, string> = {
   easy: "Dễ",
   moderate: "Vừa",
   hard: "Khó",
+};
+
+export const POST_CATEGORY_LABELS: Record<string, string> = {
+  "cam-nang": "Cẩm nang",
+  "am-thuc": "Ẩm thực",
+  "luu-tru": "Lưu trú",
+  "trai-nghiem": "Trải nghiệm",
+  "di-chuyen": "Di chuyển",
+  "tin-tuc": "Tin tức",
 };
 
 export const PRICE_LABELS: Record<string, string> = {

@@ -51,12 +51,40 @@ export default async function PostDetailPage({
         orderBy: [{ isCover: "desc" }, { order: "asc" }],
         select: { id: true, url: true, alt: true, isCover: true },
       },
+      refs: {
+        orderBy: { order: "asc" },
+        select: {
+          place: { select: { id: true, name: true } },
+          activity: { select: { id: true, name: true } },
+          spot: { select: { id: true, name: true } },
+          specialty: { select: { id: true, name: true } },
+          eatery: { select: { id: true, name: true } },
+          accommodation: { select: { id: true, name: true } },
+        },
+      },
     },
   });
 
   if (!post) notFound();
 
   const published = post.status === "published";
+  const refs = post.refs
+    .map((r) => {
+      if (r.place)
+        return { label: "Điểm đến", name: r.place.name, href: `/cms/places/${r.place.id}` };
+      if (r.activity)
+        return { label: "Hoạt động", name: r.activity.name, href: `/cms/activities/${r.activity.id}` };
+      if (r.spot)
+        return { label: "Địa điểm", name: r.spot.name, href: `/cms/spots/${r.spot.id}` };
+      if (r.specialty)
+        return { label: "Đặc sản", name: r.specialty.name, href: `/cms/specialties/${r.specialty.id}` };
+      if (r.eatery)
+        return { label: "Quán ăn", name: r.eatery.name, href: `/cms/eateries/${r.eatery.id}` };
+      if (r.accommodation)
+        return { label: "Lưu trú", name: r.accommodation.name, href: `/cms/accommodations/${r.accommodation.id}` };
+      return null;
+    })
+    .filter((x): x is { label: string; name: string; href: string } => x !== null);
   const cover = post.images.find((i) => i.isCover) ?? post.images[0] ?? null;
 
   return (
@@ -209,6 +237,32 @@ export default async function PostDetailPage({
                   </div>
                 ))}
               </div>
+            </section>
+          )}
+
+          {/* Địa điểm liên kết (PostRef) */}
+          {refs.length > 0 && (
+            <section>
+              <h2 className="text-lg font-semibold tracking-tight">
+                Địa điểm liên kết
+              </h2>
+              <ul className="mt-3 divide-y overflow-hidden rounded-xl border">
+                {refs.map((r) => (
+                  <li key={r.href}>
+                    <Link
+                      href={r.href}
+                      className="flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-muted/50"
+                    >
+                      <Badge variant="outline" className="shrink-0">
+                        {r.label}
+                      </Badge>
+                      <span className="flex-1 truncate font-medium">
+                        {r.name}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </section>
           )}
         </div>

@@ -19,8 +19,10 @@ import {
 } from "@/components/ui/select";
 import { FormSection } from "@/components/cms/form-section";
 import { RichTextEditor } from "@/components/cms/rich-text-editor";
+import { MultiCombobox } from "@/components/ui/multi-combobox";
 import { createPost, updatePost, type PostFormInput } from "./actions";
 import { POST_CATEGORIES } from "./constants";
+import type { RefOption } from "./ref-options";
 
 export type PostFormValues = PostFormInput;
 
@@ -31,15 +33,18 @@ const EMPTY: PostFormValues = {
   content: "",
   category: "",
   tags: "",
+  refs: [],
 };
 
 export function PostForm({
   mode,
   postId,
+  refOptions,
   initial,
 }: {
   mode: "create" | "edit";
   postId?: string;
+  refOptions: RefOption[];
   initial?: Partial<PostFormValues>;
 }) {
   const router = useRouter();
@@ -156,6 +161,23 @@ export function PostForm({
               }}
               placeholder="cam-nang-ha-long"
               className="font-mono"
+            />
+          </div>
+        </FormSection>
+
+        {/* Liên kết địa điểm (PostRef) */}
+        <FormSection
+          title="Địa điểm liên kết"
+          description="Gắn các điểm đến / quán / món… được nhắc trong bài. Hiển thị ở cuối bài & ở trang đó."
+        >
+          <div className="space-y-2">
+            <Label>Mục liên kết</Label>
+            <MultiCombobox
+              options={refOptions}
+              values={values.refs}
+              onChange={(v) => set("refs", v)}
+              placeholder="Chọn địa điểm / quán / món…"
+              searchPlaceholder="Tìm theo tên…"
             />
           </div>
         </FormSection>
