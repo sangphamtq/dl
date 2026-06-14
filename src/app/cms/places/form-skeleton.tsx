@@ -1,37 +1,36 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
-// Khung chờ cho trang tạo/sửa Place (khớp bố cục PlaceForm).
-function Field({ wide = false }: { wide?: boolean }) {
+// Khung chờ cho trang tạo/sửa Place (khớp bố cục section 2 cột của PlaceForm).
+function SectionSkeleton({ rows = 1 }: { rows?: number }) {
   return (
-    <div className="space-y-2">
-      <Skeleton className="h-4 w-24" />
-      <Skeleton className={wide ? "h-24 w-full" : "h-9 w-full"} />
+    <div className="grid gap-x-8 gap-y-4 py-8 lg:grid-cols-3">
+      <div className="space-y-2 lg:col-span-1">
+        <Skeleton className="h-4 w-28" />
+        <Skeleton className="h-3 w-40" />
+      </div>
+      <div className="space-y-5 lg:col-span-2">
+        {Array.from({ length: rows }).map((_, i) => (
+          <div key={i} className="space-y-2">
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-9 w-full" />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
 
 export function PlaceFormSkeleton() {
   return (
-    <div className="p-6 sm:p-8">
+    <div className="mx-auto max-w-4xl p-6 sm:p-8">
       <Skeleton className="h-4 w-32" />
       <Skeleton className="mt-3 h-8 w-64" />
-      <Skeleton className="mt-2 h-4 w-80" />
 
-      <div className="mt-8 max-w-2xl space-y-6">
-        <Field />
-        <Field />
-        <Field />
-        <Field wide />
-        <Field />
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-          <Field />
-          <Field />
-        </div>
-        <Skeleton className="h-16 w-full rounded-lg" />
-        <div className="flex gap-3 pt-2">
-          <Skeleton className="h-9 w-24" />
-          <Skeleton className="h-9 w-16" />
-        </div>
+      <div className="mt-4 divide-y">
+        <SectionSkeleton rows={1} />
+        <SectionSkeleton rows={3} />
+        <SectionSkeleton rows={1} />
+        <SectionSkeleton rows={1} />
       </div>
     </div>
   );

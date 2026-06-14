@@ -15,7 +15,7 @@ export default async function NewPlacePage() {
   ]);
 
   return (
-    <div className="p-6 sm:p-8">
+    <div className="mx-auto max-w-4xl p-6 sm:p-8">
       <Link
         href="/cms/places"
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
@@ -31,7 +31,7 @@ export default async function NewPlacePage() {
         khi tạo (ở trang sửa).
       </p>
 
-      <div className="mt-8">
+      <div className="mt-4">
         <PlaceForm
           mode="create"
           provinces={provinces}

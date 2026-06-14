@@ -11,13 +11,25 @@ export type Ward = { code: number; name: string };
 
 type Named = { code: number; name: string };
 
+// Bỏ tiền tố đơn vị hành chính cho gọn: "Tỉnh Hà Giang" → "Hà Giang",
+// "Quận Ba Đình" → "Ba Đình", "Phường Phúc Xá" → "Phúc Xá".
+const PREFIX_RE =
+  /^(Tỉnh|Thành phố|Quận|Huyện|Thị xã|Thị trấn|Phường|Xã)\s+/;
+
+function stripPrefix(name: string): string {
+  const stripped = name.replace(PREFIX_RE, "").trim();
+  // Giữ nguyên nếu bỏ tiền tố ra rỗng hoặc còn lại là số (vd "Quận 1" → "1").
+  if (!stripped || /^\d/.test(stripped)) return name;
+  return stripped;
+}
+
 // Danh sách tỉnh/thành.
 export async function getProvinces(): Promise<Province[]> {
   try {
     const res = await fetch(`${BASE}/p/`, { next: { revalidate: DAY } });
     if (!res.ok) return [];
     const data: Named[] = await res.json();
-    return data.map((p) => ({ code: p.code, name: p.name }));
+    return data.map((p) => ({ code: p.code, name: stripPrefix(p.name) }));
   } catch {
     return [];
   }
@@ -31,7 +43,10 @@ export async function getDistricts(provinceCode: number): Promise<District[]> {
     });
     if (!res.ok) return [];
     const data: { districts?: Named[] } = await res.json();
-    return (data.districts ?? []).map((d) => ({ code: d.code, name: d.name }));
+    return (data.districts ?? []).map((d) => ({
+      code: d.code,
+      name: stripPrefix(d.name),
+    }));
   } catch {
     return [];
   }
@@ -45,7 +60,10 @@ export async function getWards(districtCode: number): Promise<Ward[]> {
     });
     if (!res.ok) return [];
     const data: { wards?: Named[] } = await res.json();
-    return (data.wards ?? []).map((w) => ({ code: w.code, name: w.name }));
+    return (data.wards ?? []).map((w) => ({
+      code: w.code,
+      name: stripPrefix(w.name),
+    }));
   } catch {
     return [];
   }

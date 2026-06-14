@@ -19,6 +19,7 @@ import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { PlaceAdminControls } from "../admin-controls";
 
 const dateFmt = new Intl.DateTimeFormat("vi-VN", {
   day: "2-digit",
@@ -289,6 +290,13 @@ export default async function PlaceDetailPage({
 
         {/* Sidebar meta */}
         <aside className="space-y-4">
+          <PlaceAdminControls
+            id={place.id}
+            status={place.status}
+            isFeatured={place.isFeatured}
+            order={place.order}
+          />
+
           <div className="rounded-xl border p-4">
             <h3 className="text-sm font-semibold">Thông tin</h3>
             <dl className="mt-3 space-y-3 text-sm">
@@ -300,7 +308,6 @@ export default async function PlaceDetailPage({
                   .filter(Boolean)
                   .join(", ") || "—"}
               </Meta>
-              <Meta label="Thứ tự">{place.order ?? "—"}</Meta>
               <Meta label="Lượt xem">
                 {place.viewCount.toLocaleString("vi-VN")}
               </Meta>

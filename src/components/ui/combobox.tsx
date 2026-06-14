@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { removeDiacritics } from "@/lib/slug";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -66,7 +67,11 @@ export function Combobox({
         className="w-(--radix-popover-trigger-width) p-0"
         align="start"
       >
-        <Command>
+        <Command
+          filter={(value, search) =>
+            removeDiacritics(value).includes(removeDiacritics(search)) ? 1 : 0
+          }
+        >
           <CommandInput placeholder={searchPlaceholder} />
           <CommandList>
             <CommandEmpty>{emptyText}</CommandEmpty>

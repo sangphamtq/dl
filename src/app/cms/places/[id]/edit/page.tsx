@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getProvinces } from "@/lib/locations";
+import { Badge } from "@/components/ui/badge";
+import { FormSection } from "@/components/cms/form-section";
 import { PlaceForm, type PlaceFormValues } from "../../place-form";
 import { PlaceImages } from "../../place-images";
 
@@ -31,9 +33,6 @@ export default async function EditPlacePage({
         wardCode: true,
         wardName: true,
         tags: true,
-        status: true,
-        isFeatured: true,
-        order: true,
       },
     }),
     prisma.place.findMany({
@@ -68,13 +67,10 @@ export default async function EditPlacePage({
     wardCode: place.wardCode?.toString() ?? "",
     wardName: place.wardName ?? "",
     tags: place.tags.join(", "),
-    status: place.status,
-    isFeatured: place.isFeatured,
-    order: place.order?.toString() ?? "",
   };
 
   return (
-    <div className="p-6 sm:p-8">
+    <div className="mx-auto max-w-4xl p-6 sm:p-8">
       <Link
         href={`/cms/places/${place.id}`}
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
@@ -82,11 +78,16 @@ export default async function EditPlacePage({
         <ArrowLeft className="size-4" />
         {place.name}
       </Link>
-      <h1 className="mt-3 text-2xl font-semibold tracking-tight">
-        Sửa: {place.name}
-      </h1>
+      <div className="mt-3 flex items-center gap-2">
+        <h1 className="text-2xl font-semibold tracking-tight">
+          Sửa: {place.name}
+        </h1>
+        <Badge variant={place.kind === "province" ? "secondary" : "outline"}>
+          {place.kind === "province" ? "Tỉnh" : "Điểm đến"}
+        </Badge>
+      </div>
 
-      <div className="mt-8">
+      <div className="mt-4">
         <PlaceForm
           mode="edit"
           placeId={place.id}
@@ -96,14 +97,14 @@ export default async function EditPlacePage({
         />
       </div>
 
-      <div className="mt-10 max-w-2xl">
-        <h2 className="text-lg font-semibold tracking-tight">Ảnh</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Tải ảnh cho nơi này. Ảnh bìa hiển thị ở danh sách & hero trang.
-        </p>
-        <div className="mt-4">
+      {/* Ảnh — cùng bố cục section với form */}
+      <div className="border-t">
+        <FormSection
+          title="Ảnh"
+          description="Tải ảnh cho nơi này. Ảnh bìa hiển thị ở danh sách & hero trang."
+        >
           <PlaceImages placeId={place.id} images={images} />
-        </div>
+        </FormSection>
       </div>
     </div>
   );

@@ -23,9 +23,6 @@ export type PlaceFormInput = {
   wardCode: string;
   wardName: string;
   tags: string; // chuỗi phân tách bằng dấu phẩy
-  status: "draft" | "published";
-  isFeatured: boolean;
-  order: string; // số dạng text; rỗng = không đặt
 };
 
 export type ActionResult = { ok: true; id: string } | { ok: false; error: string };
@@ -77,10 +74,6 @@ async function normalize(
     parentId = null;
   }
 
-  const order = input.order.trim() === "" ? null : Number(input.order);
-  if (order !== null && !Number.isFinite(order))
-    return { error: "Thứ tự phải là số." };
-
   const provinceCode =
     input.provinceCode.trim() === "" ? null : Number(input.provinceCode);
   const districtCode =
@@ -98,9 +91,8 @@ async function normalize(
     .map((t) => t.trim())
     .filter(Boolean);
 
-  const status =
-    input.status === "published" ? PublishStatus.published : PublishStatus.draft;
-
+  // Chỉ gồm trường NỘI DUNG. Các AdminFields (status/isFeatured/order) được
+  // quản lý riêng ở trang chi tiết, không đụng tới khi tạo/sửa nội dung.
   return {
     data: {
       name,
@@ -116,10 +108,6 @@ async function normalize(
       wardCode,
       wardName: wardCode ? input.wardName.trim() || null : null,
       tags,
-      status,
-      isFeatured: input.isFeatured,
-      order,
-      publishedAt: status === PublishStatus.published ? new Date() : null,
     },
   };
 }
@@ -144,18 +132,9 @@ export async function updatePlace(
   const res = await normalize(input, id);
   if ("error" in res) return { ok: false, error: res.error };
 
-  // Giữ nguyên publishedAt cũ nếu đã từng xuất bản (đừng reset mốc khi chỉ sửa).
-  const existing = await prisma.place.findUnique({
-    where: { id },
-    select: { publishedAt: true },
-  });
-  const data = { ...res.data };
-  if (data.status === PublishStatus.published && existing?.publishedAt) {
-    data.publishedAt = existing.publishedAt;
-  }
-
-  await prisma.place.update({ where: { id }, data });
+  await prisma.place.update({ where: { id }, data: res.data });
   revalidatePath("/cms/places");
+  revalidatePath(`/cms/places/${id}`);
   revalidatePath(`/cms/places/${id}/edit`);
   return { ok: true, id };
 }
@@ -176,7 +155,9 @@ export async function deletePlace(id: string): Promise<ActionResult> {
   return { ok: true, id };
 }
 
-// Đổi nhanh trạng thái xuất bản từ danh sách.
+// ── AdminFields: điều khiển nhanh (không đụng nội dung) ──────────────────────
+
+// Đổi nhanh trạng thái xuất bản (dùng ở danh sách & trang chi tiết).
 export async function togglePublish(
   id: string,
   publish: boolean,
@@ -190,5 +171,37 @@ export async function togglePublish(
     },
   });
   revalidatePath("/cms/places");
+  revalidatePath(`/cms/places/${id}`);
+  return { ok: true, id };
+}
+
+// Đổi nhanh đánh dấu nổi bật.
+export async function toggleFeatured(
+  id: string,
+  featured: boolean,
+): Promise<ActionResult> {
+  await requireStaff();
+  await prisma.place.update({
+    where: { id },
+    data: { isFeatured: featured },
+  });
+  revalidatePath("/cms/places");
+  revalidatePath(`/cms/places/${id}`);
+  return { ok: true, id };
+}
+
+// Cập nhật thứ tự sắp xếp thủ công (rỗng = bỏ đặt).
+export async function updateOrder(
+  id: string,
+  order: string,
+): Promise<ActionResult> {
+  await requireStaff();
+  const value = order.trim() === "" ? null : Number(order);
+  if (value !== null && !Number.isFinite(value))
+    return { ok: false, error: "Thứ tự phải là số." };
+
+  await prisma.place.update({ where: { id }, data: { order: value } });
+  revalidatePath("/cms/places");
+  revalidatePath(`/cms/places/${id}`);
   return { ok: true, id };
 }

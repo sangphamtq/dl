@@ -1,3 +1,14 @@
+// Bỏ dấu tiếng Việt + chữ thường (giữ khoảng trắng) — dùng cho tìm kiếm
+// không phân biệt dấu. vd "Bình Thuận" → "binh thuan".
+export function removeDiacritics(input: string): string {
+  return input
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "d")
+    .toLowerCase();
+}
+
 // Chuyển tên tiếng Việt có dấu → slug không dấu, nối bằng "-".
 // vd "Hạ Long" → "ha-long", "Đà Nẵng" → "da-nang".
 export function slugify(input: string): string {
