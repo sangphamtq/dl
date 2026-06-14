@@ -89,6 +89,12 @@ enum ActivityCategory {
   other
 }
 
+enum ActivityDifficulty {
+  easy // dễ
+  moderate // vừa
+  hard // khó
+}
+
 enum TransportDirection {
   getTo // đến nơi từ bên ngoài
   getAround // di chuyển tại chỗ
@@ -263,6 +269,11 @@ model Activity {
   website      String?
   priceRange   PriceRange?
 
+  // Thực tế trải nghiệm (xem CLAUDE.md "Spot vs Activity")
+  difficulty   ActivityDifficulty?
+  durationText String? // "nửa ngày", "2N1Đ", "~2 giờ"
+  seasonText   String? // "tháng 9–11", "săn mây mùa thu"
+
   placeId String
   place   Place  @relation(fields: [placeId], references: [id], onDelete: Cascade)
 
@@ -304,6 +315,11 @@ model Spot {
 
   placeId String
   place   Place  @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  // Thực tế về chỗ (xem CLAUDE.md "Spot vs Activity")
+  bestTime   String? // mùa/giờ đẹp nhất ("mùa lúa chín", "sáng sớm")
+  ticketInfo String? // vé: "120k/người, trẻ em miễn phí"
+  notice     String? // cảnh báo truy cập: "Tạm đóng", "Cần xin phép leo"
 
   activities Activity[] @relation("ActivitySpots") // M:N
 

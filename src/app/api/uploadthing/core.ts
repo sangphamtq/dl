@@ -3,6 +3,8 @@ import { UploadThingError } from "uploadthing/server";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@/generated/prisma/client";
+import { OWNER_FK } from "@/lib/owner";
 
 const f = createUploadthing();
 
@@ -49,6 +51,62 @@ export const ourFileRouter = {
       });
 
       return { placeId: metadata.placeId };
+    }),
+
+  // Ảnh gắn vào bất kỳ Listing nào (theo ownerType + ownerId) — dùng chung.
+  listingImage: f({ image: { maxFileSize: "8MB", maxFileCount: 12 } })
+    .input(
+      z.object({
+        ownerType: z.enum([
+          "place",
+          "activity",
+          "spot",
+          "specialty",
+          "eatery",
+          "accommodation",
+          "transport",
+          "post",
+        ]),
+        ownerId: z.string().min(1),
+      }),
+    )
+    .middleware(async ({ input }) => {
+      const session = await auth();
+      const role = session?.user?.role;
+      if (!role || !STAFF.includes(role))
+        throw new UploadThingError("Không có quyền tải ảnh.");
+
+      // Kiểm tra owner tồn tại (model trùng tên ownerType).
+      const model = prisma[input.ownerType] as {
+        findUnique: (a: unknown) => Promise<{ id: string } | null>;
+      };
+      const exists = await model.findUnique({
+        where: { id: input.ownerId },
+        select: { id: true },
+      });
+      if (!exists) throw new UploadThingError("Đối tượng không tồn tại.");
+
+      return { ownerType: input.ownerType, ownerId: input.ownerId };
+    })
+    .onUploadComplete(async ({ metadata, file }) => {
+      const fk = OWNER_FK[metadata.ownerType];
+      const where = { [fk]: metadata.ownerId };
+      const [agg, count] = await Promise.all([
+        prisma.image.aggregate({ where, _max: { order: true } }),
+        prisma.image.count({ where }),
+      ]);
+
+      await prisma.image.create({
+        data: {
+          url: file.ufsUrl,
+          alt: file.name,
+          order: (agg._max.order ?? -1) + 1,
+          isCover: count === 0,
+          [fk]: metadata.ownerId,
+        } as Prisma.ImageUncheckedCreateInput,
+      });
+
+      return { ok: true };
     }),
 } satisfies FileRouter;
 

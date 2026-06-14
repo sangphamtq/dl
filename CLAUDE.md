@@ -84,6 +84,47 @@ liên kết tương tự về sau.
 > thác thì lưu thẳng trên `Activity`: `operatorName?`, `bookingUrl?`, `phone?`, `website?`.
 > Nếu sau này đơn vị cần trang riêng hoặc dùng chung nhiều hoạt động, mới tách ra `Provider`.
 
+### Spot vs Activity — mô hình khái niệm (ĐỌC KỸ trước khi làm phần này)
+
+> Phần này dễ hiểu sai. `Spot` và `Activity` KHÔNG đối xứng, và `Activity` KHÔNG phải
+> "một việc cho một chỗ".
+
+- **`Spot` = một CHỖ** (chấm được lên bản đồ): Núi Bài Thơ, Đảo Ti Tốp, Hang Sửng Sốt,
+  Chùa Cầu… Mọi địa điểm thực địa đều là `Spot`, **kể cả khi điểm hấp dẫn của nó là một
+  việc** (leo Bài Thơ để ngắm cảnh vẫn là `Spot` "Núi Bài Thơ").
+- **`Activity` = một LOẠI TRẢI NGHIỆM dùng lại**, phạm vi trong một điểm đến, **liên kết
+  M:N tới nhiều `Spot`**. Đặt tên ở mức trải nghiệm cho hấp dẫn ("Tắm biển", "Leo núi ngắm
+  toàn cảnh vịnh", "Tham quan hang động", "Chèo kayak"), **KHÔNG nhúng tên spot** vào
+  (❌ "Leo núi Bài Thơ", ❌ "Tắm biển Ti Tốp").
+  - *Đúng:* `Activity` **"Tắm biển"** ←M:N→ [Ti Tốp, Bãi Cháy, Tuần Châu]; `Activity`
+    **"Leo núi ngắm toàn cảnh"** ←M:N→ [Núi Bài Thơ, đỉnh Ti Tốp].
+  - Ti Tốp là **1 `Spot`** được **2 `Activity`** trỏ tới → khỏi tạo trang trùng.
+
+**Khi nào tạo `Activity` thành entity riêng** — chỉ khi thỏa ≥1 điều:
+1. Trải **nhiều spot** (du thuyền, chèo kayak khắp vịnh).
+2. Có **đơn vị / đặt chỗ / giá** (du thuyền ngủ đêm, thủy phi cơ, lớp học nấu ăn).
+3. Là **nhu cầu tìm kiếm độc lập / toàn vùng** ("săn mây Sa Pa", "chèo kayak Hạ Long").
+
+Nếu chỉ là "việc tự nhiên ở đúng một chỗ, không đơn vị, không đặt chỗ" → **để nguyên là
+`Spot`**, đừng tạo `Activity` (tránh trang mỏng & trùng lặp).
+
+- **Discoverability:** lọc/tìm "tắm biển" → trúng `Activity` → liệt kê các `Spot` liên kết
+  (gồm Ti Tốp); trang `Spot` hiển thị "Hoạt động ở đây". Lọc theo nhóm dùng
+  `Activity.category`. ⇒ quan hệ **M:N `Activity`↔`Spot` là xương sống** của phần này.
+- **Quản lý 1 chiều:** biên tập sửa liên kết **từ phía `Activity`** (chọn các spot diễn ra);
+  trang `Spot` chỉ hiển thị ngược (read-only).
+- **Tỉ trọng đổi theo điểm đến:** Hạ Long *activity-led* (spot là điểm dừng trong tour),
+  Hội An *spot-led* (việc là phụ trợ). UI trang Place phải **co giãn** — ẩn/thu nhỏ bên ít
+  dữ liệu, không ép luôn hai lưới cân nhau.
+
+**Trường "thực tế" (đã có trong schema):**
+- `Activity`: `difficulty` (`easy`/`moderate`/`hard`), `durationText` ("nửa ngày", "2N1Đ"),
+  `seasonText` ("tháng 9–11", "săn mây mùa thu") — trả lời "khó không / bao lâu / mùa nào".
+  (đơn vị/đặt chỗ: `operatorName`, `bookingUrl`, `phone`, `website`, `priceRange` đã có)
+- `Spot`: `bestTime` (mùa/giờ đẹp), `ticketInfo` (vé cụ thể, vd "120k/người"),
+  `notice` (cảnh báo truy cập: "Tạm đóng"/"Cần xin phép" — **khác** `status` draft/published).
+  PlaceableFields (`address`, `lat`, `lng`, `openingHours`, `phone`, `website`…) đã có.
+
 ### Bảng thuật ngữ (dùng nhất quán trong code & URL)
 
 | Tên tiếng Việt | Tên code (EN) | Vai trò / quan hệ |
