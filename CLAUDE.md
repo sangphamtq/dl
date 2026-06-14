@@ -315,7 +315,7 @@ Bài viết cẩm nang / kinh nghiệm / top-list. **Chỉ admin/editor soạn**
 Post {
   id, slug, title,
   excerpt?,                       // tóm tắt ngắn (cho card & SEO)
-  content,                        // thân bài: Markdown/MDX
+  content,                        // thân bài: HTML (rich text TipTap, lưu chuỗi HTML)
   authorId,                       // → User (người viết)
   category?,                      // phân loại bài: cam-nang | am-thuc | luu-tru | trai-nghiem...
   tags[],                         // DÙNG CHUNG cơ chế tag với Listing

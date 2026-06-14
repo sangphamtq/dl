@@ -530,7 +530,7 @@ model Post {
   slug     String  @unique
   title    String
   excerpt  String?
-  content  String // Markdown/MDX
+  content  String // HTML (rich text TipTap)
   category String? // phân loại bài (editorial, để linh hoạt): cam-nang | am-thuc | ...
 
   authorId String
