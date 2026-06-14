@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Compass, MapPin } from "lucide-react";
+import { ArrowRight, MapPin } from "lucide-react";
 import { auth } from "@/auth";
 import { buttonVariants } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site/site-header";
@@ -138,7 +138,13 @@ export default async function Home() {
       <footer className="border-t">
         <div className="mx-auto max-w-6xl px-4 py-8 text-sm text-muted-foreground sm:px-6">
           <div className="flex items-center gap-2 font-medium text-foreground">
-            <Compass className="size-4 text-primary" aria-hidden />
+            <Image
+              src="/icon-192.png"
+              alt=""
+              width={20}
+              height={20}
+              className="size-5 rounded"
+            />
             Hành Trình Việt
           </div>
           <p className="mt-2">Hỗ trợ thông tin du lịch Việt Nam.</p>

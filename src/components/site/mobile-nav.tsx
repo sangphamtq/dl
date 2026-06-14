@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu, Compass } from "lucide-react";
+import Image from "next/image";
+import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -35,7 +36,13 @@ export function MobileNav({ links, isAuthed }: Props) {
       <SheetContent side="left" className="w-72 gap-0 p-0">
         <SheetHeader className="border-b">
           <SheetTitle className="flex items-center gap-2">
-            <Compass className="size-5 text-primary" aria-hidden />
+            <Image
+              src="/icon-192.png"
+              alt=""
+              width={20}
+              height={20}
+              className="size-5 rounded"
+            />
             Hành Trình Việt
           </SheetTitle>
         </SheetHeader>

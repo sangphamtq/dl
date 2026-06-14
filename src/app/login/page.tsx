@@ -1,6 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Compass } from "lucide-react";
 import { signIn } from "@/auth";
 import { Button } from "@/components/ui/button";
 
@@ -27,7 +26,13 @@ export default async function LoginPage({
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-black/40" />
         <div className="absolute inset-0 flex flex-col justify-between p-10 text-white">
           <Link href="/" className="flex items-center gap-2 font-semibold">
-            <Compass className="size-5" aria-hidden />
+            <Image
+              src="/icon-192.png"
+              alt=""
+              width={28}
+              height={28}
+              className="size-7 rounded-lg"
+            />
             <span className="tracking-tight">Hành Trình Việt</span>
           </Link>
           <blockquote className="max-w-md space-y-3">
@@ -50,7 +55,13 @@ export default async function LoginPage({
               href="/"
               className="flex items-center gap-2 font-semibold tracking-tight lg:hidden"
             >
-              <Compass className="size-5 text-primary" aria-hidden />
+              <Image
+                src="/icon-192.png"
+                alt=""
+                width={24}
+                height={24}
+                className="size-6 rounded"
+              />
               <span>Hành Trình Việt</span>
             </Link>
             <h1 className="text-3xl font-semibold tracking-tight">Đăng nhập</h1>

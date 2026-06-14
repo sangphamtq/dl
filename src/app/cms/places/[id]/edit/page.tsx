@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { getProvinces } from "@/lib/locations";
 import { PlaceForm, type PlaceFormValues } from "../../place-form";
 import { PlaceImages } from "../../place-images";
 
@@ -12,7 +13,7 @@ export default async function EditPlacePage({
 }) {
   const { id } = await params;
 
-  const [place, provinces, images] = await Promise.all([
+  const [place, provinces, images, adminProvinces] = await Promise.all([
     prisma.place.findUnique({
       where: { id },
       select: {
@@ -23,6 +24,12 @@ export default async function EditPlacePage({
         parentId: true,
         tagline: true,
         description: true,
+        provinceCode: true,
+        provinceName: true,
+        districtCode: true,
+        districtName: true,
+        wardCode: true,
+        wardName: true,
         tags: true,
         status: true,
         isFeatured: true,
@@ -39,6 +46,7 @@ export default async function EditPlacePage({
       orderBy: [{ isCover: "desc" }, { order: "asc" }],
       select: { id: true, url: true, alt: true, isCover: true },
     }),
+    getProvinces(),
   ]);
 
   if (!place) notFound();
@@ -53,6 +61,12 @@ export default async function EditPlacePage({
     parentId: place.parentId,
     tagline: place.tagline ?? "",
     description: place.description ?? "",
+    provinceCode: place.provinceCode?.toString() ?? "",
+    provinceName: place.provinceName ?? "",
+    districtCode: place.districtCode?.toString() ?? "",
+    districtName: place.districtName ?? "",
+    wardCode: place.wardCode?.toString() ?? "",
+    wardName: place.wardName ?? "",
     tags: place.tags.join(", "),
     status: place.status,
     isFeatured: place.isFeatured,
@@ -77,6 +91,7 @@ export default async function EditPlacePage({
           mode="edit"
           placeId={place.id}
           provinces={parentOptions}
+          adminProvinces={adminProvinces}
           initial={initial}
         />
       </div>

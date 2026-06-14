@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
@@ -102,9 +103,13 @@ export function AppSidebar({ user }: Props) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/cms">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <Compass className="size-5" />
-                </div>
+                <Image
+                  src="/icon-192.png"
+                  alt="Hành Trình Việt"
+                  width={32}
+                  height={32}
+                  className="aspect-square size-8 rounded-lg"
+                />
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">Hành Trình Việt</span>
                   <span className="truncate text-xs text-muted-foreground">

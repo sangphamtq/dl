@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { slugify } from "@/lib/slug";
 import { cn } from "@/lib/utils";
+import type { Province, District, Ward } from "@/lib/locations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,11 +19,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import {
   createPlace,
   updatePlace,
   type PlaceFormInput,
 } from "./actions";
+import { loadDistricts, loadWards } from "./location-client";
 
 type ProvinceOption = { id: string; name: string };
 
@@ -35,6 +38,12 @@ const EMPTY: PlaceFormValues = {
   parentId: null,
   tagline: "",
   description: "",
+  provinceCode: "",
+  provinceName: "",
+  districtCode: "",
+  districtName: "",
+  wardCode: "",
+  wardName: "",
   tags: "",
   status: "draft",
   isFeatured: false,
@@ -45,11 +54,13 @@ export function PlaceForm({
   mode,
   placeId,
   provinces,
+  adminProvinces,
   initial,
 }: {
   mode: "create" | "edit";
   placeId?: string;
   provinces: ProvinceOption[];
+  adminProvinces: Province[];
   initial?: Partial<PlaceFormValues>;
 }) {
   const router = useRouter();
@@ -64,10 +75,106 @@ export function PlaceForm({
     mode === "edit" && Boolean(initial?.slug),
   );
 
+  // Huyện/xã của cấp trên đang chọn (nạp qua cache client → server action).
+  const [districts, setDistricts] = useState<District[]>([]);
+  const [wards, setWards] = useState<Ward[]>([]);
+  const [districtsLoading, setDistrictsLoading] = useState(false);
+  const [wardsLoading, setWardsLoading] = useState(false);
+
   const slugPreview = slugTouched ? values.slug : slugify(values.name);
 
   function set<K extends keyof PlaceFormValues>(key: K, v: PlaceFormValues[K]) {
     setValues((p) => ({ ...p, [key]: v }));
+  }
+
+  // Nạp huyện mỗi khi provinceCode đổi (gồm cả lần đầu khi sửa).
+  useEffect(() => {
+    const code = Number(values.provinceCode);
+    if (!values.provinceCode || !Number.isFinite(code)) return;
+    let active = true;
+    void (async () => {
+      setDistrictsLoading(true);
+      try {
+        const d = await loadDistricts(code);
+        if (active) setDistricts(d);
+      } finally {
+        if (active) setDistrictsLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [values.provinceCode]);
+
+  // Nạp xã mỗi khi districtCode đổi.
+  useEffect(() => {
+    const code = Number(values.districtCode);
+    if (!values.districtCode || !Number.isFinite(code)) return;
+    let active = true;
+    void (async () => {
+      setWardsLoading(true);
+      try {
+        const w = await loadWards(code);
+        if (active) setWards(w);
+      } finally {
+        if (active) setWardsLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [values.districtCode]);
+
+  function onProvinceChange(code: string) {
+    const p = adminProvinces.find((x) => String(x.code) === code);
+    setDistricts([]);
+    setWards([]);
+    setValues((prev) => ({
+      ...prev,
+      provinceCode: code,
+      provinceName: p?.name ?? "",
+      districtCode: "",
+      districtName: "",
+      wardCode: "",
+      wardName: "",
+    }));
+  }
+
+  function onDistrictChange(code: string) {
+    const d = districts.find((x) => String(x.code) === code);
+    setWards([]);
+    setValues((prev) => ({
+      ...prev,
+      districtCode: code,
+      districtName: d?.name ?? "",
+      wardCode: "",
+      wardName: "",
+    }));
+  }
+
+  function onWardChange(code: string) {
+    const w = wards.find((x) => String(x.code) === code);
+    setValues((prev) => ({
+      ...prev,
+      wardCode: code,
+      wardName: w?.name ?? "",
+    }));
+  }
+
+  function onKindChange(kind: PlaceFormValues["kind"]) {
+    // Tỉnh chỉ giữ vị trí cấp tỉnh — xóa huyện/xã đã chọn.
+    if (kind === "province") {
+      setValues((prev) => ({
+        ...prev,
+        kind,
+        districtCode: "",
+        districtName: "",
+        wardCode: "",
+        wardName: "",
+      }));
+    } else {
+      set("kind", kind);
+    }
   }
 
   function onSubmit(e: React.FormEvent) {
@@ -106,7 +213,7 @@ export function PlaceForm({
         <Label>Loại</Label>
         <Select
           value={values.kind}
-          onValueChange={(v) => set("kind", v as PlaceFormValues["kind"])}
+          onValueChange={(v) => onKindChange(v as PlaceFormValues["kind"])}
         >
           <SelectTrigger>
             <SelectValue />
@@ -206,6 +313,89 @@ export function PlaceForm({
           placeholder="Giới thiệu ngắn về nơi này…"
           rows={5}
         />
+      </div>
+
+      {/* Vị trí hành chính */}
+      <div className="space-y-4 rounded-lg border p-4">
+        <div>
+          <Label>Vị trí</Label>
+          <p className="text-xs text-muted-foreground">
+            Đơn vị hành chính cũ (tỉnh → quận/huyện → phường/xã). Tùy chọn.
+          </p>
+        </div>
+        <div
+          className={cn(
+            "grid grid-cols-1 gap-4",
+            values.kind === "province" ? "sm:grid-cols-1" : "sm:grid-cols-3",
+          )}
+        >
+          {/* Tỉnh / Thành phố */}
+          <div className="space-y-2">
+            <Label>Tỉnh / Thành phố</Label>
+            <Combobox
+              options={adminProvinces.map((p) => ({
+                value: String(p.code),
+                label: p.name,
+              }))}
+              value={values.provinceCode}
+              onChange={onProvinceChange}
+              placeholder="Chọn tỉnh/thành…"
+              searchPlaceholder="Tìm tỉnh/thành…"
+              emptyText={
+                adminProvinces.length === 0
+                  ? "Không tải được danh sách."
+                  : "Không tìm thấy."
+              }
+            />
+          </div>
+
+          {/* Quận / Huyện & Phường / Xã — chỉ cho điểm đến (không phải tỉnh) */}
+          {values.kind !== "province" && (
+            <>
+              <div className="space-y-2">
+                <Label>Quận / Huyện</Label>
+                <Combobox
+                  options={districts.map((d) => ({
+                    value: String(d.code),
+                    label: d.name,
+                  }))}
+                  value={values.districtCode}
+                  onChange={onDistrictChange}
+                  disabled={!values.provinceCode || districtsLoading}
+                  placeholder={
+                    districtsLoading
+                      ? "Đang tải…"
+                      : !values.provinceCode
+                        ? "Chọn tỉnh trước"
+                        : "Chọn quận/huyện…"
+                  }
+                  searchPlaceholder="Tìm quận/huyện…"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Phường / Xã</Label>
+                <Combobox
+                  options={wards.map((w) => ({
+                    value: String(w.code),
+                    label: w.name,
+                  }))}
+                  value={values.wardCode}
+                  onChange={onWardChange}
+                  disabled={!values.districtCode || wardsLoading}
+                  placeholder={
+                    wardsLoading
+                      ? "Đang tải…"
+                      : !values.districtCode
+                        ? "Chọn huyện trước"
+                        : "Chọn phường/xã…"
+                  }
+                  searchPlaceholder="Tìm phường/xã…"
+                />
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Tags */}

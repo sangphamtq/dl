@@ -168,12 +168,25 @@ async function PlacesList({ filters }: { filters: Filters }) {
     },
   });
 
-  return (
-    <div className="mt-4 overflow-hidden rounded-xl border">
-      <ListHeader />
+  const provinceCount = places.filter((p) => p.kind === "province").length;
+  const destinationCount = places.length - provinceCount;
 
-      <ul className="divide-y">
-        {places.map((p) => {
+  return (
+    <>
+      <p className="mt-4 text-sm text-muted-foreground">
+        <span className="font-medium text-foreground">{places.length}</span> mục
+        {places.length > 0 && (
+          <span className="text-muted-foreground/70">
+            {" · "}
+            {provinceCount} tỉnh · {destinationCount} điểm đến
+          </span>
+        )}
+      </p>
+      <div className="mt-3 overflow-hidden rounded-xl border">
+        <ListHeader />
+
+        <ul className="divide-y">
+          {places.map((p) => {
           const isProvince = p.kind === "province";
           const listingCount =
             p._count.activities +
@@ -274,7 +287,8 @@ async function PlacesList({ filters }: { filters: Filters }) {
           )}
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 }
 

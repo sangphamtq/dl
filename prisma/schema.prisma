@@ -176,6 +176,16 @@ model Place {
   tagline     String? // câu slogan ngắn hiển thị dưới tên (khác description)
   description String?
 
+  // Vị trí hành chính (provinces.open-api.vn v1 — địa chính cũ, 3 cấp:
+  // tỉnh → quận/huyện → phường/xã). Lưu cả code (để truy vấn/relink lại) và
+  // name (denormalized để hiển thị không cần gọi API).
+  provinceCode Int?
+  provinceName String?
+  districtCode Int?
+  districtName String?
+  wardCode     Int?
+  wardName     String?
+
   parentId String?
   parent   Place?  @relation("PlaceTree", fields: [parentId], references: [id], onDelete: SetNull)
   children Place[] @relation("PlaceTree")

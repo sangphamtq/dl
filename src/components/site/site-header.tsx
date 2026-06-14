@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Compass, Search } from "lucide-react";
+import Image from "next/image";
+import { Search } from "lucide-react";
 import { auth } from "@/auth";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -25,9 +26,13 @@ export async function SiteHeader() {
           href="/"
           className="flex items-center gap-2 font-semibold tracking-tight"
         >
-          <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <Compass className="size-5" aria-hidden />
-          </span>
+          <Image
+            src="/icon-192.png"
+            alt="Hành Trình Việt"
+            width={32}
+            height={32}
+            className="size-8 rounded-lg"
+          />
           <span className="hidden sm:inline">Hành Trình Việt</span>
         </Link>
 

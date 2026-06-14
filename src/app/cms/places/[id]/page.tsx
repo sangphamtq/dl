@@ -53,6 +53,9 @@ export default async function PlaceDetailPage({
       kind: true,
       tagline: true,
       description: true,
+      provinceName: true,
+      districtName: true,
+      wardName: true,
       tags: true,
       status: true,
       isFeatured: true,
@@ -291,6 +294,11 @@ export default async function PlaceDetailPage({
             <dl className="mt-3 space-y-3 text-sm">
               <Meta label="Slug">
                 <span className="font-mono text-xs">/diem-den/{place.slug}</span>
+              </Meta>
+              <Meta label="Vị trí">
+                {[place.wardName, place.districtName, place.provinceName]
+                  .filter(Boolean)
+                  .join(", ") || "—"}
               </Meta>
               <Meta label="Thứ tự">{place.order ?? "—"}</Meta>
               <Meta label="Lượt xem">

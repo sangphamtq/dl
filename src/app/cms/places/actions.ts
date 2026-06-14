@@ -16,6 +16,12 @@ export type PlaceFormInput = {
   parentId: string | null;
   tagline: string;
   description: string;
+  provinceCode: string; // code dạng text ("" nếu chưa chọn)
+  provinceName: string;
+  districtCode: string;
+  districtName: string;
+  wardCode: string;
+  wardName: string;
   tags: string; // chuỗi phân tách bằng dấu phẩy
   status: "draft" | "published";
   isFeatured: boolean;
@@ -75,6 +81,18 @@ async function normalize(
   if (order !== null && !Number.isFinite(order))
     return { error: "Thứ tự phải là số." };
 
+  const provinceCode =
+    input.provinceCode.trim() === "" ? null : Number(input.provinceCode);
+  const districtCode =
+    input.districtCode.trim() === "" ? null : Number(input.districtCode);
+  const wardCode = input.wardCode.trim() === "" ? null : Number(input.wardCode);
+  if (
+    (provinceCode !== null && !Number.isFinite(provinceCode)) ||
+    (districtCode !== null && !Number.isFinite(districtCode)) ||
+    (wardCode !== null && !Number.isFinite(wardCode))
+  )
+    return { error: "Mã vị trí không hợp lệ." };
+
   const tags = input.tags
     .split(",")
     .map((t) => t.trim())
@@ -91,6 +109,12 @@ async function normalize(
       parentId,
       tagline: input.tagline.trim() || null,
       description: input.description.trim() || null,
+      provinceCode,
+      provinceName: provinceCode ? input.provinceName.trim() || null : null,
+      districtCode,
+      districtName: districtCode ? input.districtName.trim() || null : null,
+      wardCode,
+      wardName: wardCode ? input.wardName.trim() || null : null,
       tags,
       status,
       isFeatured: input.isFeatured,

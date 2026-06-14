@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Compass } from "lucide-react";
+import Image from "next/image";
 
 export function SiteFooter() {
   return (
@@ -9,7 +9,13 @@ export function SiteFooter() {
           href="/"
           className="flex w-fit items-center gap-2 font-medium text-foreground"
         >
-          <Compass className="size-4 text-primary" aria-hidden />
+          <Image
+            src="/icon-192.png"
+            alt=""
+            width={20}
+            height={20}
+            className="size-5 rounded"
+          />
           Hành Trình Việt
         </Link>
         <p className="mt-2">Hỗ trợ thông tin du lịch Việt Nam.</p>

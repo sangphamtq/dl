@@ -1,14 +1,18 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { getProvinces } from "@/lib/locations";
 import { PlaceForm } from "../place-form";
 
 export default async function NewPlacePage() {
-  const provinces = await prisma.place.findMany({
-    where: { kind: "province" },
-    orderBy: { name: "asc" },
-    select: { id: true, name: true },
-  });
+  const [provinces, adminProvinces] = await Promise.all([
+    prisma.place.findMany({
+      where: { kind: "province" },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    }),
+    getProvinces(),
+  ]);
 
   return (
     <div className="p-6 sm:p-8">
@@ -28,7 +32,11 @@ export default async function NewPlacePage() {
       </p>
 
       <div className="mt-8">
-        <PlaceForm mode="create" provinces={provinces} />
+        <PlaceForm
+          mode="create"
+          provinces={provinces}
+          adminProvinces={adminProvinces}
+        />
       </div>
     </div>
   );
