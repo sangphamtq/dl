@@ -1,44 +1,49 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, MapPin } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
 import { buttonVariants } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site/site-header";
+import { SiteFooter } from "@/components/site/site-footer";
+import { PlaceCard, type PlaceCardData } from "@/components/site/place-card";
 
-const FEATURED = [
-  {
-    slug: "ha-giang",
-    name: "Hà Giang",
-    kind: "Tỉnh",
-    blurb: "Cao nguyên đá, đèo Mã Pí Lèng và những cung đường mây phủ.",
-    seed: "ha-giang-vn",
+const placeSelect = {
+  slug: true,
+  name: true,
+  kind: true,
+  description: true,
+  images: {
+    where: { isCover: true },
+    take: 1,
+    select: { url: true, isCover: true },
   },
-  {
-    slug: "ha-long",
-    name: "Hạ Long",
-    kind: "Điểm đến",
-    blurb: "Vịnh di sản với hàng nghìn đảo đá vôi trên mặt nước ngọc bích.",
-    seed: "ha-long-bay",
-  },
-  {
-    slug: "hoi-an",
-    name: "Hội An",
-    kind: "Điểm đến",
-    blurb: "Phố cổ đèn lồng, ẩm thực đường phố và những con hẻm vàng nắng.",
-    seed: "hoi-an-old-town",
-  },
-  {
-    slug: "sa-pa",
-    name: "Sa Pa",
-    kind: "Điểm đến",
-    blurb: "Ruộng bậc thang, săn mây Fansipan và bản làng vùng cao.",
-    seed: "sa-pa-terrace",
-  },
-];
+} as const;
 
 export default async function Home() {
-  const session = await auth();
+  const [session, featured] = await Promise.all([
+    auth(),
+    prisma.place.findMany({
+      where: { status: "published", isFeatured: true },
+      orderBy: [{ order: "asc" }, { popularity: "desc" }, { name: "asc" }],
+      take: 8,
+      select: placeSelect,
+    }),
+  ]);
   const user = session?.user;
+
+  // Dự phòng nếu chưa đánh dấu nổi bật: lấy điểm đến mới xuất bản.
+  const places: PlaceCardData[] =
+    featured.length > 0
+      ? featured
+      : await prisma.place.findMany({
+          where: { status: "published" },
+          orderBy: { createdAt: "desc" },
+          take: 8,
+          select: placeSelect,
+        });
+
+  const startHref = places[0] ? `/diem-den/${places[0].slug}` : "/diem-den";
 
   return (
     <div className="flex flex-1 flex-col">
@@ -71,7 +76,7 @@ export default async function Home() {
                 </p>
                 <div className="mt-7">
                   <Link
-                    href="/diem-den/ha-giang"
+                    href={startHref}
                     className={buttonVariants({ size: "lg" })}
                   >
                     Bắt đầu khám phá
@@ -83,7 +88,7 @@ export default async function Home() {
           </div>
         </section>
 
-        {/* Featured destinations */}
+        {/* Featured destinations (từ DB) */}
         <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20">
           <div className="flex items-end justify-between gap-4">
             <div className="space-y-2">
@@ -95,7 +100,7 @@ export default async function Home() {
               </p>
             </div>
             <Link
-              href="/diem-den/ha-giang"
+              href="/diem-den"
               className="hidden shrink-0 items-center gap-1 text-sm font-medium text-primary hover:underline sm:flex"
             >
               Xem tất cả
@@ -103,53 +108,21 @@ export default async function Home() {
             </Link>
           </div>
 
-          <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {FEATURED.map((place) => (
-              <Link
-                key={place.slug}
-                href={`/diem-den/${place.slug}`}
-                className="group block overflow-hidden rounded-xl"
-              >
-                <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-muted">
-                  <Image
-                    src={`https://picsum.photos/seed/${place.seed}/800/600`}
-                    alt={place.name}
-                    fill
-                    sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
-                    className="object-cover transition-transform duration-300 group-hover:scale-[1.04]"
-                  />
-                </div>
-                <div className="mt-3 space-y-1">
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <MapPin className="size-3.5" aria-hidden />
-                    {place.kind}
-                  </div>
-                  <h3 className="font-semibold tracking-tight">{place.name}</h3>
-                  <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">
-                    {place.blurb}
-                  </p>
-                </div>
-              </Link>
-            ))}
-          </div>
+          {places.length > 0 ? (
+            <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {places.map((p) => (
+                <PlaceCard key={p.slug} place={p} />
+              ))}
+            </div>
+          ) : (
+            <p className="mt-8 text-muted-foreground">
+              Chưa có điểm đến nào được xuất bản.
+            </p>
+          )}
         </section>
       </main>
 
-      <footer className="border-t">
-        <div className="mx-auto max-w-6xl px-4 py-8 text-sm text-muted-foreground sm:px-6">
-          <div className="flex items-center gap-2 font-medium text-foreground">
-            <Image
-              src="/icon-192.png"
-              alt=""
-              width={20}
-              height={20}
-              className="size-5 rounded"
-            />
-            Hành Trình Việt
-          </div>
-          <p className="mt-2">Hỗ trợ thông tin du lịch Việt Nam.</p>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

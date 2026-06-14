@@ -125,6 +125,24 @@ Nếu chỉ là "việc tự nhiên ở đúng một chỗ, không đơn vị, k
   `notice` (cảnh báo truy cập: "Tạm đóng"/"Cần xin phép" — **khác** `status` draft/published).
   PlaceableFields (`address`, `lat`, `lng`, `openingHours`, `phone`, `website`…) đã có.
 
+### Đặc sản vs Quán ăn — mô hình khái niệm (song song Spot/Activity)
+
+- **`Eatery` = một CHỖ ăn** (giống `Spot`): địa chỉ/toạ độ, giờ, giá, category (Ẩm thực).
+- **`Specialty` = một MÓN/sản vật đặc trưng DÙNG LẠI** (giống `Activity`): liên kết M:N tới
+  nhiều `Eatery` bán nó. Tên ở mức món ("Chả mực Hạ Long"), gắn địa danh khi trùng; **KHÔNG**
+  tạo "Chả mực quán X". Món signature chỉ-một-quán, không phổ biến → để trong mô tả `Eatery`.
+
+- **Ăn vs Quà** — `Specialty.kind`:
+  - `dish` (món ăn) → liên kết `Eatery` ("ăn ở đâu").
+  - `product` (sản vật/quà) → field `whereToBuy` (mua ở chợ/cửa hàng), KHÔNG ép link quán.
+- **Bữa ăn** — `Eatery.meals[]` (sáng/trưa/tối/cà phê/ăn vặt): **trục lọc chính** vì khách
+  xếp lịch ăn theo bữa. Khác `category` (kiểu món) — hai trục vuông góc. KHÔNG suy từ
+  `openingHours`; biên tập gắn trực tiếp.
+- **Liên kết M:N có chọn lọc:** mỗi món chỉ gắn **2–4 quán tiêu biểu** (đề xuất), không map
+  hết. Quản lý **một chiều từ `Specialty`**; trang `Eatery` hiển thị ngược (read-only).
+- **Trường thực tế (đã có schema):** `Specialty`: `kind`, `whereToBuy`, `priceRange`.
+  `Eatery`: `meals[]`, `notice` ("nghỉ thứ 2"/"hết sớm"). PlaceableFields của Eatery đã có.
+
 ### Bảng thuật ngữ (dùng nhất quán trong code & URL)
 
 | Tên tiếng Việt | Tên code (EN) | Vai trò / quan hệ |

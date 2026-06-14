@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "set-role": "tsx scripts/set-role.ts"
+    "set-role": "tsx scripts/set-role.ts",
+    "seed:phan-thiet": "tsx prisma/seed-phan-thiet.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",

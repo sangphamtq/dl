@@ -23,6 +23,24 @@ export const ACTIVITY_CATEGORY_LABELS: Record<string, string> = {
   other: "Khác",
 };
 
+export const EATERY_CATEGORY_LABELS: Record<string, string> = {
+  local: "Quán địa phương",
+  seafood: "Hải sản",
+  streetfood: "Đường phố",
+  vegetarian: "Chay",
+  cafe: "Cà phê",
+  bbq: "Nướng / lẩu",
+  other: "Khác",
+};
+
+export const MEAL_LABELS: Record<string, string> = {
+  breakfast: "Sáng",
+  lunch: "Trưa",
+  dinner: "Tối",
+  cafe: "Cà phê",
+  snack: "Ăn vặt",
+};
+
 export const DIFFICULTY_LABELS: Record<string, string> = {
   easy: "Dễ",
   moderate: "Vừa",

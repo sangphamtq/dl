@@ -14,6 +14,7 @@ import { coverUrl } from "@/lib/place-image";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { PlaceCard } from "@/components/site/place-card";
+import { EatSection } from "@/components/site/eat-section";
 import { PlaceViewTracker } from "@/components/site/place-view-tracker";
 
 const PRICE: Record<string, string> = {
@@ -120,12 +121,12 @@ export default async function PlaceDetailPage({
       eateries: {
         where: pub,
         orderBy: [{ isFeatured: "desc" }, { order: "asc" }, { name: "asc" }],
-        take: 8,
+        take: 12,
         select: {
           slug: true,
           name: true,
           description: true,
-          priceRange: true,
+          meals: true,
           images: listingImages,
         },
       },
@@ -166,13 +167,15 @@ export default async function PlaceDetailPage({
   const getTo = place.transports.filter((t) => t.direction === "getTo");
   const getAround = place.transports.filter((t) => t.direction === "getAround");
 
-  const sections = [
+  // Chơi/xem ở trên, Ăn ở giữa (EatSection), Lưu trú ở dưới.
+  const playSections = [
     { title: "Hoạt động & trải nghiệm", prefix: "hoat-dong", items: place.activities },
     { title: "Địa điểm tham quan", prefix: "dia-diem", items: place.spots },
-    { title: "Đặc sản", prefix: "dac-san", items: place.specialties },
-    { title: "Quán ăn nổi bật", prefix: "quan-an", items: place.eateries },
+  ];
+  const staySections = [
     { title: "Nơi lưu trú", prefix: "luu-tru", items: place.accommodations },
   ];
+  const hasEat = place.eateries.length > 0 || place.specialties.length > 0;
 
   return (
     <div className="flex flex-1 flex-col">
@@ -274,8 +277,8 @@ export default async function PlaceDetailPage({
             </section>
           )}
 
-          {/* Các loại listing */}
-          {sections.map(
+          {/* Chơi / xem */}
+          {playSections.map(
             (s) =>
               s.items.length > 0 && (
                 <ListingSection
@@ -284,6 +287,32 @@ export default async function PlaceDetailPage({
                   prefix={s.prefix}
                   items={s.items}
                   placeName={place.name}
+                  placeSlug={place.slug}
+                />
+              ),
+          )}
+
+          {/* Ăn gì (gộp đặc sản + quán, lọc theo bữa) */}
+          {hasEat && (
+            <EatSection
+              placeName={place.name}
+              placeSlug={place.slug}
+              eateries={place.eateries}
+              specialties={place.specialties}
+            />
+          )}
+
+          {/* Lưu trú */}
+          {staySections.map(
+            (s) =>
+              s.items.length > 0 && (
+                <ListingSection
+                  key={s.prefix}
+                  title={s.title}
+                  prefix={s.prefix}
+                  items={s.items}
+                  placeName={place.name}
+                  placeSlug={place.slug}
                 />
               ),
           )}
@@ -333,15 +362,25 @@ function ListingSection({
   prefix,
   items,
   placeName,
+  placeSlug,
 }: {
   title: string;
   prefix: string;
   items: ListingItem[];
   placeName: string;
+  placeSlug: string;
 }) {
   return (
     <section>
-      <h2 className="text-2xl font-semibold tracking-tight">{title}</h2>
+      <div className="flex items-end justify-between gap-4">
+        <h2 className="text-2xl font-semibold tracking-tight">{title}</h2>
+        <Link
+          href={`/diem-den/${placeSlug}/${prefix}`}
+          className="shrink-0 text-sm font-medium text-primary hover:underline"
+        >
+          Xem tất cả
+        </Link>
+      </div>
       <div className="mt-7 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {items.map((it) => (
           <Link

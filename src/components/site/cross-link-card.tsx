@@ -30,7 +30,9 @@ export function CrossLinkCard({
       <div className="mt-3 space-y-0.5">
         <h3 className="font-semibold tracking-tight">{name}</h3>
         {subtitle && (
-          <p className="text-sm text-muted-foreground">{subtitle}</p>
+          <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+            {subtitle}
+          </p>
         )}
       </div>
     </Link>
