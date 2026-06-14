@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Search } from "lucide-react";
 import { auth } from "@/auth";
+import { getSettings } from "@/lib/settings";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { MobileNav } from "./mobile-nav";
@@ -13,7 +14,7 @@ const NAV_LINKS = [
 ];
 
 export async function SiteHeader() {
-  const session = await auth();
+  const [session, settings] = await Promise.all([auth(), getSettings()]);
   const user = session?.user;
 
   return (
@@ -28,12 +29,12 @@ export async function SiteHeader() {
         >
           <Image
             src="/icon-192.png"
-            alt="Hành Trình Việt"
+            alt={settings.siteName}
             width={32}
             height={32}
             className="size-8 rounded-lg"
           />
-          <span className="hidden sm:inline">Hành Trình Việt</span>
+          <span className="hidden sm:inline">{settings.siteName}</span>
         </Link>
 
         {/* Desktop nav */}

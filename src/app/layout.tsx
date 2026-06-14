@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { getSettings } from "@/lib/settings";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -12,11 +13,13 @@ const geistMono = Geist_Mono({
   subsets: ["latin", "latin-ext"],
 });
 
-export const metadata: Metadata = {
-  title: "Hành Trình Việt — Khám phá du lịch Việt Nam",
-  description:
-    "Tra cứu và khám phá điểm đến Việt Nam: ăn gì, chơi gì, ở đâu, đi lại thế nào.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const s = await getSettings();
+  return {
+    title: { default: `${s.siteName} — ${s.tagline}`, template: `%s · ${s.siteName}` },
+    description: s.description,
+  };
+}
 
 export default function RootLayout({
   children,

@@ -20,6 +20,19 @@ enum PlaceKind {
   destination // Điểm đến lớn
 }
 
+// Cấu hình site dạng singleton (luôn 1 bản ghi id="singleton").
+model SiteSetting {
+  id           String   @id @default("singleton")
+  siteName     String   @default("Hành Trình Việt")
+  tagline      String?
+  description  String? // mô tả meta (SEO)
+  contactEmail String?
+  facebookUrl  String?
+  instagramUrl String?
+  youtubeUrl   String?
+  updatedAt    DateTime @updatedAt
+}
+
 enum PublishStatus {
   draft
   published
