@@ -7,6 +7,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { MobileNav } from "./mobile-nav";
 import { UserMenu } from "./user-menu";
+import { HeaderSearch } from "./header-search";
 
 const NAV_LINKS = [
   { href: "/diem-den", label: "Điểm đến" },
@@ -52,17 +53,11 @@ export async function SiteHeader() {
 
         {/* Right side */}
         <div className="ml-auto flex items-center gap-2">
-          {/* Search pill (desktop) */}
-          <Link
-            href="/diem-den"
-            className="hidden items-center gap-2 rounded-full border border-border/70 bg-muted/40 px-3.5 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:flex"
-          >
-            <Search className="size-4" aria-hidden />
-            Tìm điểm đến…
-          </Link>
+          {/* Search (desktop): gợi ý live */}
+          <HeaderSearch />
           {/* Search icon (mobile/tablet) */}
           <Link
-            href="/diem-den"
+            href="/tim-kiem"
             aria-label="Tìm kiếm"
             className={cn(
               buttonVariants({ variant: "ghost", size: "icon" }),
