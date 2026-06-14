@@ -3,12 +3,14 @@
 // Engine: PostgreSQL (hỗ trợ native enum + String[]).
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
+  provider   = "postgresql"
+  extensions = [unaccent]
 }
 
 // ============================================================

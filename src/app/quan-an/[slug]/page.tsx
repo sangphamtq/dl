@@ -22,6 +22,7 @@ import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { RelatedPosts } from "@/components/site/related-posts";
 import { ListingViewTracker } from "@/components/site/listing-view-tracker";
+import { isStaffViewer } from "@/lib/preview";
 import { CrossLinkCard } from "@/components/site/cross-link-card";
 
 const pub = { status: "published" as const };
@@ -83,7 +84,8 @@ export default async function EateryPublicPage({
     },
   });
 
-  if (!eatery || eatery.status !== "published") notFound();
+  const staff = await isStaffViewer();
+  if (!eatery || (eatery.status !== "published" && !staff)) notFound();
 
   const heroUrl = coverUrl(eatery.images, eatery.slug, 1800, 1000);
   const gallery = eatery.images.filter((i) => i.url !== heroUrl);

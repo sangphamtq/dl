@@ -10,11 +10,14 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { coverUrl } from "@/lib/place-image";
+import { Pagination } from "@/components/pagination";
 import { PostRowActions } from "./row-actions";
 import { POST_CATEGORIES, labelOf } from "./constants";
 
-type SearchParams = { status?: string; category?: string; q?: string };
-type Filters = { status: string; category: string; q: string };
+type SearchParams = { status?: string; category?: string; q?: string; page?: string };
+type Filters = { status: string; category: string; q: string; page: number };
+
+const PER_PAGE = 20;
 
 const dateFmt = new Intl.DateTimeFormat("vi-VN", {
   day: "2-digit",
@@ -49,7 +52,8 @@ export default async function PostsPage({
       ? sp.category
       : "all";
   const q = sp.q?.trim() ?? "";
-  const filters: Filters = { status, category, q };
+  const page = Math.max(1, Number(sp.page) || 1);
+  const filters: Filters = { status, category, q, page };
 
   return (
     <div className="p-6 sm:p-8">
@@ -130,7 +134,10 @@ export default async function PostsPage({
         </form>
       </div>
 
-      <Suspense key={`${status}|${category}|${q}`} fallback={<PostsSkeleton />}>
+      <Suspense
+        key={`${status}|${category}|${q}|${page}`}
+        fallback={<PostsSkeleton />}
+      >
         <PostList filters={filters} />
       </Suspense>
     </div>
@@ -138,7 +145,7 @@ export default async function PostsPage({
 }
 
 async function PostList({ filters }: { filters: Filters }) {
-  const { status, category, q } = filters;
+  const { status, category, q, page } = filters;
   const where: Prisma.PostWhereInput = {
     ...(status !== "all" && {
       status: status as Prisma.PostWhereInput["status"],
@@ -147,31 +154,45 @@ async function PostList({ filters }: { filters: Filters }) {
     ...(q && { title: { contains: q, mode: "insensitive" } }),
   };
 
-  const posts = await prisma.post.findMany({
-    where,
-    orderBy: [{ isFeatured: "desc" }, { createdAt: "desc" }],
-    select: {
-      id: true,
-      title: true,
-      slug: true,
-      category: true,
-      status: true,
-      isFeatured: true,
-      createdAt: true,
-      author: { select: { name: true } },
-      images: {
-        where: { isCover: true },
-        take: 1,
-        select: { url: true, isCover: true },
+  const [posts, total] = await Promise.all([
+    prisma.post.findMany({
+      where,
+      orderBy: [{ isFeatured: "desc" }, { createdAt: "desc" }],
+      take: PER_PAGE,
+      skip: (page - 1) * PER_PAGE,
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        category: true,
+        status: true,
+        isFeatured: true,
+        createdAt: true,
+        author: { select: { name: true } },
+        images: {
+          where: { isCover: true },
+          take: 1,
+          select: { url: true, isCover: true },
+        },
       },
-    },
-  });
+    }),
+    prisma.post.count({ where }),
+  ]);
+  const totalPages = Math.ceil(total / PER_PAGE);
+  const pageHref = (p: number) => {
+    const params = new URLSearchParams();
+    if (status !== "all") params.set("status", status);
+    if (category !== "all") params.set("category", category);
+    if (q) params.set("q", q);
+    if (p > 1) params.set("page", String(p));
+    const qs = params.toString();
+    return `/cms/posts${qs ? `?${qs}` : ""}`;
+  };
 
   return (
     <>
       <p className="mt-4 text-sm text-muted-foreground">
-        <span className="font-medium text-foreground">{posts.length}</span> bài
-        viết
+        <span className="font-medium text-foreground">{total}</span> bài viết
       </p>
 
       <div className="mt-3 overflow-hidden rounded-xl border">
@@ -239,6 +260,8 @@ async function PostList({ filters }: { filters: Filters }) {
           </div>
         )}
       </div>
+
+      <Pagination page={page} totalPages={totalPages} hrefFor={pageHref} />
     </>
   );
 }

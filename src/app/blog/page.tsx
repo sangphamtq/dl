@@ -8,6 +8,7 @@ import { coverUrl } from "@/lib/place-image";
 import { POST_CATEGORY_LABELS, label } from "@/lib/listing-labels";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
+import { Pagination } from "@/components/pagination";
 
 export const metadata = {
   title: "Cẩm nang du lịch · Hành Trình Việt",
@@ -33,21 +34,26 @@ const CATEGORIES = [
 export default async function BlogPage({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string }>;
+  searchParams: Promise<{ category?: string; page?: string }>;
 }) {
   const sp = await searchParams;
   const category =
     sp.category && sp.category in POST_CATEGORY_LABELS ? sp.category : "all";
+  const page = Math.max(1, Number(sp.page) || 1);
+  const PER_PAGE = 12;
 
   const where: Prisma.PostWhereInput = {
     status: "published",
     ...(category !== "all" && { category }),
   };
 
-  const posts = await prisma.post.findMany({
-    where,
-    orderBy: [{ isFeatured: "desc" }, { publishedAt: "desc" }, { createdAt: "desc" }],
-    select: {
+  const [posts, total] = await Promise.all([
+    prisma.post.findMany({
+      where,
+      orderBy: [{ isFeatured: "desc" }, { publishedAt: "desc" }, { createdAt: "desc" }],
+      take: PER_PAGE,
+      skip: (page - 1) * PER_PAGE,
+      select: {
       slug: true,
       title: true,
       excerpt: true,
@@ -60,8 +66,18 @@ export default async function BlogPage({
         take: 1,
         select: { url: true, isCover: true },
       },
-    },
-  });
+      },
+    }),
+    prisma.post.count({ where }),
+  ]);
+  const totalPages = Math.ceil(total / PER_PAGE);
+  const pageHref = (p: number) => {
+    const params = new URLSearchParams();
+    if (category !== "all") params.set("category", category);
+    if (p > 1) params.set("page", String(p));
+    const qs = params.toString();
+    return `/blog${qs ? `?${qs}` : ""}`;
+  };
 
   return (
     <div className="flex flex-1 flex-col">
@@ -141,6 +157,8 @@ export default async function BlogPage({
               </p>
             </div>
           )}
+
+          <Pagination page={page} totalPages={totalPages} hrefFor={pageHref} />
         </div>
       </main>
 

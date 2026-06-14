@@ -14,6 +14,7 @@ import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { RelatedPosts } from "@/components/site/related-posts";
 import { ListingViewTracker } from "@/components/site/listing-view-tracker";
+import { isStaffViewer } from "@/lib/preview";
 import { CrossLinkCard } from "@/components/site/cross-link-card";
 
 const pub = { status: "published" as const };
@@ -68,7 +69,8 @@ export default async function SpecialtyPublicPage({
     },
   });
 
-  if (!specialty || specialty.status !== "published") notFound();
+  const staff = await isStaffViewer();
+  if (!specialty || (specialty.status !== "published" && !staff)) notFound();
 
   const isProduct = specialty.kind === "product";
   const heroUrl = coverUrl(specialty.images, specialty.slug, 1800, 1000);

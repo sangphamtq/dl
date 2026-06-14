@@ -9,6 +9,7 @@ import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { RelatedPosts } from "@/components/site/related-posts";
 import { ListingViewTracker } from "@/components/site/listing-view-tracker";
+import { isStaffViewer } from "@/lib/preview";
 
 export async function generateMetadata({
   params,
@@ -55,7 +56,8 @@ export default async function AccommodationPublicPage({
     },
   });
 
-  if (!acc || acc.status !== "published") notFound();
+  const staff = await isStaffViewer();
+  if (!acc || (acc.status !== "published" && !staff)) notFound();
 
   const heroUrl = coverUrl(acc.images, acc.slug, 1800, 1000);
   const gallery = acc.images.filter((i) => i.url !== heroUrl);

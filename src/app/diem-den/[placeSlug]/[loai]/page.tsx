@@ -61,7 +61,12 @@ export default async function PlaceListingPage({
   };
   const items = await delegate.findMany({
     where: { placeId: place.id, status: "published" },
-    orderBy: [{ isFeatured: "desc" }, { order: "asc" }, { name: "asc" }],
+    orderBy: [
+      { isFeatured: "desc" },
+      { order: "asc" },
+      { popularity: "desc" },
+      { name: "asc" },
+    ],
     select: {
       slug: true,
       name: true,

@@ -23,6 +23,7 @@ import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { RelatedPosts } from "@/components/site/related-posts";
 import { ListingViewTracker } from "@/components/site/listing-view-tracker";
+import { isStaffViewer } from "@/lib/preview";
 import { CrossLinkCard } from "@/components/site/cross-link-card";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -85,7 +86,8 @@ export default async function ActivityPublicPage({
     },
   });
 
-  if (!activity || activity.status !== "published") notFound();
+  const staff = await isStaffViewer();
+  if (!activity || (activity.status !== "published" && !staff)) notFound();
 
   const heroUrl = coverUrl(activity.images, activity.slug, 1800, 1000);
   const gallery = activity.images.filter((i) => i.url !== heroUrl);

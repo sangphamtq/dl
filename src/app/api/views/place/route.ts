@@ -1,9 +1,12 @@
 import { NextRequest } from "next/server";
 import { recordPlaceView } from "@/lib/views";
+import { rateLimit, ipKey } from "@/lib/rate-limit";
 
 // Ghi lượt xem cho Place. Gọi từ client (beacon) khi người dùng thật sự xem
 // trang — tránh đếm dư do prefetch/SSR render. /api/* không qua proxy auth.
 export async function POST(req: NextRequest) {
+  if (!rateLimit(ipKey(req, "view"), 80))
+    return new Response(null, { status: 429 });
   try {
     const { placeId } = await req.json();
     if (typeof placeId === "string" && placeId) {

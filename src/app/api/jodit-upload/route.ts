@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { UTApi } from "uploadthing/server";
 import { auth } from "@/auth";
+import { rateLimit, ipKey } from "@/lib/rate-limit";
 
 const STAFF = ["admin", "editor"];
 const utapi = new UTApi();
@@ -8,6 +9,11 @@ const utapi = new UTApi();
 // Nhận ảnh chèn trong trình soạn thảo Jodit → tải lên UploadThing → trả về URL
 // theo định dạng Jodit hiểu (data.files = mảng URL, baseurl rỗng).
 export async function POST(req: NextRequest) {
+  if (!rateLimit(ipKey(req, "upload"), 30))
+    return Response.json(
+      { success: false, data: { messages: ["Quá nhiều yêu cầu."] } },
+      { status: 429 },
+    );
   const session = await auth();
   const role = session?.user?.role;
   if (!role || !STAFF.includes(role)) {

@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { Badge } from "@/components/ui/badge";
+import { isStaffViewer } from "@/lib/preview";
 
 const dateFmt = new Intl.DateTimeFormat("vi-VN", {
   day: "2-digit",
@@ -91,7 +92,8 @@ export default async function BlogPostPage({
     },
   });
 
-  if (!post || post.status !== "published") notFound();
+  const staff = await isStaffViewer();
+  if (!post || (post.status !== "published" && !staff)) notFound();
 
   const cover = post.images.find((i) => i.isCover) ?? post.images[0] ?? null;
   const refs = post.refs
