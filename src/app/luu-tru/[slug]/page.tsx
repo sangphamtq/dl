@@ -7,6 +7,8 @@ import { coverUrl } from "@/lib/place-image";
 import { ACCOMMODATION_CATEGORY_LABELS, PRICE_LABELS, label } from "@/lib/listing-labels";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
+import { RelatedPosts } from "@/components/site/related-posts";
+import { ListingViewTracker } from "@/components/site/listing-view-tracker";
 
 export async function generateMetadata({
   params,
@@ -66,6 +68,7 @@ export default async function AccommodationPublicPage({
   return (
     <div className="flex flex-1 flex-col">
       <SiteHeader />
+      <ListingViewTracker type="accommodation" id={acc.id} />
 
       <main className="flex-1">
         <section className="relative h-[340px] w-full sm:h-[420px]">
@@ -206,6 +209,7 @@ export default async function AccommodationPublicPage({
             </aside>
           </div>
         </div>
+        <RelatedPosts type="accommodation" id={acc.id} />
       </main>
 
       <SiteFooter />

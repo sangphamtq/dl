@@ -20,6 +20,8 @@ import {
 } from "@/lib/listing-labels";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
+import { RelatedPosts } from "@/components/site/related-posts";
+import { ListingViewTracker } from "@/components/site/listing-view-tracker";
 import { CrossLinkCard } from "@/components/site/cross-link-card";
 
 const pub = { status: "published" as const };
@@ -99,6 +101,7 @@ export default async function EateryPublicPage({
   return (
     <div className="flex flex-1 flex-col">
       <SiteHeader />
+      <ListingViewTracker type="eatery" id={eatery.id} />
 
       <main className="flex-1">
         <section className="relative h-[340px] w-full sm:h-[420px]">
@@ -268,6 +271,7 @@ export default async function EateryPublicPage({
             </aside>
           </div>
         </div>
+        <RelatedPosts type="eatery" id={eatery.id} />
       </main>
 
       <SiteFooter />

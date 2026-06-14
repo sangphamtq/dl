@@ -41,8 +41,13 @@ export function RichTextEditor({
       statusbar: false,
       askBeforePasteHTML: false,
       askBeforePasteFromWord: false,
-      // Ảnh chèn trong bài lưu base64 trong nội dung (không cần upload server).
-      uploader: { insertImageAsBase64URI: true },
+      // Ảnh chèn/kéo-thả/dán → tải lên UploadThing (route /api/jodit-upload),
+      // chèn URL vào nội dung (không nhúng base64).
+      uploader: {
+        insertImageAsBase64URI: false,
+        url: "/api/jodit-upload",
+        format: "json",
+      },
     }),
     [placeholder],
   );

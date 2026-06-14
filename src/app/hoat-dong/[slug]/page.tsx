@@ -21,6 +21,8 @@ import {
 } from "@/lib/listing-labels";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
+import { RelatedPosts } from "@/components/site/related-posts";
+import { ListingViewTracker } from "@/components/site/listing-view-tracker";
 import { CrossLinkCard } from "@/components/site/cross-link-card";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -98,6 +100,7 @@ export default async function ActivityPublicPage({
   return (
     <div className="flex flex-1 flex-col">
       <SiteHeader />
+      <ListingViewTracker type="activity" id={activity.id} />
 
       <main className="flex-1">
         {/* Hero */}
@@ -258,6 +261,7 @@ export default async function ActivityPublicPage({
             </aside>
           </div>
         </div>
+        <RelatedPosts type="activity" id={activity.id} />
       </main>
 
       <SiteFooter />

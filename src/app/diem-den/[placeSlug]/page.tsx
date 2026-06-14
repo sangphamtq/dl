@@ -13,6 +13,7 @@ import { prisma } from "@/lib/prisma";
 import { coverUrl } from "@/lib/place-image";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
+import { RelatedPosts } from "@/components/site/related-posts";
 import { PlaceCard } from "@/components/site/place-card";
 import { EatSection } from "@/components/site/eat-section";
 import { PlaceViewTracker } from "@/components/site/place-view-tracker";
@@ -342,6 +343,7 @@ export default async function PlaceDetailPage({
             </section>
           )}
         </div>
+        <RelatedPosts type="place" id={place.id} />
       </main>
 
       <SiteFooter />
