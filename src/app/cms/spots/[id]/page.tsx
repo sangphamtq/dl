@@ -9,11 +9,11 @@ import {
   MapPin,
   Compass,
   ImageOff,
-  ImagePlus,
   TriangleAlert,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
+import { parseTicketTiers, tierPriceLabel } from "@/lib/tickets";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SpotAdminControls } from "../admin-controls";
@@ -50,11 +50,17 @@ export default async function SpotDetailPage({
       phone: true,
       website: true,
       bookingUrl: true,
+      mapUrl: true,
       priceRange: true,
       bestTime: true,
+      ticketFree: true,
+      ticketTiers: true,
       ticketInfo: true,
       notice: true,
       tags: true,
+      provinceName: true,
+      districtName: true,
+      wardName: true,
       createdAt: true,
       updatedAt: true,
       place: { select: { id: true, name: true } },
@@ -73,21 +79,33 @@ export default async function SpotDetailPage({
 
   const published = spot.status === "published";
   const cover = spot.images.find((i) => i.isCover) ?? spot.images[0] ?? null;
+  const gallery = spot.images.filter((i) => i.id !== cover?.id);
+  const tiers = parseTicketTiers(spot.ticketTiers);
   const facts = [
     { label: "Loại", value: labelOf(SPOT_CATEGORIES, spot.category) },
     { label: "Giá", value: labelOf(PRICE_RANGES, spot.priceRange) },
-    { label: "Vé", value: spot.ticketInfo },
     { label: "Giờ mở cửa", value: spot.openingHours },
     { label: "Thời điểm đẹp", value: spot.bestTime },
     { label: "Địa chỉ", value: spot.address },
     {
+      label: "Khu vực",
+      value:
+        [spot.wardName, spot.districtName, spot.provinceName]
+          .filter(Boolean)
+          .join(", ") || null,
+    },
+    {
       label: "Toạ độ",
-      value: spot.lat != null && spot.lng != null ? `${spot.lat}, ${spot.lng}` : null,
+      value:
+        spot.lat != null && spot.lng != null
+          ? `${spot.lat}, ${spot.lng}`
+          : null,
     },
   ].filter((f) => f.value);
 
   return (
-    <div className="space-y-6 p-6 sm:p-8">
+    <div className="p-6 sm:p-8">
+      {/* Breadcrumb + tiêu đề + hành động */}
       <Link
         href="/cms/spots"
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
@@ -96,113 +114,61 @@ export default async function SpotDetailPage({
         Địa điểm nhỏ
       </Link>
 
-      {/* Header card */}
-      <div className="rounded-2xl border p-4 sm:p-6">
-        <div className="flex flex-col gap-5 sm:flex-row">
-          <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden rounded-xl bg-muted sm:w-56">
-            {cover ? (
-              <Image
-                src={cover.url}
-                alt={cover.alt ?? spot.name}
-                fill
-                sizes="(max-width: 640px) 100vw, 14rem"
-                className="object-cover"
-                priority
-              />
-            ) : (
-              <Link
-                href={`/cms/spots/${spot.id}/edit`}
-                className="flex h-full flex-col items-center justify-center gap-1.5 text-muted-foreground transition-colors hover:text-foreground"
-              >
-                <ImageOff className="size-6" aria-hidden />
-                <span className="text-xs">Chưa có ảnh</span>
-              </Link>
-            )}
-          </div>
-
-          <div className="flex min-w-0 flex-1 flex-col">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="secondary">Địa điểm nhỏ</Badge>
-                {spot.category && (
-                  <Badge variant="outline">
-                    {labelOf(SPOT_CATEGORIES, spot.category)}
-                  </Badge>
-                )}
-                <Badge variant={published ? "default" : "outline"}>
-                  {published ? "Đã xuất bản" : "Bản nháp"}
-                </Badge>
-                {spot.isFeatured && (
-                  <Badge variant="secondary" className="gap-1">
-                    <Star className="size-3 fill-current" aria-hidden />
-                    Nổi bật
-                  </Badge>
-                )}
-              </div>
-
-              <div className="hidden shrink-0 items-center gap-2 sm:flex">
-                <Link
-                  href={`/dia-diem/${spot.slug}`}
-                  target="_blank"
-                  className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
-                >
-                  <ExternalLink className="size-4" />
-                  Xem web
-                </Link>
-                <Link
-                  href={`/cms/spots/${spot.id}/edit`}
-                  className={cn(buttonVariants({ size: "sm" }))}
-                >
-                  <Pencil className="size-4" />
-                  Sửa
-                </Link>
-              </div>
-            </div>
-
-            <h1 className="mt-3 text-2xl font-semibold tracking-tight">
+      <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-2xl font-semibold tracking-tight">
               {spot.name}
             </h1>
-
-            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted-foreground">
-              <Link
-                href={`/cms/places/${spot.place.id}`}
-                className="inline-flex items-center gap-1 hover:text-foreground"
-              >
-                <MapPin className="size-3.5" aria-hidden />
-                {spot.place.name}
-              </Link>
-              {spot.address && (
-                <span className="truncate">{spot.address}</span>
-              )}
-            </div>
-
-            <div className="mt-4 flex items-center gap-2 sm:hidden">
-              <Link
-                href={`/cms/spots/${spot.id}/edit`}
-                className={cn(buttonVariants({ size: "sm" }), "flex-1")}
-              >
-                <Pencil className="size-4" />
-                Sửa
-              </Link>
-              <Link
-                href={`/dia-diem/${spot.slug}`}
-                target="_blank"
-                className={cn(
-                  buttonVariants({ variant: "outline", size: "sm" }),
-                  "flex-1",
-                )}
-              >
-                <ExternalLink className="size-4" />
-                Xem web
-              </Link>
-            </div>
+            {spot.isFeatured && (
+              <Star
+                className="size-4 fill-primary text-primary"
+                aria-label="Nổi bật"
+              />
+            )}
           </div>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <Badge variant="secondary">Địa điểm nhỏ</Badge>
+            {spot.category && (
+              <Badge variant="outline">
+                {labelOf(SPOT_CATEGORIES, spot.category)}
+              </Badge>
+            )}
+            <Badge variant={published ? "default" : "outline"}>
+              {published ? "Đã xuất bản" : "Bản nháp"}
+            </Badge>
+            <Link
+              href={`/cms/places/${spot.place.id}`}
+              className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+            >
+              <MapPin className="size-3.5" />
+              {spot.place.name}
+            </Link>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/dia-diem/${spot.slug}`}
+            target="_blank"
+            className={cn(buttonVariants({ variant: "outline" }))}
+          >
+            <ExternalLink className="size-4" />
+            Xem web
+          </Link>
+          <Link
+            href={`/cms/spots/${spot.id}/edit`}
+            className={cn(buttonVariants())}
+          >
+            <Pencil className="size-4" />
+            Sửa
+          </Link>
         </div>
       </div>
 
       {/* Cảnh báo */}
       {spot.notice && (
-        <div className="flex items-start gap-2 rounded-xl border border-amber-500/40 bg-amber-500/5 px-4 py-3 text-sm">
+        <div className="mt-6 flex items-start gap-2 rounded-xl border border-amber-500/40 bg-amber-500/5 px-4 py-3 text-sm">
           <TriangleAlert
             className="mt-0.5 size-4 shrink-0 text-amber-600"
             aria-hidden
@@ -211,8 +177,57 @@ export default async function SpotDetailPage({
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+      {/* Bố cục 2 cột: nội dung + sidebar meta */}
+      <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="space-y-8 lg:col-span-2">
+          {/* Ảnh */}
+          <section>
+            {cover ? (
+              <div className="flex max-w-2xl gap-3">
+                <div className="relative aspect-[16/9] max-h-72 flex-1 overflow-hidden rounded-xl bg-muted">
+                  <Image
+                    src={cover.url}
+                    alt={cover.alt ?? spot.name}
+                    fill
+                    sizes="(max-width: 1024px) 100vw, 32rem"
+                    className="object-cover"
+                    priority
+                  />
+                </div>
+                {gallery.length > 0 && (
+                  <div className="flex max-h-72 w-16 shrink-0 flex-col gap-2 overflow-y-auto sm:w-20">
+                    {gallery.map((img) => (
+                      <div
+                        key={img.id}
+                        className="relative aspect-square shrink-0 overflow-hidden rounded-lg bg-muted"
+                      >
+                        <Image
+                          src={img.url}
+                          alt={img.alt ?? spot.name}
+                          fill
+                          sizes="80px"
+                          className="object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex aspect-[16/9] max-h-72 max-w-xl flex-col items-center justify-center gap-2 rounded-xl border border-dashed text-muted-foreground">
+                <ImageOff className="size-7" aria-hidden />
+                <p className="text-sm">Chưa có ảnh</p>
+                <Link
+                  href={`/cms/spots/${spot.id}/edit`}
+                  className="text-sm text-primary hover:underline"
+                >
+                  Thêm ảnh
+                </Link>
+              </div>
+            )}
+          </section>
+
+          {/* Mô tả */}
           <section>
             <h2 className="text-lg font-semibold tracking-tight">Mô tả</h2>
             {spot.description ? (
@@ -220,43 +235,18 @@ export default async function SpotDetailPage({
                 {spot.description}
               </p>
             ) : (
-              <p className="mt-2 text-sm text-muted-foreground">Chưa có mô tả.</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Chưa có mô tả.
+              </p>
             )}
           </section>
-
-          {spot.images.length > 0 && (
-            <section>
-              <h2 className="text-lg font-semibold tracking-tight">
-                Thư viện ảnh
-              </h2>
-              <div className="mt-3 grid grid-cols-3 gap-3 sm:grid-cols-4">
-                {spot.images.map((img) => (
-                  <div
-                    key={img.id}
-                    className="relative aspect-square overflow-hidden rounded-lg bg-muted"
-                  >
-                    <Image
-                      src={img.url}
-                      alt={img.alt ?? spot.name}
-                      fill
-                      sizes="(min-width: 640px) 25vw, 33vw"
-                      className="object-cover"
-                    />
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
 
           {/* Hoạt động liên kết (read-only) */}
           <section>
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-lg font-semibold tracking-tight">
-                Hoạt động tại đây
+                Hoạt động tại đây ({spot.activities.length})
               </h2>
-              <span className="text-sm text-muted-foreground">
-                {spot.activities.length} mục
-              </span>
             </div>
             {spot.activities.length > 0 ? (
               <ul className="mt-3 divide-y overflow-hidden rounded-xl border">
@@ -277,14 +267,14 @@ export default async function SpotDetailPage({
               </ul>
             ) : (
               <p className="mt-2 text-sm text-muted-foreground">
-                Chưa có hoạt động nào liên kết. Liên kết được quản lý ở phần Hoạt
-                động.
+                Chưa có hoạt động nào liên kết. Liên kết được quản lý ở phần
+                Hoạt động.
               </p>
             )}
           </section>
         </div>
 
-        {/* Sidebar */}
+        {/* Sidebar meta */}
         <aside className="space-y-4">
           <SpotAdminControls
             id={spot.id}
@@ -293,32 +283,67 @@ export default async function SpotDetailPage({
             order={spot.order}
           />
 
-          {facts.length > 0 && (
+          {(spot.ticketFree || tiers.length > 0 || spot.ticketInfo) && (
             <div className="rounded-xl border p-4">
-              <h3 className="text-sm font-semibold">Thông tin</h3>
-              <dl className="mt-3 space-y-3 text-sm">
-                {facts.map((f) => (
-                  <div
-                    key={f.label}
-                    className="flex items-start justify-between gap-3"
-                  >
-                    <dt className="text-muted-foreground">{f.label}</dt>
-                    <dd className="text-right">{f.value}</dd>
-                  </div>
-                ))}
-                <div className="flex items-center justify-between gap-3">
-                  <dt className="text-muted-foreground">Slug</dt>
-                  <dd className="text-right font-mono text-xs">
-                    /dia-diem/{spot.slug}
-                  </dd>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <dt className="text-muted-foreground">Cập nhật</dt>
-                  <dd className="text-right">{dateFmt.format(spot.updatedAt)}</dd>
-                </div>
-              </dl>
+              <h3 className="text-sm font-semibold">Vé vào cửa</h3>
+              {spot.ticketFree ? (
+                <p className="mt-3 text-sm font-medium text-primary">Miễn phí</p>
+              ) : tiers.length > 0 ? (
+                <dl className="mt-3 space-y-2 text-sm">
+                  {tiers.map((t, i) => (
+                    <div
+                      key={i}
+                      className="flex items-baseline justify-between gap-3"
+                    >
+                      <dt className="text-muted-foreground">
+                        {t.label}
+                        {t.note && (
+                          <span className="ml-1 text-xs">({t.note})</span>
+                        )}
+                      </dt>
+                      <dd className="text-right font-medium tabular-nums">
+                        {tierPriceLabel(t)}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              ) : null}
+              {spot.ticketInfo && (
+                <p className="mt-3 text-xs text-muted-foreground">
+                  {spot.ticketInfo}
+                </p>
+              )}
             </div>
           )}
+
+          <div className="rounded-xl border p-4">
+            <h3 className="text-sm font-semibold">Thông tin</h3>
+            <dl className="mt-3 space-y-3 text-sm">
+              <Meta label="Slug">
+                <span className="font-mono text-xs">/dia-diem/{spot.slug}</span>
+              </Meta>
+              {facts.map((f) => (
+                <Meta key={f.label} label={f.label}>
+                  {f.value}
+                </Meta>
+              ))}
+              {spot.mapUrl && (
+                <Meta label="Bản đồ">
+                  <a
+                    href={spot.mapUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-primary hover:underline"
+                  >
+                    Mở bản đồ
+                    <ExternalLink className="size-3.5" aria-hidden />
+                  </a>
+                </Meta>
+              )}
+              <Meta label="Tạo lúc">{dateFmt.format(spot.createdAt)}</Meta>
+              <Meta label="Cập nhật">{dateFmt.format(spot.updatedAt)}</Meta>
+            </dl>
+          </div>
 
           {spot.tags.length > 0 && (
             <div className="rounded-xl border p-4">
@@ -333,15 +358,23 @@ export default async function SpotDetailPage({
             </div>
           )}
 
-          <Link
-            href={`/cms/spots/${spot.id}/edit`}
-            className="flex items-center gap-2 rounded-xl border border-dashed px-4 py-3 text-sm text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
-          >
-            <ImagePlus className="size-4" aria-hidden />
-            Quản lý ảnh ({spot.images.length})
-          </Link>
         </aside>
       </div>
+    </div>
+  );
+}
+
+function Meta({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="text-right">{children}</dd>
     </div>
   );
 }

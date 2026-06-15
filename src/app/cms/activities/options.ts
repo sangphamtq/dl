@@ -17,16 +17,16 @@ export async function getPlaceOptions(): Promise<Option[]> {
     id: p.id,
     label:
       p.kind === "province"
-        ? `${p.name} · Tỉnh`
+        ? p.name
         : `${p.name}${p.parent ? ` · ${p.parent.name}` : ""}`,
   }));
 }
 
-// Spot để liên kết M:N (kèm tên nơi chứa để phân biệt).
+// Spot để liên kết M:N.
 export async function getSpotOptions(): Promise<Option[]> {
   const spots = await prisma.spot.findMany({
     orderBy: { name: "asc" },
-    select: { id: true, name: true, place: { select: { name: true } } },
+    select: { id: true, name: true },
   });
-  return spots.map((s) => ({ id: s.id, label: `${s.name} · ${s.place.name}` }));
+  return spots.map((s) => ({ id: s.id, label: s.name }));
 }

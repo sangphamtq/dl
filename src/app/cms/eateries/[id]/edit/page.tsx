@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { getProvinces } from "@/lib/locations";
 import { FormSection } from "@/components/cms/form-section";
 import { ListingImages } from "@/components/cms/listing-images";
 import { EateryForm, type EateryFormValues } from "../../eatery-form";
@@ -14,7 +15,7 @@ export default async function EditEateryPage({
 }) {
   const { id } = await params;
 
-  const [eatery, places, images] = await Promise.all([
+  const [eatery, places, adminProvinces, images] = await Promise.all([
     prisma.eatery.findUnique({
       where: { id },
       select: {
@@ -31,13 +32,21 @@ export default async function EditEateryPage({
         phone: true,
         website: true,
         bookingUrl: true,
+        mapUrl: true,
         priceRange: true,
         meals: true,
         notice: true,
         tags: true,
+        provinceCode: true,
+        provinceName: true,
+        districtCode: true,
+        districtName: true,
+        wardCode: true,
+        wardName: true,
       },
     }),
     getPlaceOptions(),
+    getProvinces(),
     prisma.image.findMany({
       where: { eateryId: id },
       orderBy: [{ isCover: "desc" }, { order: "asc" }],
@@ -60,10 +69,17 @@ export default async function EditEateryPage({
     phone: eatery.phone ?? "",
     website: eatery.website ?? "",
     bookingUrl: eatery.bookingUrl ?? "",
+    mapUrl: eatery.mapUrl ?? "",
     priceRange: eatery.priceRange ?? "",
     meals: eatery.meals,
     notice: eatery.notice ?? "",
     tags: eatery.tags.join(", "),
+    provinceCode: eatery.provinceCode?.toString() ?? "",
+    provinceName: eatery.provinceName ?? "",
+    districtCode: eatery.districtCode?.toString() ?? "",
+    districtName: eatery.districtName ?? "",
+    wardCode: eatery.wardCode?.toString() ?? "",
+    wardName: eatery.wardName ?? "",
   };
 
   return (
@@ -84,6 +100,7 @@ export default async function EditEateryPage({
           mode="edit"
           eateryId={eatery.id}
           places={places}
+          adminProvinces={adminProvinces}
           initial={initial}
         />
       </div>

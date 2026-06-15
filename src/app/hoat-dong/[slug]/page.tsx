@@ -3,20 +3,18 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import {
   ChevronRight,
-  Gauge,
   Clock,
   CalendarDays,
-  Banknote,
   Building2,
+  Ticket,
   ExternalLink,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { coverUrl } from "@/lib/place-image";
+import { parseTicketTiers, tierPriceLabel } from "@/lib/tickets";
 import {
   ACTIVITY_CATEGORY_LABELS,
   SPOT_CATEGORY_LABELS,
-  DIFFICULTY_LABELS,
-  PRICE_LABELS,
   label,
 } from "@/lib/listing-labels";
 import { SiteHeader } from "@/components/site/site-header";
@@ -60,13 +58,13 @@ export default async function ActivityPublicPage({
       description: true,
       category: true,
       status: true,
-      difficulty: true,
       durationText: true,
       seasonText: true,
       operatorName: true,
       bookingUrl: true,
       website: true,
-      priceRange: true,
+      ticketFree: true,
+      ticketTiers: true,
       tags: true,
       place: { select: { slug: true, name: true } },
       spots: {
@@ -91,11 +89,10 @@ export default async function ActivityPublicPage({
 
   const heroUrl = coverUrl(activity.images, activity.slug, 1800, 1000);
   const gallery = activity.images.filter((i) => i.url !== heroUrl);
+  const tiers = parseTicketTiers(activity.ticketTiers);
   const facts = [
-    { icon: Gauge, label: "Độ khó", value: label(DIFFICULTY_LABELS, activity.difficulty) },
     { icon: Clock, label: "Thời lượng", value: activity.durationText },
     { icon: CalendarDays, label: "Mùa / thời điểm", value: activity.seasonText },
-    { icon: Banknote, label: "Mức giá", value: label(PRICE_LABELS, activity.priceRange) },
     { icon: Building2, label: "Đơn vị", value: activity.operatorName },
   ].filter((f) => f.value);
 
@@ -204,6 +201,43 @@ export default async function ActivityPublicPage({
 
             {/* Sidebar */}
             <aside className="space-y-6">
+              {/* Giá vé */}
+              {(activity.ticketFree || tiers.length > 0) && (
+                <div className="rounded-2xl border p-5">
+                  <h2 className="flex items-center gap-2 text-sm font-semibold">
+                    <Ticket
+                      className="size-4 text-muted-foreground"
+                      aria-hidden
+                    />
+                    Giá vé
+                  </h2>
+                  {activity.ticketFree ? (
+                    <p className="mt-4 text-sm font-medium text-primary">
+                      Miễn phí
+                    </p>
+                  ) : (
+                    <dl className="mt-4 space-y-2.5 text-sm">
+                      {tiers.map((t, i) => (
+                        <div
+                          key={i}
+                          className="flex items-baseline justify-between gap-3"
+                        >
+                          <dt className="text-muted-foreground">
+                            {t.label}
+                            {t.note && (
+                              <span className="ml-1 text-xs">({t.note})</span>
+                            )}
+                          </dt>
+                          <dd className="text-right font-medium tabular-nums">
+                            {tierPriceLabel(t)}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                  )}
+                </div>
+              )}
+
               {facts.length > 0 && (
                 <div className="rounded-2xl border p-5">
                   <h2 className="text-sm font-semibold">Thông tin</h2>

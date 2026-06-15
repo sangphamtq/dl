@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { parseTicketTiers } from "@/lib/tickets";
 import { FormSection } from "@/components/cms/form-section";
 import { ListingImages } from "@/components/cms/listing-images";
 import { ActivityForm, type ActivityFormValues } from "../../activity-form";
@@ -24,14 +25,14 @@ export default async function EditActivityPage({
         description: true,
         category: true,
         placeId: true,
-        difficulty: true,
         durationText: true,
         seasonText: true,
         operatorName: true,
         bookingUrl: true,
         phone: true,
         website: true,
-        priceRange: true,
+        ticketFree: true,
+        ticketTiers: true,
         tags: true,
         spots: { select: { id: true } },
       },
@@ -53,14 +54,18 @@ export default async function EditActivityPage({
     description: activity.description ?? "",
     category: activity.category ?? "",
     placeId: activity.placeId,
-    difficulty: activity.difficulty ?? "",
     durationText: activity.durationText ?? "",
     seasonText: activity.seasonText ?? "",
     operatorName: activity.operatorName ?? "",
     bookingUrl: activity.bookingUrl ?? "",
     phone: activity.phone ?? "",
     website: activity.website ?? "",
-    priceRange: activity.priceRange ?? "",
+    ticketFree: activity.ticketFree,
+    ticketTiers: parseTicketTiers(activity.ticketTiers).map((t) => ({
+      label: t.label,
+      price: t.price == null ? "" : String(t.price),
+      note: t.note ?? "",
+    })),
     spotIds: activity.spots.map((s) => s.id),
     tags: activity.tags.join(", "),
   };

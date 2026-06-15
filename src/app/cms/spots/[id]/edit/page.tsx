@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { getProvinces } from "@/lib/locations";
+import { parseTicketTiers } from "@/lib/tickets";
 import { FormSection } from "@/components/cms/form-section";
 import { ListingImages } from "@/components/cms/listing-images";
 import { SpotForm, type SpotFormValues } from "../../spot-form";
@@ -14,7 +16,7 @@ export default async function EditSpotPage({
 }) {
   const { id } = await params;
 
-  const [spot, places, images] = await Promise.all([
+  const [spot, places, adminProvinces, images] = await Promise.all([
     prisma.spot.findUnique({
       where: { id },
       select: {
@@ -31,14 +33,24 @@ export default async function EditSpotPage({
         phone: true,
         website: true,
         bookingUrl: true,
+        mapUrl: true,
         priceRange: true,
         bestTime: true,
+        ticketFree: true,
+        ticketTiers: true,
         ticketInfo: true,
         notice: true,
         tags: true,
+        provinceCode: true,
+        provinceName: true,
+        districtCode: true,
+        districtName: true,
+        wardCode: true,
+        wardName: true,
       },
     }),
     getPlaceOptions(),
+    getProvinces(),
     prisma.image.findMany({
       where: { spotId: id },
       orderBy: [{ isCover: "desc" }, { order: "asc" }],
@@ -61,11 +73,24 @@ export default async function EditSpotPage({
     phone: spot.phone ?? "",
     website: spot.website ?? "",
     bookingUrl: spot.bookingUrl ?? "",
+    mapUrl: spot.mapUrl ?? "",
     priceRange: spot.priceRange ?? "",
     bestTime: spot.bestTime ?? "",
+    ticketFree: spot.ticketFree,
+    ticketTiers: parseTicketTiers(spot.ticketTiers).map((t) => ({
+      label: t.label,
+      price: t.price == null ? "" : String(t.price),
+      note: t.note ?? "",
+    })),
     ticketInfo: spot.ticketInfo ?? "",
     notice: spot.notice ?? "",
     tags: spot.tags.join(", "),
+    provinceCode: spot.provinceCode?.toString() ?? "",
+    provinceName: spot.provinceName ?? "",
+    districtCode: spot.districtCode?.toString() ?? "",
+    districtName: spot.districtName ?? "",
+    wardCode: spot.wardCode?.toString() ?? "",
+    wardName: spot.wardName ?? "",
   };
 
   return (
@@ -86,6 +111,7 @@ export default async function EditSpotPage({
           mode="edit"
           spotId={spot.id}
           places={places}
+          adminProvinces={adminProvinces}
           initial={initial}
         />
       </div>

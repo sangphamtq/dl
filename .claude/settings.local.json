@@ -15,7 +15,8 @@
       "Bash(pkill -f \"next dev\")",
       "Bash(pkill -f \"next-server\")",
       "Bash(curl -s http://localhost:3000/login)",
-      "Bash(curl -s http://localhost:3000/api/auth/providers)"
+      "Bash(curl -s http://localhost:3000/api/auth/providers)",
+      "Bash(pnpm lint *)"
     ]
   }
 }

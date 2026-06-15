@@ -7,13 +7,13 @@ import {
   ExternalLink,
   Star,
   MapPin,
-  Sparkles,
   ImageOff,
-  ImagePlus,
   TriangleAlert,
+  ChevronRight,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
+import { coverUrl } from "@/lib/place-image";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EateryAdminControls } from "../admin-controls";
@@ -49,15 +49,31 @@ export default async function EateryDetailPage({
       openingHours: true,
       website: true,
       bookingUrl: true,
+      mapUrl: true,
       priceRange: true,
       meals: true,
       notice: true,
       tags: true,
+      provinceName: true,
+      districtName: true,
+      wardName: true,
+      createdAt: true,
       updatedAt: true,
       place: { select: { id: true, name: true } },
       specialties: {
-        orderBy: { name: "asc" },
-        select: { id: true, name: true, status: true },
+        orderBy: [{ isFeatured: "desc" }, { name: "asc" }],
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          status: true,
+          kind: true,
+          images: {
+            where: { isCover: true },
+            take: 1,
+            select: { url: true, isCover: true },
+          },
+        },
       },
       images: {
         orderBy: [{ isCover: "desc" }, { order: "asc" }],
@@ -70,6 +86,7 @@ export default async function EateryDetailPage({
 
   const published = eatery.status === "published";
   const cover = eatery.images.find((i) => i.isCover) ?? eatery.images[0] ?? null;
+  const gallery = eatery.images.filter((i) => i.id !== cover?.id);
   const mealLabels = eatery.meals
     .map((m) => labelOf(MEALS, m))
     .filter(Boolean) as string[];
@@ -78,6 +95,13 @@ export default async function EateryDetailPage({
     { label: "Giờ mở cửa", value: eatery.openingHours },
     { label: "Bữa", value: mealLabels.join(", ") || null },
     { label: "Địa chỉ", value: eatery.address },
+    {
+      label: "Khu vực",
+      value:
+        [eatery.wardName, eatery.districtName, eatery.provinceName]
+          .filter(Boolean)
+          .join(", ") || null,
+    },
     {
       label: "Toạ độ",
       value:
@@ -90,7 +114,8 @@ export default async function EateryDetailPage({
   const hasMap = eatery.lat != null && eatery.lng != null;
 
   return (
-    <div className="space-y-6 p-6 sm:p-8">
+    <div className="p-6 sm:p-8">
+      {/* Breadcrumb + tiêu đề + hành động */}
       <Link
         href="/cms/eateries"
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
@@ -99,120 +124,109 @@ export default async function EateryDetailPage({
         Quán ăn
       </Link>
 
-      {/* Header card */}
-      <div className="rounded-2xl border p-4 sm:p-6">
-        <div className="flex flex-col gap-5 sm:flex-row">
-          <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden rounded-xl bg-muted sm:w-56">
-            {cover ? (
-              <Image
-                src={cover.url}
-                alt={cover.alt ?? eatery.name}
-                fill
-                sizes="(max-width: 640px) 100vw, 14rem"
-                className="object-cover"
-                priority
-              />
-            ) : (
-              <Link
-                href={`/cms/eateries/${eatery.id}/edit`}
-                className="flex h-full flex-col items-center justify-center gap-1.5 text-muted-foreground transition-colors hover:text-foreground"
-              >
-                <ImageOff className="size-6" aria-hidden />
-                <span className="text-xs">Chưa có ảnh</span>
-              </Link>
-            )}
-          </div>
-
-          <div className="flex min-w-0 flex-1 flex-col">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="secondary">Quán ăn</Badge>
-                {eatery.category && (
-                  <Badge variant="outline">
-                    {labelOf(EATERY_CATEGORIES, eatery.category)}
-                  </Badge>
-                )}
-                <Badge variant={published ? "default" : "outline"}>
-                  {published ? "Đã xuất bản" : "Bản nháp"}
-                </Badge>
-                {eatery.isFeatured && (
-                  <Badge variant="secondary" className="gap-1">
-                    <Star className="size-3 fill-current" aria-hidden />
-                    Nổi bật
-                  </Badge>
-                )}
-              </div>
-
-              <div className="hidden shrink-0 items-center gap-2 sm:flex">
-                <Link
-                  href={`/quan-an/${eatery.slug}`}
-                  target="_blank"
-                  className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
-                >
-                  <ExternalLink className="size-4" />
-                  Xem web
-                </Link>
-                <Link
-                  href={`/cms/eateries/${eatery.id}/edit`}
-                  className={cn(buttonVariants({ size: "sm" }))}
-                >
-                  <Pencil className="size-4" />
-                  Sửa
-                </Link>
-              </div>
-            </div>
-
-            <h1 className="mt-3 text-2xl font-semibold tracking-tight">
+      <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-2xl font-semibold tracking-tight">
               {eatery.name}
             </h1>
-
-            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted-foreground">
-              <Link
-                href={`/cms/places/${eatery.place.id}`}
-                className="inline-flex items-center gap-1 hover:text-foreground"
-              >
-                <MapPin className="size-3.5" aria-hidden />
-                {eatery.place.name}
-              </Link>
-              {mealLabels.length > 0 && <span>{mealLabels.join(" · ")}</span>}
-            </div>
-
-            <div className="mt-4 flex items-center gap-2 sm:hidden">
-              <Link
-                href={`/cms/eateries/${eatery.id}/edit`}
-                className={cn(buttonVariants({ size: "sm" }), "flex-1")}
-              >
-                <Pencil className="size-4" />
-                Sửa
-              </Link>
-              <Link
-                href={`/quan-an/${eatery.slug}`}
-                target="_blank"
-                className={cn(
-                  buttonVariants({ variant: "outline", size: "sm" }),
-                  "flex-1",
-                )}
-              >
-                <ExternalLink className="size-4" />
-                Xem web
-              </Link>
-            </div>
+            {eatery.isFeatured && (
+              <Star
+                className="size-4 fill-primary text-primary"
+                aria-label="Nổi bật"
+              />
+            )}
           </div>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <Badge variant="secondary">Quán ăn</Badge>
+            {eatery.category && (
+              <Badge variant="outline">
+                {labelOf(EATERY_CATEGORIES, eatery.category)}
+              </Badge>
+            )}
+            <Badge variant={published ? "default" : "outline"}>
+              {published ? "Đã xuất bản" : "Bản nháp"}
+            </Badge>
+            <Link
+              href={`/cms/places/${eatery.place.id}`}
+              className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+            >
+              <MapPin className="size-3.5" />
+              {eatery.place.name}
+            </Link>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/quan-an/${eatery.slug}`}
+            target="_blank"
+            className={cn(buttonVariants({ variant: "outline" }))}
+          >
+            <ExternalLink className="size-4" />
+            Xem web
+          </Link>
+          <Link
+            href={`/cms/eateries/${eatery.id}/edit`}
+            className={cn(buttonVariants())}
+          >
+            <Pencil className="size-4" />
+            Sửa
+          </Link>
         </div>
       </div>
 
-      {eatery.notice && (
-        <div className="flex items-start gap-2 rounded-xl border border-amber-500/40 bg-amber-500/5 px-4 py-3 text-sm">
-          <TriangleAlert
-            className="mt-0.5 size-4 shrink-0 text-amber-600"
-            aria-hidden
-          />
-          <span>{eatery.notice}</span>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+      {/* Bố cục 2 cột: nội dung + sidebar meta */}
+      <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="space-y-8 lg:col-span-2">
+          {/* Ảnh */}
+          <section>
+            {cover ? (
+              <div className="flex max-w-2xl gap-3">
+                <div className="relative aspect-[16/9] max-h-72 flex-1 overflow-hidden rounded-xl bg-muted">
+                  <Image
+                    src={cover.url}
+                    alt={cover.alt ?? eatery.name}
+                    fill
+                    sizes="(max-width: 1024px) 100vw, 32rem"
+                    className="object-cover"
+                    priority
+                  />
+                </div>
+                {gallery.length > 0 && (
+                  <div className="flex max-h-72 w-16 shrink-0 flex-col gap-2 overflow-y-auto sm:w-20">
+                    {gallery.map((img) => (
+                      <div
+                        key={img.id}
+                        className="relative aspect-square shrink-0 overflow-hidden rounded-lg bg-muted"
+                      >
+                        <Image
+                          src={img.url}
+                          alt={img.alt ?? eatery.name}
+                          fill
+                          sizes="80px"
+                          className="object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex aspect-[16/9] max-h-72 max-w-xl flex-col items-center justify-center gap-2 rounded-xl border border-dashed text-muted-foreground">
+                <ImageOff className="size-7" aria-hidden />
+                <p className="text-sm">Chưa có ảnh</p>
+                <Link
+                  href={`/cms/eateries/${eatery.id}/edit`}
+                  className="text-sm text-primary hover:underline"
+                >
+                  Thêm ảnh
+                </Link>
+              </div>
+            )}
+          </section>
+
+          {/* Mô tả */}
           <section>
             <h2 className="text-lg font-semibold tracking-tight">Mô tả</h2>
             {eatery.description ? (
@@ -220,74 +234,65 @@ export default async function EateryDetailPage({
                 {eatery.description}
               </p>
             ) : (
-              <p className="mt-2 text-sm text-muted-foreground">Chưa có mô tả.</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Chưa có mô tả.
+              </p>
             )}
           </section>
 
-          {eatery.images.length > 0 && (
-            <section>
-              <h2 className="text-lg font-semibold tracking-tight">
-                Thư viện ảnh
-              </h2>
-              <div className="mt-3 grid grid-cols-3 gap-3 sm:grid-cols-4">
-                {eatery.images.map((img) => (
-                  <div
-                    key={img.id}
-                    className="relative aspect-square overflow-hidden rounded-lg bg-muted"
-                  >
-                    <Image
-                      src={img.url}
-                      alt={img.alt ?? eatery.name}
-                      fill
-                      sizes="(min-width: 640px) 25vw, 33vw"
-                      className="object-cover"
-                    />
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
           {/* Đặc sản tại đây (read-only) */}
           <section>
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold tracking-tight">
-                Đặc sản tại đây
-              </h2>
-              <span className="text-sm text-muted-foreground">
-                {eatery.specialties.length} món
-              </span>
-            </div>
+            <h2 className="text-lg font-semibold tracking-tight">
+              Đặc sản tại đây ({eatery.specialties.length})
+            </h2>
             {eatery.specialties.length > 0 ? (
-              <ul className="mt-3 divide-y overflow-hidden rounded-xl border">
+              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
                 {eatery.specialties.map((s) => (
-                  <li key={s.id}>
-                    <Link
-                      href={`/cms/specialties/${s.id}`}
-                      className="flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-muted/50"
-                    >
-                      <Sparkles className="size-4 shrink-0 text-muted-foreground" />
-                      <span className="flex-1 truncate font-medium">
-                        {s.name}
-                      </span>
-                      <Badge
-                        variant={s.status === "published" ? "default" : "outline"}
-                      >
-                        {s.status === "published" ? "Xuất bản" : "Nháp"}
-                      </Badge>
-                    </Link>
-                  </li>
+                  <Link
+                    key={s.id}
+                    href={`/cms/specialties/${s.id}`}
+                    className="group flex items-center gap-3 rounded-xl border p-2 transition-colors hover:bg-muted/50"
+                  >
+                    <div className="relative size-16 shrink-0 overflow-hidden rounded-lg bg-muted">
+                      <Image
+                        src={coverUrl(s.images, s.slug, 128, 128)}
+                        alt={s.name}
+                        fill
+                        sizes="64px"
+                        className="object-cover"
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="truncate font-medium">{s.name}</span>
+                        {s.status !== "published" && (
+                          <Badge variant="outline" className="shrink-0">
+                            Nháp
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                        {s.kind === "product" ? "Sản vật / quà" : "Món ăn"}
+                      </p>
+                    </div>
+                    <ChevronRight className="size-4 shrink-0 text-muted-foreground/60 transition-transform group-hover:translate-x-0.5" />
+                  </Link>
                 ))}
-              </ul>
+              </div>
             ) : (
-              <p className="mt-2 text-sm text-muted-foreground">
-                Chưa có đặc sản nào liên kết. Liên kết quản lý ở phần Đặc sản.
-              </p>
+              <div className="mt-3 rounded-xl border border-dashed px-4 py-8 text-center">
+                <p className="text-sm text-muted-foreground">
+                  Chưa có đặc sản nào liên kết.
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Liên kết được quản lý ở phần Đặc sản.
+                </p>
+              </div>
             )}
           </section>
         </div>
 
-        {/* Sidebar */}
+        {/* Sidebar meta */}
         <aside className="space-y-4">
           <EateryAdminControls
             id={eatery.id}
@@ -296,30 +301,70 @@ export default async function EateryDetailPage({
             order={eatery.order}
           />
 
-          {facts.length > 0 && (
-            <div className="rounded-xl border p-4">
-              <h3 className="text-sm font-semibold">Thông tin</h3>
-              <dl className="mt-3 space-y-3 text-sm">
-                {facts.map((f) => (
-                  <div
-                    key={f.label}
-                    className="flex items-start justify-between gap-3"
+          {eatery.notice && (
+            <div className="flex items-start gap-2 rounded-xl border border-amber-500/40 bg-amber-500/5 px-4 py-3 text-sm">
+              <TriangleAlert
+                className="mt-0.5 size-4 shrink-0 text-amber-600"
+                aria-hidden
+              />
+              <span>{eatery.notice}</span>
+            </div>
+          )}
+
+          <div className="rounded-xl border p-4">
+            <h3 className="text-sm font-semibold">Thông tin</h3>
+            <dl className="mt-3 space-y-3 text-sm">
+              <Meta label="Slug">
+                <span className="font-mono text-xs">/quan-an/{eatery.slug}</span>
+              </Meta>
+              {facts.map((f) => (
+                <Meta key={f.label} label={f.label}>
+                  {f.value}
+                </Meta>
+              ))}
+              {eatery.mapUrl && (
+                <Meta label="Bản đồ">
+                  <a
+                    href={eatery.mapUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-primary hover:underline"
                   >
-                    <dt className="text-muted-foreground">{f.label}</dt>
-                    <dd className="text-right">{f.value}</dd>
-                  </div>
-                ))}
-                <div className="flex items-center justify-between gap-3">
-                  <dt className="text-muted-foreground">Slug</dt>
-                  <dd className="text-right font-mono text-xs">
-                    /quan-an/{eatery.slug}
-                  </dd>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <dt className="text-muted-foreground">Cập nhật</dt>
-                  <dd className="text-right">{dateFmt.format(eatery.updatedAt)}</dd>
-                </div>
-              </dl>
+                    Mở bản đồ
+                    <ExternalLink className="size-3.5" aria-hidden />
+                  </a>
+                </Meta>
+              )}
+              <Meta label="Tạo lúc">{dateFmt.format(eatery.createdAt)}</Meta>
+              <Meta label="Cập nhật">{dateFmt.format(eatery.updatedAt)}</Meta>
+            </dl>
+          </div>
+
+          {(eatery.bookingUrl || eatery.website) && (
+            <div className="rounded-xl border p-4">
+              <h3 className="text-sm font-semibold">Liên kết</h3>
+              <div className="mt-3 space-y-2 text-sm">
+                {eatery.bookingUrl && (
+                  <a
+                    href={eatery.bookingUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 text-primary hover:underline"
+                  >
+                    <ExternalLink className="size-3.5" /> Đặt bàn
+                  </a>
+                )}
+                {eatery.website && (
+                  <a
+                    href={eatery.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 text-primary hover:underline"
+                  >
+                    <ExternalLink className="size-3.5" /> Website
+                  </a>
+                )}
+              </div>
             </div>
           )}
 
@@ -347,15 +392,23 @@ export default async function EateryDetailPage({
             </div>
           )}
 
-          <Link
-            href={`/cms/eateries/${eatery.id}/edit`}
-            className="flex items-center gap-2 rounded-xl border border-dashed px-4 py-3 text-sm text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
-          >
-            <ImagePlus className="size-4" aria-hidden />
-            Quản lý ảnh ({eatery.images.length})
-          </Link>
         </aside>
       </div>
+    </div>
+  );
+}
+
+function Meta({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="text-right">{children}</dd>
     </div>
   );
 }

@@ -67,6 +67,9 @@ export default async function EateryPublicPage({
       meals: true,
       notice: true,
       tags: true,
+      wardName: true,
+      districtName: true,
+      provinceName: true,
       place: { select: { slug: true, name: true } },
       specialties: {
         where: pub,
@@ -97,6 +100,14 @@ export default async function EateryPublicPage({
     { icon: Clock, label: "Giờ mở cửa", value: eatery.openingHours },
     { icon: UtensilsCrossed, label: "Bữa", value: mealLabels.join(", ") || null },
     { icon: MapPin, label: "Địa chỉ", value: eatery.address },
+    {
+      icon: MapPin,
+      label: "Khu vực",
+      value:
+        [eatery.wardName, eatery.districtName, eatery.provinceName]
+          .filter(Boolean)
+          .join(", ") || null,
+    },
   ].filter((f) => f.value);
   const hasMap = eatery.lat != null && eatery.lng != null;
 

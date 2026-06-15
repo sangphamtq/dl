@@ -27,10 +27,17 @@ export type EateryFormInput = {
   phone: string;
   website: string;
   bookingUrl: string;
+  mapUrl: string;
   priceRange: string;
   meals: string[];
   notice: string;
   tags: string;
+  provinceCode: string;
+  provinceName: string;
+  districtCode: string;
+  districtName: string;
+  wardCode: string;
+  wardName: string;
 };
 
 export type ActionResult = { ok: true; id: string } | { ok: false; error: string };
@@ -45,6 +52,13 @@ function num(v: string): number | null {
   if (v.trim() === "") return null;
   const n = Number(v);
   return Number.isFinite(n) ? n : NaN;
+}
+
+// Mã hành chính đến từ selector — bỏ qua giá trị rác thay vì báo lỗi.
+function code(v: string): number | null {
+  if (v.trim() === "") return null;
+  const n = Number(v);
+  return Number.isInteger(n) ? n : null;
 }
 
 async function normalize(
@@ -104,10 +118,17 @@ async function normalize(
       phone: input.phone.trim() || null,
       website: input.website.trim() || null,
       bookingUrl: input.bookingUrl.trim() || null,
+      mapUrl: input.mapUrl.trim() || null,
       priceRange,
       meals,
       notice: input.notice.trim() || null,
       tags,
+      provinceCode: code(input.provinceCode),
+      provinceName: input.provinceName.trim() || null,
+      districtCode: code(input.districtCode),
+      districtName: input.districtName.trim() || null,
+      wardCode: code(input.wardCode),
+      wardName: input.wardName.trim() || null,
     },
   };
 }

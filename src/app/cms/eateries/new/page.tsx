@@ -1,10 +1,14 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { getProvinces } from "@/lib/locations";
 import { EateryForm } from "../eatery-form";
 import { getPlaceOptions } from "../options";
 
 export default async function NewEateryPage() {
-  const places = await getPlaceOptions();
+  const [places, adminProvinces] = await Promise.all([
+    getPlaceOptions(),
+    getProvinces(),
+  ]);
 
   return (
     <div className="mx-auto max-w-4xl p-6 sm:p-8">
@@ -21,7 +25,11 @@ export default async function NewEateryPage() {
       </p>
 
       <div className="mt-4">
-        <EateryForm mode="create" places={places} />
+        <EateryForm
+          mode="create"
+          places={places}
+          adminProvinces={adminProvinces}
+        />
       </div>
     </div>
   );

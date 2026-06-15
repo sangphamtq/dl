@@ -11,9 +11,17 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { coverUrl } from "@/lib/place-image";
 import { SpecialtyRowActions } from "./row-actions";
+import { getPlaceFilterOptions, resolvePlaceIds } from "../place-filter";
+import { PlaceFilterSelect } from "../place-filter-select";
+import { ClearFilters } from "../clear-filters";
 
-type SearchParams = { status?: string; kind?: string; q?: string };
-type Filters = { status: string; kind: string; q: string };
+type SearchParams = {
+  status?: string;
+  kind?: string;
+  place?: string;
+  q?: string;
+};
+type Filters = { status: string; kind: string; place: string; q: string };
 
 const STATUS_FILTERS = [
   { value: "all", label: "Mọi trạng thái" },
@@ -44,8 +52,12 @@ export default async function SpecialtiesPage({
   const status =
     sp.status === "published" || sp.status === "draft" ? sp.status : "all";
   const kind = sp.kind === "dish" || sp.kind === "product" ? sp.kind : "all";
+  const place = sp.place ?? "all";
   const q = sp.q?.trim() ?? "";
-  const filters: Filters = { status, kind, q };
+  const filters: Filters = { status, kind, place, q };
+  const hasFilters =
+    status !== "all" || kind !== "all" || place !== "all" || q !== "";
+  const placeOptions = await getPlaceFilterOptions();
 
   return (
     <div className="p-6 sm:p-8">
@@ -62,7 +74,7 @@ export default async function SpecialtiesPage({
         </Link>
       </div>
 
-      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mt-6 flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
           {STATUS_FILTERS.map((f) => (
             <Link
@@ -93,27 +105,42 @@ export default async function SpecialtiesPage({
               {f.label}
             </Link>
           ))}
+          </div>
+
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <PlaceFilterSelect options={placeOptions} value={place} />
+          <form className="relative" action="/cms/specialties">
+            {status !== "all" && (
+              <input type="hidden" name="status" value={status} />
+            )}
+            {kind !== "all" && <input type="hidden" name="kind" value={kind} />}
+            {place !== "all" && (
+              <input type="hidden" name="place" value={place} />
+            )}
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden
+            />
+            <Input
+              name="q"
+              defaultValue={q}
+              placeholder="Tìm theo tên…"
+              className="w-full pl-9 sm:w-64"
+            />
+          </form>
         </div>
 
-        <form className="relative" action="/cms/specialties">
-          {status !== "all" && (
-            <input type="hidden" name="status" value={status} />
-          )}
-          {kind !== "all" && <input type="hidden" name="kind" value={kind} />}
-          <Search
-            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-            aria-hidden
-          />
-          <Input
-            name="q"
-            defaultValue={q}
-            placeholder="Tìm theo tên…"
-            className="w-full pl-9 sm:w-64"
-          />
-        </form>
+        {hasFilters && (
+          <div>
+            <ClearFilters href="/cms/specialties" show={hasFilters} />
+          </div>
+        )}
       </div>
 
-      <Suspense key={`${status}|${kind}|${q}`} fallback={<SpecialtiesSkeleton />}>
+      <Suspense
+        key={`${status}|${kind}|${place}|${q}`}
+        fallback={<SpecialtiesSkeleton />}
+      >
         <SpecialtyList filters={filters} />
       </Suspense>
     </div>
@@ -121,7 +148,8 @@ export default async function SpecialtiesPage({
 }
 
 async function SpecialtyList({ filters }: { filters: Filters }) {
-  const { status, kind, q } = filters;
+  const { status, kind, place, q } = filters;
+  const placeIds = await resolvePlaceIds(place);
   const where: Prisma.SpecialtyWhereInput = {
     ...(status !== "all" && {
       status: status as Prisma.SpecialtyWhereInput["status"],
@@ -129,6 +157,7 @@ async function SpecialtyList({ filters }: { filters: Filters }) {
     ...(kind !== "all" && {
       kind: kind as Prisma.SpecialtyWhereInput["kind"],
     }),
+    ...(placeIds && { placeId: { in: placeIds } }),
     ...(q && { name: { contains: q, mode: "insensitive" } }),
   };
 
@@ -217,7 +246,7 @@ async function SpecialtyList({ filters }: { filters: Filters }) {
         {specialties.length === 0 && (
           <div className="px-4 py-16 text-center">
             <p className="text-sm text-muted-foreground">
-              {q || status !== "all" || kind !== "all"
+              {q || status !== "all" || kind !== "all" || place !== "all"
                 ? "Không tìm thấy đặc sản nào khớp bộ lọc."
                 : "Chưa có đặc sản nào."}
             </p>

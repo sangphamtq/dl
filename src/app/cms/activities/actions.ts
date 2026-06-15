@@ -4,15 +4,14 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
-import {
-  ActivityCategory,
-  ActivityDifficulty,
-  PriceRange,
-  PublishStatus,
-} from "@/generated/prisma/enums";
+import { ActivityCategory, PublishStatus } from "@/generated/prisma/enums";
 import { slugify, RESERVED_SLUGS } from "@/lib/slug";
+import type { TicketTier } from "@/lib/tickets";
 
 const STAFF = ["admin", "editor"];
+
+// Một dòng giá vé ở form (giá nhập text); chuẩn hóa thành number ở normalize.
+export type TicketTierInput = { label: string; price: string; note: string };
 
 export type ActivityFormInput = {
   name: string;
@@ -20,14 +19,14 @@ export type ActivityFormInput = {
   description: string;
   category: string; // "" = none
   placeId: string;
-  difficulty: string; // "" = none
   durationText: string;
   seasonText: string;
   operatorName: string;
   bookingUrl: string;
   phone: string;
   website: string;
-  priceRange: string; // "" = none
+  ticketFree: boolean;
+  ticketTiers: TicketTierInput[];
   spotIds: string[];
   tags: string;
 };
@@ -67,19 +66,29 @@ async function normalize(
     input.category && input.category in ActivityCategory
       ? (input.category as ActivityCategory)
       : null;
-  const difficulty =
-    input.difficulty && input.difficulty in ActivityDifficulty
-      ? (input.difficulty as ActivityDifficulty)
-      : null;
-  const priceRange =
-    input.priceRange && input.priceRange in PriceRange
-      ? (input.priceRange as PriceRange)
-      : null;
 
   const tags = input.tags
     .split(",")
     .map((t) => t.trim())
     .filter(Boolean);
+
+  // Giá vé: bỏ dòng trống, validate giá; miễn phí thì không lưu tiers.
+  const tiers: TicketTier[] = [];
+  if (!input.ticketFree) {
+    for (const t of input.ticketTiers) {
+      const label = t.label.trim();
+      if (!label) continue;
+      const priceStr = t.price.trim();
+      let price: number | null = null;
+      if (priceStr !== "") {
+        const n = Number(priceStr);
+        if (!Number.isFinite(n)) return { error: `Giá vé "${label}" phải là số.` };
+        if (n < 0) return { error: `Giá vé "${label}" không được âm.` };
+        price = Math.round(n);
+      }
+      tiers.push({ label, price, note: t.note.trim() || null });
+    }
+  }
 
   return {
     data: {
@@ -88,14 +97,15 @@ async function normalize(
       description: input.description.trim() || null,
       category,
       placeId: input.placeId,
-      difficulty,
       durationText: input.durationText.trim() || null,
       seasonText: input.seasonText.trim() || null,
       operatorName: input.operatorName.trim() || null,
       bookingUrl: input.bookingUrl.trim() || null,
       phone: input.phone.trim() || null,
       website: input.website.trim() || null,
-      priceRange,
+      ticketFree: input.ticketFree,
+      ticketTiers:
+        tiers.length > 0 ? (tiers as Prisma.InputJsonValue) : Prisma.DbNull,
       tags,
     },
   };

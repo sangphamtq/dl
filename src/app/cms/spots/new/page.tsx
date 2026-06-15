@@ -1,10 +1,14 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { getProvinces } from "@/lib/locations";
 import { SpotForm } from "../spot-form";
 import { getPlaceOptions } from "../place-options";
 
 export default async function NewSpotPage() {
-  const places = await getPlaceOptions();
+  const [places, adminProvinces] = await Promise.all([
+    getPlaceOptions(),
+    getProvinces(),
+  ]);
 
   return (
     <div className="mx-auto max-w-4xl p-6 sm:p-8">
@@ -23,7 +27,11 @@ export default async function NewSpotPage() {
       </p>
 
       <div className="mt-4">
-        <SpotForm mode="create" places={places} />
+        <SpotForm
+          mode="create"
+          places={places}
+          adminProvinces={adminProvinces}
+        />
       </div>
     </div>
   );

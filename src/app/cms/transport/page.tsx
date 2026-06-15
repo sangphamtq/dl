@@ -10,9 +10,17 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TransportRowActions } from "./row-actions";
 import { TRANSPORT_DIRECTIONS, TRANSPORT_MODES, labelOf } from "./constants";
+import { getPlaceFilterOptions, resolvePlaceIds } from "../place-filter";
+import { PlaceFilterSelect } from "../place-filter-select";
+import { ClearFilters } from "../clear-filters";
 
-type SearchParams = { status?: string; direction?: string; q?: string };
-type Filters = { status: string; direction: string; q: string };
+type SearchParams = {
+  status?: string;
+  direction?: string;
+  place?: string;
+  q?: string;
+};
+type Filters = { status: string; direction: string; place: string; q: string };
 
 const STATUS_FILTERS = [
   { value: "all", label: "Mọi trạng thái" },
@@ -46,8 +54,12 @@ export default async function TransportPage({
     sp.direction === "getTo" || sp.direction === "getAround"
       ? sp.direction
       : "all";
+  const place = sp.place ?? "all";
   const q = sp.q?.trim() ?? "";
-  const filters: Filters = { status, direction, q };
+  const filters: Filters = { status, direction, place, q };
+  const hasFilters =
+    status !== "all" || direction !== "all" || place !== "all" || q !== "";
+  const placeOptions = await getPlaceFilterOptions();
 
   return (
     <div className="p-6 sm:p-8">
@@ -64,7 +76,7 @@ export default async function TransportPage({
         </Link>
       </div>
 
-      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mt-6 flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
           {STATUS_FILTERS.map((f) => (
             <Link
@@ -95,30 +107,42 @@ export default async function TransportPage({
               {f.label}
             </Link>
           ))}
+          </div>
+
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <PlaceFilterSelect options={placeOptions} value={place} />
+          <form className="relative" action="/cms/transport">
+            {status !== "all" && (
+              <input type="hidden" name="status" value={status} />
+            )}
+            {direction !== "all" && (
+              <input type="hidden" name="direction" value={direction} />
+            )}
+            {place !== "all" && (
+              <input type="hidden" name="place" value={place} />
+            )}
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden
+            />
+            <Input
+              name="q"
+              defaultValue={q}
+              placeholder="Tìm theo tên…"
+              className="w-full pl-9 sm:w-64"
+            />
+          </form>
         </div>
 
-        <form className="relative" action="/cms/transport">
-          {status !== "all" && (
-            <input type="hidden" name="status" value={status} />
-          )}
-          {direction !== "all" && (
-            <input type="hidden" name="direction" value={direction} />
-          )}
-          <Search
-            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-            aria-hidden
-          />
-          <Input
-            name="q"
-            defaultValue={q}
-            placeholder="Tìm theo tên…"
-            className="w-full pl-9 sm:w-64"
-          />
-        </form>
+        {hasFilters && (
+          <div>
+            <ClearFilters href="/cms/transport" show={hasFilters} />
+          </div>
+        )}
       </div>
 
       <Suspense
-        key={`${status}|${direction}|${q}`}
+        key={`${status}|${direction}|${place}|${q}`}
         fallback={<TransportSkeleton />}
       >
         <TransportList filters={filters} />
@@ -128,7 +152,8 @@ export default async function TransportPage({
 }
 
 async function TransportList({ filters }: { filters: Filters }) {
-  const { status, direction, q } = filters;
+  const { status, direction, place, q } = filters;
+  const placeIds = await resolvePlaceIds(place);
   const where: Prisma.TransportWhereInput = {
     ...(status !== "all" && {
       status: status as Prisma.TransportWhereInput["status"],
@@ -136,6 +161,7 @@ async function TransportList({ filters }: { filters: Filters }) {
     ...(direction !== "all" && {
       direction: direction as Prisma.TransportWhereInput["direction"],
     }),
+    ...(placeIds && { placeId: { in: placeIds } }),
     ...(q && { name: { contains: q, mode: "insensitive" } }),
   };
 
@@ -216,7 +242,7 @@ async function TransportList({ filters }: { filters: Filters }) {
         {rows.length === 0 && (
           <div className="px-4 py-16 text-center">
             <p className="text-sm text-muted-foreground">
-              {q || status !== "all" || direction !== "all"
+              {q || status !== "all" || direction !== "all" || place !== "all"
                 ? "Không tìm thấy cách di chuyển nào khớp bộ lọc."
                 : "Chưa có cách di chuyển nào."}
             </p>

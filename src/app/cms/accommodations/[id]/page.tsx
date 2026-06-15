@@ -8,7 +8,6 @@ import {
   Star,
   MapPin,
   ImageOff,
-  ImagePlus,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
@@ -289,13 +288,6 @@ export default async function AccommodationDetailPage({
             </div>
           )}
 
-          <Link
-            href={`/cms/accommodations/${acc.id}/edit`}
-            className="flex items-center gap-2 rounded-xl border border-dashed px-4 py-3 text-sm text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
-          >
-            <ImagePlus className="size-4" aria-hidden />
-            Quản lý ảnh ({acc.images.length})
-          </Link>
         </aside>
       </div>
     </div>

@@ -12,9 +12,17 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { coverUrl } from "@/lib/place-image";
 import { ActivityRowActions } from "./row-actions";
 import { ACTIVITY_CATEGORIES, labelOf } from "./constants";
+import { getPlaceFilterOptions, resolvePlaceIds } from "../place-filter";
+import { PlaceFilterSelect } from "../place-filter-select";
+import { ClearFilters } from "../clear-filters";
 
-type SearchParams = { status?: string; category?: string; q?: string };
-type Filters = { status: string; category: string; q: string };
+type SearchParams = {
+  status?: string;
+  category?: string;
+  place?: string;
+  q?: string;
+};
+type Filters = { status: string; category: string; place: string; q: string };
 
 const STATUS_FILTERS = [
   { value: "all", label: "Mọi trạng thái" },
@@ -42,8 +50,12 @@ export default async function ActivitiesPage({
     sp.category && ACTIVITY_CATEGORIES.some((c) => c.value === sp.category)
       ? sp.category
       : "all";
+  const place = sp.place ?? "all";
   const q = sp.q?.trim() ?? "";
-  const filters: Filters = { status, category, q };
+  const filters: Filters = { status, category, place, q };
+  const hasFilters =
+    status !== "all" || category !== "all" || place !== "all" || q !== "";
+  const placeOptions = await getPlaceFilterOptions();
 
   return (
     <div className="p-6 sm:p-8">
@@ -60,7 +72,7 @@ export default async function ActivitiesPage({
         </Link>
       </div>
 
-      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mt-6 flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
           {STATUS_FILTERS.map((f) => (
             <Link
@@ -102,30 +114,42 @@ export default async function ActivitiesPage({
               {c.label}
             </Link>
           ))}
+          </div>
+
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <PlaceFilterSelect options={placeOptions} value={place} />
+          <form className="relative" action="/cms/activities">
+            {status !== "all" && (
+              <input type="hidden" name="status" value={status} />
+            )}
+            {category !== "all" && (
+              <input type="hidden" name="category" value={category} />
+            )}
+            {place !== "all" && (
+              <input type="hidden" name="place" value={place} />
+            )}
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden
+            />
+            <Input
+              name="q"
+              defaultValue={q}
+              placeholder="Tìm theo tên…"
+              className="w-full pl-9 sm:w-64"
+            />
+          </form>
         </div>
 
-        <form className="relative" action="/cms/activities">
-          {status !== "all" && (
-            <input type="hidden" name="status" value={status} />
-          )}
-          {category !== "all" && (
-            <input type="hidden" name="category" value={category} />
-          )}
-          <Search
-            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-            aria-hidden
-          />
-          <Input
-            name="q"
-            defaultValue={q}
-            placeholder="Tìm theo tên…"
-            className="w-full pl-9 sm:w-64"
-          />
-        </form>
+        {hasFilters && (
+          <div>
+            <ClearFilters href="/cms/activities" show={hasFilters} />
+          </div>
+        )}
       </div>
 
       <Suspense
-        key={`${status}|${category}|${q}`}
+        key={`${status}|${category}|${place}|${q}`}
         fallback={<ActivitiesSkeleton />}
       >
         <ActivityList filters={filters} />
@@ -135,7 +159,8 @@ export default async function ActivitiesPage({
 }
 
 async function ActivityList({ filters }: { filters: Filters }) {
-  const { status, category, q } = filters;
+  const { status, category, place, q } = filters;
+  const placeIds = await resolvePlaceIds(place);
   const where: Prisma.ActivityWhereInput = {
     ...(status !== "all" && {
       status: status as Prisma.ActivityWhereInput["status"],
@@ -143,6 +168,7 @@ async function ActivityList({ filters }: { filters: Filters }) {
     ...(category !== "all" && {
       category: category as Prisma.ActivityWhereInput["category"],
     }),
+    ...(placeIds && { placeId: { in: placeIds } }),
     ...(q && { name: { contains: q, mode: "insensitive" } }),
   };
 
@@ -234,7 +260,7 @@ async function ActivityList({ filters }: { filters: Filters }) {
         {activities.length === 0 && (
           <div className="px-4 py-16 text-center">
             <p className="text-sm text-muted-foreground">
-              {q || status !== "all" || category !== "all"
+              {q || status !== "all" || category !== "all" || place !== "all"
                 ? "Không tìm thấy hoạt động nào khớp bộ lọc."
                 : "Chưa có hoạt động nào."}
             </p>

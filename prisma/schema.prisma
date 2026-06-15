@@ -284,7 +284,9 @@ model Activity {
   bookingUrl   String?
   phone        String?
   website      String?
-  priceRange   PriceRange?
+  priceRange   PriceRange? // (giữ cho dữ liệu cũ; form dùng ticketTiers)
+  ticketFree   Boolean     @default(false) // miễn phí tham gia
+  ticketTiers  Json? // [{ label, price, note }] — giá VND, null/0 = miễn phí (xem lib/tickets)
 
   // Thực tế trải nghiệm (xem CLAUDE.md "Spot vs Activity")
   difficulty   ActivityDifficulty?
@@ -328,15 +330,27 @@ model Spot {
   phone        String?
   website      String?
   bookingUrl   String?
+  mapUrl       String? // link bản đồ (Google Maps…)
   priceRange   PriceRange?
+
+  // Vị trí hành chính (provinces.open-api.vn v1 — địa chính cũ, 3 cấp:
+  // tỉnh → quận/huyện → phường/xã). Lưu cả code (để tải cấp con) và name (hiển thị).
+  provinceCode Int?
+  provinceName String?
+  districtCode Int?
+  districtName String?
+  wardCode     Int?
+  wardName     String?
 
   placeId String
   place   Place  @relation(fields: [placeId], references: [id], onDelete: Cascade)
 
   // Thực tế về chỗ (xem CLAUDE.md "Spot vs Activity")
   bestTime   String? // mùa/giờ đẹp nhất ("mùa lúa chín", "sáng sớm")
-  ticketInfo String? // vé: "120k/người, trẻ em miễn phí"
-  notice     String? // cảnh báo truy cập: "Tạm đóng", "Cần xin phép leo"
+  ticketFree  Boolean @default(false) // miễn phí vào cửa
+  ticketTiers Json? // [{ label, price, note }] — giá VND, null/0 = miễn phí (xem lib/tickets)
+  ticketInfo  String? // ghi chú vé chung (giờ bán vé, ưu đãi…)
+  notice      String? // cảnh báo truy cập: "Tạm đóng", "Cần xin phép leo"
 
   activities Activity[] @relation("ActivitySpots") // M:N
 
@@ -402,7 +416,16 @@ model Eatery {
   phone        String?
   website      String?
   bookingUrl   String?
+  mapUrl       String? // link bản đồ (Google Maps…)
   priceRange   PriceRange?
+
+  // Vị trí hành chính (tự điền theo địa điểm cha; xem CLAUDE.md). Lưu cả code + name.
+  provinceCode Int?
+  provinceName String?
+  districtCode Int?
+  districtName String?
+  wardCode     Int?
+  wardName     String?
 
   meals  Meal[] // bữa phù hợp (sáng/trưa/tối/cà phê/ăn vặt) — để lọc
   notice String? // cảnh báo: "nghỉ thứ 2", "hết sớm", "chỉ bán sáng"

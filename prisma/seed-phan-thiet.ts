@@ -9,6 +9,9 @@ import {
   EateryCategory,
   Meal,
   SpecialtyKind,
+  AccommodationCategory,
+  TransportDirection,
+  TransportMode,
   PriceRange,
 } from "@/generated/prisma/enums";
 
@@ -27,7 +30,8 @@ async function setCover(
     | { spotId: string }
     | { activityId: string }
     | { eateryId: string }
-    | { specialtyId: string },
+    | { specialtyId: string }
+    | { accommodationId: string },
   seed: string,
   alt: string,
 ) {
@@ -345,8 +349,150 @@ async function main() {
     await setCover({ specialtyId: row.id }, slug, name);
   }
 
+  // 7) Accommodations
+  const accommodations = [
+    {
+      slug: "anantara-mui-ne-resort",
+      name: "Anantara Mũi Né Resort",
+      category: AccommodationCategory.resort,
+      priceRange: PriceRange.luxury,
+      address: "Đường Nguyễn Đình Chiểu, Hàm Tiến, Mũi Né",
+      lat: 10.9446,
+      lng: 108.2412,
+      phone: "0252 3741 888",
+      website: "https://www.anantara.com",
+      description:
+        "Resort nghỉ dưỡng cao cấp sát biển Hàm Tiến, hồ bơi hướng biển và spa thư giãn.",
+      tags: ["resort", "biển", "spa", "hồ bơi"],
+      isFeatured: true,
+    },
+    {
+      slug: "the-cliff-resort-mui-ne",
+      name: "The Cliff Resort & Residences",
+      category: AccommodationCategory.resort,
+      priceRange: PriceRange.premium,
+      address: "Khu phố 5, Phú Hài, Phan Thiết",
+      lat: 10.9269,
+      lng: 108.1659,
+      phone: "0252 3719 111",
+      website: "https://thecliffresort.com.vn",
+      description:
+        "Resort sắc màu Địa Trung Hải với nhiều hồ bơi, bãi biển riêng và view mũi Kê Gà phía xa.",
+      tags: ["resort", "view biển", "check-in"],
+    },
+    {
+      slug: "mui-ne-hills-homestay",
+      name: "Mũi Né Hills Homestay",
+      category: AccommodationCategory.homestay,
+      priceRange: PriceRange.budget,
+      address: "Đồi Hồng, Mũi Né, Phan Thiết",
+      lat: 10.9512,
+      lng: 108.2934,
+      phone: "0901 234 567",
+      description:
+        "Homestay trên đồi, phòng giá mềm, sân thượng ngắm hoàng hôn — hợp khách trẻ và phượt thủ.",
+      tags: ["homestay", "giá rẻ", "view đẹp"],
+    },
+    {
+      slug: "khach-san-phan-thiet-center",
+      name: "Khách sạn Phan Thiết Center",
+      category: AccommodationCategory.hotel,
+      priceRange: PriceRange.moderate,
+      address: "Đường Tôn Đức Thắng, TP. Phan Thiết",
+      lat: 10.9281,
+      lng: 108.1019,
+      phone: "0252 3822 999",
+      description:
+        "Khách sạn trung tâm thành phố, tiện di chuyển tới chợ, bến cá và các điểm tham quan.",
+      tags: ["khách sạn", "trung tâm", "tiện nghi"],
+    },
+  ];
+
+  for (const ac of accommodations) {
+    const { slug, name, ...rest } = ac;
+    const row = await prisma.accommodation.upsert({
+      where: { slug },
+      update: { ...rest, placeId: phanThiet.id, ...PUB },
+      create: { slug, name, ...rest, placeId: phanThiet.id, ...PUB },
+    });
+    await setCover({ accommodationId: row.id }, slug, name);
+  }
+
+  // 8) Transport (inline trên trang Place; không có slug → reset theo placeId)
+  const transports = [
+    {
+      direction: TransportDirection.getTo,
+      mode: TransportMode.bus,
+      name: "Xe khách TP.HCM → Phan Thiết",
+      fromName: "TP. Hồ Chí Minh",
+      duration: "4 – 5 giờ",
+      distanceKm: 200,
+      priceFrom: 120000,
+      priceTo: 230000,
+      operatorName: "Phương Trang, Kumho, Tâm Hạnh…",
+      description:
+        "Xe giường nằm chạy liên tục trong ngày từ bến xe Miền Đông; nhiều nhà xe trả khách tận Mũi Né.",
+    },
+    {
+      direction: TransportDirection.getTo,
+      mode: TransportMode.train,
+      name: "Tàu hỏa Sài Gòn → Phan Thiết",
+      fromName: "Ga Sài Gòn",
+      duration: "~4 giờ",
+      distanceKm: 200,
+      priceFrom: 160000,
+      priceTo: 260000,
+      operatorName: "Đường sắt Việt Nam",
+      description:
+        "Tàu SPT đến ga Phan Thiết, từ đó đi taxi/xe ôm ~20 phút ra Mũi Né. Thư thái, ngắm cảnh dọc đường.",
+    },
+    {
+      direction: TransportDirection.getTo,
+      mode: TransportMode.car,
+      name: "Limousine TP.HCM → Mũi Né",
+      fromName: "TP. Hồ Chí Minh",
+      duration: "4 giờ",
+      distanceKm: 220,
+      priceFrom: 250000,
+      priceTo: 380000,
+      operatorName: "Các hãng limousine (Quê Hương, Phúc An…)",
+      description:
+        "Xe limousine 9–11 chỗ đón/trả tận nơi, nhanh và tiện cho nhóm nhỏ đi nghỉ dưỡng.",
+    },
+    {
+      direction: TransportDirection.getAround,
+      mode: TransportMode.motorbike,
+      name: "Thuê xe máy",
+      duration: "Theo ngày",
+      priceFrom: 120000,
+      priceTo: 180000,
+      description:
+        "Cách chủ động nhất để chạy dọc Mũi Né, ra Bàu Trắng, đồi cát; nhiều khách sạn/đại lý cho thuê theo ngày.",
+    },
+    {
+      direction: TransportDirection.getAround,
+      mode: TransportMode.taxi,
+      name: "Taxi & xe công nghệ",
+      description:
+        "Taxi Mai Linh, Phan Thiết và Grab phủ tốt trong nội thành; ra Mũi Né/Hòn Rơm nên đặt xe trọn cuốc hoặc thỏa giá trước.",
+    },
+  ];
+
+  await prisma.transport.deleteMany({ where: { placeId: phanThiet.id } });
+  let transportOrder = 0;
+  for (const t of transports) {
+    await prisma.transport.create({
+      data: {
+        ...t,
+        placeId: phanThiet.id,
+        order: transportOrder++,
+        ...PUB,
+      },
+    });
+  }
+
   console.log(
-    `✓ Seed Phan Thiết xong: 1 tỉnh, 1 điểm đến, ${spots.length} địa điểm, ${activities.length} hoạt động, ${eateries.length} quán ăn, ${specialties.length} đặc sản.`,
+    `✓ Seed Phan Thiết xong: 1 tỉnh, 1 điểm đến, ${spots.length} địa điểm, ${activities.length} hoạt động, ${eateries.length} quán ăn, ${specialties.length} đặc sản, ${accommodations.length} lưu trú, ${transports.length} di chuyển.`,
   );
 }
 

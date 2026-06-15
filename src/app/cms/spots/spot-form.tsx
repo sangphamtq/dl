@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2, Plus, Trash2 } from "lucide-react";
 import { slugify } from "@/lib/slug";
 import { cn } from "@/lib/utils";
+import type { Province, District, Ward } from "@/lib/locations";
+import { loadDistricts, loadWards } from "../places/location-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,9 +20,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Combobox } from "@/components/ui/combobox";
+import { Switch } from "@/components/ui/switch";
 import { FormSection } from "@/components/cms/form-section";
-import { createSpot, updateSpot, type SpotFormInput } from "./actions";
-import { SPOT_CATEGORIES, PRICE_RANGES } from "./constants";
+import {
+  createSpot,
+  updateSpot,
+  type SpotFormInput,
+  type TicketTierInput,
+} from "./actions";
+import { SPOT_CATEGORIES } from "./constants";
 
 export type PlaceOption = { id: string; label: string };
 export type SpotFormValues = SpotFormInput;
@@ -38,22 +46,33 @@ const EMPTY: SpotFormValues = {
   phone: "",
   website: "",
   bookingUrl: "",
+  mapUrl: "",
   priceRange: "",
   bestTime: "",
+  ticketFree: false,
+  ticketTiers: [],
   ticketInfo: "",
   notice: "",
   tags: "",
+  provinceCode: "",
+  provinceName: "",
+  districtCode: "",
+  districtName: "",
+  wardCode: "",
+  wardName: "",
 };
 
 export function SpotForm({
   mode,
   spotId,
   places,
+  adminProvinces,
   initial,
 }: {
   mode: "create" | "edit";
   spotId?: string;
   places: PlaceOption[];
+  adminProvinces: Province[];
   initial?: Partial<SpotFormValues>;
 }) {
   const router = useRouter();
@@ -64,10 +83,117 @@ export function SpotForm({
     mode === "edit" && Boolean(initial?.slug),
   );
 
+  // Huyện/xã của cấp trên đang chọn (nạp qua cache client → server action).
+  const [districts, setDistricts] = useState<District[]>([]);
+  const [wards, setWards] = useState<Ward[]>([]);
+  const [districtsLoading, setDistrictsLoading] = useState(false);
+  const [wardsLoading, setWardsLoading] = useState(false);
+
   const slugPreview = slugTouched ? values.slug : slugify(values.name);
 
   function set<K extends keyof SpotFormValues>(key: K, v: SpotFormValues[K]) {
     setValues((p) => ({ ...p, [key]: v }));
+  }
+
+  function addTier() {
+    setValues((p) => ({
+      ...p,
+      ticketTiers: [...p.ticketTiers, { label: "", price: "", note: "" }],
+    }));
+  }
+
+  function removeTier(index: number) {
+    setValues((p) => ({
+      ...p,
+      ticketTiers: p.ticketTiers.filter((_, i) => i !== index),
+    }));
+  }
+
+  function updateTier(
+    index: number,
+    key: keyof TicketTierInput,
+    value: string,
+  ) {
+    setValues((p) => ({
+      ...p,
+      ticketTiers: p.ticketTiers.map((t, i) =>
+        i === index ? { ...t, [key]: value } : t,
+      ),
+    }));
+  }
+
+  // Nạp huyện mỗi khi provinceCode đổi (gồm cả lần đầu khi sửa).
+  useEffect(() => {
+    const c = Number(values.provinceCode);
+    if (!values.provinceCode || !Number.isFinite(c)) return;
+    let active = true;
+    void (async () => {
+      setDistrictsLoading(true);
+      try {
+        const d = await loadDistricts(c);
+        if (active) setDistricts(d);
+      } finally {
+        if (active) setDistrictsLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [values.provinceCode]);
+
+  // Nạp xã mỗi khi districtCode đổi.
+  useEffect(() => {
+    const c = Number(values.districtCode);
+    if (!values.districtCode || !Number.isFinite(c)) return;
+    let active = true;
+    void (async () => {
+      setWardsLoading(true);
+      try {
+        const w = await loadWards(c);
+        if (active) setWards(w);
+      } finally {
+        if (active) setWardsLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [values.districtCode]);
+
+  function onProvinceChange(c: string) {
+    const p = adminProvinces.find((x) => String(x.code) === c);
+    setDistricts([]);
+    setWards([]);
+    setValues((prev) => ({
+      ...prev,
+      provinceCode: c,
+      provinceName: p?.name ?? "",
+      districtCode: "",
+      districtName: "",
+      wardCode: "",
+      wardName: "",
+    }));
+  }
+
+  function onDistrictChange(c: string) {
+    const d = districts.find((x) => String(x.code) === c);
+    setWards([]);
+    setValues((prev) => ({
+      ...prev,
+      districtCode: c,
+      districtName: d?.name ?? "",
+      wardCode: "",
+      wardName: "",
+    }));
+  }
+
+  function onWardChange(c: string) {
+    const w = wards.find((x) => String(x.code) === c);
+    setValues((prev) => ({
+      ...prev,
+      wardCode: c,
+      wardName: w?.name ?? "",
+    }));
   }
 
   function onSubmit(e: React.FormEvent) {
@@ -134,6 +260,118 @@ export function SpotForm({
           </div>
         </FormSection>
 
+        {/* Vị trí */}
+        <FormSection
+          title="Vị trí"
+          description="Đơn vị hành chính, địa chỉ, toạ độ và link bản đồ. Tùy chọn."
+        >
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="space-y-2">
+              <Label>Tỉnh / Thành phố</Label>
+              <Combobox
+                options={adminProvinces.map((p) => ({
+                  value: String(p.code),
+                  label: p.name,
+                }))}
+                value={values.provinceCode}
+                onChange={onProvinceChange}
+                placeholder="Chọn tỉnh/thành…"
+                searchPlaceholder="Tìm tỉnh/thành…"
+                emptyText={
+                  adminProvinces.length === 0
+                    ? "Không tải được danh sách."
+                    : "Không tìm thấy."
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Quận / Huyện</Label>
+              <Combobox
+                options={districts.map((d) => ({
+                  value: String(d.code),
+                  label: d.name,
+                }))}
+                value={values.districtCode}
+                onChange={onDistrictChange}
+                disabled={!values.provinceCode || districtsLoading}
+                placeholder={
+                  districtsLoading
+                    ? "Đang tải…"
+                    : !values.provinceCode
+                      ? "Chọn tỉnh trước"
+                      : "Chọn quận/huyện…"
+                }
+                searchPlaceholder="Tìm quận/huyện…"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Phường / Xã</Label>
+              <Combobox
+                options={wards.map((w) => ({
+                  value: String(w.code),
+                  label: w.name,
+                }))}
+                value={values.wardCode}
+                onChange={onWardChange}
+                disabled={!values.districtCode || wardsLoading}
+                placeholder={
+                  wardsLoading
+                    ? "Đang tải…"
+                    : !values.districtCode
+                      ? "Chọn huyện trước"
+                      : "Chọn phường/xã…"
+                }
+                searchPlaceholder="Tìm phường/xã…"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="address">Địa chỉ chi tiết</Label>
+            <Input
+              id="address"
+              value={values.address}
+              onChange={(e) => set("address", e.target.value)}
+              placeholder="Số nhà, đường, khu vực…"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="lat">Vĩ độ (lat)</Label>
+              <Input
+                id="lat"
+                type="number"
+                step="any"
+                value={values.lat}
+                onChange={(e) => set("lat", e.target.value)}
+                placeholder="20.9101"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="lng">Kinh độ (lng)</Label>
+              <Input
+                id="lng"
+                type="number"
+                step="any"
+                value={values.lng}
+                onChange={(e) => set("lng", e.target.value)}
+                placeholder="107.1839"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="mapUrl">Link bản đồ</Label>
+            <Input
+              id="mapUrl"
+              value={values.mapUrl}
+              onChange={(e) => set("mapUrl", e.target.value)}
+              placeholder="https://maps.google.com/…"
+            />
+          </div>
+        </FormSection>
+
         {/* Thông tin cơ bản */}
         <FormSection
           title="Thông tin cơ bản"
@@ -178,44 +416,100 @@ export function SpotForm({
           </div>
         </FormSection>
 
-        {/* Vị trí & cơ sở */}
+        {/* Vé vào cửa */}
         <FormSection
-          title="Vị trí & thông tin thực địa"
-          description="Địa chỉ, toạ độ bản đồ, giờ/vé và lưu ý. Tùy chọn."
+          title="Vé vào cửa"
+          description="Miễn phí, hoặc liệt kê giá theo từng loại vé."
         >
-          <div className="space-y-2">
-            <Label htmlFor="address">Địa chỉ</Label>
-            <Input
-              id="address"
-              value={values.address}
-              onChange={(e) => set("address", e.target.value)}
-              placeholder="Số nhà, đường, khu vực…"
+          <div className="flex items-center justify-between gap-3 rounded-lg border px-4 py-3">
+            <div className="space-y-0.5">
+              <Label htmlFor="ticketFree">Miễn phí vào cửa</Label>
+              <p className="text-xs text-muted-foreground">
+                Bật nếu không bán vé. Khi bật sẽ ẩn bảng giá.
+              </p>
+            </div>
+            <Switch
+              id="ticketFree"
+              checked={values.ticketFree}
+              onCheckedChange={(v) => set("ticketFree", v)}
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+
+          {!values.ticketFree && (
             <div className="space-y-2">
-              <Label htmlFor="lat">Vĩ độ (lat)</Label>
-              <Input
-                id="lat"
-                type="number"
-                step="any"
-                value={values.lat}
-                onChange={(e) => set("lat", e.target.value)}
-                placeholder="20.9101"
-              />
+              <Label>Các loại vé</Label>
+              {values.ticketTiers.length > 0 && (
+                <div className="space-y-2">
+                  {values.ticketTiers.map((t, i) => (
+                    <div key={i} className="flex items-start gap-2">
+                      <Input
+                        value={t.label}
+                        onChange={(e) => updateTier(i, "label", e.target.value)}
+                        placeholder="Người lớn"
+                        className="flex-1"
+                        aria-label="Tên loại vé"
+                      />
+                      <div className="relative w-32 shrink-0 sm:w-40">
+                        <Input
+                          value={t.price}
+                          onChange={(e) =>
+                            updateTier(i, "price", e.target.value)
+                          }
+                          type="number"
+                          min="0"
+                          step="1000"
+                          placeholder="Miễn phí"
+                          className="pr-7"
+                          aria-label="Giá vé (VND)"
+                        />
+                        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                          đ
+                        </span>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeTier(i)}
+                        aria-label="Xóa loại vé"
+                      >
+                        <Trash2 className="size-4" aria-hidden />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addTier}
+              >
+                <Plus className="size-4" aria-hidden />
+                Thêm loại vé
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Để trống giá nghĩa là miễn phí cho loại vé đó.
+              </p>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="lng">Kinh độ (lng)</Label>
-              <Input
-                id="lng"
-                type="number"
-                step="any"
-                value={values.lng}
-                onChange={(e) => set("lng", e.target.value)}
-                placeholder="107.1839"
-              />
-            </div>
+          )}
+
+          <div className="space-y-2">
+            <Label htmlFor="ticketInfo">Ghi chú vé</Label>
+            <Input
+              id="ticketInfo"
+              value={values.ticketInfo}
+              onChange={(e) => set("ticketInfo", e.target.value)}
+              placeholder="Giờ bán vé, ưu đãi nhóm…"
+            />
           </div>
+        </FormSection>
+
+        {/* Thông tin thực địa */}
+        <FormSection
+          title="Thông tin thực địa"
+          description="Giờ mở cửa, thời điểm đẹp, liên hệ và lưu ý. Tùy chọn."
+        >
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="openingHours">Giờ mở cửa</Label>
@@ -227,15 +521,6 @@ export function SpotForm({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="ticketInfo">Vé</Label>
-              <Input
-                id="ticketInfo"
-                value={values.ticketInfo}
-                onChange={(e) => set("ticketInfo", e.target.value)}
-                placeholder="120k/người, trẻ em miễn phí"
-              />
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="bestTime">Thời điểm đẹp</Label>
               <Input
                 id="bestTime"
@@ -243,24 +528,6 @@ export function SpotForm({
                 onChange={(e) => set("bestTime", e.target.value)}
                 placeholder="sáng sớm, mùa thu…"
               />
-            </div>
-            <div className="space-y-2">
-              <Label>Mức giá</Label>
-              <Select
-                value={values.priceRange}
-                onValueChange={(v) => set("priceRange", v)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="—" />
-                </SelectTrigger>
-                <SelectContent>
-                  {PRICE_RANGES.map((p) => (
-                    <SelectItem key={p.value} value={p.value}>
-                      {p.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
           </div>
           <div className="space-y-2">

@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2, Plus, Trash2 } from "lucide-react";
 import { slugify } from "@/lib/slug";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -19,13 +19,15 @@ import {
 } from "@/components/ui/select";
 import { Combobox } from "@/components/ui/combobox";
 import { MultiCombobox } from "@/components/ui/multi-combobox";
+import { Switch } from "@/components/ui/switch";
 import { FormSection } from "@/components/cms/form-section";
-import { createActivity, updateActivity, type ActivityFormInput } from "./actions";
 import {
-  ACTIVITY_CATEGORIES,
-  ACTIVITY_DIFFICULTIES,
-  PRICE_RANGES,
-} from "./constants";
+  createActivity,
+  updateActivity,
+  type ActivityFormInput,
+  type TicketTierInput,
+} from "./actions";
+import { ACTIVITY_CATEGORIES } from "./constants";
 
 export type Option = { id: string; label: string };
 export type ActivityFormValues = ActivityFormInput;
@@ -36,14 +38,14 @@ const EMPTY: ActivityFormValues = {
   description: "",
   category: "",
   placeId: "",
-  difficulty: "",
   durationText: "",
   seasonText: "",
   operatorName: "",
   bookingUrl: "",
   phone: "",
   website: "",
-  priceRange: "",
+  ticketFree: false,
+  ticketTiers: [],
   spotIds: [],
   tags: "",
 };
@@ -79,6 +81,33 @@ export function ActivityForm({
     v: ActivityFormValues[K],
   ) {
     setValues((p) => ({ ...p, [key]: v }));
+  }
+
+  function addTier() {
+    setValues((p) => ({
+      ...p,
+      ticketTiers: [...p.ticketTiers, { label: "", price: "", note: "" }],
+    }));
+  }
+
+  function removeTier(index: number) {
+    setValues((p) => ({
+      ...p,
+      ticketTiers: p.ticketTiers.filter((_, i) => i !== index),
+    }));
+  }
+
+  function updateTier(
+    index: number,
+    key: keyof TicketTierInput,
+    value: string,
+  ) {
+    setValues((p) => ({
+      ...p,
+      ticketTiers: p.ticketTiers.map((t, i) =>
+        i === index ? { ...t, [key]: value } : t,
+      ),
+    }));
   }
 
   function onSubmit(e: React.FormEvent) {
@@ -211,27 +240,9 @@ export function ActivityForm({
         {/* Chi tiết trải nghiệm */}
         <FormSection
           title="Chi tiết trải nghiệm"
-          description="Độ khó, thời lượng, mùa — thông tin khách luôn hỏi."
+          description="Thời lượng, mùa — thông tin khách luôn hỏi."
         >
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="space-y-2">
-              <Label>Độ khó</Label>
-              <Select
-                value={values.difficulty}
-                onValueChange={(v) => set("difficulty", v)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="—" />
-                </SelectTrigger>
-                <SelectContent>
-                  {ACTIVITY_DIFFICULTIES.map((d) => (
-                    <SelectItem key={d.value} value={d.value}>
-                      {d.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="durationText">Thời lượng</Label>
               <Input
@@ -256,7 +267,7 @@ export function ActivityForm({
         {/* Đơn vị & đặt chỗ */}
         <FormSection
           title="Đơn vị & đặt chỗ"
-          description="Đơn vị khai thác / giá / liên hệ (nếu có)."
+          description="Đơn vị khai thác / giá vé / liên hệ (nếu có)."
         >
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
@@ -267,24 +278,6 @@ export function ActivityForm({
                 onChange={(e) => set("operatorName", e.target.value)}
                 placeholder="vd: Công ty du thuyền X"
               />
-            </div>
-            <div className="space-y-2">
-              <Label>Mức giá</Label>
-              <Select
-                value={values.priceRange}
-                onValueChange={(v) => set("priceRange", v)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="—" />
-                </SelectTrigger>
-                <SelectContent>
-                  {PRICE_RANGES.map((p) => (
-                    <SelectItem key={p.value} value={p.value}>
-                      {p.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">Điện thoại</Label>
@@ -303,16 +296,90 @@ export function ActivityForm({
                 placeholder="https://…"
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="bookingUrl">Link đặt chỗ</Label>
+              <Input
+                id="bookingUrl"
+                value={values.bookingUrl}
+                onChange={(e) => set("bookingUrl", e.target.value)}
+                placeholder="https://…"
+              />
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="bookingUrl">Link đặt chỗ</Label>
-            <Input
-              id="bookingUrl"
-              value={values.bookingUrl}
-              onChange={(e) => set("bookingUrl", e.target.value)}
-              placeholder="https://…"
+
+          {/* Giá vé / phí tham gia */}
+          <div className="flex items-center justify-between gap-3 rounded-lg border px-4 py-3">
+            <div className="space-y-0.5">
+              <Label htmlFor="ticketFree">Miễn phí tham gia</Label>
+              <p className="text-xs text-muted-foreground">
+                Bật nếu không thu phí. Khi bật sẽ ẩn bảng giá.
+              </p>
+            </div>
+            <Switch
+              id="ticketFree"
+              checked={values.ticketFree}
+              onCheckedChange={(v) => set("ticketFree", v)}
             />
           </div>
+
+          {!values.ticketFree && (
+            <div className="space-y-2">
+              <Label>Giá vé</Label>
+              {values.ticketTiers.length > 0 && (
+                <div className="space-y-2">
+                  {values.ticketTiers.map((t, i) => (
+                    <div key={i} className="flex items-start gap-2">
+                      <Input
+                        value={t.label}
+                        onChange={(e) => updateTier(i, "label", e.target.value)}
+                        placeholder="Người lớn"
+                        className="flex-1"
+                        aria-label="Tên loại vé"
+                      />
+                      <div className="relative w-32 shrink-0 sm:w-40">
+                        <Input
+                          value={t.price}
+                          onChange={(e) =>
+                            updateTier(i, "price", e.target.value)
+                          }
+                          type="number"
+                          min="0"
+                          step="1000"
+                          placeholder="Miễn phí"
+                          className="pr-7"
+                          aria-label="Giá vé (VND)"
+                        />
+                        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                          đ
+                        </span>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeTier(i)}
+                        aria-label="Xóa loại vé"
+                      >
+                        <Trash2 className="size-4" aria-hidden />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addTier}
+              >
+                <Plus className="size-4" aria-hidden />
+                Thêm loại vé
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Để trống giá nghĩa là miễn phí cho loại vé đó.
+              </p>
+            </div>
+          )}
         </FormSection>
 
         {/* Thẻ */}

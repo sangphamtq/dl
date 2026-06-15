@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { coverUrl } from "@/lib/place-image";
+import { parseTicketTiers, tierPriceLabel } from "@/lib/tickets";
 import {
   SPOT_CATEGORY_LABELS,
   ACTIVITY_CATEGORY_LABELS,
@@ -65,6 +66,8 @@ export default async function SpotPublicPage({
       bookingUrl: true,
       priceRange: true,
       bestTime: true,
+      ticketFree: true,
+      ticketTiers: true,
       ticketInfo: true,
       notice: true,
       tags: true,
@@ -91,8 +94,8 @@ export default async function SpotPublicPage({
 
   const heroUrl = coverUrl(spot.images, spot.slug, 1800, 1000);
   const gallery = spot.images.filter((i) => i.url !== heroUrl);
+  const tiers = parseTicketTiers(spot.ticketTiers);
   const facts = [
-    { icon: Ticket, label: "Vé", value: spot.ticketInfo },
     { icon: Clock, label: "Giờ mở cửa", value: spot.openingHours },
     { icon: CalendarDays, label: "Thời điểm đẹp", value: spot.bestTime },
     { icon: Ticket, label: "Mức giá", value: label(PRICE_LABELS, spot.priceRange) },
@@ -218,6 +221,48 @@ export default async function SpotPublicPage({
 
             {/* Sidebar */}
             <aside className="space-y-6">
+              {/* Vé vào cửa */}
+              {(spot.ticketFree || tiers.length > 0 || spot.ticketInfo) && (
+                <div className="rounded-2xl border p-5">
+                  <h2 className="flex items-center gap-2 text-sm font-semibold">
+                    <Ticket
+                      className="size-4 text-muted-foreground"
+                      aria-hidden
+                    />
+                    Vé vào cửa
+                  </h2>
+                  {spot.ticketFree ? (
+                    <p className="mt-4 text-sm font-medium text-primary">
+                      Miễn phí
+                    </p>
+                  ) : tiers.length > 0 ? (
+                    <dl className="mt-4 space-y-2.5 text-sm">
+                      {tiers.map((t, i) => (
+                        <div
+                          key={i}
+                          className="flex items-baseline justify-between gap-3"
+                        >
+                          <dt className="text-muted-foreground">
+                            {t.label}
+                            {t.note && (
+                              <span className="ml-1 text-xs">({t.note})</span>
+                            )}
+                          </dt>
+                          <dd className="text-right font-medium tabular-nums">
+                            {tierPriceLabel(t)}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                  ) : null}
+                  {spot.ticketInfo && (
+                    <p className="mt-3 text-xs text-muted-foreground">
+                      {spot.ticketInfo}
+                    </p>
+                  )}
+                </div>
+              )}
+
               {facts.length > 0 && (
                 <div className="rounded-2xl border p-5">
                   <h2 className="text-sm font-semibold">Thông tin</h2>

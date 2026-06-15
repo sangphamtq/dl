@@ -6,8 +6,12 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import { SpotCategory, PriceRange, PublishStatus } from "@/generated/prisma/enums";
 import { slugify, RESERVED_SLUGS } from "@/lib/slug";
+import type { TicketTier } from "@/lib/tickets";
 
 const STAFF = ["admin", "editor"];
+
+// Một dòng loại vé ở form (giá nhập text); chuẩn hóa thành number ở normalize.
+export type TicketTierInput = { label: string; price: string; note: string };
 
 export type SpotFormInput = {
   name: string;
@@ -22,11 +26,20 @@ export type SpotFormInput = {
   phone: string;
   website: string;
   bookingUrl: string;
+  mapUrl: string;
   priceRange: string; // "" = none
   bestTime: string;
+  ticketFree: boolean;
+  ticketTiers: TicketTierInput[];
   ticketInfo: string;
   notice: string;
   tags: string;
+  provinceCode: string; // "" = none
+  provinceName: string;
+  districtCode: string;
+  districtName: string;
+  wardCode: string;
+  wardName: string;
 };
 
 export type ActionResult = { ok: true; id: string } | { ok: false; error: string };
@@ -41,6 +54,13 @@ function num(v: string): number | null {
   if (v.trim() === "") return null;
   const n = Number(v);
   return Number.isFinite(n) ? n : NaN;
+}
+
+// Mã hành chính đến từ selector — bỏ qua giá trị rác thay vì báo lỗi.
+function code(v: string): number | null {
+  if (v.trim() === "") return null;
+  const n = Number(v);
+  return Number.isInteger(n) ? n : null;
 }
 
 async function normalize(
@@ -85,6 +105,21 @@ async function normalize(
     .map((t) => t.trim())
     .filter(Boolean);
 
+  // Loại vé: bỏ dòng trống, validate giá; miễn phí vào cửa thì không lưu tiers.
+  const tiers: TicketTier[] = [];
+  if (!input.ticketFree) {
+    for (const t of input.ticketTiers) {
+      const label = t.label.trim();
+      if (!label) continue;
+      const price = num(t.price);
+      if (Number.isNaN(price))
+        return { error: `Giá vé "${label}" phải là số.` };
+      if (price != null && price < 0)
+        return { error: `Giá vé "${label}" không được âm.` };
+      tiers.push({ label, price, note: t.note.trim() || null });
+    }
+  }
+
   return {
     data: {
       name,
@@ -99,11 +134,21 @@ async function normalize(
       phone: input.phone.trim() || null,
       website: input.website.trim() || null,
       bookingUrl: input.bookingUrl.trim() || null,
+      mapUrl: input.mapUrl.trim() || null,
       priceRange,
       bestTime: input.bestTime.trim() || null,
+      ticketFree: input.ticketFree,
+      ticketTiers:
+        tiers.length > 0 ? (tiers as Prisma.InputJsonValue) : Prisma.DbNull,
       ticketInfo: input.ticketInfo.trim() || null,
       notice: input.notice.trim() || null,
       tags,
+      provinceCode: code(input.provinceCode),
+      provinceName: input.provinceName.trim() || null,
+      districtCode: code(input.districtCode),
+      districtName: input.districtName.trim() || null,
+      wardCode: code(input.wardCode),
+      wardName: input.wardName.trim() || null,
     },
   };
 }
