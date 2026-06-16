@@ -1,9 +1,11 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { redirect } from "next/navigation";
 import { Plus, Search, Star } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
+import { searchIds } from "@/lib/cms-search";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -146,12 +148,13 @@ export default async function PostsPage({
 
 async function PostList({ filters }: { filters: Filters }) {
   const { status, category, q, page } = filters;
+  const matchIds = q ? await searchIds("Post", ["title", "excerpt"], q) : null;
   const where: Prisma.PostWhereInput = {
     ...(status !== "all" && {
       status: status as Prisma.PostWhereInput["status"],
     }),
     ...(category !== "all" && { category }),
-    ...(q && { title: { contains: q, mode: "insensitive" } }),
+    ...(matchIds && { id: { in: matchIds } }),
   };
 
   const [posts, total] = await Promise.all([
@@ -188,6 +191,7 @@ async function PostList({ filters }: { filters: Filters }) {
     const qs = params.toString();
     return `/cms/posts${qs ? `?${qs}` : ""}`;
   };
+  if (total > 0 && page > totalPages) redirect(pageHref(totalPages));
 
   return (
     <>

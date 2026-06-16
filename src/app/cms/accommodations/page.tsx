@@ -1,9 +1,11 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { redirect } from "next/navigation";
 import { Plus, Search, Star } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
+import { searchIds } from "@/lib/cms-search";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,14 +17,24 @@ import { ACCOMMODATION_CATEGORIES, labelOf } from "./constants";
 import { getPlaceFilterOptions, resolvePlaceIds } from "../place-filter";
 import { PlaceFilterSelect } from "../place-filter-select";
 import { ClearFilters } from "../clear-filters";
+import { Pagination } from "@/components/pagination";
+
+const PER_PAGE = 20;
 
 type SearchParams = {
   status?: string;
   category?: string;
   place?: string;
   q?: string;
+  page?: string;
 };
-type Filters = { status: string; category: string; place: string; q: string };
+type Filters = {
+  status: string;
+  category: string;
+  place: string;
+  q: string;
+  page: number;
+};
 
 const STATUS_FILTERS = [
   { value: "all", label: "Mọi trạng thái" },
@@ -33,7 +45,8 @@ const STATUS_FILTERS = [
 function buildHref(base: SearchParams, patch: Partial<SearchParams>) {
   const merged = { ...base, ...patch };
   const sp = new URLSearchParams();
-  for (const [k, v] of Object.entries(merged)) if (v && v !== "all") sp.set(k, v);
+  for (const [k, v] of Object.entries(merged))
+    if (v && v !== "all" && k !== "page") sp.set(k, v);
   const qs = sp.toString();
   return `/cms/accommodations${qs ? `?${qs}` : ""}`;
 }
@@ -52,7 +65,8 @@ export default async function AccommodationsPage({
       : "all";
   const place = sp.place ?? "all";
   const q = sp.q?.trim() ?? "";
-  const filters: Filters = { status, category, place, q };
+  const page = Math.max(1, Number(sp.page) || 1);
+  const filters: Filters = { status, category, place, q, page };
   const hasFilters =
     status !== "all" || category !== "all" || place !== "all" || q !== "";
   const placeOptions = await getPlaceFilterOptions();
@@ -149,7 +163,7 @@ export default async function AccommodationsPage({
       </div>
 
       <Suspense
-        key={`${status}|${category}|${place}|${q}`}
+        key={`${status}|${category}|${place}|${q}|${page}`}
         fallback={<AccommodationsSkeleton />}
       >
         <AccommodationList filters={filters} />
@@ -159,8 +173,11 @@ export default async function AccommodationsPage({
 }
 
 async function AccommodationList({ filters }: { filters: Filters }) {
-  const { status, category, place, q } = filters;
+  const { status, category, place, q, page } = filters;
   const placeIds = await resolvePlaceIds(place);
+  const matchIds = q
+    ? await searchIds("Accommodation", ["name", "description"], q)
+    : null;
   const where: Prisma.AccommodationWhereInput = {
     ...(status !== "all" && {
       status: status as Prisma.AccommodationWhereInput["status"],
@@ -169,32 +186,49 @@ async function AccommodationList({ filters }: { filters: Filters }) {
       category: category as Prisma.AccommodationWhereInput["category"],
     }),
     ...(placeIds && { placeId: { in: placeIds } }),
-    ...(q && { name: { contains: q, mode: "insensitive" } }),
+    ...(matchIds && { id: { in: matchIds } }),
   };
 
-  const rows = await prisma.accommodation.findMany({
-    where,
-    orderBy: [{ isFeatured: "desc" }, { name: "asc" }],
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      category: true,
-      status: true,
-      isFeatured: true,
-      place: { select: { name: true } },
-      images: {
-        where: { isCover: true },
-        take: 1,
-        select: { url: true, isCover: true },
+  const [rows, total] = await Promise.all([
+    prisma.accommodation.findMany({
+      where,
+      orderBy: [{ isFeatured: "desc" }, { name: "asc" }],
+      take: PER_PAGE,
+      skip: (page - 1) * PER_PAGE,
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        category: true,
+        status: true,
+        isFeatured: true,
+        place: { select: { name: true } },
+        images: {
+          where: { isCover: true },
+          take: 1,
+          select: { url: true, isCover: true },
+        },
       },
-    },
-  });
+    }),
+    prisma.accommodation.count({ where }),
+  ]);
+  const totalPages = Math.ceil(total / PER_PAGE);
+  const pageHref = (p: number) => {
+    const params = new URLSearchParams();
+    if (status !== "all") params.set("status", status);
+    if (category !== "all") params.set("category", category);
+    if (place !== "all") params.set("place", place);
+    if (q) params.set("q", q);
+    if (p > 1) params.set("page", String(p));
+    const qs = params.toString();
+    return `/cms/accommodations${qs ? `?${qs}` : ""}`;
+  };
+  if (total > 0 && page > totalPages) redirect(pageHref(totalPages));
 
   return (
     <>
       <p className="mt-4 text-sm text-muted-foreground">
-        <span className="font-medium text-foreground">{rows.length}</span> cơ sở
+        <span className="font-medium text-foreground">{total}</span> cơ sở
       </p>
 
       <div className="mt-3 overflow-hidden rounded-xl border">
@@ -262,6 +296,8 @@ async function AccommodationList({ filters }: { filters: Filters }) {
           </div>
         )}
       </div>
+
+      <Pagination page={page} totalPages={totalPages} hrefFor={pageHref} />
     </>
   );
 }

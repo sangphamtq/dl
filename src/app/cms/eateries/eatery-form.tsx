@@ -6,6 +6,7 @@ import Link from "next/link";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { slugify } from "@/lib/slug";
 import { cn } from "@/lib/utils";
+import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import type { Province, District, Ward } from "@/lib/locations";
 import { loadDistricts, loadWards } from "../places/location-client";
 import { Button } from "@/components/ui/button";
@@ -189,6 +190,11 @@ export function EateryForm({
         : [...p.meals, m],
     }));
   }
+
+  const [snapshot] = useState(() =>
+    JSON.stringify({ ...EMPTY, ...initial }),
+  );
+  useUnsavedChanges(!pending && JSON.stringify(values) !== snapshot);
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();

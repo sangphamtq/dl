@@ -34,7 +34,6 @@ export default async function EditSpotPage({
         website: true,
         bookingUrl: true,
         mapUrl: true,
-        priceRange: true,
         bestTime: true,
         ticketFree: true,
         ticketTiers: true,
@@ -74,7 +73,6 @@ export default async function EditSpotPage({
     website: spot.website ?? "",
     bookingUrl: spot.bookingUrl ?? "",
     mapUrl: spot.mapUrl ?? "",
-    priceRange: spot.priceRange ?? "",
     bestTime: spot.bestTime ?? "",
     ticketFree: spot.ticketFree,
     ticketTiers: parseTicketTiers(spot.ticketTiers).map((t) => ({

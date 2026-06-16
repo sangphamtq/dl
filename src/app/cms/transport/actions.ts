@@ -9,6 +9,7 @@ import {
   TransportMode,
   PublishStatus,
 } from "@/generated/prisma/enums";
+import { normalizeUrl } from "@/lib/url";
 
 const STAFF = ["admin", "editor"];
 
@@ -101,7 +102,7 @@ async function normalize(
       priceTo,
       currency: input.currency.trim() || "VND",
       operatorName: input.operatorName.trim() || null,
-      bookingUrl: input.bookingUrl.trim() || null,
+      bookingUrl: normalizeUrl(input.bookingUrl),
       status,
       publishedAt: status === PublishStatus.published ? new Date() : null,
       order,

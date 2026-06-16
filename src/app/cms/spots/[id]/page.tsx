@@ -17,7 +17,7 @@ import { parseTicketTiers, tierPriceLabel } from "@/lib/tickets";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SpotAdminControls } from "../admin-controls";
-import { SPOT_CATEGORIES, PRICE_RANGES, labelOf } from "../constants";
+import { SPOT_CATEGORIES, labelOf } from "../constants";
 
 const dateFmt = new Intl.DateTimeFormat("vi-VN", {
   day: "2-digit",
@@ -51,7 +51,6 @@ export default async function SpotDetailPage({
       website: true,
       bookingUrl: true,
       mapUrl: true,
-      priceRange: true,
       bestTime: true,
       ticketFree: true,
       ticketTiers: true,
@@ -81,9 +80,9 @@ export default async function SpotDetailPage({
   const cover = spot.images.find((i) => i.isCover) ?? spot.images[0] ?? null;
   const gallery = spot.images.filter((i) => i.id !== cover?.id);
   const tiers = parseTicketTiers(spot.ticketTiers);
+  const hasMap = spot.lat != null && spot.lng != null;
   const facts = [
     { label: "Loại", value: labelOf(SPOT_CATEGORIES, spot.category) },
-    { label: "Giá", value: labelOf(PRICE_RANGES, spot.priceRange) },
     { label: "Giờ mở cửa", value: spot.openingHours },
     { label: "Thời điểm đẹp", value: spot.bestTime },
     { label: "Địa chỉ", value: spot.address },
@@ -344,6 +343,17 @@ export default async function SpotDetailPage({
               <Meta label="Cập nhật">{dateFmt.format(spot.updatedAt)}</Meta>
             </dl>
           </div>
+
+          {hasMap && (
+            <div className="overflow-hidden rounded-xl border">
+              <iframe
+                title={`Bản đồ ${spot.name}`}
+                className="aspect-video w-full"
+                loading="lazy"
+                src={`https://www.openstreetmap.org/export/embed.html?bbox=${spot.lng! - 0.01}%2C${spot.lat! - 0.01}%2C${spot.lng! + 0.01}%2C${spot.lat! + 0.01}&layer=mapnik&marker=${spot.lat}%2C${spot.lng}`}
+              />
+            </div>
+          )}
 
           {spot.tags.length > 0 && (
             <div className="rounded-xl border p-4">

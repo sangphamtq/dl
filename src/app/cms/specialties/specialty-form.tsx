@@ -6,6 +6,7 @@ import Link from "next/link";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { slugify } from "@/lib/slug";
 import { cn } from "@/lib/utils";
+import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -75,6 +76,11 @@ export function SpecialtyForm({
   ) {
     setValues((p) => ({ ...p, [key]: v }));
   }
+
+  const [snapshot] = useState(() =>
+    JSON.stringify({ ...EMPTY, ...initial }),
+  );
+  useUnsavedChanges(!pending && JSON.stringify(values) !== snapshot);
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();

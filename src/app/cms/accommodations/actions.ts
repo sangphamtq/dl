@@ -10,6 +10,7 @@ import {
   PublishStatus,
 } from "@/generated/prisma/enums";
 import { slugify, RESERVED_SLUGS } from "@/lib/slug";
+import { normalizeUrl } from "@/lib/url";
 
 const STAFF = ["admin", "editor"];
 
@@ -72,6 +73,10 @@ async function normalize(
   const lng = num(input.lng);
   if (Number.isNaN(lat) || Number.isNaN(lng))
     return { error: "Toạ độ (lat/lng) phải là số." };
+  if (lat != null && (lat < -90 || lat > 90))
+    return { error: "Vĩ độ (lat) phải trong khoảng -90 đến 90." };
+  if (lng != null && (lng < -180 || lng > 180))
+    return { error: "Kinh độ (lng) phải trong khoảng -180 đến 180." };
 
   const category =
     input.category && input.category in AccommodationCategory
@@ -98,8 +103,8 @@ async function normalize(
       lat,
       lng,
       phone: input.phone.trim() || null,
-      website: input.website.trim() || null,
-      bookingUrl: input.bookingUrl.trim() || null,
+      website: normalizeUrl(input.website),
+      bookingUrl: normalizeUrl(input.bookingUrl),
       priceRange,
       tags,
     },

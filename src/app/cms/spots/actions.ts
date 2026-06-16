@@ -4,8 +4,9 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
-import { SpotCategory, PriceRange, PublishStatus } from "@/generated/prisma/enums";
+import { SpotCategory, PublishStatus } from "@/generated/prisma/enums";
 import { slugify, RESERVED_SLUGS } from "@/lib/slug";
+import { normalizeUrl } from "@/lib/url";
 import type { TicketTier } from "@/lib/tickets";
 
 const STAFF = ["admin", "editor"];
@@ -27,7 +28,6 @@ export type SpotFormInput = {
   website: string;
   bookingUrl: string;
   mapUrl: string;
-  priceRange: string; // "" = none
   bestTime: string;
   ticketFree: boolean;
   ticketTiers: TicketTierInput[];
@@ -90,14 +90,14 @@ async function normalize(
   const lng = num(input.lng);
   if (Number.isNaN(lat) || Number.isNaN(lng))
     return { error: "Toạ độ (lat/lng) phải là số." };
+  if (lat != null && (lat < -90 || lat > 90))
+    return { error: "Vĩ độ (lat) phải trong khoảng -90 đến 90." };
+  if (lng != null && (lng < -180 || lng > 180))
+    return { error: "Kinh độ (lng) phải trong khoảng -180 đến 180." };
 
   const category =
     input.category && input.category in SpotCategory
       ? (input.category as SpotCategory)
-      : null;
-  const priceRange =
-    input.priceRange && input.priceRange in PriceRange
-      ? (input.priceRange as PriceRange)
       : null;
 
   const tags = input.tags
@@ -132,10 +132,9 @@ async function normalize(
       lng,
       openingHours: input.openingHours.trim() || null,
       phone: input.phone.trim() || null,
-      website: input.website.trim() || null,
-      bookingUrl: input.bookingUrl.trim() || null,
-      mapUrl: input.mapUrl.trim() || null,
-      priceRange,
+      website: normalizeUrl(input.website),
+      bookingUrl: normalizeUrl(input.bookingUrl),
+      mapUrl: normalizeUrl(input.mapUrl),
       bestTime: input.bestTime.trim() || null,
       ticketFree: input.ticketFree,
       ticketTiers:

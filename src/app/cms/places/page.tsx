@@ -1,8 +1,10 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Plus, Search, MapPin, Compass, Star } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
+import { searchIds } from "@/lib/cms-search";
 import { cn } from "@/lib/utils";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,13 +12,17 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LinkPending } from "@/components/cms/link-pending";
 import { PlaceRowActions } from "./row-actions";
+import { Pagination } from "@/components/pagination";
+
+const PER_PAGE = 20;
 
 type SearchParams = {
   kind?: string;
   status?: string;
   q?: string;
+  page?: string;
 };
-type Filters = { kind: string; status: string; q: string };
+type Filters = { kind: string; status: string; q: string; page: number };
 
 const KIND_FILTERS = [
   { value: "all", label: "Tất cả" },
@@ -33,7 +39,7 @@ function buildHref(base: SearchParams, patch: Partial<SearchParams>) {
   const merged = { ...base, ...patch };
   const sp = new URLSearchParams();
   for (const [k, v] of Object.entries(merged)) {
-    if (v && v !== "all") sp.set(k, v);
+    if (v && v !== "all" && k !== "page") sp.set(k, v);
   }
   const qs = sp.toString();
   return `/cms/places${qs ? `?${qs}` : ""}`;
@@ -49,7 +55,8 @@ export default async function PlacesPage({
   const status =
     sp.status === "published" || sp.status === "draft" ? sp.status : "all";
   const q = sp.q?.trim() ?? "";
-  const filters: Filters = { kind, status, q };
+  const page = Math.max(1, Number(sp.page) || 1);
+  const filters: Filters = { kind, status, q, page };
 
   return (
     <div className="p-6 sm:p-8">
@@ -123,7 +130,7 @@ export default async function PlacesPage({
 
       {/* Danh sách — Suspense theo bộ lọc để hiện skeleton mỗi lần lọc/tìm */}
       <Suspense
-        key={`${kind}|${status}|${q}`}
+        key={`${kind}|${status}|${q}|${page}`}
         fallback={<PlacesListSkeleton />}
       >
         <PlacesList filters={filters} />
@@ -133,49 +140,68 @@ export default async function PlacesPage({
 }
 
 async function PlacesList({ filters }: { filters: Filters }) {
-  const { kind, status, q } = filters;
+  const { kind, status, q, page } = filters;
 
+  const matchIds = q ? await searchIds("Place", ["name", "description"], q) : null;
   const where: Prisma.PlaceWhereInput = {
     ...(kind !== "all" && { kind: kind as Prisma.PlaceWhereInput["kind"] }),
     ...(status !== "all" && {
       status: status as Prisma.PlaceWhereInput["status"],
     }),
-    ...(q && { name: { contains: q, mode: "insensitive" } }),
+    ...(matchIds && { id: { in: matchIds } }),
   };
 
-  const places = await prisma.place.findMany({
-    where,
-    orderBy: [{ kind: "asc" }, { isFeatured: "desc" }, { name: "asc" }],
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      kind: true,
-      status: true,
-      isFeatured: true,
-      parent: { select: { name: true } },
-      _count: {
-        select: {
-          children: true,
-          activities: true,
-          spots: true,
-          specialties: true,
-          eateries: true,
-          accommodations: true,
-          transports: true,
+  const [places, total, provinceCount] = await Promise.all([
+    prisma.place.findMany({
+      where,
+      orderBy: [{ kind: "asc" }, { isFeatured: "desc" }, { name: "asc" }],
+      take: PER_PAGE,
+      skip: (page - 1) * PER_PAGE,
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        kind: true,
+        status: true,
+        isFeatured: true,
+        parent: { select: { name: true } },
+        _count: {
+          select: {
+            children: true,
+            activities: true,
+            spots: true,
+            specialties: true,
+            eateries: true,
+            accommodations: true,
+            transports: true,
+          },
         },
       },
-    },
-  });
-
-  const provinceCount = places.filter((p) => p.kind === "province").length;
-  const destinationCount = places.length - provinceCount;
+    }),
+    prisma.place.count({ where }),
+    // Số tỉnh trong toàn bộ kết quả (chỉ dùng khi không lọc theo loại).
+    kind === "all"
+      ? prisma.place.count({ where: { ...where, kind: "province" } })
+      : Promise.resolve(0),
+  ]);
+  const totalPages = Math.ceil(total / PER_PAGE);
+  const destinationCount = total - provinceCount;
+  const pageHref = (p: number) => {
+    const params = new URLSearchParams();
+    if (kind !== "all") params.set("kind", kind);
+    if (status !== "all") params.set("status", status);
+    if (q) params.set("q", q);
+    if (p > 1) params.set("page", String(p));
+    const qs = params.toString();
+    return `/cms/places${qs ? `?${qs}` : ""}`;
+  };
+  if (total > 0 && page > totalPages) redirect(pageHref(totalPages));
 
   return (
     <>
       <p className="mt-4 text-sm text-muted-foreground">
-        <span className="font-medium text-foreground">{places.length}</span> mục
-        {places.length > 0 && (
+        <span className="font-medium text-foreground">{total}</span> mục
+        {total > 0 && kind === "all" && (
           <span className="text-muted-foreground/70">
             {" · "}
             {provinceCount} tỉnh · {destinationCount} điểm đến
@@ -288,6 +314,8 @@ async function PlacesList({ filters }: { filters: Filters }) {
         </div>
       )}
       </div>
+
+      <Pagination page={page} totalPages={totalPages} hrefFor={pageHref} />
     </>
   );
 }

@@ -1,13 +1,17 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { ImageIcon } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Pagination } from "@/components/pagination";
 import { MediaCard, type MediaItem } from "./media-card";
 
-type SearchParams = { type?: string };
+const PER_PAGE = 60;
+
+type SearchParams = { type?: string; page?: string };
 
 // Loại chủ sở hữu (exclusive arc trên Image). fk = tên cột khóa ngoại.
 const OWNER_TYPES = [
@@ -37,6 +41,7 @@ export default async function MediaPage({
     OWNER_TYPES.some((t) => t.key === sp.type) || sp.type === "none"
       ? sp.type!
       : "all";
+  const page = Math.max(1, Number(sp.page) || 1);
 
   const filters = [
     { key: "all", label: "Tất cả" },
@@ -69,14 +74,14 @@ export default async function MediaPage({
         ))}
       </div>
 
-      <Suspense key={type} fallback={<MediaSkeleton />}>
-        <MediaGrid type={type} />
+      <Suspense key={`${type}|${page}`} fallback={<MediaSkeleton />}>
+        <MediaGrid type={type} page={page} />
       </Suspense>
     </div>
   );
 }
 
-async function MediaGrid({ type }: { type: string }) {
+async function MediaGrid({ type, page }: { type: string; page: number }) {
   const where: Prisma.ImageWhereInput =
     type === "all"
       ? {}
@@ -84,27 +89,40 @@ async function MediaGrid({ type }: { type: string }) {
         ? Object.fromEntries(ALL_FK.map((fk) => [fk, null]))
         : { [OWNER_TYPES.find((t) => t.key === type)!.fk]: { not: null } };
 
-  const images = await prisma.image.findMany({
-    where,
-    orderBy: { createdAt: "desc" },
-    take: 120,
-    select: {
-      id: true,
-      url: true,
-      alt: true,
-      caption: true,
-      credit: true,
-      isCover: true,
-      place: { select: { id: true, name: true } },
-      activity: { select: { name: true } },
-      spot: { select: { name: true } },
-      specialty: { select: { name: true } },
-      eatery: { select: { name: true } },
-      accommodation: { select: { name: true } },
-      transport: { select: { name: true } },
-      post: { select: { title: true } },
-    },
-  });
+  const [images, total] = await Promise.all([
+    prisma.image.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      take: PER_PAGE,
+      skip: (page - 1) * PER_PAGE,
+      select: {
+        id: true,
+        url: true,
+        alt: true,
+        caption: true,
+        credit: true,
+        isCover: true,
+        place: { select: { id: true, name: true } },
+        activity: { select: { name: true } },
+        spot: { select: { name: true } },
+        specialty: { select: { name: true } },
+        eatery: { select: { name: true } },
+        accommodation: { select: { name: true } },
+        transport: { select: { name: true } },
+        post: { select: { title: true } },
+      },
+    }),
+    prisma.image.count({ where }),
+  ]);
+  const totalPages = Math.ceil(total / PER_PAGE);
+  const pageHref = (p: number) => {
+    const params = new URLSearchParams();
+    if (type !== "all") params.set("type", type);
+    if (p > 1) params.set("page", String(p));
+    const qs = params.toString();
+    return `/cms/media${qs ? `?${qs}` : ""}`;
+  };
+  if (total > 0 && page > totalPages) redirect(pageHref(totalPages));
 
   const items: MediaItem[] = images.map((img) => ({
     id: img.id,
@@ -130,14 +148,15 @@ async function MediaGrid({ type }: { type: string }) {
   return (
     <>
       <p className="mt-4 text-sm text-muted-foreground">
-        <span className="font-medium text-foreground">{items.length}</span> ảnh
-        {items.length === 120 && " (mới nhất)"}
+        <span className="font-medium text-foreground">{total}</span> ảnh
       </p>
       <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
         {items.map((item) => (
           <MediaCard key={item.id} item={item} />
         ))}
       </div>
+
+      <Pagination page={page} totalPages={totalPages} hrefFor={pageHref} />
     </>
   );
 }

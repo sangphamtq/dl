@@ -1,8 +1,10 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Plus, Search, PlaneLanding, Navigation } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
+import { searchIds } from "@/lib/cms-search";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,14 +15,24 @@ import { TRANSPORT_DIRECTIONS, TRANSPORT_MODES, labelOf } from "./constants";
 import { getPlaceFilterOptions, resolvePlaceIds } from "../place-filter";
 import { PlaceFilterSelect } from "../place-filter-select";
 import { ClearFilters } from "../clear-filters";
+import { Pagination } from "@/components/pagination";
+
+const PER_PAGE = 20;
 
 type SearchParams = {
   status?: string;
   direction?: string;
   place?: string;
   q?: string;
+  page?: string;
 };
-type Filters = { status: string; direction: string; place: string; q: string };
+type Filters = {
+  status: string;
+  direction: string;
+  place: string;
+  q: string;
+  page: number;
+};
 
 const STATUS_FILTERS = [
   { value: "all", label: "Mọi trạng thái" },
@@ -37,7 +49,8 @@ const DIRECTION_FILTERS = [
 function buildHref(base: SearchParams, patch: Partial<SearchParams>) {
   const merged = { ...base, ...patch };
   const sp = new URLSearchParams();
-  for (const [k, v] of Object.entries(merged)) if (v && v !== "all") sp.set(k, v);
+  for (const [k, v] of Object.entries(merged))
+    if (v && v !== "all" && k !== "page") sp.set(k, v);
   const qs = sp.toString();
   return `/cms/transport${qs ? `?${qs}` : ""}`;
 }
@@ -56,7 +69,8 @@ export default async function TransportPage({
       : "all";
   const place = sp.place ?? "all";
   const q = sp.q?.trim() ?? "";
-  const filters: Filters = { status, direction, place, q };
+  const page = Math.max(1, Number(sp.page) || 1);
+  const filters: Filters = { status, direction, place, q, page };
   const hasFilters =
     status !== "all" || direction !== "all" || place !== "all" || q !== "";
   const placeOptions = await getPlaceFilterOptions();
@@ -142,7 +156,7 @@ export default async function TransportPage({
       </div>
 
       <Suspense
-        key={`${status}|${direction}|${place}|${q}`}
+        key={`${status}|${direction}|${place}|${q}|${page}`}
         fallback={<TransportSkeleton />}
       >
         <TransportList filters={filters} />
@@ -152,8 +166,11 @@ export default async function TransportPage({
 }
 
 async function TransportList({ filters }: { filters: Filters }) {
-  const { status, direction, place, q } = filters;
+  const { status, direction, place, q, page } = filters;
   const placeIds = await resolvePlaceIds(place);
+  const matchIds = q
+    ? await searchIds("Transport", ["name", "description"], q)
+    : null;
   const where: Prisma.TransportWhereInput = {
     ...(status !== "all" && {
       status: status as Prisma.TransportWhereInput["status"],
@@ -162,28 +179,45 @@ async function TransportList({ filters }: { filters: Filters }) {
       direction: direction as Prisma.TransportWhereInput["direction"],
     }),
     ...(placeIds && { placeId: { in: placeIds } }),
-    ...(q && { name: { contains: q, mode: "insensitive" } }),
+    ...(matchIds && { id: { in: matchIds } }),
   };
 
-  const rows = await prisma.transport.findMany({
-    where,
-    orderBy: [{ order: "asc" }, { name: "asc" }],
-    select: {
-      id: true,
-      name: true,
-      direction: true,
-      mode: true,
-      fromName: true,
-      duration: true,
-      status: true,
-      place: { select: { name: true } },
-    },
-  });
+  const [rows, total] = await Promise.all([
+    prisma.transport.findMany({
+      where,
+      orderBy: [{ order: "asc" }, { name: "asc" }],
+      take: PER_PAGE,
+      skip: (page - 1) * PER_PAGE,
+      select: {
+        id: true,
+        name: true,
+        direction: true,
+        mode: true,
+        fromName: true,
+        duration: true,
+        status: true,
+        place: { select: { name: true } },
+      },
+    }),
+    prisma.transport.count({ where }),
+  ]);
+  const totalPages = Math.ceil(total / PER_PAGE);
+  const pageHref = (p: number) => {
+    const params = new URLSearchParams();
+    if (status !== "all") params.set("status", status);
+    if (direction !== "all") params.set("direction", direction);
+    if (place !== "all") params.set("place", place);
+    if (q) params.set("q", q);
+    if (p > 1) params.set("page", String(p));
+    const qs = params.toString();
+    return `/cms/transport${qs ? `?${qs}` : ""}`;
+  };
+  if (total > 0 && page > totalPages) redirect(pageHref(totalPages));
 
   return (
     <>
       <p className="mt-4 text-sm text-muted-foreground">
-        <span className="font-medium text-foreground">{rows.length}</span> cách di
+        <span className="font-medium text-foreground">{total}</span> cách di
         chuyển
       </p>
 
@@ -249,6 +283,8 @@ async function TransportList({ filters }: { filters: Filters }) {
           </div>
         )}
       </div>
+
+      <Pagination page={page} totalPages={totalPages} hrefFor={pageHref} />
     </>
   );
 }

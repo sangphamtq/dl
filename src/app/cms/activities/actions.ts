@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import { ActivityCategory, PublishStatus } from "@/generated/prisma/enums";
 import { slugify, RESERVED_SLUGS } from "@/lib/slug";
+import { normalizeUrl } from "@/lib/url";
 import type { TicketTier } from "@/lib/tickets";
 
 const STAFF = ["admin", "editor"];
@@ -100,9 +101,9 @@ async function normalize(
       durationText: input.durationText.trim() || null,
       seasonText: input.seasonText.trim() || null,
       operatorName: input.operatorName.trim() || null,
-      bookingUrl: input.bookingUrl.trim() || null,
+      bookingUrl: normalizeUrl(input.bookingUrl),
       phone: input.phone.trim() || null,
-      website: input.website.trim() || null,
+      website: normalizeUrl(input.website),
       ticketFree: input.ticketFree,
       ticketTiers:
         tiers.length > 0 ? (tiers as Prisma.InputJsonValue) : Prisma.DbNull,

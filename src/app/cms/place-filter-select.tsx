@@ -32,6 +32,7 @@ export function PlaceFilterSelect({
     const params = new URLSearchParams(searchParams.toString());
     if (v && v !== "all") params.set("place", v);
     else params.delete("place");
+    params.delete("page"); // đổi nơi → về trang 1
     const qs = params.toString();
     router.push(`${pathname}${qs ? `?${qs}` : ""}`);
   }

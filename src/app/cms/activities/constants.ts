@@ -9,19 +9,6 @@ export const ACTIVITY_CATEGORIES: { value: string; label: string }[] = [
   { value: "other", label: "Khác" },
 ];
 
-export const ACTIVITY_DIFFICULTIES: { value: string; label: string }[] = [
-  { value: "easy", label: "Dễ" },
-  { value: "moderate", label: "Vừa" },
-  { value: "hard", label: "Khó" },
-];
-
-export const PRICE_RANGES: { value: string; label: string }[] = [
-  { value: "budget", label: "$ · Bình dân" },
-  { value: "moderate", label: "$$ · Vừa" },
-  { value: "premium", label: "$$$ · Cao" },
-  { value: "luxury", label: "$$$$ · Sang" },
-];
-
 export function labelOf(
   list: { value: string; label: string }[],
   value: string | null,
