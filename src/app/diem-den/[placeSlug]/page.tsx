@@ -142,6 +142,7 @@ export default async function PlaceDetailPage({
         select: {
           slug: true,
           name: true,
+          kind: true,
           priceRange: true,
           images: listingImages,
         },
@@ -182,11 +183,24 @@ export default async function PlaceDetailPage({
   const tabs = buildPlaceTabs(place.slug, counts);
 
   const isProvince = place.kind === "province";
+  // Hero: ảnh của điểm đến trước, rồi nối ảnh bìa các "địa điểm con"
+  // (điểm đến con nếu là tỉnh + spot), chỉ lấy ảnh thật, khử trùng URL.
   const heroImages: HeroImage[] = place.images.map((i) => ({
     url: i.url,
     alt: i.alt,
     caption: i.caption,
   }));
+  const childCovers: HeroImage[] = [...place.children, ...place.spots]
+    .map((c) => ({ cover: c.images[0], name: c.name }))
+    .filter((c) => c.cover?.url)
+    .map((c) => ({ url: c.cover!.url, alt: c.name, caption: c.name }));
+  const seenUrls = new Set(heroImages.map((i) => i.url));
+  for (const c of childCovers) {
+    if (!seenUrls.has(c.url)) {
+      heroImages.push(c);
+      seenUrls.add(c.url);
+    }
+  }
   if (heroImages.length === 0) {
     heroImages.push({ url: coverUrl([], place.slug, 1600, 1000), alt: place.name });
   }
@@ -211,7 +225,7 @@ export default async function PlaceDetailPage({
           {/* Tổng quan */}
           {place.description && (
             <section className="max-w-3xl">
-              <Eyebrow num="00" text={`Tổng quan về ${place.name}`} />
+              <Eyebrow num="00" text={`Đôi nét về ${place.name}`} />
               <p className="mt-5 whitespace-pre-line text-lg leading-8 text-foreground/90">
                 {place.description}
               </p>
@@ -308,7 +322,7 @@ export default async function PlaceDetailPage({
                 eyebrow="Ẩm thực"
                 title="Đặc sản nên thử"
                 description="Hương vị bản địa khó quên — gợi ý món & nơi thưởng thức."
-                href={`/diem-den/${place.slug}/dac-san`}
+                href={`/diem-den/${place.slug}/am-thuc`}
               />
               <div className="mt-7 grid grid-cols-2 gap-5 lg:grid-cols-4">
                 {place.specialties.map((sp) => (
@@ -321,6 +335,9 @@ export default async function PlaceDetailPage({
                         sizes="(min-width: 1024px) 25vw, 50vw"
                         className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
                       />
+                      <span className="absolute left-2 top-2 rounded-full bg-background/90 px-2.5 py-1 text-xs font-medium shadow-sm backdrop-blur">
+                        {sp.kind === "product" ? "Sản vật / quà" : "Món ăn"}
+                      </span>
                     </div>
                     <h3 className="mt-3 font-semibold tracking-tight line-clamp-1">
                       {sp.name}

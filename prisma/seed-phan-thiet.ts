@@ -10,8 +10,6 @@ import {
   Meal,
   SpecialtyKind,
   AccommodationCategory,
-  TransportDirection,
-  TransportMode,
   PriceRange,
 } from "@/generated/prisma/enums";
 
@@ -21,25 +19,107 @@ import {
 
 const now = new Date();
 const PUB = { status: PublishStatus.published, publishedAt: now } as const;
-const img = (seed: string) => `https://picsum.photos/seed/${seed}/1200/800`;
 
-// Đặt 1 ảnh bìa demo cho một owner (xóa ảnh cũ của owner để khỏi nhân bản).
-async function setCover(
-  where:
-    | { placeId: string }
-    | { spotId: string }
-    | { activityId: string }
-    | { eateryId: string }
-    | { specialtyId: string }
-    | { accommodationId: string },
-  seed: string,
-  alt: string,
+type ImageOwner =
+  | { placeId: string }
+  | { spotId: string }
+  | { activityId: string }
+  | { eateryId: string }
+  | { specialtyId: string }
+  | { accommodationId: string };
+
+// Ảnh của một mục — ĐỂ TRỐNG để tự điền. Mỗi ảnh: { url, alt?, caption? }.
+// Ảnh đầu mảng tự thành ảnh bìa (isCover). Mảng rỗng → trang dùng ảnh fallback.
+type ImageInput = { url: string; alt?: string; caption?: string };
+
+// Ghi lại toàn bộ ảnh cho một owner (xóa ảnh cũ trước để khỏi nhân bản khi seed lại).
+async function setImages(
+  where: ImageOwner,
+  images: readonly ImageInput[],
+  fallbackAlt: string,
 ) {
   await prisma.image.deleteMany({ where });
-  await prisma.image.create({
-    data: { ...where, url: img(seed), alt, isCover: true, order: 0 },
-  });
+  await Promise.all(
+    images.map((im, i) =>
+      prisma.image.create({
+        data: {
+          ...where,
+          url: im.url,
+          alt: im.alt ?? fallbackAlt,
+          caption: im.caption,
+          isCover: i === 0,
+          order: i,
+        },
+      }),
+    ),
+  );
 }
+
+// ────────────────────────────────────────────────────────────────────────────
+// ẢNH CHO TỪNG MỤC — TỰ ĐIỀN Ở ĐÂY (key = slug). Mỗi mục một mảng ảnh; ảnh đầu
+// mảng là ảnh bìa. Bỏ trống / để mảng rỗng → trang dùng ảnh fallback tạm.
+// Mỗi ảnh: { url: "https://…", alt?: "mô tả", caption?: "chú thích" }
+// Ví dụ:
+//   "bai-bien-mui-ne": [
+//     { url: "https://…/1.jpg", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },
+//     { url: "https://…/2.jpg" },
+//   ],
+// ────────────────────────────────────────────────────────────────────────────
+const IMAGES: Record<string, ImageInput[]> = {
+  // Place
+  "binh-thuan": [],
+  "phan-thiet": [],
+
+  // Địa điểm (Spot)
+  "bai-bien-mui-ne": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVVLFiMOGrfcH3IL5QbghBD7ty4wjlxu80KkaJ", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
+  "doi-cat-bay-mui-ne": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVOcQgLKNlS9oC6u4I8lqYVhvJFnANpGZDfxky", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
+  "bau-trang": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVFQeJkN5pDvbxdNjE48eVyfrl2qSG5oOt3ksu", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
+  "suoi-tien-mui-ne": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVLTtEbU9lUriqpvaHYIV59KnXoBuy426ehsmg", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
+  "lang-chai-mui-ne": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbV47vP3DhjsBNSi21ZO0E6Qknf9K5aCAzPGhXv", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
+  "thap-po-sah-inu": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVn6VllskyNpVrswG2bXt7P5uIACShYzTBO4cQ", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
+  "hon-rom": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVIZuBizOJ3i9vQ1fIPbaTDodWErlMtRmUSn2j", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
+  "bai-da-ong-dia": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVnUQ9AOkyNpVrswG2bXt7P5uIACShYzTBO4cQ", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
+
+  // Hoạt động (Activity)
+  "truot-cat-mui-ne": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVrE9lesYb8jagp6cK5uSRW3FnfXEZDVh1xAqB", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
+  "luot-van-dieu-mui-ne": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbV8MLQRGSNtSa4RYZ1IFnoHwL8POAuJXU9lpqr", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
+  "jeep-binh-minh-doi-cat": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVwzBbByPfv7TtDnqG58WPEKwhlSVOiFgU1ZIQ", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
+  "tam-bien-mui-ne": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVtO2kvLa9DUqbFmsL3nowTu54dv7fryRz0GYe", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
+  "cheo-sup-kayak-mui-ne": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVC80sqWAb0IqpSx6Et5DlWkmrFgQJZdBeKYhU", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
+  "mo-to-nuoc-mui-ne": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVIFZSckOJ3i9vQ1fIPbaTDodWErlMtRmUSn2j", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
+  "tham-quan-thap-cham": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVXa7aoKriSgYjdfKV9N46zZEP0aCvqmulRbGy", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
+  "san-hoang-hon-phan-thiet": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbV7oEMwfcsduBOTVW6GbCrSo4ZJg8lncNqKxmR", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
+
+  // Quán ăn (Eatery)
+  "banh-can-cay-phuong": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVHOHsVwgtLGTBS2Zs017p36DzeKQXcnfw5yNm", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
+  "lau-tha-hong-ngoc": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbV0uC2gJ42IasfMBuQhmEv5CcVHDr7R9wnW8bg", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
+  "hai-san-bo-ke-24": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVF2tJSI5pDvbxdNjE48eVyfrl2qSG5oOt3ksu", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
+  "banh-xeo-ba-hai": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVtO2kvLa9DUqbFmsL3nowTu54dv7fryRz0GYe", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
+  "banh-canh-cha-ca-ba-ly": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVP2d9olRWz28SuVb46BiWcK9jXJPIfRHrTpa3", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
+  "rang-muc-cay-bang": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVDOM9EHV7y8JhmixqtcU0eVNuEYsBndZ1CokX", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
+  "hai-san-co-ni": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbV32sscNxMeYTmuqJL4cbBoxQnCyX7ArKj0NPv", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
+  "sandy-beach-cafe": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbV3brXfESxNIzSVdQsYLDi4gpfXl5Bjw0RKWoC", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
+
+  // Đặc sản (Specialty)
+  "banh-can-phan-thiet": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVHOHsVwgtLGTBS2Zs017p36DzeKQXcnfw5yNm", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
+  "lau-tha-phan-thiet": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbV0uC2gJ42IasfMBuQhmEv5CcVHDr7R9wnW8bg", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
+  "goi-ca-mai-phan-thiet": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVF2tJSI5pDvbxdNjE48eVyfrl2qSG5oOt3ksu", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
+  "nuoc-mam-phan-thiet": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVbFFxeLGtBO2eXE0oTNdl4aqLIKZ7y59rPzVQ", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
+  "thanh-long-binh-thuan": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVMMryv70xmWkuS4zvncQBOspdHe0rojq8wiaC", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
+  "rang-muc-phan-thiet": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVDOM9EHV7y8JhmixqtcU0eVNuEYsBndZ1CokX", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
+  "banh-canh-cha-ca-phan-thiet": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVP2d9olRWz28SuVb46BiWcK9jXJPIfRHrTpa3", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
+  "muc-mot-nang-phan-thiet": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVwxgIA6xPfv7TtDnqG58WPEKwhlSVOiFgU1ZI", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
+
+  // Lưu trú (Accommodation)
+  "anantara-mui-ne-resort": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbV88W20kNtSa4RYZ1IFnoHwL8POAuJXU9lpqre", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
+  "the-cliff-resort-mui-ne": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVKjSeN0eoDPNw8b4hMBxe3vjfX0JlqIyC7mio", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
+  "mui-ne-hills-homestay": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVIMyiaWOJ3i9vQ1fIPbaTDodWErlMtRmUSn2j", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
+  "khach-san-phan-thiet-center": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVnOIIS66kyNpVrswG2bXt7P5uIACShYzTBO4c", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
+  "sailing-club-resort-mui-ne": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVlwyNwz7KZuRxYfJ0sUTyC4mB3WAIvHNna9rE", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
+  "pandanus-resort-phan-thiet": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbV3brXfESxNIzSVdQsYLDi4gpfXl5Bjw0RKWoC", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
+  "mango-beach-hostel-mui-ne": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVGXK7LJpMeYTmuqJL4cbBoxQnCyX7ArKj0NPv", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
+  "villa-aria-mui-ne": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVrofNvlYb8jagp6cK5uSRW3FnfXEZDVh1xAqB", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
+};
 
 async function main() {
   // 1) Tỉnh Bình Thuận
@@ -56,7 +136,7 @@ async function main() {
       ...PUB,
     },
   });
-  await setCover({ placeId: binhThuan.id }, "binh-thuan", "Bình Thuận");
+  await setImages({ placeId: binhThuan.id }, IMAGES["binh-thuan"] ?? [], "Bình Thuận");
 
   // 2) Điểm đến Phan Thiết
   const phanThiet = await prisma.place.upsert({
@@ -69,14 +149,14 @@ async function main() {
       parentId: binhThuan.id,
       tagline: "Tạm rời xa nhịp sống vội vã để tận hưởng những ngày bình yên bên biển xanh, nắng vàng và làn gió mát lành.",
       description:
-        "Thành phố biển nổi tiếng với Mũi Né, những đồi cát đổi màu, làng chài rực rỡ và hải sản tươi ngon. Điểm đến lý tưởng cho nghỉ dưỡng và thể thao biển.",
+        "Phan Thiết là thành phố biển nổi tiếng của Bình Thuận, thu hút du khách bởi những bãi biển đẹp, đồi cát độc đáo và nền ẩm thực đậm chất miền biển. Từ những ngày nghỉ dưỡng thư thái bên biển Mũi Né đến hành trình khám phá làng chài, văn hóa địa phương và các thắng cảnh thiên nhiên, Phan Thiết mang đến nhiều trải nghiệm phù hợp cho mọi du khách. Với khí hậu nắng ấm quanh năm và vị trí thuận tiện từ TP.HCM, đây là một trong những điểm đến biển hấp dẫn hàng đầu Việt Nam.",
       provinceName: "Bình Thuận",
       tags: ["biển", "đồi cát", "resort", "hải sản"],
       isFeatured: true,
       ...PUB,
     },
   });
-  await setCover({ placeId: phanThiet.id }, "phan-thiet-mui-ne", "Phan Thiết");
+  await setImages({ placeId: phanThiet.id }, IMAGES["phan-thiet"] ?? [], "Phan Thiết");
 
   // 3) Spots
   const spots = [
@@ -168,7 +248,7 @@ async function main() {
       create: { slug, name, ...rest, placeId: phanThiet.id, ...PUB },
     });
     spotId[slug] = row.id;
-    await setCover({ spotId: row.id }, slug, name);
+    await setImages({ spotId: row.id }, IMAGES[slug] ?? [], name);
   }
 
   // 4) Activities (M:N tới Spot)
@@ -214,6 +294,50 @@ async function main() {
       description: "Thả mình trong làn nước ấm dọc các bãi biển Phan Thiết.",
       spots: ["bai-bien-mui-ne", "hon-rom", "bai-da-ong-dia"],
     },
+    {
+      slug: "cheo-sup-kayak-mui-ne",
+      name: "Chèo SUP & kayak",
+      category: ActivityCategory.water,
+      difficulty: ActivityDifficulty.easy,
+      durationText: "1–2 giờ",
+      seasonText: "Đẹp nhất sáng sớm, biển lặng",
+      description:
+        "Chèo SUP/kayak dọc bờ biển buổi sớm khi mặt nước phẳng lặng, ngắm bình minh trên biển.",
+      spots: ["hon-rom", "bai-bien-mui-ne"],
+    },
+    {
+      slug: "mo-to-nuoc-mui-ne",
+      name: "Mô tô nước & thể thao biển",
+      category: ActivityCategory.water,
+      difficulty: ActivityDifficulty.moderate,
+      durationText: "30–60 phút",
+      operatorName: "Dịch vụ thể thao biển tại bãi",
+      priceRange: PriceRange.moderate,
+      description:
+        "Lái mô tô nước, dù bay, chuối phao — những trò cảm giác mạnh ngay trên biển Mũi Né.",
+      spots: ["bai-bien-mui-ne", "hon-rom"],
+    },
+    {
+      slug: "tham-quan-thap-cham",
+      name: "Tham quan tháp Chăm",
+      category: ActivityCategory.culture,
+      difficulty: ActivityDifficulty.easy,
+      durationText: "Khoảng 1 giờ",
+      description:
+        "Khám phá kiến trúc Chăm cổ trên đồi Bà Nài và phóng tầm mắt ra cửa biển Phan Thiết.",
+      spots: ["thap-po-sah-inu"],
+    },
+    {
+      slug: "san-hoang-hon-phan-thiet",
+      name: "Săn hoàng hôn",
+      category: ActivityCategory.relax,
+      difficulty: ActivityDifficulty.easy,
+      durationText: "Cuối ngày",
+      seasonText: "Quanh năm",
+      description:
+        "Ngắm hoàng hôn rực rỡ buông xuống bãi đá, đồi cát và tháp cổ — khoảnh khắc lãng mạn nhất ngày.",
+      spots: ["bai-da-ong-dia", "doi-cat-bay-mui-ne", "thap-po-sah-inu"],
+    },
   ];
 
   for (const a of activities) {
@@ -231,7 +355,7 @@ async function main() {
         ...PUB,
       },
     });
-    await setCover({ activityId: row.id }, slug, name);
+    await setImages({ activityId: row.id }, IMAGES[slug] ?? [], name);
   }
 
   // 5) Eateries
@@ -267,6 +391,57 @@ async function main() {
       notice: "Rất đông vào cuối tuần — nên đến sớm.",
       description: "Khu hải sản bờ kè nhộn nhịp, đồ tươi, chế biến nhanh.",
     },
+    {
+      slug: "banh-xeo-ba-hai",
+      name: "Bánh xèo Bà Hai",
+      category: EateryCategory.streetfood,
+      meals: [Meal.snack, Meal.dinner],
+      priceRange: PriceRange.budget,
+      address: "Đường Tuyên Quang, Phan Thiết",
+      openingHours: "15:00 – 21:00",
+      description: "Bánh xèo mực, tôm đổ nóng giòn rụm, ăn kèm rau sống và nước mắm chua ngọt.",
+    },
+    {
+      slug: "banh-canh-cha-ca-ba-ly",
+      name: "Bánh canh chả cá Bà Lý",
+      category: EateryCategory.local,
+      meals: [Meal.breakfast, Meal.lunch],
+      priceRange: PriceRange.budget,
+      address: "Đường Kim Đồng, Phan Thiết",
+      openingHours: "6:00 – 12:00",
+      description: "Bánh canh chả cá dai ngọt, nước dùng đậm vị biển — món sáng quen thuộc của dân địa phương.",
+    },
+    {
+      slug: "rang-muc-cay-bang",
+      name: "Răng mực nướng Cây Bàng",
+      category: EateryCategory.streetfood,
+      meals: [Meal.snack, Meal.dinner],
+      priceRange: PriceRange.budget,
+      address: "Khu Cây Bàng, Phan Thiết",
+      openingHours: "16:00 – 22:00",
+      notice: "Hết sớm, nên đi trước 20h.",
+      description: "Răng mực nướng/chiên giòn chấm muối ớt xanh — món vặt 'gây nghiện' của giới trẻ.",
+    },
+    {
+      slug: "hai-san-co-ni",
+      name: "Hải sản Cô Nỉ",
+      category: EateryCategory.seafood,
+      meals: [Meal.lunch, Meal.dinner],
+      priceRange: PriceRange.moderate,
+      address: "Đường Huỳnh Thúc Kháng, Mũi Né",
+      openingHours: "10:00 – 22:00",
+      description: "Hải sản tươi sống chế biến theo yêu cầu, giá hợp lý, được khách địa phương ưa chuộng.",
+    },
+    {
+      slug: "sandy-beach-cafe",
+      name: "Sandy Beach Café",
+      category: EateryCategory.cafe,
+      meals: [Meal.breakfast, Meal.snack],
+      priceRange: PriceRange.moderate,
+      address: "Đường Nguyễn Đình Chiểu, Hàm Tiến, Mũi Né",
+      openingHours: "7:00 – 22:00",
+      description: "Quán cà phê sát biển, view sóng vỗ, hợp ngồi nhâm nhi buổi sáng hoặc chiều mát.",
+    },
   ];
 
   const eateryId: Record<string, string> = {};
@@ -278,7 +453,7 @@ async function main() {
       create: { slug, name, ...rest, placeId: phanThiet.id, ...PUB },
     });
     eateryId[slug] = row.id;
-    await setCover({ eateryId: row.id }, slug, name);
+    await setImages({ eateryId: row.id }, IMAGES[slug] ?? [], name);
   }
 
   // 6) Specialties (dish → M:N quán; product → whereToBuy)
@@ -324,6 +499,29 @@ async function main() {
       description: "Thủ phủ thanh long cả nước — trái to, ngọt, mua về làm quà.",
       whereToBuy: "Vựa thanh long ven QL1, chợ và siêu thị địa phương.",
     },
+    {
+      slug: "rang-muc-phan-thiet",
+      name: "Răng mực",
+      kind: SpecialtyKind.dish,
+      priceRange: PriceRange.budget,
+      description: "Phần sụn quanh răng mực nướng/chiên giòn, chấm muối ớt xanh — đặc sản ăn vặt nức tiếng.",
+      eateries: ["rang-muc-cay-bang"],
+    },
+    {
+      slug: "banh-canh-cha-ca-phan-thiet",
+      name: "Bánh canh chả cá",
+      kind: SpecialtyKind.dish,
+      priceRange: PriceRange.budget,
+      description: "Sợi bánh canh dai, chả cá ngọt, nước dùng nấu từ cá biển tươi — món sáng đặc trưng.",
+      eateries: ["banh-canh-cha-ca-ba-ly"],
+    },
+    {
+      slug: "muc-mot-nang-phan-thiet",
+      name: "Mực một nắng",
+      kind: SpecialtyKind.product,
+      description: "Mực tươi phơi một nắng, nướng lên ngọt đậm — món quà biển được ưa chuộng.",
+      whereToBuy: "Chợ Phan Thiết, làng chài Mũi Né và các cửa hàng đặc sản.",
+    },
   ];
 
   for (const sp of specialties) {
@@ -346,7 +544,7 @@ async function main() {
         ...PUB,
       },
     });
-    await setCover({ specialtyId: row.id }, slug, name);
+    await setImages({ specialtyId: row.id }, IMAGES[slug] ?? [], name);
   }
 
   // 7) Accommodations
@@ -406,6 +604,59 @@ async function main() {
         "Khách sạn trung tâm thành phố, tiện di chuyển tới chợ, bến cá và các điểm tham quan.",
       tags: ["khách sạn", "trung tâm", "tiện nghi"],
     },
+    {
+      slug: "sailing-club-resort-mui-ne",
+      name: "Sailing Club Resort Mũi Né",
+      category: AccommodationCategory.resort,
+      priceRange: PriceRange.premium,
+      address: "Đường Nguyễn Đình Chiểu, Hàm Tiến, Mũi Né",
+      lat: 10.9461,
+      lng: 108.2389,
+      phone: "0252 3847 440",
+      website: "https://sailingclubresortmuine.com",
+      description:
+        "Resort bên biển phong cách phóng khoáng, hồ bơi hướng biển và nhà hàng nổi tiếng.",
+      tags: ["resort", "biển", "hồ bơi"],
+    },
+    {
+      slug: "pandanus-resort-phan-thiet",
+      name: "Pandanus Resort",
+      category: AccommodationCategory.resort,
+      priceRange: PriceRange.premium,
+      address: "Đường Tiến Thành, Phan Thiết",
+      lat: 10.8895,
+      lng: 108.1456,
+      phone: "0252 3849 849",
+      description:
+        "Khu nghỉ rộng rãi nhiều cây xanh, bãi biển riêng yên tĩnh ở phía nam thành phố.",
+      tags: ["resort", "yên tĩnh", "bãi riêng"],
+    },
+    {
+      slug: "mango-beach-hostel-mui-ne",
+      name: "Mango Beach Hostel",
+      category: AccommodationCategory.hostel,
+      priceRange: PriceRange.budget,
+      address: "Đường Huỳnh Thúc Kháng, Mũi Né",
+      lat: 10.9505,
+      lng: 108.2876,
+      phone: "0908 765 432",
+      description:
+        "Hostel trẻ trung sát biển, phòng dorm giá rẻ, sân chung sôi động — hợp khách Tây ba lô.",
+      tags: ["hostel", "giá rẻ", "backpacker"],
+    },
+    {
+      slug: "villa-aria-mui-ne",
+      name: "Villa Aria Mũi Né",
+      category: AccommodationCategory.villa,
+      priceRange: PriceRange.luxury,
+      address: "Đường Nguyễn Đình Chiểu, Hàm Tiến, Mũi Né",
+      lat: 10.9438,
+      lng: 108.2301,
+      phone: "0252 3743 388",
+      description:
+        "Biệt thự boutique sát biển, không gian riêng tư, hồ bơi và bãi tắm ngay trước villa.",
+      tags: ["villa", "biển", "riêng tư"],
+    },
   ];
 
   for (const ac of accommodations) {
@@ -415,84 +666,11 @@ async function main() {
       update: { ...rest, placeId: phanThiet.id, ...PUB },
       create: { slug, name, ...rest, placeId: phanThiet.id, ...PUB },
     });
-    await setCover({ accommodationId: row.id }, slug, name);
-  }
-
-  // 8) Transport (inline trên trang Place; không có slug → reset theo placeId)
-  const transports = [
-    {
-      direction: TransportDirection.getTo,
-      mode: TransportMode.bus,
-      name: "Xe khách TP.HCM → Phan Thiết",
-      fromName: "TP. Hồ Chí Minh",
-      duration: "4 – 5 giờ",
-      distanceKm: 200,
-      priceFrom: 120000,
-      priceTo: 230000,
-      operatorName: "Phương Trang, Kumho, Tâm Hạnh…",
-      description:
-        "Xe giường nằm chạy liên tục trong ngày từ bến xe Miền Đông; nhiều nhà xe trả khách tận Mũi Né.",
-    },
-    {
-      direction: TransportDirection.getTo,
-      mode: TransportMode.train,
-      name: "Tàu hỏa Sài Gòn → Phan Thiết",
-      fromName: "Ga Sài Gòn",
-      duration: "~4 giờ",
-      distanceKm: 200,
-      priceFrom: 160000,
-      priceTo: 260000,
-      operatorName: "Đường sắt Việt Nam",
-      description:
-        "Tàu SPT đến ga Phan Thiết, từ đó đi taxi/xe ôm ~20 phút ra Mũi Né. Thư thái, ngắm cảnh dọc đường.",
-    },
-    {
-      direction: TransportDirection.getTo,
-      mode: TransportMode.car,
-      name: "Limousine TP.HCM → Mũi Né",
-      fromName: "TP. Hồ Chí Minh",
-      duration: "4 giờ",
-      distanceKm: 220,
-      priceFrom: 250000,
-      priceTo: 380000,
-      operatorName: "Các hãng limousine (Quê Hương, Phúc An…)",
-      description:
-        "Xe limousine 9–11 chỗ đón/trả tận nơi, nhanh và tiện cho nhóm nhỏ đi nghỉ dưỡng.",
-    },
-    {
-      direction: TransportDirection.getAround,
-      mode: TransportMode.motorbike,
-      name: "Thuê xe máy",
-      duration: "Theo ngày",
-      priceFrom: 120000,
-      priceTo: 180000,
-      description:
-        "Cách chủ động nhất để chạy dọc Mũi Né, ra Bàu Trắng, đồi cát; nhiều khách sạn/đại lý cho thuê theo ngày.",
-    },
-    {
-      direction: TransportDirection.getAround,
-      mode: TransportMode.taxi,
-      name: "Taxi & xe công nghệ",
-      description:
-        "Taxi Mai Linh, Phan Thiết và Grab phủ tốt trong nội thành; ra Mũi Né/Hòn Rơm nên đặt xe trọn cuốc hoặc thỏa giá trước.",
-    },
-  ];
-
-  await prisma.transport.deleteMany({ where: { placeId: phanThiet.id } });
-  let transportOrder = 0;
-  for (const t of transports) {
-    await prisma.transport.create({
-      data: {
-        ...t,
-        placeId: phanThiet.id,
-        order: transportOrder++,
-        ...PUB,
-      },
-    });
+    await setImages({ accommodationId: row.id }, IMAGES[slug] ?? [], name);
   }
 
   console.log(
-    `✓ Seed Phan Thiết xong: 1 tỉnh, 1 điểm đến, ${spots.length} địa điểm, ${activities.length} hoạt động, ${eateries.length} quán ăn, ${specialties.length} đặc sản, ${accommodations.length} lưu trú, ${transports.length} di chuyển.`,
+    `✓ Seed Phan Thiết xong: 1 tỉnh, 1 điểm đến, ${spots.length} địa điểm, ${activities.length} hoạt động, ${eateries.length} quán ăn, ${specialties.length} đặc sản, ${accommodations.length} lưu trú.`,
   );
 }
 

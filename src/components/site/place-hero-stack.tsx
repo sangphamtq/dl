@@ -95,7 +95,7 @@ export function PlaceHeroStack({
 
   return (
     <>
-      <div className="group/heroframe relative aspect-[16/10] w-full">
+      <div className="group/heroframe relative aspect-[3/2] w-full sm:aspect-[16/10] lg:aspect-[3/2]">
         <div className="relative h-full w-full">
           {images.map((img, i) => {
             const depth = (i - index + n) % n;

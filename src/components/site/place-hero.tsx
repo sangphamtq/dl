@@ -24,34 +24,33 @@ export function PlaceHero({
   stats: PlaceStat[];
 }) {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-primary/[0.07] via-accent/50 to-background">
-      {/* Lưới chấm mờ dần từ trên xuống */}
+    <section className="relative bg-gradient-to-b from-primary/[0.07] via-accent/50 to-background">
+      {/* Lớp họa tiết nền — clip riêng để không tràn, KHÔNG cắt shadow của ảnh */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10"
-        style={{
-          backgroundImage:
-            "radial-gradient(var(--border) 1.2px, transparent 1.2px)",
-          backgroundSize: "22px 22px",
-          maskImage:
-            "radial-gradient(ellipse 80% 60% at 50% 0%, #000 30%, transparent 100%)",
-          WebkitMaskImage:
-            "radial-gradient(ellipse 80% 60% at 50% 0%, #000 30%, transparent 100%)",
-        }}
-      />
-      {/* Vầng sáng primary — trên phải */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -right-32 -top-28 -z-10 size-[34rem] rounded-full bg-primary/10 blur-3xl"
-      />
-      {/* Vầng sáng cam — trái dưới */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -left-28 top-24 -z-10 size-[26rem] rounded-full bg-warm/[0.08] blur-3xl"
-      />
+        className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
+      >
+        {/* Lưới chấm mờ dần từ trên xuống */}
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage:
+              "radial-gradient(var(--border) 1.2px, transparent 1.2px)",
+            backgroundSize: "22px 22px",
+            maskImage:
+              "radial-gradient(ellipse 80% 60% at 50% 0%, #000 30%, transparent 100%)",
+            WebkitMaskImage:
+              "radial-gradient(ellipse 80% 60% at 50% 0%, #000 30%, transparent 100%)",
+          }}
+        />
+        {/* Vầng sáng primary — trên phải */}
+        <div className="absolute -right-32 -top-28 size-[34rem] rounded-full bg-primary/10 blur-3xl" />
+        {/* Vầng sáng cam — trái dưới */}
+        <div className="absolute -left-28 top-24 size-[26rem] rounded-full bg-warm/[0.08] blur-3xl" />
+      </div>
 
-      <div className="mx-auto max-w-6xl px-4 pb-12 pt-10 sm:px-6 sm:pb-16 sm:pt-14">
-        <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-12">
+      <div className="mx-auto max-w-6xl px-4 pb-12 pt-10 sm:px-6 sm:pb-6 sm:pt-6">
+        <div className="grid items-center gap-10 lg:grid-cols-[1fr_1.2fr] lg:gap-12">
           {/* Trái: chữ */}
           <div>
             {/* Tỉnh / nổi bật — ẩn với trang tỉnh */}
@@ -106,8 +105,11 @@ export function PlaceHero({
             )}
           </div>
 
-          {/* Phải: chồng ảnh */}
-          <PlaceHeroStack images={heroImages} />
+          {/* Phải: chồng ảnh — z cao hơn sticky tab (z-40) để shadow đè lên,
+              vẫn thấp hơn header (z-50). */}
+          <div className="relative z-[45]">
+            <PlaceHeroStack images={heroImages} />
+          </div>
         </div>
       </div>
     </section>

@@ -11,14 +11,6 @@ export type PlaceCounts = {
   accommodation: number;
 };
 
-// Thứ tự & nhãn ngắn các loại listing có trang danh sách ("xem tất cả").
-const LOAI_TABS: { key: keyof PlaceCounts; loai: string; label: string }[] = [
-  { key: "activity", loai: "hoat-dong", label: "Trải nghiệm" },
-  { key: "spot", loai: "dia-diem", label: "Tham quan" },
-  { key: "specialty", loai: "dac-san", label: "Đặc sản" },
-  { key: "eatery", loai: "quan-an", label: "Quán ăn" },
-  { key: "accommodation", loai: "luu-tru", label: "Nơi lưu trú" },
-];
 
 // Dữ liệu header dùng chung cho trang Place & trang danh sách listing.
 export async function getPlaceHeader(placeSlug: string) {
@@ -57,15 +49,18 @@ export async function getPlaceCounts(placeId: string): Promise<PlaceCounts> {
 export type PlaceTab = { href: string; label: string };
 
 // Tabs sticky: "Tổng quan" về trang Place + mỗi loại listing có dữ liệu → trang "xem tất cả".
+// Đặc sản + Quán ăn gộp chung thành một tab "Ẩm thực" (trang /am-thuc hiển thị cả hai).
 export function buildPlaceTabs(placeSlug: string, counts: PlaceCounts): PlaceTab[] {
-  const tabs: PlaceTab[] = [
-    { href: `/diem-den/${placeSlug}`, label: "Tổng quan" },
-  ];
-  for (const t of LOAI_TABS) {
-    if (counts[t.key] > 0) {
-      tabs.push({ href: `/diem-den/${placeSlug}/${t.loai}`, label: t.label });
-    }
-  }
+  const base = `/diem-den/${placeSlug}`;
+  const tabs: PlaceTab[] = [{ href: base, label: "Tổng quan" }];
+  const add = (loai: string, label: string) =>
+    tabs.push({ href: `${base}/${loai}`, label });
+
+  if (counts.activity > 0) add("hoat-dong", "Trải nghiệm");
+  if (counts.spot > 0) add("dia-diem", "Tham quan");
+  if (counts.specialty + counts.eatery > 0) add("am-thuc", "Ẩm thực");
+  if (counts.accommodation > 0) add("luu-tru", "Nơi lưu trú");
+
   return tabs;
 }
 
