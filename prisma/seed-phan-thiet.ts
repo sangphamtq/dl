@@ -67,7 +67,7 @@ async function main() {
       name: "Phan Thiết",
       kind: PlaceKind.destination,
       parentId: binhThuan.id,
-      tagline: "Thủ phủ resort, đồi cát & hải sản",
+      tagline: "Tạm rời xa nhịp sống vội vã để tận hưởng những ngày bình yên bên biển xanh, nắng vàng và làn gió mát lành.",
       description:
         "Thành phố biển nổi tiếng với Mũi Né, những đồi cát đổi màu, làng chài rực rỡ và hải sản tươi ngon. Điểm đến lý tưởng cho nghỉ dưỡng và thể thao biển.",
       provinceName: "Bình Thuận",
