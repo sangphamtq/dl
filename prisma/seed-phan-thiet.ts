@@ -8,9 +8,9 @@ import {
   ActivityDifficulty,
   EateryCategory,
   Meal,
-  SpecialtyKind,
   AccommodationCategory,
   PriceRange,
+  UserRole,
 } from "@/generated/prisma/enums";
 
 // Seed điểm đến Phan Thiết (Bình Thuận): Place + Spot + Activity + Eatery + Specialty.
@@ -139,17 +139,23 @@ async function main() {
   await setImages({ placeId: binhThuan.id }, IMAGES["binh-thuan"] ?? [], "Bình Thuận");
 
   // 2) Điểm đến Phan Thiết
+  // Câu đầu là lede (đoạn dẫn) — trang sẽ tách & phóng to.
+  const phanThietDesc =
+    "Nắng vàng, biển xanh và những đồi cát đổi màu — Phan Thiết là thành phố biển quyến rũ bậc nhất duyên hải Nam Trung Bộ. Từ những ngày nghỉ dưỡng thư thái bên biển Mũi Né đến hành trình khám phá làng chài, văn hóa địa phương và các thắng cảnh thiên nhiên, Phan Thiết mang đến nhiều trải nghiệm phù hợp cho mọi du khách. Với khí hậu nắng ấm quanh năm và vị trí thuận tiện từ TP.HCM, đây là một trong những điểm đến biển hấp dẫn hàng đầu Việt Nam.";
   const phanThiet = await prisma.place.upsert({
     where: { slug: "phan-thiet" },
-    update: { parentId: binhThuan.id },
+    update: {
+      parentId: binhThuan.id,
+      provinceName: "Bình Thuận",
+      description: phanThietDesc,
+    },
     create: {
       slug: "phan-thiet",
       name: "Phan Thiết",
       kind: PlaceKind.destination,
       parentId: binhThuan.id,
       tagline: "Tạm rời xa nhịp sống vội vã để tận hưởng những ngày bình yên bên biển xanh, nắng vàng và làn gió mát lành.",
-      description:
-        "Phan Thiết là thành phố biển nổi tiếng của Bình Thuận, thu hút du khách bởi những bãi biển đẹp, đồi cát độc đáo và nền ẩm thực đậm chất miền biển. Từ những ngày nghỉ dưỡng thư thái bên biển Mũi Né đến hành trình khám phá làng chài, văn hóa địa phương và các thắng cảnh thiên nhiên, Phan Thiết mang đến nhiều trải nghiệm phù hợp cho mọi du khách. Với khí hậu nắng ấm quanh năm và vị trí thuận tiện từ TP.HCM, đây là một trong những điểm đến biển hấp dẫn hàng đầu Việt Nam.",
+      description: phanThietDesc,
       provinceName: "Bình Thuận",
       tags: ["biển", "đồi cát", "resort", "hải sản"],
       isFeatured: true,
@@ -365,7 +371,6 @@ async function main() {
       name: "Bánh căn Cây Phượng",
       category: EateryCategory.local,
       meals: [Meal.breakfast, Meal.snack],
-      priceRange: PriceRange.budget,
       address: "Phan Thiết, Bình Thuận",
       openingHours: "6:00 – 11:00, 15:00 – 20:00",
       description: "Quán bánh căn lâu năm, nước chấm cá kho đậm đà đặc trưng.",
@@ -375,7 +380,6 @@ async function main() {
       name: "Lẩu thả Hồng Ngọc",
       category: EateryCategory.seafood,
       meals: [Meal.lunch, Meal.dinner],
-      priceRange: PriceRange.moderate,
       address: "Phan Thiết, Bình Thuận",
       openingHours: "10:00 – 21:00",
       description: "Chuyên lẩu thả — đặc sản trứ danh của vùng biển Phan Thiết.",
@@ -385,7 +389,6 @@ async function main() {
       name: "Hải sản Bờ Kè 24",
       category: EateryCategory.seafood,
       meals: [Meal.dinner],
-      priceRange: PriceRange.moderate,
       address: "Đường Phạm Văn Đồng, Phan Thiết",
       openingHours: "16:00 – 23:00",
       notice: "Rất đông vào cuối tuần — nên đến sớm.",
@@ -396,7 +399,6 @@ async function main() {
       name: "Bánh xèo Bà Hai",
       category: EateryCategory.streetfood,
       meals: [Meal.snack, Meal.dinner],
-      priceRange: PriceRange.budget,
       address: "Đường Tuyên Quang, Phan Thiết",
       openingHours: "15:00 – 21:00",
       description: "Bánh xèo mực, tôm đổ nóng giòn rụm, ăn kèm rau sống và nước mắm chua ngọt.",
@@ -406,7 +408,6 @@ async function main() {
       name: "Bánh canh chả cá Bà Lý",
       category: EateryCategory.local,
       meals: [Meal.breakfast, Meal.lunch],
-      priceRange: PriceRange.budget,
       address: "Đường Kim Đồng, Phan Thiết",
       openingHours: "6:00 – 12:00",
       description: "Bánh canh chả cá dai ngọt, nước dùng đậm vị biển — món sáng quen thuộc của dân địa phương.",
@@ -416,7 +417,6 @@ async function main() {
       name: "Răng mực nướng Cây Bàng",
       category: EateryCategory.streetfood,
       meals: [Meal.snack, Meal.dinner],
-      priceRange: PriceRange.budget,
       address: "Khu Cây Bàng, Phan Thiết",
       openingHours: "16:00 – 22:00",
       notice: "Hết sớm, nên đi trước 20h.",
@@ -427,7 +427,6 @@ async function main() {
       name: "Hải sản Cô Nỉ",
       category: EateryCategory.seafood,
       meals: [Meal.lunch, Meal.dinner],
-      priceRange: PriceRange.moderate,
       address: "Đường Huỳnh Thúc Kháng, Mũi Né",
       openingHours: "10:00 – 22:00",
       description: "Hải sản tươi sống chế biến theo yêu cầu, giá hợp lý, được khách địa phương ưa chuộng.",
@@ -437,7 +436,6 @@ async function main() {
       name: "Sandy Beach Café",
       category: EateryCategory.cafe,
       meals: [Meal.breakfast, Meal.snack],
-      priceRange: PriceRange.moderate,
       address: "Đường Nguyễn Đình Chiểu, Hàm Tiến, Mũi Né",
       openingHours: "7:00 – 22:00",
       description: "Quán cà phê sát biển, view sóng vỗ, hợp ngồi nhâm nhi buổi sáng hoặc chiều mát.",
@@ -456,21 +454,17 @@ async function main() {
     await setImages({ eateryId: row.id }, IMAGES[slug] ?? [], name);
   }
 
-  // 6) Specialties (dish → M:N quán; product → whereToBuy)
+  // 6) Specialties — đặc sản nên thử (liên kết quán nếu có)
   const specialties = [
     {
       slug: "banh-can-phan-thiet",
       name: "Bánh căn Phan Thiết",
-      kind: SpecialtyKind.dish,
-      priceRange: PriceRange.budget,
       description: "Bánh nướng khuôn đất, ăn kèm xíu mại, trứng và nước mắm cá kho.",
       eateries: ["banh-can-cay-phuong"],
     },
     {
       slug: "lau-tha-phan-thiet",
       name: "Lẩu thả",
-      kind: SpecialtyKind.dish,
-      priceRange: PriceRange.moderate,
       description:
         "Cá mai/cá suốt tươi cuốn cùng rau, bún, nước lèo — bày như bông hoa.",
       eateries: ["lau-tha-hong-ngoc", "hai-san-bo-ke-24"],
@@ -478,49 +472,36 @@ async function main() {
     {
       slug: "goi-ca-mai-phan-thiet",
       name: "Gỏi cá mai",
-      kind: SpecialtyKind.dish,
-      priceRange: PriceRange.budget,
       description: "Cá mai trộn gỏi chua ngọt, cuốn bánh tráng, chấm nước lèo sệt.",
       eateries: ["hai-san-bo-ke-24"],
     },
     {
       slug: "nuoc-mam-phan-thiet",
       name: "Nước mắm Phan Thiết",
-      kind: SpecialtyKind.product,
       description:
         "Nước mắm cá cơm ủ truyền thống, đậm đạm, là đặc sản quà nổi tiếng.",
-      whereToBuy:
-        "Các lò nước mắm Phú Hài, cửa hàng đặc sản và chợ Phan Thiết.",
     },
     {
       slug: "thanh-long-binh-thuan",
       name: "Thanh long Bình Thuận",
-      kind: SpecialtyKind.product,
       description: "Thủ phủ thanh long cả nước — trái to, ngọt, mua về làm quà.",
-      whereToBuy: "Vựa thanh long ven QL1, chợ và siêu thị địa phương.",
     },
     {
       slug: "rang-muc-phan-thiet",
       name: "Răng mực",
-      kind: SpecialtyKind.dish,
-      priceRange: PriceRange.budget,
       description: "Phần sụn quanh răng mực nướng/chiên giòn, chấm muối ớt xanh — đặc sản ăn vặt nức tiếng.",
       eateries: ["rang-muc-cay-bang"],
     },
     {
       slug: "banh-canh-cha-ca-phan-thiet",
       name: "Bánh canh chả cá",
-      kind: SpecialtyKind.dish,
-      priceRange: PriceRange.budget,
       description: "Sợi bánh canh dai, chả cá ngọt, nước dùng nấu từ cá biển tươi — món sáng đặc trưng.",
       eateries: ["banh-canh-cha-ca-ba-ly"],
     },
     {
       slug: "muc-mot-nang-phan-thiet",
       name: "Mực một nắng",
-      kind: SpecialtyKind.product,
       description: "Mực tươi phơi một nắng, nướng lên ngọt đậm — món quà biển được ưa chuộng.",
-      whereToBuy: "Chợ Phan Thiết, làng chài Mũi Né và các cửa hàng đặc sản.",
     },
   ];
 
@@ -553,7 +534,6 @@ async function main() {
       slug: "anantara-mui-ne-resort",
       name: "Anantara Mũi Né Resort",
       category: AccommodationCategory.resort,
-      priceRange: PriceRange.luxury,
       address: "Đường Nguyễn Đình Chiểu, Hàm Tiến, Mũi Né",
       lat: 10.9446,
       lng: 108.2412,
@@ -568,7 +548,6 @@ async function main() {
       slug: "the-cliff-resort-mui-ne",
       name: "The Cliff Resort & Residences",
       category: AccommodationCategory.resort,
-      priceRange: PriceRange.premium,
       address: "Khu phố 5, Phú Hài, Phan Thiết",
       lat: 10.9269,
       lng: 108.1659,
@@ -582,7 +561,6 @@ async function main() {
       slug: "mui-ne-hills-homestay",
       name: "Mũi Né Hills Homestay",
       category: AccommodationCategory.homestay,
-      priceRange: PriceRange.budget,
       address: "Đồi Hồng, Mũi Né, Phan Thiết",
       lat: 10.9512,
       lng: 108.2934,
@@ -595,7 +573,6 @@ async function main() {
       slug: "khach-san-phan-thiet-center",
       name: "Khách sạn Phan Thiết Center",
       category: AccommodationCategory.hotel,
-      priceRange: PriceRange.moderate,
       address: "Đường Tôn Đức Thắng, TP. Phan Thiết",
       lat: 10.9281,
       lng: 108.1019,
@@ -608,7 +585,6 @@ async function main() {
       slug: "sailing-club-resort-mui-ne",
       name: "Sailing Club Resort Mũi Né",
       category: AccommodationCategory.resort,
-      priceRange: PriceRange.premium,
       address: "Đường Nguyễn Đình Chiểu, Hàm Tiến, Mũi Né",
       lat: 10.9461,
       lng: 108.2389,
@@ -622,7 +598,6 @@ async function main() {
       slug: "pandanus-resort-phan-thiet",
       name: "Pandanus Resort",
       category: AccommodationCategory.resort,
-      priceRange: PriceRange.premium,
       address: "Đường Tiến Thành, Phan Thiết",
       lat: 10.8895,
       lng: 108.1456,
@@ -635,7 +610,6 @@ async function main() {
       slug: "mango-beach-hostel-mui-ne",
       name: "Mango Beach Hostel",
       category: AccommodationCategory.hostel,
-      priceRange: PriceRange.budget,
       address: "Đường Huỳnh Thúc Kháng, Mũi Né",
       lat: 10.9505,
       lng: 108.2876,
@@ -648,7 +622,6 @@ async function main() {
       slug: "villa-aria-mui-ne",
       name: "Villa Aria Mũi Né",
       category: AccommodationCategory.villa,
-      priceRange: PriceRange.luxury,
       address: "Đường Nguyễn Đình Chiểu, Hàm Tiến, Mũi Né",
       lat: 10.9438,
       lng: 108.2301,
@@ -669,8 +642,54 @@ async function main() {
     await setImages({ accommodationId: row.id }, IMAGES[slug] ?? [], name);
   }
 
+  // 8) Blog giới thiệu Phan Thiết (gắn PostRef → Place để hiện thẻ "Bài giới thiệu")
+  const author =
+    (await prisma.user.findFirst({
+      where: { role: { in: [UserRole.admin, UserRole.editor] } },
+      orderBy: { createdAt: "asc" },
+    })) ??
+    (await prisma.user.upsert({
+      where: { email: "seed@hanhtrinhviet.local" },
+      update: {},
+      create: {
+        email: "seed@hanhtrinhviet.local",
+        name: "Hành Trình Việt",
+        role: UserRole.editor,
+      },
+    }));
+
+  const post = await prisma.post.upsert({
+    where: { slug: "kham-pha-phan-thiet" },
+    update: { authorId: author.id, ...PUB },
+    create: {
+      slug: "kham-pha-phan-thiet",
+      title: "Khám phá Phan Thiết: thành phố của biển, cát và nắng",
+      excerpt:
+        "Cẩm nang ngắn gọn về Phan Thiết — nên đi mùa nào, chơi gì, ăn gì và đi lại ra sao.",
+      category: "cam-nang",
+      tags: ["phan-thiet", "mui-ne", "biển", "cẩm nang"],
+      authorId: author.id,
+      isFeatured: true,
+      content: [
+        "<p>Phan Thiết là thành phố biển của tỉnh Bình Thuận, nổi tiếng với bãi biển Mũi Né, những đồi cát đổi màu và nền ẩm thực đậm vị miền biển. Chỉ cách TP.HCM khoảng 200km, đây là điểm đến quen thuộc cho những kỳ nghỉ cuối tuần.</p>",
+        "<h2>Nên đi khi nào?</h2>",
+        "<p>Đẹp nhất là khoảng tháng 11 đến tháng 4, trời khô ráo, nắng đẹp, thích hợp tắm biển và chơi các môn thể thao trên cát. Mùa gió (tháng 11–3) cũng là lúc Mũi Né hút dân lướt ván diều khắp nơi đổ về.</p>",
+        "<h2>Chơi gì ở Phan Thiết?</h2>",
+        "<p>Đừng bỏ lỡ bình minh trên Đồi Cát Bay, trượt cát ở Bàu Trắng, dạo Suối Tiên và ghé làng chài Mũi Né lúc sáng sớm. Người thích văn hóa có thể thăm tháp Chăm Po Sah Inư cổ kính nhìn ra cửa biển.</p>",
+        "<h2>Ăn gì?</h2>",
+        "<p>Hải sản tươi là điều hiển nhiên, nhưng hãy thử thêm lẩu thả, bánh căn, gỏi cá mai và món răng mực nướng trứ danh. Mua nước mắm hoặc thanh long về làm quà cũng rất hợp.</p>",
+        "<p>Với khí hậu nắng ấm quanh năm và quãng đường di chuyển ngắn, Phan Thiết luôn là lựa chọn dễ chịu cho một chuyến đi biển 2–3 ngày.</p>",
+      ].join(""),
+      ...PUB,
+    },
+  });
+  await prisma.postRef.deleteMany({ where: { postId: post.id } });
+  await prisma.postRef.create({
+    data: { postId: post.id, placeId: phanThiet.id },
+  });
+
   console.log(
-    `✓ Seed Phan Thiết xong: 1 tỉnh, 1 điểm đến, ${spots.length} địa điểm, ${activities.length} hoạt động, ${eateries.length} quán ăn, ${specialties.length} đặc sản, ${accommodations.length} lưu trú.`,
+    `✓ Seed Phan Thiết xong: 1 tỉnh, 1 điểm đến, ${spots.length} địa điểm, ${activities.length} hoạt động, ${eateries.length} quán ăn, ${specialties.length} đặc sản, ${accommodations.length} lưu trú, 1 bài blog.`,
   );
 }
 

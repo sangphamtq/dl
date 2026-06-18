@@ -8,14 +8,12 @@ import {
   Navigation,
   Clock,
   Banknote,
-  Sparkles,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { coverUrl } from "@/lib/place-image";
 import {
   SPOT_CATEGORY_LABELS,
   ACCOMMODATION_CATEGORY_LABELS,
-  PRICE_LABELS,
   label,
 } from "@/lib/listing-labels";
 import { parseTicketTiers, formatVnd } from "@/lib/tickets";
@@ -24,6 +22,8 @@ import { SiteFooter } from "@/components/site/site-footer";
 import { RelatedPosts } from "@/components/site/related-posts";
 import { isStaffViewer } from "@/lib/preview";
 import { PlaceCard } from "@/components/site/place-card";
+import { ListingCard } from "@/components/site/listing-card";
+import { Rail } from "@/components/site/rail";
 import { PlaceViewTracker } from "@/components/site/place-view-tracker";
 import { type HeroImage } from "@/components/site/place-hero-stack";
 import { PlaceHero } from "@/components/site/place-hero";
@@ -142,8 +142,6 @@ export default async function PlaceDetailPage({
         select: {
           slug: true,
           name: true,
-          kind: true,
-          priceRange: true,
           images: listingImages,
         },
       },
@@ -155,7 +153,7 @@ export default async function PlaceDetailPage({
           slug: true,
           name: true,
           category: true,
-          priceRange: true,
+          description: true,
           images: listingImages,
         },
       },
@@ -182,6 +180,17 @@ export default async function PlaceDetailPage({
   const stats = buildPlaceStats(place.viewCount, counts);
   const tabs = buildPlaceTabs(place.slug, counts);
 
+  // Bài giới thiệu: post (đã xuất bản) nổi bật/mới nhất gắn với điểm đến này.
+  const introPost = await prisma.post.findFirst({
+    where: { status: "published", refs: { some: { placeId: place.id } } },
+    orderBy: [{ isFeatured: "desc" }, { publishedAt: "desc" }],
+    select: {
+      slug: true,
+      title: true,
+      images: { where: { isCover: true }, take: 1, select: { url: true, isCover: true } },
+    },
+  });
+
   const isProvince = place.kind === "province";
   // Hero: ảnh của điểm đến trước, rồi nối ảnh bìa các "địa điểm con"
   // (điểm đến con nếu là tỉnh + spot), chỉ lấy ảnh thật, khử trùng URL.
@@ -190,10 +199,26 @@ export default async function PlaceDetailPage({
     alt: i.alt,
     caption: i.caption,
   }));
-  const childCovers: HeroImage[] = [...place.children, ...place.spots]
-    .map((c) => ({ cover: c.images[0], name: c.name }))
+  // Ảnh bìa các "địa điểm con" — caption = tên, click sang đúng trang địa điểm đó.
+  const childCovers: HeroImage[] = [
+    ...place.children.map((c) => ({
+      cover: c.images[0],
+      name: c.name,
+      href: `/diem-den/${c.slug}`,
+    })),
+    ...place.spots.map((s) => ({
+      cover: s.images[0],
+      name: s.name,
+      href: `/dia-diem/${s.slug}`,
+    })),
+  ]
     .filter((c) => c.cover?.url)
-    .map((c) => ({ url: c.cover!.url, alt: c.name, caption: c.name }));
+    .map((c) => ({
+      url: c.cover!.url,
+      alt: c.name,
+      caption: c.name,
+      href: c.href,
+    }));
   const seenUrls = new Set(heroImages.map((i) => i.url));
   for (const c of childCovers) {
     if (!seenUrls.has(c.url)) {
@@ -210,37 +235,103 @@ export default async function PlaceDetailPage({
 
   const showChildren = isProvince && place.children.length > 0;
 
+  // Đánh số section theo thứ tự xuất hiện (mục nào có dữ liệu mới được tính).
+  const sectionNum: Record<string, string> = {};
+  let nseq = 0;
+  const numFor = (present: boolean, key: string) => {
+    if (present) sectionNum[key] = String(++nseq).padStart(2, "0");
+  };
+  numFor(showChildren, "children");
+  numFor(place.activities.length > 0, "activities");
+  numFor(place.spots.length > 0, "spots");
+  numFor(place.specialties.length > 0, "specialties");
+  numFor(place.accommodations.length > 0, "accommodations");
+  numFor(place.transports.length > 0, "transports");
+
+
   return (
     <div className="flex flex-1 flex-col">
       <PlaceViewTracker placeId={place.id} />
       <SiteHeader />
 
       <main className="flex-1">
-        <PlaceHero place={place} heroImages={heroImages} stats={stats} />
+        <PlaceHero
+          place={place}
+          heroImages={heroImages}
+          stats={stats}
+          back={{ href: "/diem-den", label: "Điểm đến" }}
+        />
 
         {/* Thanh tab: Tổng quan + xem tất cả từng listing */}
         <PlaceTabs items={tabs} />
 
-        <div className="mx-auto max-w-6xl space-y-20 px-4 py-14 sm:px-6 sm:py-20">
-          {/* Tổng quan */}
+        <div className="mx-auto max-w-6xl divide-y divide-border/60 px-4 py-14 sm:px-6 sm:py-20">
+          {/* Đôi nét */}
           {place.description && (
-            <section className="max-w-3xl">
-              <Eyebrow num="00" text={`Đôi nét về ${place.name}`} />
-              <p className="mt-5 whitespace-pre-line text-lg leading-8 text-foreground/90">
-                {place.description}
+            <section id="doi-net" className="scroll-mt-32 py-10 first:pt-0 last:pb-0">
+              <p className="text-xs font-semibold uppercase tracking-widest text-primary">
+                Giới thiệu
               </p>
+              <div className="mt-5 grid gap-8 lg:grid-cols-[1fr_16rem] lg:gap-14">
+                <div className="max-w-prose">
+                  <p className="whitespace-pre-line leading-8 text-foreground/90">
+                    {place.description}
+                  </p>
+                  {place.tags.length > 0 && (
+                    <div className="mt-5 flex flex-wrap gap-1.5">
+                      {place.tags.map((t) => (
+                        <span
+                          key={t}
+                          className="rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground"
+                        >
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {introPost && (
+                    <Link
+                      href={`/blog/${introPost.slug}`}
+                      className="group mt-6 inline-flex items-center gap-3 rounded-xl border border-border/60 bg-card p-2 pr-4 text-sm shadow-sm shadow-black/5 transition-all hover:border-primary/40 hover:shadow-md"
+                    >
+                      <span className="relative size-11 shrink-0 overflow-hidden rounded-lg bg-muted">
+                        <Image
+                          src={coverUrl(introPost.images, introPost.slug, 96, 96)}
+                          alt=""
+                          fill
+                          sizes="44px"
+                          className="object-cover"
+                        />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-xs text-muted-foreground">
+                          Bài giới thiệu
+                        </span>
+                        <span className="block truncate font-medium">
+                          {introPost.title}
+                        </span>
+                      </span>
+                      <ChevronRight
+                        className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary"
+                        aria-hidden
+                      />
+                    </Link>
+                  )}
+                </div>
+                <QuickInfo />
+              </div>
             </section>
           )}
 
-          {/* Điểm đến con (chỉ tỉnh) */}
+          {/* Điểm đến con (chỉ tỉnh) — lưới (là Place, cấp khác) */}
           {showChildren && (
-            <section id="diem-den-con" className="scroll-mt-32">
+            <section id="diem-den-con" className="scroll-mt-32 py-10 first:pt-0 last:pb-0">
               <SectionHeading
-                num="01"
+                num={sectionNum.children}
                 eyebrow="Điểm đến"
                 title={`Điểm đến tại ${place.name}`}
               />
-              <div className="mt-7 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
                 {place.children.map((c) => (
                   <PlaceCard key={c.slug} place={c} />
                 ))}
@@ -248,169 +339,123 @@ export default async function PlaceDetailPage({
             </section>
           )}
 
-          {/* Trải nghiệm */}
+          {/* Trải nghiệm — rail cuộn ngang */}
           {place.activities.length > 0 && (
-            <section id="trai-nghiem" className="scroll-mt-32">
+            <section id="trai-nghiem" className="scroll-mt-32 py-10 first:pt-0 last:pb-0">
               <SectionHeading
-                num={showChildren ? "02" : "01"}
+                num={sectionNum.activities}
                 eyebrow="Trải nghiệm"
                 title="Trải nghiệm không thể bỏ lỡ"
                 description="Từ mạo hiểm gây cấn đến thư giãn nhẹ nhàng — chọn trải nghiệm hợp gu bạn."
                 href={`/diem-den/${place.slug}/hoat-dong`}
+                count={counts.activity}
               />
-              <div className="mt-7 grid grid-cols-1 gap-5 lg:grid-cols-2">
-                {place.activities.map((a) => {
-                  const badges = [
-                    a.durationText,
-                    activityPriceBadge(a.ticketFree, a.ticketTiers),
-                  ].filter(Boolean) as string[];
-                  return (
-                    <HRow
-                      key={a.slug}
-                      href={`/hoat-dong/${a.slug}`}
-                      name={a.name}
-                      slug={a.slug}
-                      images={a.images}
-                      description={a.description}
-                      badges={badges}
-                      cta="Khám phá"
-                    />
-                  );
-                })}
-              </div>
+              <Rail itemClassName="basis-1/2 sm:basis-1/3 lg:basis-1/4">
+                {place.activities.map((a) => (
+                  <ListingCard
+                    key={a.slug}
+                    href={`/hoat-dong/${a.slug}`}
+                    name={a.name}
+                    slug={a.slug}
+                    images={a.images}
+                    subtitle={a.description}
+                    meta={a.durationText ? [a.durationText] : []}
+                    price={activityPriceBadge(a.ticketFree, a.ticketTiers)}
+                  />
+                ))}
+              </Rail>
             </section>
           )}
 
-          {/* Tham quan (Spot) */}
+          {/* Tham quan (Spot) — rail */}
           {place.spots.length > 0 && (
-            <section id="tham-quan" className="scroll-mt-32">
+            <section id="tham-quan" className="scroll-mt-32 py-10 first:pt-0 last:pb-0">
               <SectionHeading
-                num={showChildren ? "03" : "02"}
+                num={sectionNum.spots}
                 eyebrow="Tham quan"
                 title="Địa điểm đáng ghé"
-                description="Hàng động kỳ ảo, đảo đá vịnh ngọc, di tích lịch sử mảnh ghép của bạn."
+                description="Hang động kỳ ảo, đảo đá vịnh ngọc, di tích lịch sử — mảnh ghép của bạn."
                 href={`/diem-den/${place.slug}/dia-diem`}
+                count={counts.spot}
               />
-              <div className="mt-7 grid grid-cols-1 gap-5 lg:grid-cols-2">
-                {place.spots.map((s) => {
-                  const badges = [
-                    s.category ? label(SPOT_CATEGORY_LABELS, s.category) : null,
-                    s.tags[0] ?? null,
-                  ].filter(Boolean) as string[];
-                  return (
-                    <HRow
-                      key={s.slug}
-                      href={`/dia-diem/${s.slug}`}
-                      name={s.name}
-                      slug={s.slug}
-                      images={s.images}
-                      description={s.description}
-                      badges={badges}
-                      cta="Xem chi tiết"
-                    />
-                  );
-                })}
-              </div>
+              <Rail itemClassName="basis-1/2 sm:basis-1/3 lg:basis-1/4">
+                {place.spots.map((s) => (
+                  <ListingCard
+                    key={s.slug}
+                    href={`/dia-diem/${s.slug}`}
+                    name={s.name}
+                    slug={s.slug}
+                    images={s.images}
+                    subtitle={s.description}
+                    tag={s.category ? label(SPOT_CATEGORY_LABELS, s.category) : null}
+                    meta={s.tags[0] ? [s.tags[0]] : []}
+                  />
+                ))}
+              </Rail>
             </section>
           )}
 
-          {/* Ẩm thực (đặc sản) */}
+          {/* Ẩm thực (đặc sản) — rail card nhỏ */}
           {place.specialties.length > 0 && (
-            <section id="am-thuc" className="scroll-mt-32">
+            <section id="am-thuc" className="scroll-mt-32 py-10 first:pt-0 last:pb-0">
               <SectionHeading
-                num={showChildren ? "04" : "03"}
+                num={sectionNum.specialties}
                 eyebrow="Ẩm thực"
                 title="Đặc sản nên thử"
                 description="Hương vị bản địa khó quên — gợi ý món & nơi thưởng thức."
                 href={`/diem-den/${place.slug}/am-thuc`}
+                count={counts.specialty + counts.eatery}
               />
-              <div className="mt-7 grid grid-cols-2 gap-5 lg:grid-cols-4">
+              <Rail itemClassName="basis-1/3 sm:basis-1/4 lg:basis-1/6">
                 {place.specialties.map((sp) => (
-                  <Link key={sp.slug} href={`/dac-san/${sp.slug}`} className="group block">
-                    <div className="relative aspect-square overflow-hidden rounded-2xl bg-muted shadow-sm shadow-black/5 transition-shadow group-hover:shadow-md">
-                      <Image
-                        src={coverUrl(sp.images, sp.slug)}
-                        alt={sp.name}
-                        fill
-                        sizes="(min-width: 1024px) 25vw, 50vw"
-                        className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                      />
-                      <span className="absolute left-2 top-2 rounded-full bg-background/90 px-2.5 py-1 text-xs font-medium shadow-sm backdrop-blur">
-                        {sp.kind === "product" ? "Sản vật / quà" : "Món ăn"}
-                      </span>
-                    </div>
-                    <h3 className="mt-3 font-semibold tracking-tight line-clamp-1">
-                      {sp.name}
-                    </h3>
-                    {sp.priceRange && (
-                      <p className="mt-0.5 text-sm font-semibold text-primary">
-                        {label(PRICE_LABELS, sp.priceRange)}
-                      </p>
-                    )}
-                  </Link>
+                  <ListingCard
+                    key={sp.slug}
+                    href={`/dac-san/${sp.slug}`}
+                    name={sp.name}
+                    slug={sp.slug}
+                    images={sp.images}
+                  />
                 ))}
-              </div>
+              </Rail>
             </section>
           )}
 
-          {/* Lưu trú */}
+          {/* Lưu trú — rail */}
           {place.accommodations.length > 0 && (
-            <section id="luu-tru" className="scroll-mt-32">
+            <section id="luu-tru" className="scroll-mt-32 py-10 first:pt-0 last:pb-0">
               <SectionHeading
-                num={showChildren ? "05" : "04"}
+                num={sectionNum.accommodations}
                 eyebrow="Lưu trú"
                 title="Chỗ nghỉ gợi ý"
                 description="Resort sang trọng hay homestay ấm cúng — chọn nơi dừng chân hợp túi tiền."
                 href={`/diem-den/${place.slug}/luu-tru`}
+                count={counts.accommodation}
               />
-              <div className="mt-7 grid grid-cols-2 gap-5 lg:grid-cols-4">
+              <Rail itemClassName="basis-1/2 sm:basis-1/3 lg:basis-1/4">
                 {place.accommodations.map((ac) => (
-                  <Link key={ac.slug} href={`/luu-tru/${ac.slug}`} className="group block">
-                    <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-muted shadow-sm shadow-black/5 transition-shadow group-hover:shadow-md">
-                      <Image
-                        src={coverUrl(ac.images, ac.slug)}
-                        alt={ac.name}
-                        fill
-                        sizes="(min-width: 1024px) 25vw, 50vw"
-                        className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                      />
-                      {ac.category && (
-                        <span className="absolute left-2 top-2 rounded-full bg-background/90 px-2.5 py-1 text-xs font-medium shadow-sm backdrop-blur">
-                          {label(ACCOMMODATION_CATEGORY_LABELS, ac.category)}
-                        </span>
-                      )}
-                    </div>
-                    <h3 className="mt-3 font-semibold tracking-tight line-clamp-1">
-                      {ac.name}
-                    </h3>
-                    {ac.priceRange && (
-                      <p className="mt-0.5 text-sm font-semibold text-primary">
-                        {label(PRICE_LABELS, ac.priceRange)}
-                      </p>
-                    )}
-                  </Link>
+                  <ListingCard
+                    key={ac.slug}
+                    href={`/luu-tru/${ac.slug}`}
+                    name={ac.name}
+                    slug={ac.slug}
+                    images={ac.images}
+                    subtitle={ac.description}
+                    tag={ac.category ? label(ACCOMMODATION_CATEGORY_LABELS, ac.category) : null}
+                  />
                 ))}
-              </div>
+              </Rail>
             </section>
           )}
 
-          {/* Di chuyển */}
+          {/* Di chuyển — lưới (hướng dẫn, không phải rail) */}
           {place.transports.length > 0 && (
-            <section id="di-chuyen" className="scroll-mt-32">
+            <section id="di-chuyen" className="scroll-mt-32 py-10 first:pt-0 last:pb-0">
               <SectionHeading
-                num={String(
-                  [
-                    showChildren,
-                    place.activities.length > 0,
-                    place.spots.length > 0,
-                    place.specialties.length > 0,
-                    place.accommodations.length > 0,
-                  ].filter(Boolean).length + 1,
-                ).padStart(2, "0")}
+                num={sectionNum.transports}
                 eyebrow="Di chuyển"
                 title="Đi lại thế nào?"
               />
-              <div className="mt-7 grid grid-cols-1 gap-6 lg:grid-cols-2">
+              <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
                 {getTo.length > 0 && (
                   <TransportGroup title="Đến nơi" icon={PlaneLanding} items={getTo} />
                 )}
@@ -435,50 +480,81 @@ export default async function PlaceDetailPage({
   );
 }
 
-/* ── Eyebrow + tiêu đề section ─────────────────────────────────── */
-function Eyebrow({ num, text }: { num: string; text: string }) {
+
+/* ── Bảng "Trước khi đi" cạnh đoạn Giới thiệu ────────────────────── */
+// TODO: tạm để cứng cho preview — sau bổ sung field vào Place (bestSeason,
+// idealDays, weather, distanceText, budgetText) rồi đọc từ DB.
+function QuickInfo() {
+  const facts = [
+    { label: "Thời điểm đẹp", value: "Tháng 11 – tháng 4" },
+    { label: "Nên đi", value: "2 – 3 ngày" },
+    { label: "Thời tiết", value: "Nắng ấm, khô ráo" },
+    { label: "Cách TP.HCM", value: "≈ 200 km" },
+    { label: "Chi phí / ngày", value: "1 – 2 triệu" },
+  ];
+
   return (
-    <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-primary">
-      <span className="text-muted-foreground/50">{num}</span>
-      <Sparkles className="size-3.5" aria-hidden />
-      {text}
-    </p>
+    <aside className="lg:sticky lg:top-32 lg:self-start">
+      <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+        Trước khi đi
+      </p>
+      <dl className="mt-3 divide-y divide-border/60 border-y border-border/60">
+        {facts.map((f) => (
+          <div
+            key={f.label}
+            className="flex items-baseline justify-between gap-4 py-3"
+          >
+            <dt className="text-sm text-muted-foreground">{f.label}</dt>
+            <dd className="text-right text-sm font-semibold tracking-tight">
+              {f.value}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </aside>
   );
 }
 
+/* ── Tiêu đề section ────────────────────────────────────────────── */
 function SectionHeading({
   num,
   eyebrow,
   title,
   description,
   href,
+  count,
 }: {
   num: string;
   eyebrow: string;
   title: string;
   description?: string;
   href?: string;
+  count?: number;
 }) {
   return (
     <>
       <div className="flex items-end justify-between gap-4">
         <div>
-          <p className="flex items-center gap-2.5 text-xs font-semibold uppercase tracking-widest text-primary">
+          <p className="flex items-center gap-2.5 text-xs font-semibold uppercase tracking-wide text-primary">
             <span className="grid size-6 place-items-center rounded-full bg-primary/10 text-[10px] tabular-nums">
               {num}
             </span>
             {eyebrow}
           </p>
-          <h2 className="mt-3 font-display text-2xl font-bold tracking-tight sm:text-3xl">
+          <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
             {title}
           </h2>
         </div>
         {href && (
           <Link
             href={href}
-            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/10 px-3.5 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-primary/15"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-primary/10 px-3.5 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-primary/15"
           >
-            Xem tất cả <ChevronRight className="size-4" aria-hidden />
+            Xem tất cả
+            {count != null && (
+              <span className="tabular-nums text-primary/70">({count})</span>
+            )}
+            <ChevronRight className="size-4" aria-hidden />
           </Link>
         )}
       </div>
@@ -486,69 +562,6 @@ function SectionHeading({
         <p className="mt-2 max-w-2xl text-muted-foreground">{description}</p>
       )}
     </>
-  );
-}
-
-/* ── Card ngang (trải nghiệm / địa điểm) ──────────────────────── */
-function HRow({
-  href,
-  name,
-  slug,
-  images,
-  description,
-  badges,
-  cta,
-}: {
-  href: string;
-  name: string;
-  slug: string;
-  images: { url: string; isCover: boolean }[];
-  description: string | null;
-  badges: string[];
-  cta: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className="group flex gap-4 rounded-2xl bg-card p-3 ring-1 ring-border/50 transition-all duration-200 hover:shadow-md hover:shadow-black/5 hover:ring-border"
-    >
-      <div className="relative aspect-square w-28 shrink-0 overflow-hidden rounded-xl bg-muted sm:w-36">
-        <Image
-          src={coverUrl(images, slug)}
-          alt={name}
-          fill
-          sizes="144px"
-          className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-        />
-      </div>
-      <div className="flex min-w-0 flex-1 flex-col py-0.5">
-        {badges.length > 0 && (
-          <div className="flex flex-wrap items-center gap-1.5">
-            {badges.map((b, i) => (
-              <span
-                key={i}
-                className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
-              >
-                {b}
-              </span>
-            ))}
-          </div>
-        )}
-        <h3 className="mt-1.5 font-semibold tracking-tight line-clamp-1">{name}</h3>
-        {description && (
-          <p className="mt-0.5 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
-            {description}
-          </p>
-        )}
-        <span className="mt-auto inline-flex items-center gap-1 pt-2 text-sm font-medium text-primary">
-          {cta}{" "}
-          <ChevronRight
-            className="size-4 transition-transform group-hover:translate-x-0.5"
-            aria-hidden
-          />
-        </span>
-      </div>
-    </Link>
   );
 }
 

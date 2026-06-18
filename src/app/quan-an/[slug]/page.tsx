@@ -5,7 +5,6 @@ import {
   ChevronRight,
   MapPin,
   Clock,
-  Banknote,
   UtensilsCrossed,
   TriangleAlert,
   ExternalLink,
@@ -15,7 +14,6 @@ import { coverUrl } from "@/lib/place-image";
 import {
   EATERY_CATEGORY_LABELS,
   MEAL_LABELS,
-  PRICE_LABELS,
   label,
 } from "@/lib/listing-labels";
 import { SiteHeader } from "@/components/site/site-header";
@@ -63,7 +61,6 @@ export default async function EateryPublicPage({
       openingHours: true,
       website: true,
       bookingUrl: true,
-      priceRange: true,
       meals: true,
       notice: true,
       tags: true,
@@ -96,7 +93,6 @@ export default async function EateryPublicPage({
     .map((m) => label(MEAL_LABELS, m))
     .filter(Boolean) as string[];
   const facts = [
-    { icon: Banknote, label: "Mức giá", value: label(PRICE_LABELS, eatery.priceRange) },
     { icon: Clock, label: "Giờ mở cửa", value: eatery.openingHours },
     { icon: UtensilsCrossed, label: "Bữa", value: mealLabels.join(", ") || null },
     { icon: MapPin, label: "Địa chỉ", value: eatery.address },

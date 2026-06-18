@@ -33,7 +33,6 @@ export default async function EditAccommodationPage({
         phone: true,
         website: true,
         bookingUrl: true,
-        priceRange: true,
         tags: true,
       },
     }),
@@ -59,7 +58,6 @@ export default async function EditAccommodationPage({
     phone: acc.phone ?? "",
     website: acc.website ?? "",
     bookingUrl: acc.bookingUrl ?? "",
-    priceRange: acc.priceRange ?? "",
     tags: acc.tags.join(", "),
   };
 

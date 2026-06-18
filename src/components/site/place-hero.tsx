@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MapPin, Star } from "lucide-react";
+import { ChevronLeft, MapPin, Star } from "lucide-react";
 import { PlaceHeroStack, type HeroImage } from "@/components/site/place-hero-stack";
 import type { PlaceStat } from "@/lib/place-meta";
 
@@ -14,14 +14,17 @@ type PlaceHeroData = {
 };
 
 // Hero dùng chung cho trang chi tiết điểm đến & trang danh sách listing.
+// back: link "quay lại" do từng trang truyền vào (danh sách điểm đến / trang điểm đến).
 export function PlaceHero({
   place,
   heroImages,
   stats,
+  back,
 }: {
   place: PlaceHeroData;
   heroImages: HeroImage[];
   stats: PlaceStat[];
+  back?: { href: string; label: string };
 }) {
   return (
     <section className="relative bg-gradient-to-b from-primary/[0.07] via-accent/50 to-background">
@@ -50,27 +53,34 @@ export function PlaceHero({
       </div>
 
       <div className="mx-auto max-w-6xl px-4 pb-12 pt-10 sm:px-6 sm:pb-6 sm:pt-6">
-        <div className="grid items-center gap-10 lg:grid-cols-[1fr_1.2fr] lg:gap-12">
+        <div className="grid items-center gap-10 lg:grid-cols-[1fr_1.4fr] lg:gap-12">
           {/* Trái: chữ */}
           <div>
-            {/* Tỉnh / nổi bật — ẩn với trang tỉnh */}
-            {place.kind !== "province" && (
+            {back && (
+              <Link
+                href={back.href}
+                className="group mb-5 inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <ChevronLeft
+                  className="size-4 transition-transform group-hover:-translate-x-0.5"
+                  aria-hidden
+                />
+                {back.label}
+              </Link>
+            )}
+
+            {/* Tỉnh (ngữ cảnh "thuộc tỉnh nào") + nổi bật */}
+            {(place.parent || place.isFeatured) && (
               <div className="flex flex-wrap items-center gap-4 text-sm font-medium">
-                {place.provinceName &&
-                  (place.parent ? (
-                    <Link
-                      href={`/diem-den/${place.parent.slug}`}
-                      className="inline-flex items-center gap-1.5 text-primary transition-colors hover:text-primary/80"
-                    >
-                      <MapPin className="size-4" aria-hidden />
-                      {place.provinceName}
-                    </Link>
-                  ) : (
-                    <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-                      <MapPin className="size-4" aria-hidden />
-                      {place.provinceName}
-                    </span>
-                  ))}
+                {place.parent && (
+                  <Link
+                    href={`/diem-den/${place.parent.slug}`}
+                    className="inline-flex items-center gap-1.5 text-primary transition-colors hover:text-primary/80"
+                  >
+                    <MapPin className="size-4" aria-hidden />
+                    {place.parent.name}
+                  </Link>
+                )}
                 {place.isFeatured && (
                   <span className="inline-flex items-center gap-1.5 text-warm">
                     <Star className="size-3.5 fill-current" aria-hidden />
@@ -83,6 +93,21 @@ export function PlaceHero({
             <h1 className="mt-4 text-balance text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
               {place.name}
             </h1>
+            {/* Gạch nguệch ngoạc trang trí dưới tên */}
+            <svg
+              aria-hidden
+              viewBox="0 0 200 14"
+              preserveAspectRatio="none"
+              fill="none"
+              className="mt-3 h-2.5 w-36 text-warm/70"
+            >
+              <path
+                d="M3 9 C 34 2 56 2 84 8 S 150 13 197 5"
+                stroke="currentColor"
+                strokeWidth="3.5"
+                strokeLinecap="round"
+              />
+            </svg>
             {place.tagline && (
               <p className="mt-5 max-w-lg text-lg leading-relaxed text-muted-foreground">
                 {place.tagline}

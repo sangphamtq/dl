@@ -17,7 +17,7 @@ import { coverUrl } from "@/lib/place-image";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EateryAdminControls } from "../admin-controls";
-import { EATERY_CATEGORIES, MEALS, PRICE_RANGES, labelOf } from "../constants";
+import { EATERY_CATEGORIES, MEALS, labelOf } from "../constants";
 
 const dateFmt = new Intl.DateTimeFormat("vi-VN", {
   day: "2-digit",
@@ -50,7 +50,6 @@ export default async function EateryDetailPage({
       website: true,
       bookingUrl: true,
       mapUrl: true,
-      priceRange: true,
       meals: true,
       notice: true,
       tags: true,
@@ -67,7 +66,6 @@ export default async function EateryDetailPage({
           name: true,
           slug: true,
           status: true,
-          kind: true,
           images: {
             where: { isCover: true },
             take: 1,
@@ -91,7 +89,6 @@ export default async function EateryDetailPage({
     .map((m) => labelOf(MEALS, m))
     .filter(Boolean) as string[];
   const facts = [
-    { label: "Giá", value: labelOf(PRICE_RANGES, eatery.priceRange) },
     { label: "Giờ mở cửa", value: eatery.openingHours },
     { label: "Bữa", value: mealLabels.join(", ") || null },
     { label: "Địa chỉ", value: eatery.address },
@@ -271,9 +268,6 @@ export default async function EateryDetailPage({
                           </Badge>
                         )}
                       </div>
-                      <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                        {s.kind === "product" ? "Sản vật / quà" : "Món ăn"}
-                      </p>
                     </div>
                     <ChevronRight className="size-4 shrink-0 text-muted-foreground/60 transition-transform group-hover:translate-x-0.5" />
                   </Link>

@@ -4,12 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
-import {
-  EateryCategory,
-  PriceRange,
-  Meal,
-  PublishStatus,
-} from "@/generated/prisma/enums";
+import { EateryCategory, Meal, PublishStatus } from "@/generated/prisma/enums";
 import { slugify, RESERVED_SLUGS } from "@/lib/slug";
 import { normalizeUrl } from "@/lib/url";
 
@@ -29,7 +24,6 @@ export type EateryFormInput = {
   website: string;
   bookingUrl: string;
   mapUrl: string;
-  priceRange: string;
   meals: string[];
   notice: string;
   tags: string;
@@ -98,10 +92,6 @@ async function normalize(
     input.category && input.category in EateryCategory
       ? (input.category as EateryCategory)
       : null;
-  const priceRange =
-    input.priceRange && input.priceRange in PriceRange
-      ? (input.priceRange as PriceRange)
-      : null;
   const meals = input.meals.filter((m) => m in Meal) as Meal[];
 
   const tags = input.tags
@@ -124,7 +114,6 @@ async function normalize(
       website: normalizeUrl(input.website),
       bookingUrl: normalizeUrl(input.bookingUrl),
       mapUrl: normalizeUrl(input.mapUrl),
-      priceRange,
       meals,
       notice: input.notice.trim() || null,
       tags,

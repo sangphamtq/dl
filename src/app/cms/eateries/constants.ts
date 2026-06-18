@@ -16,13 +16,6 @@ export const MEALS: { value: string; label: string }[] = [
   { value: "snack", label: "Ăn vặt" },
 ];
 
-export const PRICE_RANGES: { value: string; label: string }[] = [
-  { value: "budget", label: "$ · Bình dân" },
-  { value: "moderate", label: "$$ · Vừa" },
-  { value: "premium", label: "$$$ · Cao" },
-  { value: "luxury", label: "$$$$ · Sang" },
-];
-
 export function labelOf(
   list: { value: string; label: string }[],
   value: string | null,

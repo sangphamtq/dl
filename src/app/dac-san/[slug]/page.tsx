@@ -1,15 +1,9 @@
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import {
-  ChevronRight,
-  Banknote,
-  ShoppingBag,
-  UtensilsCrossed,
-} from "lucide-react";
+import { ChevronRight, UtensilsCrossed } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { coverUrl } from "@/lib/place-image";
-import { PRICE_LABELS, label } from "@/lib/listing-labels";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { RelatedPosts } from "@/components/site/related-posts";
@@ -47,9 +41,6 @@ export default async function SpecialtyPublicPage({
       name: true,
       slug: true,
       description: true,
-      kind: true,
-      whereToBuy: true,
-      priceRange: true,
       status: true,
       tags: true,
       place: { select: { slug: true, name: true } },
@@ -72,7 +63,6 @@ export default async function SpecialtyPublicPage({
   const staff = await isStaffViewer();
   if (!specialty || (specialty.status !== "published" && !staff)) notFound();
 
-  const isProduct = specialty.kind === "product";
   const heroUrl = coverUrl(specialty.images, specialty.slug, 1800, 1000);
   const gallery = specialty.images.filter((i) => i.url !== heroUrl);
 
@@ -113,15 +103,7 @@ export default async function SpecialtyPublicPage({
                 <span className="text-white">{specialty.name}</span>
               </nav>
               <p className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-white/80">
-                {isProduct ? (
-                  <>
-                    <ShoppingBag className="size-3.5" aria-hidden /> Sản vật / quà
-                  </>
-                ) : (
-                  <>
-                    <UtensilsCrossed className="size-3.5" aria-hidden /> Món ăn
-                  </>
-                )}
+                <UtensilsCrossed className="size-3.5" aria-hidden /> Đặc sản
               </p>
               <h1 className="mt-1 text-3xl font-semibold tracking-tight sm:text-4xl">
                 {specialty.name}
@@ -158,8 +140,8 @@ export default async function SpecialtyPublicPage({
                 </div>
               )}
 
-              {/* Ăn ở đâu (dish) */}
-              {!isProduct && specialty.eateries.length > 0 && (
+              {/* Ăn ở đâu */}
+              {specialty.eateries.length > 0 && (
                 <section>
                   <h2 className="text-xl font-semibold tracking-tight">
                     Ăn ở đâu
@@ -180,42 +162,6 @@ export default async function SpecialtyPublicPage({
             </div>
 
             <aside className="space-y-6">
-              <div className="rounded-2xl border p-5">
-                <h2 className="text-sm font-semibold">Thông tin</h2>
-                <dl className="mt-4 space-y-3 text-sm">
-                  <div className="flex gap-2.5">
-                    {isProduct ? (
-                      <ShoppingBag className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                    ) : (
-                      <UtensilsCrossed className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                    )}
-                    <div>
-                      <dt className="text-xs text-muted-foreground">Loại</dt>
-                      <dd>{isProduct ? "Sản vật / quà" : "Món ăn"}</dd>
-                    </div>
-                  </div>
-                  {specialty.priceRange && (
-                    <div className="flex gap-2.5">
-                      <Banknote className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                      <div>
-                        <dt className="text-xs text-muted-foreground">Mức giá</dt>
-                        <dd>{label(PRICE_LABELS, specialty.priceRange)}</dd>
-                      </div>
-                    </div>
-                  )}
-                </dl>
-              </div>
-
-              {/* Mua ở đâu (product) */}
-              {isProduct && specialty.whereToBuy && (
-                <div className="rounded-2xl border p-5">
-                  <h2 className="text-sm font-semibold">Mua ở đâu</h2>
-                  <p className="mt-2 whitespace-pre-line text-sm leading-6 text-muted-foreground">
-                    {specialty.whereToBuy}
-                  </p>
-                </div>
-              )}
-
               {specialty.tags.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {specialty.tags.map((t) => (

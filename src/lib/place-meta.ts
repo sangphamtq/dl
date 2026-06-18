@@ -1,4 +1,4 @@
-import { Eye, MapPin, Utensils, BedDouble, type LucideIcon } from "lucide-react";
+import { Eye, MapPin, Compass, type LucideIcon } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 
 const pub = { status: "published" as const };
@@ -46,13 +46,14 @@ export async function getPlaceCounts(placeId: string): Promise<PlaceCounts> {
   return { activity, spot, specialty, eatery, accommodation };
 }
 
-export type PlaceTab = { href: string; label: string };
+export type PlaceTab = { href: string; label: string; icon?: boolean };
 
 // Tabs sticky: "Tổng quan" về trang Place + mỗi loại listing có dữ liệu → trang "xem tất cả".
 // Đặc sản + Quán ăn gộp chung thành một tab "Ẩm thực" (trang /am-thuc hiển thị cả hai).
 export function buildPlaceTabs(placeSlug: string, counts: PlaceCounts): PlaceTab[] {
   const base = `/diem-den/${placeSlug}`;
-  const tabs: PlaceTab[] = [{ href: base, label: "Tổng quan" }];
+  // Mục đầu = "Tổng quan" dạng icon (gọn); chỉ hiện khi có ≥1 loại listing.
+  const tabs: PlaceTab[] = [{ href: base, label: "Tổng quan", icon: true }];
   const add = (loai: string, label: string) =>
     tabs.push({ href: `${base}/${loai}`, label });
 
@@ -72,12 +73,11 @@ export function buildPlaceStats(
 ): PlaceStat[] {
   return [
     { icon: Eye, value: viewCount, label: "lượt xem" },
-    counts.spot > 0 && { icon: MapPin, value: counts.spot, label: "điểm tham quan" },
-    counts.eatery > 0 && { icon: Utensils, value: counts.eatery, label: "quán ăn" },
-    counts.accommodation > 0 && {
-      icon: BedDouble,
-      value: counts.accommodation,
-      label: "chỗ ở",
+    counts.activity > 0 && {
+      icon: Compass,
+      value: counts.activity,
+      label: "trải nghiệm",
     },
+    counts.spot > 0 && { icon: MapPin, value: counts.spot, label: "điểm tham quan" },
   ].filter(Boolean) as PlaceStat[];
 }

@@ -7,8 +7,6 @@ import {
   ExternalLink,
   Star,
   MapPin,
-  UtensilsCrossed,
-  ShoppingBag,
   ImageOff,
   ChevronRight,
 } from "lucide-react";
@@ -18,7 +16,7 @@ import { coverUrl } from "@/lib/place-image";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SpecialtyAdminControls } from "../admin-controls";
-import { PRICE_RANGES, labelOf } from "../constants";
+import { labelOf } from "../constants";
 import { EATERY_CATEGORIES } from "../../eateries/constants";
 
 const dateFmt = new Intl.DateTimeFormat("vi-VN", {
@@ -41,9 +39,6 @@ export default async function SpecialtyDetailPage({
       name: true,
       slug: true,
       description: true,
-      kind: true,
-      whereToBuy: true,
-      priceRange: true,
       status: true,
       isFeatured: true,
       order: true,
@@ -76,7 +71,6 @@ export default async function SpecialtyDetailPage({
   if (!specialty) notFound();
 
   const published = specialty.status === "published";
-  const isProduct = specialty.kind === "product";
   const cover =
     specialty.images.find((i) => i.isCover) ?? specialty.images[0] ?? null;
   const gallery = specialty.images.filter((i) => i.id !== cover?.id);
@@ -107,17 +101,6 @@ export default async function SpecialtyDetailPage({
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <Badge variant="secondary">Đặc sản</Badge>
-            <Badge variant="outline" className="gap-1">
-              {isProduct ? (
-                <>
-                  <ShoppingBag className="size-3" aria-hidden /> Sản vật
-                </>
-              ) : (
-                <>
-                  <UtensilsCrossed className="size-3" aria-hidden /> Món ăn
-                </>
-              )}
-            </Badge>
             <Badge variant={published ? "default" : "outline"}>
               {published ? "Đã xuất bản" : "Bản nháp"}
             </Badge>
@@ -214,22 +197,8 @@ export default async function SpecialtyDetailPage({
             )}
           </section>
 
-          {/* Mua ở đâu (product) / Ăn ở đâu (dish) */}
-          {isProduct ? (
-            <section>
-              <h2 className="text-lg font-semibold tracking-tight">Mua ở đâu</h2>
-              {specialty.whereToBuy ? (
-                <p className="mt-2 whitespace-pre-line leading-7 text-foreground/90">
-                  {specialty.whereToBuy}
-                </p>
-              ) : (
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Chưa ghi nơi mua.
-                </p>
-              )}
-            </section>
-          ) : (
-            <section>
+          {/* Ăn ở đâu */}
+          <section>
               <h2 className="text-lg font-semibold tracking-tight">
                 Ăn ở đâu ({specialty.eateries.length})
               </h2>
@@ -282,8 +251,7 @@ export default async function SpecialtyDetailPage({
                   </Link>
                 </div>
               )}
-            </section>
-          )}
+          </section>
         </div>
 
         {/* Sidebar meta */}
@@ -298,12 +266,6 @@ export default async function SpecialtyDetailPage({
           <div className="rounded-xl border p-4">
             <h3 className="text-sm font-semibold">Thông tin</h3>
             <dl className="mt-3 space-y-3 text-sm">
-              <Meta label="Loại">{isProduct ? "Sản vật / quà" : "Món ăn"}</Meta>
-              {specialty.priceRange && (
-                <Meta label="Giá">
-                  {labelOf(PRICE_RANGES, specialty.priceRange)}
-                </Meta>
-              )}
               <Meta label="Slug">
                 <span className="font-mono text-xs">
                   /dac-san/{specialty.slug}

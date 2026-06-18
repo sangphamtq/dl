@@ -25,7 +25,7 @@ import {
   updateAccommodation,
   type AccommodationFormInput,
 } from "./actions";
-import { ACCOMMODATION_CATEGORIES, PRICE_RANGES } from "./constants";
+import { ACCOMMODATION_CATEGORIES } from "./constants";
 
 export type PlaceOption = { id: string; label: string };
 export type AccommodationFormValues = AccommodationFormInput;
@@ -42,7 +42,6 @@ const EMPTY: AccommodationFormValues = {
   phone: "",
   website: "",
   bookingUrl: "",
-  priceRange: "",
   tags: "",
 };
 
@@ -223,24 +222,6 @@ export function AccommodationForm({
                 placeholder="108.287"
               />
             </div>
-          </div>
-          <div className="space-y-2 sm:w-72">
-            <Label>Mức giá</Label>
-            <Select
-              value={values.priceRange}
-              onValueChange={(v) => set("priceRange", v)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="—" />
-              </SelectTrigger>
-              <SelectContent>
-                {PRICE_RANGES.map((p) => (
-                  <SelectItem key={p.value} value={p.value}>
-                    {p.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">

@@ -24,7 +24,7 @@ import { Combobox } from "@/components/ui/combobox";
 import { FormSection } from "@/components/cms/form-section";
 import { createEatery, updateEatery, type EateryFormInput } from "./actions";
 import type { Option as PlaceOption } from "./options";
-import { EATERY_CATEGORIES, MEALS, PRICE_RANGES } from "./constants";
+import { EATERY_CATEGORIES, MEALS } from "./constants";
 
 export type { PlaceOption };
 export type EateryFormValues = EateryFormInput;
@@ -43,7 +43,6 @@ const EMPTY: EateryFormValues = {
   website: "",
   bookingUrl: "",
   mapUrl: "",
-  priceRange: "",
   meals: [],
   notice: "",
   tags: "",
@@ -439,24 +438,6 @@ export function EateryForm({
                 onChange={(e) => set("openingHours", e.target.value)}
                 placeholder="6:00 – 22:00"
               />
-            </div>
-            <div className="space-y-2">
-              <Label>Mức giá</Label>
-              <Select
-                value={values.priceRange}
-                onValueChange={(v) => set("priceRange", v)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="—" />
-                </SelectTrigger>
-                <SelectContent>
-                  {PRICE_RANGES.map((p) => (
-                    <SelectItem key={p.value} value={p.value}>
-                      {p.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
           </div>
           <div className="space-y-2">

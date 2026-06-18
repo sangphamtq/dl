@@ -1,10 +1,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { ChevronRight, MapPin, Banknote, ExternalLink } from "lucide-react";
+import { ChevronRight, MapPin, ExternalLink } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { coverUrl } from "@/lib/place-image";
-import { ACCOMMODATION_CATEGORY_LABELS, PRICE_LABELS, label } from "@/lib/listing-labels";
+import { ACCOMMODATION_CATEGORY_LABELS, label } from "@/lib/listing-labels";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { RelatedPosts } from "@/components/site/related-posts";
@@ -46,7 +46,6 @@ export default async function AccommodationPublicPage({
       lng: true,
       website: true,
       bookingUrl: true,
-      priceRange: true,
       tags: true,
       place: { select: { slug: true, name: true } },
       images: {
@@ -62,7 +61,6 @@ export default async function AccommodationPublicPage({
   const heroUrl = coverUrl(acc.images, acc.slug, 1800, 1000);
   const gallery = acc.images.filter((i) => i.url !== heroUrl);
   const facts = [
-    { icon: Banknote, label: "Mức giá", value: label(PRICE_LABELS, acc.priceRange) },
     { icon: MapPin, label: "Địa chỉ", value: acc.address },
   ].filter((f) => f.value);
   const hasMap = acc.lat != null && acc.lng != null;

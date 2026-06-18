@@ -1,14 +1,23 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronRight, Pause, Play, X } from "lucide-react";
+import {
+  ArrowUpRight,
+  ChevronLeft,
+  ChevronRight,
+  Pause,
+  Play,
+  X,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type HeroImage = {
   url: string;
   alt?: string | null;
   caption?: string | null;
+  href?: string | null;
 };
 
 // Hero "chồng ảnh polaroid" cho trang chi tiết: stack 3 thẻ theo chiều sâu,
@@ -134,14 +143,8 @@ export function PlaceHeroStack({
 
                 {isActive && (
                   <>
-                    {/* Caption đáy */}
-                    {img.caption && (
-                      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/65 to-transparent p-4 pt-10 sm:p-6 sm:pt-14">
-                        <p className="line-clamp-2 text-sm text-white drop-shadow">
-                          {img.caption}
-                        </p>
-                      </div>
-                    )}
+                    {/* Gradient đáy cho tên + góc trên-phải cho nút */}
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-2/5 bg-gradient-to-t from-black/70 via-black/15 to-transparent" />
 
                     {/* Lớp nhận gesture (dưới controls) */}
                     <button
@@ -152,74 +155,75 @@ export function PlaceHeroStack({
                       className="absolute inset-0 z-20 cursor-pointer"
                     />
 
-                    {/* Counter pill glass — góc trên-trái */}
-                    {n > 1 && (
-                      <div className="absolute left-3 top-3 z-30 flex items-center gap-2 rounded-full bg-black/40 py-1 pl-1 pr-2.5 text-white backdrop-blur-md sm:left-4 sm:top-4">
-                        <span className="relative flex size-7 items-center justify-center">
-                          <svg
-                            viewBox="0 0 32 32"
-                            className="absolute inset-0 size-full -rotate-90"
-                          >
-                            <circle
-                              cx="16"
-                              cy="16"
-                              r="14"
-                              fill="none"
-                              stroke="rgba(255,255,255,0.25)"
-                              strokeWidth="2.5"
-                            />
-                            <circle
-                              key={index}
-                              cx="16"
-                              cy="16"
-                              r="14"
-                              fill="none"
-                              stroke="white"
-                              strokeWidth="2.5"
-                              strokeLinecap="round"
-                              strokeDasharray="88"
-                              style={{
-                                ["--hero-ring-c" as string]: "88",
-                                animation: playing
-                                  ? `hero-ring-fill ${intervalMs}ms linear forwards`
-                                  : "none",
-                                strokeDashoffset: playing ? undefined : 0,
-                              }}
-                            />
-                          </svg>
-                          <span className="text-[11px] font-semibold tabular-nums">
-                            {index + 1}
-                          </span>
-                        </span>
-                        <span className="text-xs tabular-nums text-white/70">
-                          / {n}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setPaused((p) => !p)}
-                          aria-label={paused ? "Tiếp tục" : "Tạm dừng"}
-                          className="ml-0.5 grid size-6 place-items-center rounded-full transition-transform hover:bg-white/15 active:scale-95"
-                        >
-                          {paused ? (
-                            <Play className="size-3.5" aria-hidden />
-                          ) : (
-                            <Pause className="size-3.5" aria-hidden />
-                          )}
-                        </button>
-                      </div>
-                    )}
-
-                    {/* Nút next liquid-glass — ẩn, hiện khi hover (luôn hiện trên touch) */}
+                    {/* Tạm dừng / tiếp tục — góc trên phải */}
                     {n > 1 && (
                       <button
                         type="button"
-                        onClick={next}
-                        aria-label="Ảnh tiếp theo"
-                        className="absolute right-3 top-1/2 z-30 grid size-11 -translate-y-1/2 place-items-center rounded-full border border-white/30 bg-white/15 text-white opacity-100 shadow-lg backdrop-blur-md transition-all hover:bg-white/25 active:scale-95 sm:right-4 sm:opacity-0 sm:group-hover/heroframe:opacity-100"
+                        onClick={() => setPaused((p) => !p)}
+                        aria-label={paused ? "Tiếp tục" : "Tạm dừng"}
+                        className="absolute right-3 top-3 z-30 grid size-8 place-items-center rounded-full bg-black/35 text-white opacity-100 backdrop-blur-md transition-all hover:bg-black/55 sm:right-4 sm:top-4 sm:opacity-0 sm:group-hover/heroframe:opacity-100"
                       >
-                        <ChevronRight className="size-5" aria-hidden />
+                        {paused ? (
+                          <Play className="size-3.5" aria-hidden />
+                        ) : (
+                          <Pause className="size-3.5" aria-hidden />
+                        )}
                       </button>
                     )}
+
+                    {/* Prev / Next — ẩn, hover mới hiện (desktop); mobile vuốt */}
+                    {n > 1 && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={prev}
+                          aria-label="Ảnh trước"
+                          className="absolute left-3 top-1/2 z-30 hidden size-10 -translate-y-1/2 place-items-center rounded-full bg-black/35 text-white opacity-0 backdrop-blur-md transition-all hover:bg-black/55 active:scale-95 sm:grid sm:group-hover/heroframe:opacity-100"
+                        >
+                          <ChevronLeft className="size-5" aria-hidden />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={next}
+                          aria-label="Ảnh tiếp theo"
+                          className="absolute right-3 top-1/2 z-30 hidden size-10 -translate-y-1/2 place-items-center rounded-full bg-black/35 text-white opacity-0 backdrop-blur-md transition-all hover:bg-black/55 active:scale-95 sm:grid sm:group-hover/heroframe:opacity-100"
+                        >
+                          <ChevronRight className="size-5" aria-hidden />
+                        </button>
+                      </>
+                    )}
+
+                    {/* Đếm i/n — góc dưới-phải, ẩn/hover (mobile vẫn hiện) */}
+                    {n > 1 && (
+                      <span className="absolute bottom-5 right-4 z-30 text-sm font-medium tabular-nums text-white/90 opacity-100 drop-shadow transition-opacity sm:opacity-0 sm:group-hover/heroframe:opacity-100">
+                        {index + 1} / {n}
+                      </span>
+                    )}
+
+                    {/* Tên ảnh — cụm trái, luôn hiện; click sang địa điểm */}
+                    {img.caption &&
+                      (img.href ? (
+                        <Link
+                          href={img.href}
+                          className="group/badge absolute bottom-4 left-3 z-30 flex max-w-[75%] items-center gap-3 sm:bottom-5 sm:left-5"
+                        >
+                          <span className="min-w-0">
+                            <span className="block text-[11px] font-medium uppercase tracking-[0.2em] text-white/70">
+                              Địa điểm
+                            </span>
+                            <span className="mt-0.5 block truncate text-base font-semibold text-white drop-shadow sm:text-lg">
+                              {img.caption}
+                            </span>
+                          </span>
+                          <span className="grid size-9 shrink-0 place-items-center rounded-full border border-white/30 bg-white/15 text-white opacity-100 backdrop-blur-md transition-all group-hover/badge:translate-x-0.5 group-hover/badge:bg-white/25 sm:opacity-0 sm:group-hover/heroframe:opacity-100">
+                            <ArrowUpRight className="size-4" aria-hidden />
+                          </span>
+                        </Link>
+                      ) : (
+                        <p className="absolute bottom-4 left-3 z-30 max-w-[75%] truncate text-base font-semibold text-white drop-shadow sm:bottom-5 sm:left-5 sm:text-lg">
+                          {img.caption}
+                        </p>
+                      ))}
                   </>
                 )}
               </div>

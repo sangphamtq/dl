@@ -4,11 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
-import {
-  SpecialtyKind,
-  PriceRange,
-  PublishStatus,
-} from "@/generated/prisma/enums";
+import { PublishStatus } from "@/generated/prisma/enums";
 import { slugify, RESERVED_SLUGS } from "@/lib/slug";
 
 const STAFF = ["admin", "editor"];
@@ -17,9 +13,6 @@ export type SpecialtyFormInput = {
   name: string;
   slug: string;
   description: string;
-  kind: string; // dish | product
-  whereToBuy: string;
-  priceRange: string;
   placeId: string;
   eateryIds: string[];
   tags: string;
@@ -56,13 +49,6 @@ async function normalize(
   });
   if (!place) return { error: "Place không tồn tại." };
 
-  const kind =
-    input.kind === "product" ? SpecialtyKind.product : SpecialtyKind.dish;
-  const priceRange =
-    input.priceRange && input.priceRange in PriceRange
-      ? (input.priceRange as PriceRange)
-      : null;
-
   const tags = input.tags
     .split(",")
     .map((t) => t.trim())
@@ -73,20 +59,14 @@ async function normalize(
       name,
       slug,
       description: input.description.trim() || null,
-      kind,
-      // whereToBuy chỉ áp cho sản vật; món ăn dùng liên kết quán.
-      whereToBuy:
-        kind === SpecialtyKind.product ? input.whereToBuy.trim() || null : null,
-      priceRange,
       placeId: input.placeId,
       tags,
     },
   };
 }
 
-// Món ăn (dish) mới gắn quán; sản vật (product) bỏ liên kết quán.
 function eateryConnect(input: SpecialtyFormInput) {
-  return input.kind === "product" ? [] : input.eateryIds.map((id) => ({ id }));
+  return input.eateryIds.map((id) => ({ id }));
 }
 
 export async function createSpecialty(

@@ -11,13 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Combobox } from "@/components/ui/combobox";
 import { MultiCombobox } from "@/components/ui/multi-combobox";
 import { FormSection } from "@/components/cms/form-section";
@@ -26,7 +19,6 @@ import {
   updateSpecialty,
   type SpecialtyFormInput,
 } from "./actions";
-import { SPECIALTY_KINDS, PRICE_RANGES } from "./constants";
 
 export type Option = { id: string; label: string };
 export type SpecialtyFormValues = SpecialtyFormInput;
@@ -35,9 +27,6 @@ const EMPTY: SpecialtyFormValues = {
   name: "",
   slug: "",
   description: "",
-  kind: "dish",
-  whereToBuy: "",
-  priceRange: "",
   placeId: "",
   eateryIds: [],
   tags: "",
@@ -68,7 +57,6 @@ export function SpecialtyForm({
   );
 
   const slugPreview = slugTouched ? values.slug : slugify(values.name);
-  const isProduct = values.kind === "product";
 
   function set<K extends keyof SpecialtyFormValues>(
     key: K,
@@ -110,31 +98,8 @@ export function SpecialtyForm({
       )}
 
       <div className="divide-y">
-        {/* Phân loại & nơi */}
-        <FormSection
-          title="Phân loại"
-          description="Món ăn hay sản vật/quà, và thuộc tỉnh/điểm đến nào."
-        >
-          <div className="space-y-2">
-            <Label>Loại</Label>
-            <Select value={values.kind} onValueChange={(v) => set("kind", v)}>
-              <SelectTrigger className="w-full sm:w-72">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {SPECIALTY_KINDS.map((k) => (
-                  <SelectItem key={k.value} value={k.value}>
-                    {k.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              {isProduct
-                ? "Sản vật/quà: ghi nơi mua, không gắn quán ăn."
-                : "Món ăn: liên kết các quán phục vụ món này."}
-            </p>
-          </div>
+        {/* Nơi */}
+        <FormSection title="Nơi" description="Đặc sản này thuộc tỉnh/điểm đến nào.">
           <div className="space-y-2">
             <Label>Nơi (Place)</Label>
             <Combobox
@@ -189,60 +154,24 @@ export function SpecialtyForm({
               rows={5}
             />
           </div>
-          <div className="space-y-2 sm:w-72">
-            <Label>Mức giá</Label>
-            <Select
-              value={values.priceRange}
-              onValueChange={(v) => set("priceRange", v)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="—" />
-              </SelectTrigger>
-              <SelectContent>
-                {PRICE_RANGES.map((p) => (
-                  <SelectItem key={p.value} value={p.value}>
-                    {p.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
         </FormSection>
 
-        {/* Mua/ăn ở đâu */}
-        {isProduct ? (
-          <FormSection
-            title="Mua ở đâu"
-            description="Nơi mua sản vật về làm quà (chợ, cửa hàng đặc sản…)."
-          >
-            <div className="space-y-2">
-              <Label htmlFor="whereToBuy">Nơi mua</Label>
-              <Textarea
-                id="whereToBuy"
-                value={values.whereToBuy}
-                onChange={(e) => set("whereToBuy", e.target.value)}
-                placeholder="vd: Chợ Hạ Long 1, các cửa hàng đặc sản gần bến tàu…"
-                rows={3}
-              />
-            </div>
-          </FormSection>
-        ) : (
-          <FormSection
-            title="Ăn ở đâu"
-            description="Liên kết vài quán tiêu biểu phục vụ món này (đề xuất, không cần đủ hết)."
-          >
-            <div className="space-y-2">
-              <Label>Quán phục vụ</Label>
-              <MultiCombobox
-                options={eateries.map((e) => ({ value: e.id, label: e.label }))}
-                values={values.eateryIds}
-                onChange={(v) => set("eateryIds", v)}
-                placeholder="Chọn quán…"
-                searchPlaceholder="Tìm quán…"
-              />
-            </div>
-          </FormSection>
-        )}
+        {/* Ăn ở đâu */}
+        <FormSection
+          title="Ăn ở đâu"
+          description="Liên kết vài quán tiêu biểu phục vụ món này (đề xuất, không cần đủ hết)."
+        >
+          <div className="space-y-2">
+            <Label>Quán phục vụ</Label>
+            <MultiCombobox
+              options={eateries.map((e) => ({ value: e.id, label: e.label }))}
+              values={values.eateryIds}
+              onChange={(v) => set("eateryIds", v)}
+              placeholder="Chọn quán…"
+              searchPlaceholder="Tìm quán…"
+            />
+          </div>
+        </FormSection>
 
         {/* Thẻ */}
         <FormSection title="Thẻ" description="Nhãn tự do để lọc & gợi ý.">

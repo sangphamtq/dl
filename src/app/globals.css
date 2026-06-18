@@ -123,16 +123,6 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
-/* Vòng progress của hero card-stack: chạy đầy (stroke-dashoffset C → 0) trong 1 chu kỳ. */
-@keyframes hero-ring-fill {
-  from {
-    stroke-dashoffset: var(--hero-ring-c, 88);
-  }
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-
 @layer base {
   * {
     @apply border-border outline-ring/50;

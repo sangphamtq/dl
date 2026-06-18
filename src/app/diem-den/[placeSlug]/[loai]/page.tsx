@@ -129,7 +129,12 @@ export default async function PlaceListingPage({
       <SiteHeader />
 
       <main className="flex-1">
-        <PlaceHero place={place} heroImages={heroImages} stats={stats} />
+        <PlaceHero
+          place={place}
+          heroImages={heroImages}
+          stats={stats}
+          back={{ href: `/diem-den/${place.slug}`, label: "Tổng quan" }}
+        />
 
         {/* Thanh tab: Tổng quan + xem tất cả từng listing */}
         <PlaceTabs items={tabs} />

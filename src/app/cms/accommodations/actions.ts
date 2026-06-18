@@ -4,11 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
-import {
-  AccommodationCategory,
-  PriceRange,
-  PublishStatus,
-} from "@/generated/prisma/enums";
+import { AccommodationCategory, PublishStatus } from "@/generated/prisma/enums";
 import { slugify, RESERVED_SLUGS } from "@/lib/slug";
 import { normalizeUrl } from "@/lib/url";
 
@@ -26,7 +22,6 @@ export type AccommodationFormInput = {
   phone: string;
   website: string;
   bookingUrl: string;
-  priceRange: string;
   tags: string;
 };
 
@@ -82,11 +77,6 @@ async function normalize(
     input.category && input.category in AccommodationCategory
       ? (input.category as AccommodationCategory)
       : null;
-  const priceRange =
-    input.priceRange && input.priceRange in PriceRange
-      ? (input.priceRange as PriceRange)
-      : null;
-
   const tags = input.tags
     .split(",")
     .map((t) => t.trim())
@@ -105,7 +95,6 @@ async function normalize(
       phone: input.phone.trim() || null,
       website: normalizeUrl(input.website),
       bookingUrl: normalizeUrl(input.bookingUrl),
-      priceRange,
       tags,
     },
   };

@@ -72,12 +72,6 @@ enum EateryCategory {
   other
 }
 
-// Đặc sản: món ăn (ăn tại quán) hay sản vật/quà (mua mang về).
-enum SpecialtyKind {
-  dish // món ăn
-  product // sản vật / quà
-}
-
 // Bữa/khung giờ ăn — để khách lọc & xếp lịch ăn theo ngày.
 enum Meal {
   breakfast // sáng
@@ -376,9 +370,6 @@ model Specialty {
   slug        String        @unique
   name        String
   description String?
-  kind        SpecialtyKind @default(dish) // món ăn / sản vật-quà
-  whereToBuy  String? // chỉ product: mua ở đâu (chợ/cửa hàng…)
-  priceRange  PriceRange?
 
   placeId String
   place   Place  @relation(fields: [placeId], references: [id], onDelete: Cascade)
@@ -417,7 +408,6 @@ model Eatery {
   website      String?
   bookingUrl   String?
   mapUrl       String? // link bản đồ (Google Maps…)
-  priceRange   PriceRange?
 
   // Vị trí hành chính (tự điền theo địa điểm cha; xem CLAUDE.md). Lưu cả code + name.
   provinceCode Int?
@@ -467,7 +457,6 @@ model Accommodation {
   phone        String?
   website      String?
   bookingUrl   String?
-  priceRange   PriceRange?
 
   placeId String
   place   Place  @relation(fields: [placeId], references: [id], onDelete: Cascade)
