@@ -7,7 +7,14 @@ import {
   PlaneLanding,
   Navigation,
   Clock,
-  Banknote,
+  MapPin,
+  Car,
+  TrainFront,
+  Plane,
+  Ship,
+  Bike,
+  Footprints,
+  CarTaxiFront,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { coverUrl } from "@/lib/place-image";
@@ -242,8 +249,8 @@ export default async function PlaceDetailPage({
     if (present) sectionNum[key] = String(++nseq).padStart(2, "0");
   };
   numFor(showChildren, "children");
-  numFor(place.activities.length > 0, "activities");
   numFor(place.spots.length > 0, "spots");
+  numFor(place.activities.length > 0, "activities");
   numFor(place.specialties.length > 0, "specialties");
   numFor(place.accommodations.length > 0, "accommodations");
   numFor(place.transports.length > 0, "transports");
@@ -339,6 +346,34 @@ export default async function PlaceDetailPage({
             </section>
           )}
 
+          {/* Tham quan (Spot) — rail */}
+          {place.spots.length > 0 && (
+            <section id="tham-quan" className="scroll-mt-32 py-10 first:pt-0 last:pb-0">
+              <SectionHeading
+                num={sectionNum.spots}
+                eyebrow="Địa điểm"
+                title="Địa điểm đáng ghé"
+                description="Hang động kỳ ảo, đảo đá vịnh ngọc, di tích lịch sử — mảnh ghép của bạn."
+                href={`/diem-den/${place.slug}/dia-diem`}
+                count={counts.spot}
+              />
+              <Rail itemClassName="basis-1/2 sm:basis-1/3 lg:basis-1/4">
+                {place.spots.map((s) => (
+                  <ListingCard
+                    key={s.slug}
+                    href={`/dia-diem/${s.slug}`}
+                    name={s.name}
+                    slug={s.slug}
+                    images={s.images}
+                    subtitle={s.description}
+                    tag={s.category ? label(SPOT_CATEGORY_LABELS, s.category) : null}
+                    meta={s.tags[0] ? [s.tags[0]] : []}
+                  />
+                ))}
+              </Rail>
+            </section>
+          )}
+
           {/* Trải nghiệm — rail cuộn ngang */}
           {place.activities.length > 0 && (
             <section id="trai-nghiem" className="scroll-mt-32 py-10 first:pt-0 last:pb-0">
@@ -361,34 +396,6 @@ export default async function PlaceDetailPage({
                     subtitle={a.description}
                     meta={a.durationText ? [a.durationText] : []}
                     price={activityPriceBadge(a.ticketFree, a.ticketTiers)}
-                  />
-                ))}
-              </Rail>
-            </section>
-          )}
-
-          {/* Tham quan (Spot) — rail */}
-          {place.spots.length > 0 && (
-            <section id="tham-quan" className="scroll-mt-32 py-10 first:pt-0 last:pb-0">
-              <SectionHeading
-                num={sectionNum.spots}
-                eyebrow="Tham quan"
-                title="Địa điểm đáng ghé"
-                description="Hang động kỳ ảo, đảo đá vịnh ngọc, di tích lịch sử — mảnh ghép của bạn."
-                href={`/diem-den/${place.slug}/dia-diem`}
-                count={counts.spot}
-              />
-              <Rail itemClassName="basis-1/2 sm:basis-1/3 lg:basis-1/4">
-                {place.spots.map((s) => (
-                  <ListingCard
-                    key={s.slug}
-                    href={`/dia-diem/${s.slug}`}
-                    name={s.name}
-                    slug={s.slug}
-                    images={s.images}
-                    subtitle={s.description}
-                    tag={s.category ? label(SPOT_CATEGORY_LABELS, s.category) : null}
-                    meta={s.tags[0] ? [s.tags[0]] : []}
                   />
                 ))}
               </Rail>
@@ -455,16 +462,34 @@ export default async function PlaceDetailPage({
                 eyebrow="Di chuyển"
                 title="Đi lại thế nào?"
               />
-              <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+              <div className="mt-7 space-y-8">
                 {getTo.length > 0 && (
-                  <TransportGroup title="Đến nơi" icon={PlaneLanding} items={getTo} />
+                  <div>
+                    <TransportSubhead
+                      icon={PlaneLanding}
+                      title="Đến nơi"
+                      count={getTo.length}
+                    />
+                    <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                      {getTo.map((t) => (
+                        <TransportCard key={t.id} item={t} />
+                      ))}
+                    </div>
+                  </div>
                 )}
                 {getAround.length > 0 && (
-                  <TransportGroup
-                    title="Đi lại tại chỗ"
-                    icon={Navigation}
-                    items={getAround}
-                  />
+                  <div>
+                    <TransportSubhead
+                      icon={Navigation}
+                      title="Đi lại tại chỗ"
+                      count={getAround.length}
+                    />
+                    <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                      {getAround.map((t) => (
+                        <TransportCard key={t.id} item={t} />
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
             </section>
@@ -574,58 +599,91 @@ type TransportItem = {
   description: string | null;
 };
 
-function TransportGroup({
-  title,
+// Icon + nhãn theo phương tiện (TransportMode).
+const MODE_ICON: Record<string, typeof Bus> = {
+  car: Car,
+  bus: Bus,
+  train: TrainFront,
+  plane: Plane,
+  boat: Ship,
+  motorbike: Bike,
+  bike: Bike,
+  taxi: CarTaxiFront,
+  grab: CarTaxiFront,
+  walk: Footprints,
+  cyclo: Bike,
+  shuttle: Bus,
+  other: Navigation,
+};
+const MODE_LABEL: Record<string, string> = {
+  car: "Ô tô",
+  bus: "Xe khách",
+  train: "Tàu hỏa",
+  plane: "Máy bay",
+  boat: "Tàu / thuyền",
+  motorbike: "Xe máy",
+  bike: "Xe đạp",
+  taxi: "Taxi",
+  grab: "Grab",
+  walk: "Đi bộ",
+  cyclo: "Xích lô",
+  shuttle: "Xe đưa đón",
+  other: "Khác",
+};
+
+function TransportSubhead({
   icon: Icon,
-  items,
+  title,
+  count,
 }: {
-  title: string;
   icon: typeof Bus;
-  items: TransportItem[];
+  title: string;
+  count: number;
 }) {
   return (
-    <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-lg shadow-black/5">
-      <div className="flex items-center gap-2">
-        <span className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
-          <Icon className="size-5" aria-hidden />
+    <h3 className="flex items-center gap-2 text-sm font-semibold">
+      <Icon className="size-4 text-primary" aria-hidden />
+      {title}
+      <span className="font-normal text-muted-foreground">({count})</span>
+    </h3>
+  );
+}
+
+// Card di chuyển — cùng họ thị giác với ListingCard (bo góc, viền, hover shadow).
+function TransportCard({ item: t }: { item: TransportItem }) {
+  const ModeIcon = MODE_ICON[t.mode] ?? Navigation;
+  return (
+    <div className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm shadow-black/5 transition-shadow hover:shadow-md">
+      <div className="flex items-center gap-2.5">
+        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+          <ModeIcon className="size-5" aria-hidden />
         </span>
-        <h3 className="font-semibold">{title}</h3>
+        <span className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+          {MODE_LABEL[t.mode] ?? t.mode}
+        </span>
       </div>
-      <ul className="mt-4 space-y-4">
-        {items.map((t) => (
-          <li key={t.id} className="border-t pt-4 first:border-t-0 first:pt-0">
-            <div className="flex items-start gap-2">
-              <Bus className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
-              <div className="min-w-0">
-                <p className="font-medium">{t.name}</p>
-                <div className="mt-0.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                  {t.fromName && (
-                    <span className="inline-flex items-center gap-1">
-                      <Navigation className="size-3" aria-hidden />
-                      Từ {t.fromName}
-                    </span>
-                  )}
-                  {t.duration && (
-                    <span className="inline-flex items-center gap-1">
-                      <Clock className="size-3" aria-hidden />
-                      {t.duration}
-                    </span>
-                  )}
-                  <span className="inline-flex items-center gap-1">
-                    <Banknote className="size-3" aria-hidden />
-                    {t.mode}
-                  </span>
-                </div>
-                {t.description && (
-                  <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                    {t.description}
-                  </p>
-                )}
-              </div>
-            </div>
-          </li>
-        ))}
-      </ul>
+      <h4 className="mt-3 font-semibold leading-snug">{t.name}</h4>
+      {(t.fromName || t.duration) && (
+        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+          {t.fromName && (
+            <span className="inline-flex items-center gap-1">
+              <MapPin className="size-3" aria-hidden />
+              Từ {t.fromName}
+            </span>
+          )}
+          {t.duration && (
+            <span className="inline-flex items-center gap-1">
+              <Clock className="size-3" aria-hidden />
+              {t.duration}
+            </span>
+          )}
+        </div>
+      )}
+      {t.description && (
+        <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+          {t.description}
+        </p>
+      )}
     </div>
   );
 }

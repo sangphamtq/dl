@@ -57,8 +57,8 @@ export function buildPlaceTabs(placeSlug: string, counts: PlaceCounts): PlaceTab
   const add = (loai: string, label: string) =>
     tabs.push({ href: `${base}/${loai}`, label });
 
+  if (counts.spot > 0) add("dia-diem", "Địa điểm");
   if (counts.activity > 0) add("hoat-dong", "Trải nghiệm");
-  if (counts.spot > 0) add("dia-diem", "Tham quan");
   if (counts.specialty + counts.eatery > 0) add("am-thuc", "Ẩm thực");
   if (counts.accommodation > 0) add("luu-tru", "Nơi lưu trú");
 
