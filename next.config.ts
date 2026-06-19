@@ -7,6 +7,8 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "*.ufs.sh" }, // UploadThing
       { protocol: "https", hostname: "utfs.io" }, // UploadThing (legacy)
+      { protocol: "https", hostname: "*.tiktokcdn.com" }, // thumbnail TikTok (oEmbed)
+      { protocol: "https", hostname: "*.tiktokcdn-us.com" },
     ],
   },
 };

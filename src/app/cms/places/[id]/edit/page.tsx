@@ -5,8 +5,10 @@ import { prisma } from "@/lib/prisma";
 import { getProvinces } from "@/lib/locations";
 import { Badge } from "@/components/ui/badge";
 import { FormSection } from "@/components/cms/form-section";
+import { getTikTokInfo } from "@/lib/tiktok";
 import { PlaceForm, type PlaceFormValues } from "../../place-form";
 import { PlaceImages } from "../../place-images";
+import { PlaceVideosManager } from "../../place-videos";
 
 export default async function EditPlacePage({
   params,
@@ -49,6 +51,19 @@ export default async function EditPlacePage({
   ]);
 
   if (!place) notFound();
+
+  // Video TikTok + thumbnail (oEmbed, cache trong helper).
+  const videoRows = await prisma.placeVideo.findMany({
+    where: { placeId: id },
+    orderBy: [{ order: "asc" }, { createdAt: "asc" }],
+    select: { id: true, videoId: true, caption: true },
+  });
+  const videos = await Promise.all(
+    videoRows.map(async (v) => ({
+      ...v,
+      thumbnail: (await getTikTokInfo(v.videoId)).thumbnail,
+    })),
+  );
 
   // Loại bỏ chính nó khỏi danh sách tỉnh cha (không tự làm cha mình).
   const parentOptions = provinces.filter((p) => p.id !== place.id);
@@ -104,6 +119,16 @@ export default async function EditPlacePage({
           description="Tải ảnh cho nơi này. Ảnh bìa hiển thị ở danh sách & hero trang."
         >
           <PlaceImages placeId={place.id} images={images} />
+        </FormSection>
+      </div>
+
+      {/* Video TikTok */}
+      <div className="border-t">
+        <FormSection
+          title="Video TikTok"
+          description="Dán link/ID video TikTok giới thiệu nơi này. Hiển thị ở hero + nút Video trên trang."
+        >
+          <PlaceVideosManager placeId={place.id} videos={videos} />
         </FormSection>
       </div>
     </div>

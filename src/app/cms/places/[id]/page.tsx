@@ -14,8 +14,10 @@ import {
   BedDouble,
   Bus,
   ImageOff,
+  Play,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { getTikTokInfo } from "@/lib/tiktok";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -82,12 +84,26 @@ export default async function PlaceDetailPage({
           eateries: true,
           accommodations: true,
           transports: true,
+          videos: true,
         },
       },
     },
   });
 
   if (!place) notFound();
+
+  // Video TikTok + thumbnail (oEmbed, cache trong helper).
+  const videoRows = await prisma.placeVideo.findMany({
+    where: { placeId: id },
+    orderBy: [{ order: "asc" }, { createdAt: "asc" }],
+    select: { id: true, videoId: true, caption: true },
+  });
+  const videos = await Promise.all(
+    videoRows.map(async (v) => ({
+      ...v,
+      thumbnail: (await getTikTokInfo(v.videoId)).thumbnail,
+    })),
+  );
 
   const isProvince = place.kind === "province";
   const published = place.status === "published";
@@ -221,6 +237,52 @@ export default async function PlaceDetailPage({
             ) : (
               <p className="mt-2 text-sm text-muted-foreground">
                 Chưa có mô tả.
+              </p>
+            )}
+          </section>
+
+          {/* Video TikTok */}
+          <section>
+            <h2 className="text-lg font-semibold tracking-tight">
+              Video TikTok ({place._count.videos})
+            </h2>
+            {videos.length > 0 ? (
+              <div className="mt-3 flex flex-wrap gap-3">
+                {videos.map((v) => (
+                  <div key={v.id} className="w-24">
+                    <div className="relative aspect-[9/16] overflow-hidden rounded-lg bg-muted">
+                      {v.thumbnail ? (
+                        <Image
+                          src={v.thumbnail}
+                          alt={v.caption ?? ""}
+                          fill
+                          sizes="96px"
+                          unoptimized
+                          className="object-cover"
+                        />
+                      ) : (
+                        <span className="absolute inset-0 grid place-items-center text-muted-foreground">
+                          <Play className="size-5" aria-hidden />
+                        </span>
+                      )}
+                    </div>
+                    {v.caption && (
+                      <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                        {v.caption}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-2 text-sm text-muted-foreground">
+                Chưa có video.{" "}
+                <Link
+                  href={`/cms/places/${place.id}/edit`}
+                  className="text-primary hover:underline"
+                >
+                  Thêm video
+                </Link>
               </p>
             )}
           </section>

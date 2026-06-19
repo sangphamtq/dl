@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ChevronLeft, MapPin, Star } from "lucide-react";
 import { PlaceHeroStack, type HeroImage } from "@/components/site/place-hero-stack";
+import { PlaceVideos, type PlaceVideo } from "@/components/site/tiktok-videos";
 import type { PlaceStat } from "@/lib/place-meta";
 
 type PlaceHeroData = {
@@ -19,11 +20,13 @@ export function PlaceHero({
   place,
   heroImages,
   stats,
+  videos = [],
   back,
 }: {
   place: PlaceHeroData;
   heroImages: HeroImage[];
   stats: PlaceStat[];
+  videos?: PlaceVideo[];
   back?: { href: string; label: string };
 }) {
   return (
@@ -128,12 +131,20 @@ export function PlaceHero({
                 ))}
               </dl>
             )}
+
           </div>
 
           {/* Phải: chồng ảnh — z cao hơn sticky tab (z-40) để shadow đè lên,
               vẫn thấp hơn header (z-50). */}
           <div className="relative z-[45]">
             <PlaceHeroStack images={heroImages} />
+            {videos.length > 0 && (
+              <PlaceVideos
+                videos={videos}
+                placeName={place.name}
+                className="absolute bottom-3 right-3 z-40 w-[88px] sm:bottom-4 sm:right-4 lg:-bottom-5 lg:-right-5 lg:w-[112px]"
+              />
+            )}
           </div>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Be_Vietnam_Pro, Geist_Mono, Playfair_Display } from "next/font/google";
 import { getSettings } from "@/lib/settings";
+import { BackToTop } from "@/components/site/back-to-top";
 import "./globals.css";
 
 const beVietnamPro = Be_Vietnam_Pro({
@@ -40,7 +41,10 @@ export default function RootLayout({
       lang="vi"
       className={`${beVietnamPro.variable} ${playfair.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        <BackToTop />
+      </body>
     </html>
   );
 }

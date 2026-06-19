@@ -229,6 +229,7 @@ model Place {
   transports     Transport[]
 
   images    Image[]
+  videos    PlaceVideo[] // video TikTok giới thiệu (hiển thị ở hero + modal)
   postRefs  PostRef[]
   viewStats PlaceViewStat[] // lượt xem theo ngày (để lọc trending)
 
@@ -554,6 +555,21 @@ model Image {
   @@index([accommodationId])
   @@index([transportId])
   @@index([postId])
+}
+
+// Video TikTok gắn vào Place (giới thiệu điểm đến). Chỉ lưu videoId của TikTok
+// (vd 7486790456437787925) + caption; thumbnail lấy runtime qua oEmbed.
+model PlaceVideo {
+  id        String   @id @default(cuid())
+  placeId   String
+  place     Place    @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  videoId   String // ID video TikTok
+  caption   String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([placeId])
 }
 
 // ============================================================

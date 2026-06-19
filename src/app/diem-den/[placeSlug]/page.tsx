@@ -35,6 +35,7 @@ import { PlaceViewTracker } from "@/components/site/place-view-tracker";
 import { type HeroImage } from "@/components/site/place-hero-stack";
 import { PlaceHero } from "@/components/site/place-hero";
 import { PlaceTabs } from "@/components/site/place-tabs";
+import { getTikTokInfo } from "@/lib/tiktok";
 import {
   getPlaceCounts,
   buildPlaceTabs,
@@ -177,6 +178,10 @@ export default async function PlaceDetailPage({
           description: true,
         },
       },
+      videos: {
+        orderBy: [{ order: "asc" }, { createdAt: "asc" }],
+        select: { videoId: true, caption: true },
+      },
     },
   });
 
@@ -242,6 +247,22 @@ export default async function PlaceDetailPage({
 
   const showChildren = isProvince && place.children.length > 0;
 
+  const videoSeed = place.videos.map((v) => ({
+    id: v.videoId,
+    caption: v.caption ?? undefined,
+  }));
+  // Lấy thumbnail thật qua oEmbed (dedupe theo id, cache trong helper).
+  const thumbById = new Map<string, string | null>();
+  await Promise.all(
+    [...new Set(videoSeed.map((v) => v.id))].map(async (id) => {
+      thumbById.set(id, (await getTikTokInfo(id)).thumbnail);
+    }),
+  );
+  const videos = videoSeed.map((v) => ({
+    ...v,
+    thumbnail: thumbById.get(v.id) ?? null,
+  }));
+
   // Đánh số section theo thứ tự xuất hiện (mục nào có dữ liệu mới được tính).
   const sectionNum: Record<string, string> = {};
   let nseq = 0;
@@ -266,11 +287,12 @@ export default async function PlaceDetailPage({
           place={place}
           heroImages={heroImages}
           stats={stats}
+          videos={videos}
           back={{ href: "/diem-den", label: "Điểm đến" }}
         />
 
-        {/* Thanh tab: Tổng quan + xem tất cả từng listing */}
-        <PlaceTabs items={tabs} />
+        {/* Thanh tab: Tổng quan + xem tất cả từng listing + nút Video */}
+        <PlaceTabs items={tabs} videos={videos} placeName={place.name} />
 
         <div className="mx-auto max-w-6xl divide-y divide-border/60 px-4 py-14 sm:px-6 sm:py-20">
           {/* Đôi nét */}
