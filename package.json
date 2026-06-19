@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "set-role": "tsx scripts/set-role.ts",
+    "seed:places": "tsx prisma/seed-places.ts",
     "seed:phan-thiet": "tsx prisma/seed-phan-thiet.ts",
     "seed:blog": "tsx prisma/seed-blog.ts"
   },
