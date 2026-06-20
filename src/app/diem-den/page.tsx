@@ -157,7 +157,7 @@ export default async function DiemDenPage() {
             aria-hidden
             className="pointer-events-none absolute -right-24 -top-28 size-[28rem] rounded-full bg-primary/10 blur-3xl"
           />
-          <div className="relative mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-10 lg:flex-row lg:items-end lg:justify-between lg:gap-12">
+          <div className="relative mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-10 lg:flex-row lg:items-end lg:justify-between lg:gap-12">
             <div>
               <span className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card/70 px-3 py-1 text-xs font-medium text-muted-foreground backdrop-blur">
                 <Sparkles className="size-3.5 text-primary" aria-hidden />
@@ -186,7 +186,7 @@ export default async function DiemDenPage() {
         </section>
 
         {isEmpty ? (
-          <div className="mx-auto max-w-6xl px-4 py-24 text-center sm:px-6">
+          <div className="mx-auto max-w-7xl px-4 py-24 text-center sm:px-6">
             <MapPinned
               className="mx-auto size-10 text-muted-foreground"
               aria-hidden
@@ -196,7 +196,7 @@ export default async function DiemDenPage() {
             </p>
           </div>
         ) : (
-          <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+          <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16">
             <DestinationFilter
               items={destItems}
               provinces={provinceItems}

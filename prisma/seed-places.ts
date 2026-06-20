@@ -75,8 +75,43 @@ const DESTINATIONS = [
   { slug: "can-gio", name: "Cần Giờ", parent: "ho-chi-minh", tagline: "Rừng ngập mặn, biển gần thành phố." },
 ];
 
+// ẢNH ĐIỂM ĐẾN — ĐIỀN LINK Ở ĐÂY (key = slug). Ảnh đầu mảng là ảnh bìa.
+// Để trống [] → dùng ảnh fallback (picsum). Chỉ ghi đè ảnh khi có ≥1 link.
+const DEST_IMAGES: Record<string, string[]> = {
+  "sa-pa": [],
+  "ha-long": [],
+  "hoi-an": [],
+  "da-lat": [],
+  "nha-trang": [],
+  "co-to": [],
+  "moc-chau": [],
+  "mai-chau": [],
+  "tam-dao": [],
+  "trang-an": [],
+  "cat-ba": [],
+  "mu-cang-chai": [],
+  "dong-van": [],
+  "ba-vi": [],
+  "pu-luong": [],
+  "phong-nha": [],
+  "ba-na-hills": [],
+  "ly-son": [],
+  "quy-nhon": [],
+  "ganh-da-dia": [],
+  "mang-den": [],
+  "bien-ho": [],
+  "buon-ma-thuot": [],
+  "mui-ne": [],
+  "vung-tau": [],
+  "con-dao": [],
+  "phu-quoc": [],
+  "chau-doc": [],
+  "can-gio": [],
+};
+
 async function main() {
   const idBySlug = new Map<string, string>();
+  let imageCount = 0;
 
   for (let i = 0; i < PROVINCE_NAMES.length; i++) {
     const name = PROVINCE_NAMES[i];
@@ -116,15 +151,31 @@ async function main() {
       order: i,
       ...PUB,
     };
-    await prisma.place.upsert({
+    const dest = await prisma.place.upsert({
       where: { slug: d.slug },
       create: { slug: d.slug, ...data },
       update: data,
+      select: { id: true },
     });
+
+    // Ảnh: chỉ ghi đè khi có link trong DEST_IMAGES (để trống → giữ ảnh cũ/fallback).
+    const urls = DEST_IMAGES[d.slug] ?? [];
+    if (urls.length > 0) {
+      await prisma.image.deleteMany({ where: { placeId: dest.id } });
+      await prisma.image.createMany({
+        data: urls.map((url, idx) => ({
+          placeId: dest.id,
+          url,
+          isCover: idx === 0,
+          order: idx,
+        })),
+      });
+      imageCount += urls.length;
+    }
   }
 
   console.log(
-    `Seeded ${PROVINCE_NAMES.length} tỉnh/thành + ${DESTINATIONS.length} điểm đến.`,
+    `Seeded ${PROVINCE_NAMES.length} tỉnh/thành + ${DESTINATIONS.length} điểm đến + ${imageCount} ảnh.`,
   );
 }
 

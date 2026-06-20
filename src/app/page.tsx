@@ -90,7 +90,7 @@ export default async function Home() {
           />
           <div className="absolute inset-0 -z-10 bg-gradient-to-br from-black/80 via-black/55 to-black/65" />
 
-          <div className="mx-auto w-full max-w-6xl px-4 py-20 text-white sm:px-6">
+          <div className="mx-auto w-full max-w-7xl px-4 py-20 text-white sm:px-6">
             <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/15 py-1 pl-1.5 pr-3 text-xs font-medium backdrop-blur">
               <span className="rounded-full bg-white/25 px-2 py-0.5">Xin chào</span>
               {user?.name ?? "bạn"} 👋
@@ -123,7 +123,7 @@ export default async function Home() {
 
         {/* Điểm đến nổi bật — danh sách dưới hero */}
         {places.length > 0 && (
-          <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+          <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20">
             <SectionHead
               eyebrow="Điểm đến"
               title="Điểm đến nổi bật"
@@ -140,7 +140,7 @@ export default async function Home() {
         {/* Cẩm nang */}
         {posts.length > 0 && (
           <section className="border-y border-border/60 bg-muted/30">
-            <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+            <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20">
               <SectionHead
                 eyebrow="Cẩm nang"
                 title="Kinh nghiệm cho chuyến đi"
@@ -156,7 +156,7 @@ export default async function Home() {
         )}
 
         {/* CTA */}
-        <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20">
           <div className="relative overflow-hidden rounded-3xl bg-primary px-6 py-12 text-center text-primary-foreground sm:px-12 sm:py-16">
             <div
               aria-hidden

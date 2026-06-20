@@ -44,7 +44,7 @@ export default function HeroPreviewPage() {
           aria-hidden
           className="pointer-events-none absolute -left-28 -top-32 -z-0 size-[30rem] rounded-full border border-primary/10"
         />
-        <div className="mx-auto max-w-6xl px-4 pt-6 sm:px-6">
+        <div className="mx-auto max-w-7xl px-4 pt-6 sm:px-6">
           {/* Breadcrumb */}
           <nav className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
             <Link href="/" className="hover:text-foreground">
@@ -99,7 +99,7 @@ export default function HeroPreviewPage() {
         </div>
       </section>
 
-      <div className="mx-auto mt-16 max-w-6xl px-4 sm:px-6">
+      <div className="mx-auto mt-16 max-w-7xl px-4 sm:px-6">
         <p className="text-sm text-muted-foreground">
           Mẹo: tự lật mỗi 5s · rê chuột vào ảnh để hiện nút next · vuốt ngang để
           đổi · bấm vào ảnh để mở full-screen · nút ⏸ để tạm dừng.

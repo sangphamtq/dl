@@ -124,7 +124,7 @@ export default async function SpotPublicPage({
             className="pointer-events-none absolute -right-10 -top-12 -z-0 size-56 rounded-full border border-primary/10"
           />
 
-          <div className="mx-auto max-w-6xl px-4 pt-6 sm:px-6">
+          <div className="mx-auto max-w-7xl px-4 pt-6 sm:px-6">
             {/* Breadcrumb */}
             <nav className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
               <Link href="/" className="hover:text-foreground">
@@ -205,7 +205,7 @@ export default async function SpotPublicPage({
           </div>
         </section>
 
-        <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16">
           {spot.notice && (
             <div className="mb-10 flex items-start gap-2 rounded-2xl border border-warm/40 bg-warm/5 px-4 py-3 text-sm">
               <TriangleAlert

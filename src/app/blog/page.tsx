@@ -84,7 +84,7 @@ export default async function BlogPage({
       <SiteHeader />
 
       <main className="flex-1">
-        <section className="mx-auto max-w-5xl px-4 pt-10 sm:px-6 sm:pt-14">
+        <section className="mx-auto max-w-7xl px-4 pt-10 sm:px-6 sm:pt-14">
           <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
             Cẩm nang du lịch
           </h1>
@@ -110,7 +110,7 @@ export default async function BlogPage({
           </div>
         </section>
 
-        <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-12">
+        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
           {posts.length > 0 ? (
             <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
               {posts.map((p) => (

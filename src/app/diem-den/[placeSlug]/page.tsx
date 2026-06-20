@@ -294,7 +294,7 @@ export default async function PlaceDetailPage({
         {/* Thanh tab: Tổng quan + xem tất cả từng listing + nút Video */}
         <PlaceTabs items={tabs} videos={videos} placeName={place.name} />
 
-        <div className="mx-auto max-w-6xl divide-y divide-border/60 px-4 py-14 sm:px-6 sm:py-20">
+        <div className="mx-auto max-w-7xl divide-y divide-border/60 px-4 py-14 sm:px-6 sm:py-20">
           {/* Đôi nét */}
           {place.description && (
             <section id="doi-net" className="scroll-mt-32 py-10 first:pt-0 last:pb-0">

@@ -277,7 +277,7 @@ export default async function PlaceListingPage({
         {/* Thanh tab: Tổng quan + xem tất cả từng listing */}
         <PlaceTabs items={tabs} />
 
-        <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20">
+        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20">
           <ListingView groups={groups} initialView={listingView} />
         </div>
       </main>

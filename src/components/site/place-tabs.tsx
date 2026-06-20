@@ -73,7 +73,7 @@ export function PlaceTabs({
     <>
     <div ref={sentinelRef} aria-hidden className="h-0" />
     <div className="sticky top-16 z-40 border-b border-border/60 bg-background/80 backdrop-blur-lg">
-      <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 sm:px-6">
+      <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 sm:px-6">
         <nav className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {items.map((it) => {
             const active = pathname === it.href;

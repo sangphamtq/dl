@@ -55,7 +55,7 @@ export function PlaceHero({
         <div className="absolute -left-28 top-24 size-[26rem] rounded-full bg-warm/[0.08] blur-3xl" />
       </div>
 
-      <div className="mx-auto max-w-6xl px-4 pb-12 pt-10 sm:px-6 sm:pb-6 sm:pt-6">
+      <div className="mx-auto max-w-7xl px-4 pb-12 pt-10 sm:px-6 sm:pb-6 sm:pt-6">
         <div className="grid items-center gap-10 lg:grid-cols-[1fr_1.4fr] lg:gap-12">
           {/* Trái: chữ */}
           <div>
