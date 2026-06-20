@@ -15,11 +15,18 @@ const STAFF = ["admin", "editor"];
 // Một dòng loại vé ở form (giá nhập text); chuẩn hóa thành number ở normalize.
 export type TicketTierInput = { label: string; price: string; note: string };
 
+// Một điểm nhấn ở form (tiêu đề + mô tả + ảnh).
+export type HighlightInput = {
+  title: string;
+  body: string;
+  imageUrl: string;
+  imageAlt: string;
+};
+
 export type SpotFormInput = {
   name: string;
   slug: string;
   description: string;
-  content: string; // HTML rich text (tùy chọn)
   category: string; // "" = none
   placeId: string;
   address: string;
@@ -31,10 +38,14 @@ export type SpotFormInput = {
   bookingUrl: string;
   mapUrl: string;
   bestTime: string;
+  bestTimeNote: string;
   ticketFree: boolean;
   ticketTiers: TicketTierInput[];
   ticketInfo: string;
   notice: string;
+  gettingThere: string;
+  tips: string; // mỗi dòng một mẹo
+  highlights: HighlightInput[];
   tags: string;
   provinceCode: string; // "" = none
   provinceName: string;
@@ -65,10 +76,21 @@ function code(v: string): number | null {
   return Number.isInteger(n) ? n : null;
 }
 
+type HighlightData = {
+  order: number;
+  title: string;
+  body: string | null;
+  imageUrl: string | null;
+  imageAlt: string | null;
+};
+
 async function normalize(
   input: SpotFormInput,
   selfId?: string,
-): Promise<{ data: Prisma.SpotUncheckedCreateInput } | { error: string }> {
+): Promise<
+  | { data: Prisma.SpotUncheckedCreateInput; highlights: HighlightData[] }
+  | { error: string }
+> {
   const name = input.name.trim();
   if (!name) return { error: "Tên không được để trống." };
 
@@ -107,6 +129,26 @@ async function normalize(
     .map((t) => t.trim())
     .filter(Boolean);
 
+  // Mẹo: mỗi dòng một gạch đầu dòng.
+  const tips = input.tips
+    .split("\n")
+    .map((t) => t.trim())
+    .filter(Boolean);
+
+  // Điểm nhấn: bỏ dòng thiếu tiêu đề; order theo thứ tự nhập.
+  const highlights: HighlightData[] = [];
+  for (const h of input.highlights) {
+    const title = h.title.trim();
+    if (!title) continue;
+    highlights.push({
+      order: highlights.length,
+      title,
+      body: h.body.trim() || null,
+      imageUrl: normalizeUrl(h.imageUrl),
+      imageAlt: h.imageAlt.trim() || null,
+    });
+  }
+
   // Loại vé: bỏ dòng trống, validate giá; miễn phí vào cửa thì không lưu tiers.
   const tiers: TicketTier[] = [];
   if (!input.ticketFree) {
@@ -123,11 +165,11 @@ async function normalize(
   }
 
   return {
+    highlights,
     data: {
       name,
       slug,
       description: input.description.trim() || null,
-      content: input.content.trim() || null,
       category,
       placeId: input.placeId,
       address: input.address.trim() || null,
@@ -139,11 +181,14 @@ async function normalize(
       bookingUrl: normalizeUrl(input.bookingUrl),
       mapUrl: normalizeUrl(input.mapUrl),
       bestTime: input.bestTime.trim() || null,
+      bestTimeNote: input.bestTimeNote.trim() || null,
       ticketFree: input.ticketFree,
       ticketTiers:
         tiers.length > 0 ? (tiers as Prisma.InputJsonValue) : Prisma.DbNull,
       ticketInfo: input.ticketInfo.trim() || null,
       notice: input.notice.trim() || null,
+      gettingThere: input.gettingThere.trim() || null,
+      tips,
       tags,
       provinceCode: code(input.provinceCode),
       provinceName: input.provinceName.trim() || null,
@@ -159,7 +204,9 @@ export async function createSpot(input: SpotFormInput): Promise<ActionResult> {
   await requireStaff();
   const res = await normalize(input);
   if ("error" in res) return { ok: false, error: res.error };
-  const spot = await prisma.spot.create({ data: res.data });
+  const spot = await prisma.spot.create({
+    data: { ...res.data, highlights: { create: res.highlights } },
+  });
   revalidatePath("/cms/spots");
   updateTag(ORS_CACHE_TAG); // toạ độ mới → làm mới khoảng cách "quanh đây"
   return { ok: true, id: spot.id };
@@ -172,7 +219,14 @@ export async function updateSpot(
   await requireStaff();
   const res = await normalize(input, id);
   if ("error" in res) return { ok: false, error: res.error };
-  await prisma.spot.update({ where: { id }, data: res.data });
+  // Điểm nhấn: xoá hết rồi tạo lại theo thứ tự mới (danh sách nhỏ).
+  await prisma.spot.update({
+    where: { id },
+    data: {
+      ...res.data,
+      highlights: { deleteMany: {}, create: res.highlights },
+    },
+  });
   revalidatePath("/cms/spots");
   revalidatePath(`/cms/spots/${id}`);
   revalidatePath(`/cms/spots/${id}/edit`);

@@ -23,12 +23,12 @@ import {
 import { Combobox } from "@/components/ui/combobox";
 import { Switch } from "@/components/ui/switch";
 import { FormSection } from "@/components/cms/form-section";
-import { RichTextEditor } from "@/components/cms/rich-text-editor";
 import {
   createSpot,
   updateSpot,
   type SpotFormInput,
   type TicketTierInput,
+  type HighlightInput,
 } from "./actions";
 import { SPOT_CATEGORIES } from "./constants";
 
@@ -39,7 +39,6 @@ const EMPTY: SpotFormValues = {
   name: "",
   slug: "",
   description: "",
-  content: "",
   category: "",
   placeId: "",
   address: "",
@@ -51,10 +50,14 @@ const EMPTY: SpotFormValues = {
   bookingUrl: "",
   mapUrl: "",
   bestTime: "",
+  bestTimeNote: "",
   ticketFree: false,
   ticketTiers: [],
   ticketInfo: "",
   notice: "",
+  gettingThere: "",
+  tips: "",
+  highlights: [],
   tags: "",
   provinceCode: "",
   provinceName: "",
@@ -120,6 +123,36 @@ export function SpotForm({
       ...p,
       ticketTiers: p.ticketTiers.map((t, i) =>
         i === index ? { ...t, [key]: value } : t,
+      ),
+    }));
+  }
+
+  function addHighlight() {
+    setValues((p) => ({
+      ...p,
+      highlights: [
+        ...p.highlights,
+        { title: "", body: "", imageUrl: "", imageAlt: "" },
+      ],
+    }));
+  }
+
+  function removeHighlight(index: number) {
+    setValues((p) => ({
+      ...p,
+      highlights: p.highlights.filter((_, i) => i !== index),
+    }));
+  }
+
+  function updateHighlight(
+    index: number,
+    key: keyof HighlightInput,
+    value: string,
+  ) {
+    setValues((p) => ({
+      ...p,
+      highlights: p.highlights.map((h, i) =>
+        i === index ? { ...h, [key]: value } : h,
       ),
     }));
   }
@@ -412,7 +445,7 @@ export function SpotForm({
             </p>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="description">Mô tả ngắn</Label>
+            <Label htmlFor="description">Mô tả ngắn / mở bài</Label>
             <Textarea
               id="description"
               value={values.description}
@@ -421,20 +454,120 @@ export function SpotForm({
               rows={4}
             />
             <p className="text-xs text-muted-foreground">
-              2–5 câu. Dùng cho card, kết quả tìm kiếm và đoạn dẫn dưới hero.
+              2–5 câu. Dùng cho card, kết quả tìm kiếm, đoạn dẫn dưới hero và mục
+              &ldquo;Giới thiệu&rdquo; trên trang.
+            </p>
+          </div>
+        </FormSection>
+
+        {/* Điểm nhấn — title + mô tả + ảnh, sắp theo thứ tự */}
+        <FormSection
+          title="Điểm nhấn"
+          description="Những điều đặc biệt của địa điểm — mỗi mục có tiêu đề, mô tả và ảnh riêng."
+        >
+          {values.highlights.length > 0 && (
+            <div className="space-y-4">
+              {values.highlights.map((h, i) => (
+                <div
+                  key={i}
+                  className="space-y-3 rounded-lg border p-4"
+                >
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={h.title}
+                      onChange={(e) =>
+                        updateHighlight(i, "title", e.target.value)
+                      }
+                      placeholder="Tiêu đề điểm nhấn"
+                      className="flex-1 font-medium"
+                      aria-label="Tiêu đề điểm nhấn"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeHighlight(i)}
+                      aria-label="Xóa điểm nhấn"
+                    >
+                      <Trash2 className="size-4" aria-hidden />
+                    </Button>
+                  </div>
+                  <Textarea
+                    value={h.body}
+                    onChange={(e) => updateHighlight(i, "body", e.target.value)}
+                    placeholder="Mô tả ngắn cho điểm nhấn này…"
+                    rows={2}
+                    aria-label="Mô tả điểm nhấn"
+                  />
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_180px]">
+                    <Input
+                      value={h.imageUrl}
+                      onChange={(e) =>
+                        updateHighlight(i, "imageUrl", e.target.value)
+                      }
+                      placeholder="Link ảnh (https://…)"
+                      aria-label="Link ảnh điểm nhấn"
+                    />
+                    <Input
+                      value={h.imageAlt}
+                      onChange={(e) =>
+                        updateHighlight(i, "imageAlt", e.target.value)
+                      }
+                      placeholder="Mô tả ảnh (alt)"
+                      aria-label="Alt ảnh điểm nhấn"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          <Button type="button" variant="outline" size="sm" onClick={addHighlight}>
+            <Plus className="size-4" aria-hidden />
+            Thêm điểm nhấn
+          </Button>
+        </FormSection>
+
+        {/* Khi nào đẹp · Mẹo · Cách đến */}
+        <FormSection
+          title="Thời điểm, mẹo & cách đến"
+          description="Khi nào đẹp nhất, kinh nghiệm thực tế và hướng dẫn đường đi cho địa điểm này."
+        >
+          <div className="space-y-2">
+            <Label htmlFor="bestTimeNote">Khi nào đẹp nhất (chi tiết)</Label>
+            <Textarea
+              id="bestTimeNote"
+              value={values.bestTimeNote}
+              onChange={(e) => set("bestTimeNote", e.target.value)}
+              placeholder="Diễn giải thời điểm đẹp: mùa nào, giờ nào, vì sao…"
+              rows={3}
+            />
+            <p className="text-xs text-muted-foreground">
+              Đoạn văn cho mục &ldquo;Khi nào đẹp nhất&rdquo;. Ô &ldquo;Thời điểm
+              đẹp&rdquo; ở trên chỉ là cụm ngắn hiển thị ở hero.
             </p>
           </div>
           <div className="space-y-2">
-            <Label>Nội dung chi tiết</Label>
-            <RichTextEditor
-              value={values.content}
-              onChange={(html) => set("content", html)}
+            <Label htmlFor="tips">Kinh nghiệm / mẹo</Label>
+            <Textarea
+              id="tips"
+              value={values.tips}
+              onChange={(e) => set("tips", e.target.value)}
+              placeholder={"Mỗi dòng một mẹo, vd:\nĐi sáng sớm để tránh nắng\nMang theo nước và mũ"}
+              rows={4}
             />
             <p className="text-xs text-muted-foreground">
-              Tùy chọn. Bài viết dày dặn (tiêu đề, danh sách, ảnh…) hiển thị ở
-              mục &ldquo;Giới thiệu&rdquo; trên trang địa điểm. Để trống thì
-              trang dùng mô tả ngắn ở trên.
+              Mỗi dòng là một gạch đầu dòng.
             </p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="gettingThere">Cách đến</Label>
+            <Textarea
+              id="gettingThere"
+              value={values.gettingThere}
+              onChange={(e) => set("gettingThere", e.target.value)}
+              placeholder="Hướng dẫn đường đi, phương tiện, gửi xe…"
+              rows={3}
+            />
           </div>
         </FormSection>
 

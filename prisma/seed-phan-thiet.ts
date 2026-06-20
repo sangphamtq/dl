@@ -165,16 +165,61 @@ async function main() {
   await setImages({ placeId: phanThiet.id }, IMAGES["phan-thiet"] ?? [], "Phan Thiết");
 
   // 3) Spots
-  const spots = [
+  type HighlightSeed = {
+    title: string;
+    body?: string;
+    imageUrl?: string;
+    imageAlt?: string;
+  };
+  type SpotSeed = {
+    slug: string;
+    name: string;
+    category?: SpotCategory;
+    lat?: number;
+    lng?: number;
+    description?: string;
+    bestTime?: string;
+    bestTimeNote?: string;
+    ticketInfo?: string;
+    tips?: string[];
+    gettingThere?: string;
+    highlights?: HighlightSeed[];
+  };
+  const spots: SpotSeed[] = [
     {
       slug: "bai-bien-mui-ne",
       name: "Bãi biển Mũi Né",
       category: SpotCategory.beach,
       lat: 10.9333,
       lng: 108.287,
-      description: "Bãi biển dài, sóng đẹp, thiên đường lướt ván diều.",
+      description:
+        "Trải dài hàng cây số với hàng dừa nghiêng nghiêng đón gió, bãi biển Mũi Né là trái tim của cả vùng. Nước ấm quanh năm, sóng vừa phải để tắm, còn gió thì đủ mạnh để biến nơi đây thành một trong những thiên đường lướt ván diều nổi tiếng châu Á.",
       bestTime: "Sáng sớm & chiều mát",
+      bestTimeNote:
+        "Sáng sớm và chiều muộn là lúc nước dịu, nắng nhẹ và bãi vắng nhất để tắm. Nếu mê lướt ván diều, hãy đến vào mùa gió tháng 11–3 — gió thổi đều, mặt biển kín cánh diều. Mùa hè biển êm hơn, hợp tắm cùng gia đình.",
       ticketInfo: "Miễn phí",
+      highlights: [
+        {
+          title: "Thiên đường lướt ván diều",
+          body: "Gió ổn định gần như suốt mùa khô đưa Mũi Né vào top điểm lướt ván diều hàng đầu châu Á. Chiều đến, hàng trăm cánh diều rực rỡ chao liệng trên sóng là cảnh tượng khó quên.",
+          imageUrl: "https://picsum.photos/seed/mui-ne-kite/800/600",
+          imageAlt: "Lướt ván diều trên biển Mũi Né",
+        },
+        {
+          title: "Hàng dừa đón gió",
+          body: "Dải bờ dài rợp bóng dừa nghiêng mình theo gió biển, tạo nên khung cảnh đặc trưng và vô số góc chụp đẹp dọc đường Nguyễn Đình Chiểu.",
+          imageUrl: "https://picsum.photos/seed/mui-ne-dua/800/600",
+          imageAlt: "Hàng dừa ven biển Mũi Né",
+        },
+      ],
+      tips: [
+        "Tắm đẹp nhất lúc sáng sớm hoặc chiều mát, tránh nắng trưa gay gắt.",
+        "Mùa gió (tháng 11–3) sóng to, hợp lướt ván hơn là tắm.",
+        "Có thể thuê ghế, dù và đồ thể thao biển ngay dọc bãi.",
+        "Giữ đồ cẩn thận khi xuống tắm ở khu vực đông người.",
+      ],
+      gettingThere:
+        "Bãi biển chạy dọc đường Nguyễn Đình Chiểu — trục chính của khu nghỉ dưỡng Mũi Né. Từ trung tâm Phan Thiết đi khoảng 15–20km (25–30 phút) bằng taxi, xe máy hoặc xe buýt; hầu hết resort đều mở thẳng ra bãi.",
     },
     {
       slug: "doi-cat-bay-mui-ne",
@@ -183,9 +228,39 @@ async function main() {
       lat: 10.952,
       lng: 108.303,
       description:
-        "Đồi cát đổi màu theo nắng, điểm trượt cát và săn bình minh kinh điển.",
+        "Nếu chỉ được chọn một nơi để hiểu vì sao người ta mê Mũi Né, hãy đến Đồi Cát Bay. Những triền cát mênh mông liên tục đổi hình theo gió và đổi màu theo nắng — từ vàng óng buổi sớm tới cam đỏ lúc chiều tà. Đây là điểm săn bình minh, trượt cát và check-in kinh điển bậc nhất của thành phố biển.",
       bestTime: "Bình minh hoặc hoàng hôn",
+      bestTimeNote:
+        "Đẹp nhất vào lúc bình minh (5h30–6h30) và hoàng hôn (17h–18h), khi nắng xiên làm nổi rõ đường nét và sắc cát, đồng thời cát còn mát chân. Nên đi vào mùa khô (tháng 11–4) trời trong, ít mưa. Tránh khung giữa trưa: nắng gắt, cát nóng và ảnh dễ bị bệt màu.",
       ticketInfo: "Vé gửi xe ~10k",
+      highlights: [
+        {
+          title: "Cát đổi màu theo nắng",
+          body: "Gió biển thổi không ngừng nên đường nét những triền cát thay đổi mỗi ngày, còn nắng thì nhuộm cát từ vàng nhạt buổi sớm sang cam đỏ lúc xế chiều — không lần ghé nào giống lần nào.",
+          imageUrl: "https://picsum.photos/seed/doi-cat-mau/800/600",
+          imageAlt: "Triền cát đổi màu dưới nắng ở Đồi cát bay",
+        },
+        {
+          title: "Trượt cát — trò không thể bỏ lỡ",
+          body: "Thuê một tấm ván nhựa ngay dưới chân đồi, leo lên đỉnh rồi buông mình trượt xuống. Trò chơi đơn giản mà gây nghiện, hợp với cả trẻ con lẫn người lớn.",
+          imageUrl: "https://picsum.photos/seed/doi-cat-truot/800/600",
+          imageAlt: "Du khách trượt cát trên đồi",
+        },
+        {
+          title: "Săn bình minh & hoàng hôn",
+          body: "Lúc mặt trời mọc hoặc lặn, cả đồi cát chìm trong ánh sáng vàng cam mê hoặc — khung giờ vàng cho những bức ảnh đẹp nhất và cũng là lúc cát mát chân nhất.",
+          imageUrl: "https://picsum.photos/seed/doi-cat-binhminh/800/600",
+          imageAlt: "Bình minh trên Đồi cát bay Mũi Né",
+        },
+      ],
+      tips: [
+        "Đi lúc sáng sớm (5–6h) hoặc chiều muộn để tránh cát nóng bỏng chân và nắng gắt.",
+        "Mang theo nước, mũ và kính — gió thổi cát khá rát mặt.",
+        "Thuê ván trượt ngay tại chân đồi, hỏi giá và mặc cả trước khi chơi.",
+        "Hạn chế buổi trưa: cát có thể nóng tới mức không đi chân trần được.",
+      ],
+      gettingThere:
+        "Đồi cát bay nằm trên đường Huỳnh Thúc Kháng, cách trung tâm Phan Thiết khoảng 20km về phía Mũi Né. Đi xe máy hoặc taxi mất chừng 30–40 phút; nhiều tour xe Jeep nhận đón tận khách sạn từ sáng sớm. Có bãi gửi xe ngay lối vào (~10k).",
     },
     {
       slug: "bau-trang",
@@ -194,9 +269,33 @@ async function main() {
       lat: 11.179,
       lng: 108.413,
       description:
-        "Đồi cát trắng mênh mông ôm lấy hồ sen — 'tiểu sa mạc Sahara' của Việt Nam.",
+        "Giữa vùng cát trắng mênh mông bất ngờ hiện ra hai hồ nước ngọt phủ kín sen — khung cảnh khiến Bàu Trắng được ví như 'tiểu sa mạc Sahara' của Việt Nam. Sự tương phản giữa cát trắng, nước xanh và sen hồng tạo nên một trong những cảnh quan độc nhất miền Trung.",
       bestTime: "Sáng sớm",
+      bestTimeNote:
+        "Đến lúc sáng sớm để tránh nắng gắt, cát còn mát và mặt hồ trong trẻo. Sen rộ nhất khoảng tháng 5–7. Mùa khô (tháng 11–4) trời ổn định, dễ di chuyển trên cát hơn.",
       ticketInfo: "Vé vào ~15k",
+      highlights: [
+        {
+          title: "Hồ sen giữa sa mạc cát",
+          body: "Bàu Ông và Bàu Bà — hai hồ nước ngọt phủ sen — nằm lọt giữa đồi cát trắng, tạo khung cảnh tương phản hiếm thấy, đẹp nhất vào mùa sen nở.",
+          imageUrl: "https://picsum.photos/seed/bau-trang-sen/800/600",
+          imageAlt: "Hồ sen Bàu Trắng giữa đồi cát",
+        },
+        {
+          title: "Đồi cát trắng & xe địa hình",
+          body: "Những đồi cát trắng cao thoai thoải là sân chơi của xe Jeep, mô tô địa hình và trò trượt cát — vừa ngắm cảnh vừa thử cảm giác mạnh.",
+          imageUrl: "https://picsum.photos/seed/bau-trang-quad/800/600",
+          imageAlt: "Xe địa hình trên đồi cát Bàu Trắng",
+        },
+      ],
+      tips: [
+        "Đi sớm để tránh nắng và cát nóng; mang nước, mũ, kính.",
+        "Muốn lên đỉnh đồi xa, nên thuê xe Jeep/mô tô địa hình thay vì lội bộ.",
+        "Mùa sen (tháng 5–7) là lúc hồ đẹp nhất.",
+        "Bàu Trắng khá xa khu resort, nên đi cùng tour hoặc đổ đầy xăng trước.",
+      ],
+      gettingThere:
+        "Bàu Trắng thuộc xã Hòa Thắng, cách trung tâm Mũi Né khoảng 35km về phía bắc (gần 1 giờ chạy xe). Tiện nhất là đi xe máy theo đường ven biển hoặc ghép tour xe Jeep nửa ngày khởi hành từ Mũi Né.",
     },
     {
       slug: "suoi-tien-mui-ne",
@@ -204,8 +303,28 @@ async function main() {
       category: SpotCategory.other,
       lat: 10.9486,
       lng: 108.288,
-      description: "Khe suối nhỏ len giữa vách cát đỏ - trắng kỳ ảo, lội bộ mát chân.",
+      description:
+        "Một khe suối nhỏ nước trong vắt len lỏi giữa những vách cát đỏ và trắng kỳ ảo như tiểu hẻm núi thu nhỏ. Chỉ cần xắn quần lội bộ dọc dòng nước mát, bạn sẽ đi qua cả một 'bảo tàng' hình thù do gió và nước bào mòn nên.",
+      bestTime: "Sáng sớm",
+      bestTimeNote:
+        "Buổi sáng là lúc nắng dịu, nước mát và vách cát đỏ lên màu đẹp nhất cho ảnh. Tránh đi ngay sau mưa lớn vì nước có thể đục và chảy xiết. Mùa khô (tháng 11–4) dòng suối trong và dễ lội.",
       ticketInfo: "Miễn phí",
+      highlights: [
+        {
+          title: "Lội bộ giữa vách cát đỏ – trắng",
+          body: "Dòng suối nông, đáy cát mịn, hai bên là vách đất đỏ và nhũ cát trắng tầng tầng lớp lớp — vừa đi vừa ngắm như lạc vào một hẻm núi tí hon.",
+          imageUrl: "https://picsum.photos/seed/suoi-tien-vach/800/600",
+          imageAlt: "Vách cát đỏ trắng dọc Suối Tiên",
+        },
+      ],
+      tips: [
+        "Đi chân trần hoặc dép lê vì phải lội nước — không cần giày.",
+        "Suối nông, an toàn cho cả trẻ em, nhưng giữ điện thoại tránh ướt.",
+        "Gửi xe ở đầu suối (~5–10k), cẩn thận với người chèo kéo dịch vụ.",
+        "Hợp ghé buổi sáng rồi qua làng chài gần đó.",
+      ],
+      gettingThere:
+        "Lối vào Suối Tiên nằm ngay đường Huỳnh Thúc Kháng, khu Hàm Tiến – Mũi Né, rất gần các resort. Từ trung tâm Mũi Né chỉ vài phút xe; gửi xe đầu đường rồi đi bộ men theo dòng suối ngược lên.",
     },
     {
       slug: "lang-chai-mui-ne",
@@ -213,8 +332,33 @@ async function main() {
       category: SpotCategory.village,
       lat: 10.956,
       lng: 108.287,
-      description: "Bến cá nhộn nhịp sáng sớm với thúng chai và hải sản tươi rói.",
+      description:
+        "Muốn thấy một Mũi Né rất đời, hãy ra làng chài lúc tinh mơ. Hàng trăm chiếc thúng chai tròn dập dềnh đưa hải sản vào bờ, cả bãi rộn ràng kẻ mua người bán giữa mùi biển mặn mòi — một phiên chợ cá sống động bậc nhất vùng.",
       bestTime: "5–7h sáng",
+      bestTimeNote:
+        "Nhộn nhịp và đẹp nhất từ khoảng 5h đến 7h sáng, khi thuyền thúng lần lượt cập bờ và chợ cá họp ngay trên cát. Sau 7h30 thuyền về gần hết, chợ vãn dần. Ánh bình minh nghiêng trên hàng thúng cũng là khung cảnh chụp ảnh tuyệt đẹp.",
+      highlights: [
+        {
+          title: "Bình minh trên hàng thúng chai",
+          body: "Hàng trăm thúng chai tròn neo san sát, lắc lư theo sóng dưới nắng sớm — một trong những khung hình biểu tượng của làng chài miền biển.",
+          imageUrl: "https://picsum.photos/seed/lang-chai-thung/800/600",
+          imageAlt: "Thúng chai trên biển làng chài Mũi Né lúc bình minh",
+        },
+        {
+          title: "Chợ cá sớm tươi rói",
+          body: "Cá, mực, tôm, ghẹ vừa đánh bắt được bày bán ngay trên bãi với giá gốc — nơi tuyệt vời để cảm nhận nhịp sống ngư dân và mua hải sản tươi.",
+          imageUrl: "https://picsum.photos/seed/lang-chai-cho/800/600",
+          imageAlt: "Chợ cá sớm tại làng chài Mũi Né",
+        },
+      ],
+      tips: [
+        "Đến trước 6h30 để bắt trọn cảnh thuyền về và chợ đông nhất.",
+        "Mặc cả nhẹ nhàng khi mua hải sản; có thể nhờ quán gần đó chế biến.",
+        "Đi giày dễ tháo vì bãi ướt và nhiều cát.",
+        "Tôn trọng công việc của ngư dân khi chụp ảnh, hỏi trước khi quay cận.",
+      ],
+      gettingThere:
+        "Làng chài nằm ngay cuối đường Nguyễn Đình Chiểu, sát khu Mũi Né, chỉ vài phút từ các resort. Sáng sớm đi taxi hoặc xe máy là tiện nhất để kịp giờ chợ.",
     },
     {
       slug: "thap-po-sah-inu",
@@ -222,8 +366,34 @@ async function main() {
       category: SpotCategory.temple,
       lat: 10.929,
       lng: 108.128,
-      description: "Cụm tháp Chăm cổ trên đồi Bà Nài, nhìn ra cửa biển Phan Thiết.",
+      description:
+        "Trên đồi Bà Nài lộng gió, cụm tháp Chăm Po Sah Inư đã đứng lặng nhìn ra cửa biển Phan Thiết hơn một nghìn năm. Những khối gạch nung đỏ au với đường nét kiến trúc Chăm trầm mặc khiến nơi đây vừa là di tích quý vừa là điểm ngắm hoàng hôn rất riêng.",
+      bestTime: "Chiều mát",
+      bestTimeNote:
+        "Đẹp nhất vào cuối chiều khi nắng dịu, gạch tháp lên màu ấm và bạn có thể ở lại đón hoàng hôn trên đồi nhìn ra biển. Mùa khô (tháng 11–4) trời trong, thuận cho tham quan và chụp ảnh.",
       ticketInfo: "Vé ~15k",
+      highlights: [
+        {
+          title: "Kiến trúc Chăm ngàn năm",
+          body: "Cụm tháp xây từ thế kỷ 8–9 theo phong cách Hòa Lai, gạch xếp khít gần như không mạch vữa — minh chứng cho kỹ thuật xây dựng tài hoa của người Chăm xưa.",
+          imageUrl: "https://picsum.photos/seed/thap-cham-kientruc/800/600",
+          imageAlt: "Tháp Chăm Po Sah Inư",
+        },
+        {
+          title: "Hoàng hôn trên đồi Bà Nài",
+          body: "Vị trí trên đồi cao nhìn ra cửa biển Phan Thiết khiến đây là chỗ đón hoàng hôn yên tĩnh, ít đông hơn các bãi biển.",
+          imageUrl: "https://picsum.photos/seed/thap-cham-hoanghon/800/600",
+          imageAlt: "Hoàng hôn nhìn từ đồi tháp Po Sah Inư",
+        },
+      ],
+      tips: [
+        "Ăn mặc lịch sự vì đây là nơi tín ngưỡng của người Chăm.",
+        "Đi cuối chiều vừa mát vừa kịp ngắm hoàng hôn.",
+        "Gặp dịp lễ hội Katê (khoảng tháng 9–10 dương lịch) thì rất đáng xem.",
+        "Khuôn viên nhỏ, nên kết hợp tham quan cùng các điểm khác trong buổi.",
+      ],
+      gettingThere:
+        "Tháp nằm trên đồi Bà Nài, đường Nguyễn Thông, phường Phú Hài — cách trung tâm Phan Thiết khoảng 7km (15 phút) trên đường ra Mũi Né. Đi taxi hoặc xe máy đều thuận, có bãi đỗ xe tại chân đồi.",
     },
     {
       slug: "hon-rom",
@@ -231,8 +401,28 @@ async function main() {
       category: SpotCategory.beach,
       lat: 10.976,
       lng: 108.329,
-      description: "Bãi tắm nước trong, yên bình, thích hợp gia đình.",
+      description:
+        "Nằm ở cuối cung đường Mũi Né, Hòn Rơm là bãi tắm nước trong xanh, sóng êm và còn khá hoang sơ. Vắng vẻ, sạch sẽ và an toàn, đây là lựa chọn lý tưởng cho những ai muốn tránh đám đông và thư giãn cùng gia đình.",
+      bestTime: "Sáng & chiều mát",
+      bestTimeNote:
+        "Nước trong và êm nhất vào buổi sáng; chiều mát thì dễ chịu để tắm và dạo bãi. Mùa hè (tháng 4–8) biển lặng, hợp tắm; mùa gió cuối năm sóng lớn hơn, cần để ý khi xuống nước.",
       ticketInfo: "Miễn phí",
+      highlights: [
+        {
+          title: "Bãi tắm trong xanh, ít người",
+          body: "Bờ cát sạch, nước trong và sóng nhẹ khiến Hòn Rơm bình yên hơn hẳn các bãi trung tâm — rất hợp để tắm cùng trẻ nhỏ.",
+          imageUrl: "https://picsum.photos/seed/hon-rom-bai/800/600",
+          imageAlt: "Bãi tắm trong xanh ở Hòn Rơm",
+        },
+      ],
+      tips: [
+        "Hợp đi cùng gia đình nhờ nước êm, nhưng vẫn để mắt tới trẻ nhỏ.",
+        "Dịch vụ ít hơn khu trung tâm, nên mang theo nước và đồ ăn nhẹ.",
+        "Kết hợp ghé cùng Bàu Trắng vì nằm cùng hướng bắc.",
+        "Một số khu cho phép cắm trại, ngắm sao buổi tối.",
+      ],
+      gettingThere:
+        "Hòn Rơm thuộc phường Mũi Né, cách trung tâm Mũi Né khoảng 7–10km về phía bắc theo đường ven biển (15–20 phút xe máy). Đường đẹp, dễ đi, có thể ghép cùng cung Bàu Trắng.",
     },
     {
       slug: "bai-da-ong-dia",
@@ -240,18 +430,61 @@ async function main() {
       category: SpotCategory.beach,
       lat: 10.927,
       lng: 108.256,
-      description: "Bãi đá độc đáo với tảng đá hình Ông Địa, điểm check-in hoàng hôn.",
+      description:
+        "Bãi biển nhỏ này nổi tiếng nhờ một tảng đá lớn có hình dáng tựa Ông Địa đang ngồi nhìn ra khơi, được người dân lập am thờ. Những ghềnh đá đen xen cát vàng cùng sóng vỗ tạo nên khung cảnh vừa linh thiêng vừa rất 'ăn ảnh', đặc biệt lúc hoàng hôn.",
+      bestTime: "Hoàng hôn",
+      bestTimeNote:
+        "Đẹp nhất lúc hoàng hôn khi nắng vàng đổ lên ghềnh đá và mặt biển — khung giờ check-in được yêu thích nhất. Sáng sớm cũng yên tĩnh, sóng vỗ ghềnh đá đẹp. Khi triều xuống, bãi đá lộ ra nhiều, dễ leo trèo chụp ảnh.",
       ticketInfo: "Miễn phí",
+      highlights: [
+        {
+          title: "Tảng đá hình Ông Địa",
+          body: "Khối đá tự nhiên có hình dáng giống Ông Địa đã thành biểu tượng và nơi cầu may của người dân — gắn liền với tên gọi của bãi.",
+          imageUrl: "https://picsum.photos/seed/ong-dia-da/800/600",
+          imageAlt: "Tảng đá hình Ông Địa bên bờ biển",
+        },
+        {
+          title: "Ghềnh đá check-in hoàng hôn",
+          body: "Những ghềnh đá đen nhấp nhô xen bãi cát là phông nền lý tưởng cho ảnh hoàng hôn, thu hút đông bạn trẻ mỗi chiều.",
+          imageUrl: "https://picsum.photos/seed/ong-dia-ghenh/800/600",
+          imageAlt: "Ghềnh đá Bãi đá Ông Địa lúc hoàng hôn",
+        },
+      ],
+      tips: [
+        "Đến trước hoàng hôn chừng 30 phút để chọn chỗ đẹp.",
+        "Cẩn thận khi leo trèo trên đá trơn, nhất là lúc sóng lớn.",
+        "Đi lúc triều xuống sẽ thấy nhiều đá hơn để tạo dáng.",
+        "Giữ gìn vệ sinh và tôn trọng am thờ của người dân.",
+      ],
+      gettingThere:
+        "Bãi đá Ông Địa nằm trên đường Nguyễn Đình Chiểu, đoạn đầu khu Hàm Tiến trên đường từ Phan Thiết ra Mũi Né — cách trung tâm thành phố khoảng 10km. Đi taxi hoặc xe máy đều dễ, gửi xe ven đường.",
     },
   ];
 
   const spotId: Record<string, string> = {};
   for (const s of spots) {
-    const { slug, name, ...rest } = s;
+    const { slug, name, highlights, ...rest } = s;
+    const hl =
+      highlights && highlights.length > 0
+        ? highlights.map((h, i) => ({ ...h, order: i }))
+        : null;
     const row = await prisma.spot.upsert({
       where: { slug },
-      update: { ...rest, placeId: phanThiet.id, ...PUB },
-      create: { slug, name, ...rest, placeId: phanThiet.id, ...PUB },
+      update: {
+        ...rest,
+        placeId: phanThiet.id,
+        ...PUB,
+        // sửa: xoá điểm nhấn cũ rồi tạo lại theo thứ tự
+        highlights: hl ? { deleteMany: {}, create: hl } : undefined,
+      },
+      create: {
+        slug,
+        name,
+        ...rest,
+        placeId: phanThiet.id,
+        ...PUB,
+        highlights: hl ? { create: hl } : undefined,
+      },
     });
     spotId[slug] = row.id;
     await setImages({ spotId: row.id }, IMAGES[slug] ?? [], name);

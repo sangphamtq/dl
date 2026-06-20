@@ -315,8 +315,7 @@ model Spot {
   id          String        @id @default(cuid())
   slug        String        @unique
   name        String
-  description String? // mô tả ngắn (meta SEO, card, excerpt hero)
-  content     String? // thân bài chi tiết: HTML (rich text) — tùy chọn
+  description String? // mô tả ngắn / mở bài (meta SEO, card, excerpt hero)
   category    SpotCategory?
 
   // PlaceableFields (cơ sở thực địa)
@@ -343,11 +342,17 @@ model Spot {
   place   Place  @relation(fields: [placeId], references: [id], onDelete: Cascade)
 
   // Thực tế về chỗ (xem CLAUDE.md "Spot vs Activity")
-  bestTime   String? // mùa/giờ đẹp nhất ("mùa lúa chín", "sáng sớm")
+  bestTime     String? // mùa/giờ đẹp nhất — ngắn, cho chip hero ("sáng sớm")
+  bestTimeNote String? // diễn giải "khi nào đẹp nhất" — đoạn cho mục riêng
   ticketFree  Boolean @default(false) // miễn phí vào cửa
   ticketTiers Json? // [{ label, price, note }] — giá VND, null/0 = miễn phí (xem lib/tickets)
   ticketInfo  String? // ghi chú vé chung (giờ bán vé, ưu đãi…)
   notice      String? // cảnh báo truy cập: "Tạm đóng", "Cần xin phép leo"
+
+  // Nội dung biên tập có khuôn (thay rich-text tự do)
+  gettingThere String? // cách đến riêng cho địa điểm này (hướng dẫn, mẹo đường đi)
+  tips         String[] @default([]) // kinh nghiệm / mẹo — mỗi phần tử một gạch đầu dòng
+  highlights   SpotHighlight[] // điểm nhấn (title + body + ảnh), sắp theo order
 
   activities Activity[] @relation("ActivitySpots") // M:N
 
@@ -366,6 +371,23 @@ model Spot {
   @@index([placeId])
   @@index([category])
   @@index([status])
+}
+
+// Điểm nhấn của một địa điểm — mỗi mục có tiêu đề, mô tả và ảnh riêng.
+model SpotHighlight {
+  id       String  @id @default(cuid())
+  spotId   String
+  spot     Spot    @relation(fields: [spotId], references: [id], onDelete: Cascade)
+  order    Int     @default(0)
+  title    String
+  body     String? // mô tả ngắn cho điểm nhấn
+  imageUrl String? // ảnh minh hoạ (URL)
+  imageAlt String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([spotId])
 }
 
 model Specialty {
