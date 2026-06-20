@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { MobileNav } from "./mobile-nav";
 import { UserMenu } from "./user-menu";
 import { HeaderSearch } from "./header-search";
+import { SiteNav } from "./site-nav";
 
 const NAV_LINKS = [
   { href: "/diem-den", label: "Điểm đến" },
@@ -19,37 +20,31 @@ export async function SiteHeader() {
   const user = session?.user;
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/70 backdrop-blur-lg">
+    <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:px-6">
         <MobileNav links={NAV_LINKS} isAuthed={!!user} />
 
         {/* Logo */}
         <Link
           href="/"
-          className="flex items-center gap-2 font-semibold tracking-tight"
+          className="group flex items-center gap-2.5 font-bold tracking-tight"
         >
-          <Image
-            src="/icon-192.png"
-            alt={settings.siteName}
-            width={32}
-            height={32}
-            className="size-8 rounded-lg"
-          />
-          <span className="hidden sm:inline">{settings.siteName}</span>
+          <span className="grid size-9 place-items-center overflow-hidden rounded-xl ring-1 ring-border/60 transition-transform group-hover:-rotate-3">
+            <Image
+              src="/icon-192.png"
+              alt={settings.siteName}
+              width={36}
+              height={36}
+              className="size-full object-cover"
+            />
+          </span>
+          <span className="hidden text-base sm:inline">
+            {settings.siteName}
+          </span>
         </Link>
 
         {/* Desktop nav */}
-        <nav className="ml-2 hidden items-center gap-1 md:flex">
-          {NAV_LINKS.map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            >
-              {l.label}
-            </Link>
-          ))}
-        </nav>
+        <SiteNav links={NAV_LINKS} className="ml-3 hidden md:flex" />
 
         {/* Right side */}
         <div className="ml-auto flex items-center gap-2">
@@ -61,7 +56,7 @@ export async function SiteHeader() {
             aria-label="Tìm kiếm"
             className={cn(
               buttonVariants({ variant: "ghost", size: "icon" }),
-              "lg:hidden",
+              "rounded-full lg:hidden",
             )}
           >
             <Search className="size-5" />
@@ -77,7 +72,10 @@ export async function SiteHeader() {
               }}
             />
           ) : (
-            <Link href="/login" className={buttonVariants({ size: "sm" })}>
+            <Link
+              href="/login"
+              className="inline-flex h-9 items-center rounded-full bg-warm px-4 text-sm font-semibold text-warm-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:bg-warm/90"
+            >
               Đăng nhập
             </Link>
           )}

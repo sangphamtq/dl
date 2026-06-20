@@ -1,12 +1,11 @@
-import Link from "next/link";
-import { MapPinned, Star, Sparkles } from "lucide-react";
+import { MapPinned, Sparkles } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { cn } from "@/lib/utils";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import {
   DestinationFilter,
   type DestItem,
+  type ProvinceItem,
 } from "@/components/site/destination-filter";
 
 export const metadata = {
@@ -122,8 +121,29 @@ export default async function DiemDenPage() {
     parentName: d.parent?.name ?? null,
     region: regionOf(d.parent?.slug),
   }));
-  const destRegions = [...REGIONS.map((r) => r.label), "Khác"].filter((label) =>
-    destItems.some((d) => d.region === label),
+  const provinceItems: ProvinceItem[] = provinces.map((p) => {
+    const c = p._count;
+    return {
+      slug: p.slug,
+      name: p.name,
+      region: regionOf(p.slug),
+      isFeatured: p.isFeatured,
+      childCount: c.children,
+      hasContent:
+        c.children +
+          c.spots +
+          c.activities +
+          c.specialties +
+          c.eateries +
+          c.accommodations >
+        0,
+    };
+  });
+  // Miền có điểm đến hoặc tỉnh (giữ thứ tự Bắc → Trung → Nam → Khác).
+  const allRegions = [...REGIONS.map((r) => r.label), "Khác"].filter(
+    (label) =>
+      destItems.some((d) => d.region === label) ||
+      provinceItems.some((p) => p.region === label),
   );
 
   return (
@@ -176,95 +196,12 @@ export default async function DiemDenPage() {
             </p>
           </div>
         ) : (
-          <div className="mx-auto max-w-6xl space-y-16 px-4 py-12 sm:px-6 sm:py-16">
-            {/* Điểm đến — gộp chung + filter chọn miền (H1 ở header đã giới thiệu) */}
-            {destItems.length > 0 && (
-              <section>
-                <DestinationFilter items={destItems} regions={destRegions} />
-              </section>
-            )}
-
-            {/* Tỉnh */}
-            {provinces.length > 0 && (
-              <section>
-                <SectionHead
-                  title="Khám phá theo tỉnh"
-                  subtitle="Coi mỗi tỉnh như một điểm đến cực lớn."
-                />
-                <div className="mt-6 space-y-6">
-                  {REGIONS.map((r) => {
-                    const list = provinces.filter((p) =>
-                      r.slugs.includes(p.slug as never),
-                    );
-                    if (list.length === 0) return null;
-                    return (
-                      <div key={r.label}>
-                        <h3 className="flex items-baseline gap-2">
-                          <span className="text-sm font-semibold text-primary">
-                            {r.label}
-                          </span>
-                          <span className="text-xs tabular-nums text-muted-foreground">
-                            {list.length} tỉnh
-                          </span>
-                        </h3>
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          {list.map((p) => {
-                            const c = p._count;
-                            const hasContent =
-                              c.children +
-                                c.spots +
-                                c.activities +
-                                c.specialties +
-                                c.eateries +
-                                c.accommodations >
-                              0;
-                            if (!hasContent) {
-                              return (
-                                <span
-                                  key={p.slug}
-                                  aria-disabled="true"
-                                  title="Đang cập nhật"
-                                  className="inline-flex cursor-not-allowed items-center rounded-full border border-dashed border-border/50 px-3 py-1.5 text-sm text-muted-foreground/50"
-                                >
-                                  {p.name}
-                                </span>
-                              );
-                            }
-                            return (
-                              <Link
-                                key={p.slug}
-                                href={`/diem-den/${p.slug}`}
-                                className={cn(
-                                  "inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card px-3 py-1.5 text-sm transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary",
-                                  p.isFeatured && "font-medium",
-                                )}
-                              >
-                                {p.isFeatured && (
-                                  <Star
-                                    className="size-3.5 text-warm/80"
-                                    aria-hidden
-                                  />
-                                )}
-                                {p.name}
-                                {c.children >= 2 && (
-                                  <span
-                                    title={`${c.children} điểm đến`}
-                                    aria-label={`${c.children} điểm đến`}
-                                    className="grid h-4 min-w-4 place-items-center rounded-full bg-primary/10 px-1 text-[10px] font-semibold tabular-nums text-primary"
-                                  >
-                                    {c.children}
-                                  </span>
-                                )}
-                              </Link>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-            )}
+          <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+            <DestinationFilter
+              items={destItems}
+              provinces={provinceItems}
+              regions={allRegions}
+            />
           </div>
         )}
       </main>
@@ -274,12 +211,4 @@ export default async function DiemDenPage() {
   );
 }
 
-function SectionHead({ title, subtitle }: { title: string; subtitle: string }) {
-  return (
-    <div className="space-y-1">
-      <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">{title}</h2>
-      <p className="text-muted-foreground">{subtitle}</p>
-    </div>
-  );
-}
 
