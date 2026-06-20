@@ -18,6 +18,7 @@ export type ActivityFormInput = {
   name: string;
   slug: string;
   description: string;
+  content: string; // HTML rich text (tùy chọn)
   category: string; // "" = none
   placeId: string;
   durationText: string;
@@ -96,6 +97,7 @@ async function normalize(
       name,
       slug,
       description: input.description.trim() || null,
+      content: input.content.trim() || null,
       category,
       placeId: input.placeId,
       durationText: input.durationText.trim() || null,

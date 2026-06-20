@@ -6,11 +6,13 @@ import {
   Clock,
   CalendarDays,
   Building2,
+  MapPin,
   Ticket,
   ExternalLink,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { coverUrl } from "@/lib/place-image";
+import { proseClass } from "@/components/cms/rich-text-editor";
 import { parseTicketTiers, tierPriceLabel } from "@/lib/tickets";
 import {
   ACTIVITY_CATEGORY_LABELS,
@@ -22,7 +24,6 @@ import { SiteFooter } from "@/components/site/site-footer";
 import { RelatedPosts } from "@/components/site/related-posts";
 import { ListingViewTracker } from "@/components/site/listing-view-tracker";
 import { isStaffViewer } from "@/lib/preview";
-import { CrossLinkCard } from "@/components/site/cross-link-card";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -56,6 +57,7 @@ export default async function ActivityPublicPage({
       name: true,
       slug: true,
       description: true,
+      content: true,
       category: true,
       status: true,
       durationText: true,
@@ -147,12 +149,19 @@ export default async function ActivityPublicPage({
 
         <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-12">
           <div className="grid grid-cols-1 gap-10 lg:grid-cols-3">
-            <div className="space-y-10 lg:col-span-2">
-              {activity.description && (
+            <div className="min-w-0 space-y-10 lg:col-span-2">
+              {(activity.content || activity.description) && (
                 <section>
-                  <p className="whitespace-pre-line text-base leading-7 text-foreground/90">
-                    {activity.description}
-                  </p>
+                  {activity.content ? (
+                    <div
+                      className={proseClass}
+                      dangerouslySetInnerHTML={{ __html: activity.content }}
+                    />
+                  ) : (
+                    <p className="whitespace-pre-line text-base leading-7 text-foreground/90">
+                      {activity.description}
+                    </p>
+                  )}
                 </section>
               )}
 
@@ -177,26 +186,6 @@ export default async function ActivityPublicPage({
                 </section>
               )}
 
-              {/* Diễn ra ở đâu */}
-              {activity.spots.length > 0 && (
-                <section>
-                  <h2 className="text-xl font-semibold tracking-tight">
-                    Diễn ra ở đâu
-                  </h2>
-                  <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                    {activity.spots.map((s) => (
-                      <CrossLinkCard
-                        key={s.slug}
-                        href={`/dia-diem/${s.slug}`}
-                        name={s.name}
-                        slug={s.slug}
-                        images={s.images}
-                        subtitle={label(SPOT_CATEGORY_LABELS, s.category)}
-                      />
-                    ))}
-                  </div>
-                </section>
-              )}
             </div>
 
             {/* Sidebar */}
@@ -235,6 +224,53 @@ export default async function ActivityPublicPage({
                       ))}
                     </dl>
                   )}
+                </div>
+              )}
+
+              {/* Diễn ra ở đâu */}
+              {activity.spots.length > 0 && (
+                <div className="rounded-2xl border p-5">
+                  <h2 className="flex items-center gap-2 text-sm font-semibold">
+                    <MapPin
+                      className="size-4 text-muted-foreground"
+                      aria-hidden
+                    />
+                    Diễn ra ở đâu
+                  </h2>
+                  <ul className="mt-3 space-y-0.5">
+                    {activity.spots.map((s) => (
+                      <li key={s.slug}>
+                        <Link
+                          href={`/dia-diem/${s.slug}`}
+                          className="group -mx-2 flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-muted/60"
+                        >
+                          <span className="relative size-11 shrink-0 overflow-hidden rounded-lg bg-muted">
+                            <Image
+                              src={coverUrl(s.images, s.slug, 96, 96)}
+                              alt=""
+                              fill
+                              sizes="44px"
+                              className="object-cover transition-transform duration-300 group-hover:scale-105"
+                            />
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-sm font-medium">
+                              {s.name}
+                            </span>
+                            {label(SPOT_CATEGORY_LABELS, s.category) && (
+                              <span className="block truncate text-xs text-muted-foreground">
+                                {label(SPOT_CATEGORY_LABELS, s.category)}
+                              </span>
+                            )}
+                          </span>
+                          <ChevronRight
+                            className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary"
+                            aria-hidden
+                          />
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
 

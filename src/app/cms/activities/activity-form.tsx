@@ -22,6 +22,7 @@ import { Combobox } from "@/components/ui/combobox";
 import { MultiCombobox } from "@/components/ui/multi-combobox";
 import { Switch } from "@/components/ui/switch";
 import { FormSection } from "@/components/cms/form-section";
+import { RichTextEditor } from "@/components/cms/rich-text-editor";
 import {
   createActivity,
   updateActivity,
@@ -37,6 +38,7 @@ const EMPTY: ActivityFormValues = {
   name: "",
   slug: "",
   description: "",
+  content: "",
   category: "",
   placeId: "",
   durationText: "",
@@ -212,14 +214,28 @@ export function ActivityForm({
             </p>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="description">Mô tả</Label>
+            <Label htmlFor="description">Mô tả ngắn</Label>
             <Textarea
               id="description"
               value={values.description}
               onChange={(e) => set("description", e.target.value)}
-              placeholder="Trải nghiệm này như thế nào…"
-              rows={5}
+              placeholder="Giới thiệu ngắn gọn (hiển thị ở card, meta SEO, dưới hero)…"
+              rows={4}
             />
+            <p className="text-xs text-muted-foreground">
+              2–5 câu. Dùng cho card, kết quả tìm kiếm và đoạn dẫn dưới hero.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Label>Nội dung chi tiết</Label>
+            <RichTextEditor
+              value={values.content}
+              onChange={(html) => set("content", html)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Tùy chọn. Bài viết dày dặn (tiêu đề, danh sách, ảnh…) hiển thị ở
+              đầu trang hoạt động. Để trống thì trang dùng mô tả ngắn ở trên.
+            </p>
           </div>
         </FormSection>
 

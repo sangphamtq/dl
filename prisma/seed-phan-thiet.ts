@@ -265,7 +265,8 @@ async function main() {
       category: ActivityCategory.adventure,
       difficulty: ActivityDifficulty.easy,
       durationText: "1–2 giờ",
-      description: "Mượn ván, leo đồi rồi trượt xuống — trò vui đặc sản của Mũi Né.",
+      description:
+        "Chẳng cần kinh nghiệm hay đồ nghề cầu kỳ — chỉ một tấm ván nhựa thuê ngay dưới chân đồi là bạn đã sẵn sàng. Leo lên triền cát mịn, ngồi lên ván rồi buông mình trượt một mạch xuống dốc trong tiếng cười giòn tan. Trò chơi tuổi thơ này hợp với mọi lứa tuổi, và gần như ai ghé Mũi Né cũng muốn thử cho bằng được.",
       spots: ["doi-cat-bay-mui-ne", "bau-trang"],
     },
     {
@@ -276,7 +277,7 @@ async function main() {
       durationText: "Nửa ngày",
       seasonText: "Tháng 11 – 3 (mùa gió)",
       description:
-        "Mũi Né là một trong những điểm lướt ván diều tốt nhất châu Á nhờ gió ổn định.",
+        "Không phải ngẫu nhiên mà dân lướt ván diều khắp thế giới gọi tên Mũi Né: gió ở đây thổi đều và mạnh suốt mùa khô, mặt biển rộng thoáng đủ chỗ cho những cánh diều sải cánh. Từ tháng 11 đến tháng 3, cả bãi biển nhuộm kín sắc màu của hàng trăm cánh diều chao liệng trên sóng. Người mới có thể đăng ký một lớp học ngay tại các trung tâm ven biển, còn dân chơi lâu năm thì tha hồ vẫy vùng.",
       spots: ["bai-bien-mui-ne"],
     },
     {
@@ -289,7 +290,7 @@ async function main() {
       operatorName: "Các đơn vị tour địa phương",
       priceRange: PriceRange.moderate,
       description:
-        "Xe Jeep đón từ mờ sáng, ngắm bình minh trên đồi cát bay rồi vòng qua Bàu Trắng, suối Tiên, làng chài.",
+        "Khi trời còn nhập nhoạng, chiếc Jeep mui trần đón bạn lao đi trong gió sớm, kịp đặt chân lên đồi cát bay đúng lúc mặt trời ló rạng. Ánh bình minh trải vàng trên những triền cát uốn lượn là khoảnh khắc khó quên nhất của cả chuyến đi. Hành trình thường nối tiếp qua Bàu Trắng, suối Tiên rồi làng chài, gói trọn tinh hoa Mũi Né chỉ trong một buổi sáng.",
       spots: ["doi-cat-bay-mui-ne", "bau-trang", "suoi-tien-mui-ne"],
     },
     {
@@ -297,7 +298,8 @@ async function main() {
       name: "Tắm biển",
       category: ActivityCategory.water,
       difficulty: ActivityDifficulty.easy,
-      description: "Thả mình trong làn nước ấm dọc các bãi biển Phan Thiết.",
+      description:
+        "Biển Phan Thiết ấm áp gần như quanh năm, sóng vừa phải và bờ cát thoai thoải rất hợp để ngâm mình thư giãn. Bạn có thể chọn bãi Mũi Né đông vui, Hòn Rơm nước trong xanh hay bãi đá Ông Địa nhiều góc check-in. Sáng sớm và chiều muộn là lúc nước dịu, nắng nhẹ, dễ chịu nhất để xuống tắm.",
       spots: ["bai-bien-mui-ne", "hon-rom", "bai-da-ong-dia"],
     },
     {
@@ -308,7 +310,7 @@ async function main() {
       durationText: "1–2 giờ",
       seasonText: "Đẹp nhất sáng sớm, biển lặng",
       description:
-        "Chèo SUP/kayak dọc bờ biển buổi sớm khi mặt nước phẳng lặng, ngắm bình minh trên biển.",
+        "Có gì bình yên hơn việc lướt nhẹ trên mặt biển phẳng lặng khi ngày vừa thức giấc? Buổi sớm, lúc gió chưa nổi và nước còn như gương, chèo SUP hay kayak dọc bờ là cách tuyệt vời để ngắm bình minh từ một góc rất riêng. Hoạt động nhẹ nhàng, dễ làm quen, phù hợp cả với người lần đầu cầm mái chèo.",
       spots: ["hon-rom", "bai-bien-mui-ne"],
     },
     {
@@ -320,7 +322,7 @@ async function main() {
       operatorName: "Dịch vụ thể thao biển tại bãi",
       priceRange: PriceRange.moderate,
       description:
-        "Lái mô tô nước, dù bay, chuối phao — những trò cảm giác mạnh ngay trên biển Mũi Né.",
+        "Dành cho những ai mê cảm giác mạnh, bãi biển Mũi Né có đủ trò để tim đập nhanh: phóng mô tô nước rẽ sóng, bay bổng cùng dù kéo hay nhún nhảy trên chuối phao. Các dịch vụ đều có sẵn ngay tại bãi, trang bị áo phao và hướng dẫn đầy đủ. Chỉ vài chục phút thôi cũng đủ để adrenaline dâng trào giữa nắng và sóng.",
       spots: ["bai-bien-mui-ne", "hon-rom"],
     },
     {
@@ -330,7 +332,7 @@ async function main() {
       difficulty: ActivityDifficulty.easy,
       durationText: "Khoảng 1 giờ",
       description:
-        "Khám phá kiến trúc Chăm cổ trên đồi Bà Nài và phóng tầm mắt ra cửa biển Phan Thiết.",
+        "Trên đồi Bà Nài lộng gió, cụm tháp Po Sah Inư cổ kính lặng lẽ nhìn ra cửa biển Phan Thiết suốt hơn ngàn năm. Lối kiến trúc Chăm với những mảng gạch nung đỏ au mang vẻ đẹp trầm mặc, đầy chiều sâu lịch sử. Ghé vào lúc chiều xuống, bạn vừa khám phá di tích vừa kịp đón hoàng hôn buông trên thành phố biển.",
       spots: ["thap-po-sah-inu"],
     },
     {
@@ -341,7 +343,7 @@ async function main() {
       durationText: "Cuối ngày",
       seasonText: "Quanh năm",
       description:
-        "Ngắm hoàng hôn rực rỡ buông xuống bãi đá, đồi cát và tháp cổ — khoảnh khắc lãng mạn nhất ngày.",
+        "Khi mặt trời bắt đầu hạ xuống, cả Phan Thiết như được nhuộm trong sắc cam ấm áp. Bãi đá Ông Địa, những triền cát bay hay tháp Chăm trên đồi đều là chỗ tuyệt đẹp để ngắm khoảnh khắc ngày tàn. Mang theo một ly cà phê, ngồi lặng nhìn trời chuyển màu — đó là cách lãng mạn nhất để khép lại một ngày ở thành phố biển.",
       spots: ["bai-da-ong-dia", "doi-cat-bay-mui-ne", "thap-po-sah-inu"],
     },
   ];

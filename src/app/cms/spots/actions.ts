@@ -1,7 +1,8 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { auth } from "@/auth";
+import { ORS_CACHE_TAG } from "@/lib/routing";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import { SpotCategory, PublishStatus } from "@/generated/prisma/enums";
@@ -18,6 +19,7 @@ export type SpotFormInput = {
   name: string;
   slug: string;
   description: string;
+  content: string; // HTML rich text (tùy chọn)
   category: string; // "" = none
   placeId: string;
   address: string;
@@ -125,6 +127,7 @@ async function normalize(
       name,
       slug,
       description: input.description.trim() || null,
+      content: input.content.trim() || null,
       category,
       placeId: input.placeId,
       address: input.address.trim() || null,
@@ -158,6 +161,7 @@ export async function createSpot(input: SpotFormInput): Promise<ActionResult> {
   if ("error" in res) return { ok: false, error: res.error };
   const spot = await prisma.spot.create({ data: res.data });
   revalidatePath("/cms/spots");
+  updateTag(ORS_CACHE_TAG); // toạ độ mới → làm mới khoảng cách "quanh đây"
   return { ok: true, id: spot.id };
 }
 
@@ -172,6 +176,7 @@ export async function updateSpot(
   revalidatePath("/cms/spots");
   revalidatePath(`/cms/spots/${id}`);
   revalidatePath(`/cms/spots/${id}/edit`);
+  updateTag(ORS_CACHE_TAG); // toạ độ có thể đổi → làm mới khoảng cách
   return { ok: true, id };
 }
 

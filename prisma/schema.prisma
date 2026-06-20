@@ -271,7 +271,8 @@ model Activity {
   id          String            @id @default(cuid())
   slug        String            @unique
   name        String
-  description String?
+  description String? // mô tả ngắn (meta SEO, card, excerpt hero)
+  content     String? // thân bài chi tiết: HTML (rich text) — tùy chọn
   category    ActivityCategory?
 
   // Đơn vị khai thác / đặt chỗ (inline, không tách entity Provider)
@@ -314,7 +315,8 @@ model Spot {
   id          String        @id @default(cuid())
   slug        String        @unique
   name        String
-  description String?
+  description String? // mô tả ngắn (meta SEO, card, excerpt hero)
+  content     String? // thân bài chi tiết: HTML (rich text) — tùy chọn
   category    SpotCategory?
 
   // PlaceableFields (cơ sở thực địa)
