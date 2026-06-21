@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { coverUrl } from "@/lib/place-image";
@@ -7,6 +7,9 @@ import { SiteFooter } from "@/components/site/site-footer";
 import { PeerBar } from "@/components/site/peer-bar";
 import { getDestinationPeerGroups } from "@/lib/peers";
 import { ListingView } from "@/components/site/listing-view";
+import { type SpecialtyDetailData } from "@/components/site/specialty-detail";
+import { type EateryDetailData } from "@/components/site/eatery-detail";
+import { FoodSection } from "@/components/site/food-section";
 import { PlaceHero } from "@/components/site/place-hero";
 import { PlaceTabs } from "@/components/site/place-tabs";
 import { type HeroImage } from "@/components/site/place-hero-stack";
@@ -19,26 +22,27 @@ import {
 import {
   SPOT_CATEGORY_LABELS,
   ACTIVITY_CATEGORY_LABELS,
-  EATERY_CATEGORY_LABELS,
   ACCOMMODATION_CATEGORY_LABELS,
   DIFFICULTY_LABELS,
   label,
 } from "@/lib/listing-labels";
 import { parseTicketTiers, formatVnd } from "@/lib/tickets";
 
-// Map token [loai] đơn loại → model + tiêu đề + tiền tố URL chi tiết.
+// Map token [loai] đơn loại → model + tiêu đề. Đặc sản & Quán ăn KHÔNG còn ở đây:
+// chúng hiển thị chi tiết inline trên tab gộp "am-thuc" (xem dưới).
 const LOAI = {
   "hoat-dong": { title: "Hoạt động & trải nghiệm", model: "activity" },
   "dia-diem": { title: "Địa điểm tham quan", model: "spot" },
-  "dac-san": { title: "Đặc sản", model: "specialty" },
-  "quan-an": { title: "Quán ăn", model: "eatery" },
   "luu-tru": { title: "Nơi lưu trú", model: "accommodation" },
 } as const;
 
 type Loai = keyof typeof LOAI;
 
-// am-thuc = tab gộp: hiển thị Đặc sản + Quán ăn trên cùng một trang.
+// am-thuc = tab gộp: hiển thị chi tiết Đặc sản + Quán ăn trên cùng một trang.
 const AM_THUC = "am-thuc";
+
+// URL chi tiết cũ giờ gộp vào tab "am-thuc" → redirect để không 404.
+const FOOD_LEGACY = new Set(["dac-san", "quan-an"]);
 
 type LinkRef = { slug: string; name: string };
 type Fact = { kind: "location" | "price" | "time"; text: string };
@@ -102,8 +106,6 @@ const EXTRA_SELECT: Record<ListingModel, Record<string, unknown>> = {
       select: { activity: { select: { slug: true, name: true } } },
     },
   },
-  specialty: {},
-  eatery: { category: true, openingHours: true },
   accommodation: { category: true },
 };
 
@@ -127,8 +129,6 @@ function buildTag(model: ListingModel, r: RawListing): string | null {
       return label(SPOT_CATEGORY_LABELS, r.category);
     case "activity":
       return label(ACTIVITY_CATEGORY_LABELS, r.category);
-    case "eatery":
-      return label(EATERY_CATEGORY_LABELS, r.category);
     case "accommodation":
       return label(ACCOMMODATION_CATEGORY_LABELS, r.category);
     default:
@@ -146,8 +146,6 @@ function buildMeta(model: ListingModel, r: RawListing): string[] {
         r.seasonText,
         activityPrice(r.ticketFree, r.ticketTiers),
       ].filter(Boolean) as string[];
-    case "eatery":
-      return [r.openingHours].filter(Boolean) as string[];
     default:
       return [];
   }
@@ -208,6 +206,74 @@ async function fetchListing(
   }));
 }
 
+const FOOD_ORDER = [
+  { isFeatured: "desc" as const },
+  { order: "asc" as const },
+  { popularity: "desc" as const },
+  { name: "asc" as const },
+];
+// Quan hệ liên kết chéo (eatery↔specialty) — card có ảnh bìa.
+const crossLinkSelect = {
+  where: { status: "published" as const },
+  orderBy: [{ isFeatured: "desc" as const }, { name: "asc" as const }],
+  select: {
+    slug: true,
+    name: true,
+    images: { where: { isCover: true }, take: 1, select: { url: true, isCover: true } },
+  },
+};
+const gallerySelect = {
+  orderBy: [{ isCover: "desc" as const }, { order: "asc" as const }],
+  select: { id: true, url: true, alt: true, isCover: true },
+};
+
+// Chi tiết đầy đủ Đặc sản của một place — render khối trên tab Ẩm thực.
+async function fetchSpecialtyDetails(
+  placeId: string,
+): Promise<SpecialtyDetailData[]> {
+  return prisma.specialty.findMany({
+    where: { placeId, status: "published" },
+    orderBy: FOOD_ORDER,
+    select: {
+      slug: true,
+      name: true,
+      description: true,
+      tags: true,
+      images: gallerySelect,
+      eateries: crossLinkSelect,
+    },
+  });
+}
+
+// Chi tiết đầy đủ Quán ăn của một place — render khối trên tab Ẩm thực.
+async function fetchEateryDetails(placeId: string): Promise<EateryDetailData[]> {
+  return prisma.eatery.findMany({
+    where: { placeId, status: "published" },
+    orderBy: FOOD_ORDER,
+    select: {
+      slug: true,
+      name: true,
+      description: true,
+      category: true,
+      address: true,
+      lat: true,
+      lng: true,
+      openingHours: true,
+      phone: true,
+      website: true,
+      bookingUrl: true,
+      meals: true,
+      notice: true,
+      tags: true,
+      wardName: true,
+      districtName: true,
+      provinceName: true,
+      images: gallerySelect,
+      specialties: crossLinkSelect,
+    },
+  });
+}
+
 function pageTitle(loai: string): string | null {
   if (loai === AM_THUC) return "Ẩm thực";
   return LOAI[loai as Loai]?.title ?? null;
@@ -235,6 +301,8 @@ export default async function PlaceListingPage({
   params: Promise<{ placeSlug: string; loai: string }>;
 }) {
   const { placeSlug, loai } = await params;
+  // URL chi tiết Đặc sản/Quán ăn cũ đã gộp vào tab Ẩm thực.
+  if (FOOD_LEGACY.has(loai)) redirect(`/diem-den/${placeSlug}/${AM_THUC}`);
   const isFood = loai === AM_THUC;
   const cfg = LOAI[loai as Loai];
   if (!isFood && !cfg) notFound();
@@ -256,19 +324,25 @@ export default async function PlaceListingPage({
     heroImages.push({ url: coverUrl([], place.slug, 1600, 1000), alt: place.name });
   }
 
-  // Mỗi nhóm hiển thị: tiêu đề + danh sách (link chi tiết theo tiền tố riêng).
-  const groups = isFood
-    ? [
-        { title: "Đặc sản", prefix: "dac-san", items: await fetchListing("specialty", place.id) },
-        { title: "Quán ăn", prefix: "quan-an", items: await fetchListing("eatery", place.id) },
-      ]
-    : [
-        {
-          title: cfg.title,
-          prefix: loai,
-          items: await fetchListing(cfg.model, place.id),
-        },
-      ];
+  // Ẩm thực: chi tiết đầy đủ Đặc sản rồi Quán ăn, xếp dọc trên cùng trang.
+  const food = isFood
+    ? {
+        specialties: await fetchSpecialtyDetails(place.id),
+        eateries: await fetchEateryDetails(place.id),
+      }
+    : null;
+
+  // Các loại khác: lưới card (grid/list), link tới trang chi tiết riêng.
+  const groups =
+    !isFood && cfg
+      ? [
+          {
+            title: cfg.title,
+            prefix: loai,
+            items: await fetchListing(cfg.model, place.id),
+          },
+        ]
+      : [];
 
   const listingView =
     (await cookies()).get("listingView")?.value === "list" ? "list" : "grid";
@@ -288,8 +362,22 @@ export default async function PlaceListingPage({
         {/* Thanh tab: Tổng quan + xem tất cả từng listing */}
         <PlaceTabs items={tabs} />
 
-        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20">
-          <ListingView groups={groups} initialView={listingView} />
+        <div
+          className={`mx-auto px-4 py-14 sm:px-6 sm:py-20 max-w-7xl`}
+        >
+          {food ? (
+            food.specialties.length === 0 && food.eateries.length === 0 ? (
+              <p className="text-muted-foreground">Chưa có nội dung ẩm thực.</p>
+            ) : (
+              <FoodSection
+                placeName={place.name}
+                specialties={food.specialties}
+                eateries={food.eateries}
+              />
+            )
+          ) : (
+            <ListingView groups={groups} initialView={listingView} />
+          )}
         </div>
       </main>
 

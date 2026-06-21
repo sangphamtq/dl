@@ -7,13 +7,11 @@ const pub = { status: "published" as const };
 const sel = { where: pub, select: { slug: true, updatedAt: true } };
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [places, activities, spots, specialties, eateries, accommodations, posts] =
+  const [places, activities, spots, accommodations, posts] =
     await Promise.all([
       prisma.place.findMany(sel),
       prisma.activity.findMany(sel),
       prisma.spot.findMany(sel),
-      prisma.specialty.findMany(sel),
-      prisma.eatery.findMany(sel),
       prisma.accommodation.findMany(sel),
       prisma.post.findMany(sel),
     ]);
@@ -38,8 +36,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...entries(places, "diem-den"),
     ...entries(activities, "hoat-dong"),
     ...entries(spots, "dia-diem"),
-    ...entries(specialties, "dac-san"),
-    ...entries(eateries, "quan-an"),
     ...entries(accommodations, "luu-tru"),
     ...entries(posts, "blog"),
   ];

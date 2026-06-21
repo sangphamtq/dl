@@ -315,8 +315,8 @@ export function EateryForm({
               className="font-mono"
             />
             <p className="text-xs text-muted-foreground">
-              Đường dẫn:{" "}
-              <span className="font-mono">/quan-an/{slugPreview || "…"}</span>
+              Định danh duy nhất; dùng cho neo trên trang Ẩm thực (
+              <span className="font-mono">#eatery-{slugPreview || "…"}</span>).
             </p>
           </div>
           <div className="space-y-2">

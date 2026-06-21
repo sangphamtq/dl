@@ -140,8 +140,8 @@ export function SpecialtyForm({
               className="font-mono"
             />
             <p className="text-xs text-muted-foreground">
-              Đường dẫn:{" "}
-              <span className="font-mono">/dac-san/{slugPreview || "…"}</span>
+              Định danh duy nhất; dùng cho neo trên trang Ẩm thực (
+              <span className="font-mono">#specialty-{slugPreview || "…"}</span>).
             </p>
           </div>
           <div className="space-y-2">

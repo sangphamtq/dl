@@ -36,8 +36,6 @@ function resolveRef(r: {
   place: { slug: string; name: string } | null;
   activity: { slug: string; name: string } | null;
   spot: { slug: string; name: string } | null;
-  specialty: { slug: string; name: string } | null;
-  eatery: { slug: string; name: string } | null;
   accommodation: { slug: string; name: string } | null;
 }) {
   if (r.place)
@@ -46,10 +44,6 @@ function resolveRef(r: {
     return { label: "Hoạt động", name: r.activity.name, href: `/hoat-dong/${r.activity.slug}` };
   if (r.spot)
     return { label: "Địa điểm", name: r.spot.name, href: `/dia-diem/${r.spot.slug}` };
-  if (r.specialty)
-    return { label: "Đặc sản", name: r.specialty.name, href: `/dac-san/${r.specialty.slug}` };
-  if (r.eatery)
-    return { label: "Quán ăn", name: r.eatery.name, href: `/quan-an/${r.eatery.slug}` };
   if (r.accommodation)
     return { label: "Lưu trú", name: r.accommodation.name, href: `/luu-tru/${r.accommodation.slug}` };
   return null;
@@ -84,8 +78,6 @@ export default async function BlogPostPage({
           place: { select: { slug: true, name: true } },
           activity: { select: { slug: true, name: true } },
           spot: { select: { slug: true, name: true } },
-          specialty: { select: { slug: true, name: true } },
-          eatery: { select: { slug: true, name: true } },
           accommodation: { select: { slug: true, name: true } },
         },
       },

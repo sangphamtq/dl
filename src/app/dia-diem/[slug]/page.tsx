@@ -949,13 +949,13 @@ export default async function SpotPublicPage({
                   <SectionHead
                     eyebrow="Ăn uống"
                     title="Quán ăn gần đây"
-                    href={`/diem-den/${spot.place.slug}/quan-an`}
+                    href={`/diem-den/${spot.place.slug}/am-thuc`}
                   />
                   <Rail itemClassName="basis-1/2 sm:basis-1/3 lg:basis-1/4">
                     {nearbyEateries.map((e) => (
                       <ListingCard
                         key={e.slug}
-                        href={`/quan-an/${e.slug}`}
+                        href={`/diem-den/${spot.place.slug}/am-thuc#eatery-${e.slug}`}
                         name={e.name}
                         slug={e.slug}
                         images={e.images}

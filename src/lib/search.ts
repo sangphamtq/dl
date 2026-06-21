@@ -8,8 +8,6 @@ const TABLES = [
   { table: "Place", col: "name", label: "Điểm đến", prefix: "diem-den" },
   { table: "Activity", col: "name", label: "Hoạt động", prefix: "hoat-dong" },
   { table: "Spot", col: "name", label: "Địa điểm", prefix: "dia-diem" },
-  { table: "Specialty", col: "name", label: "Đặc sản", prefix: "dac-san" },
-  { table: "Eatery", col: "name", label: "Quán ăn", prefix: "quan-an" },
   { table: "Accommodation", col: "name", label: "Lưu trú", prefix: "luu-tru" },
   { table: "Post", col: "title", label: "Bài viết", prefix: "blog" },
 ] as const;

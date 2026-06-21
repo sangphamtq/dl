@@ -45,7 +45,7 @@ export default async function SpecialtyDetailPage({
       tags: true,
       createdAt: true,
       updatedAt: true,
-      place: { select: { id: true, name: true } },
+      place: { select: { id: true, name: true, slug: true } },
       eateries: {
         orderBy: [{ isFeatured: "desc" }, { name: "asc" }],
         select: {
@@ -116,7 +116,7 @@ export default async function SpecialtyDetailPage({
 
         <div className="flex items-center gap-2">
           <Link
-            href={`/dac-san/${specialty.slug}`}
+            href={`/diem-den/${specialty.place.slug}/am-thuc#specialty-${specialty.slug}`}
             target="_blank"
             className={cn(buttonVariants({ variant: "outline" }))}
           >
@@ -267,9 +267,7 @@ export default async function SpecialtyDetailPage({
             <h3 className="text-sm font-semibold">Thông tin</h3>
             <dl className="mt-3 space-y-3 text-sm">
               <Meta label="Slug">
-                <span className="font-mono text-xs">
-                  /dac-san/{specialty.slug}
-                </span>
+                <span className="font-mono text-xs">{specialty.slug}</span>
               </Meta>
               <Meta label="Tạo lúc">{dateFmt.format(specialty.createdAt)}</Meta>
               <Meta label="Cập nhật">

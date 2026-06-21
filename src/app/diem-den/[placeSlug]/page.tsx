@@ -433,7 +433,7 @@ export default async function PlaceDetailPage({
                 {place.specialties.map((sp) => (
                   <ListingCard
                     key={sp.slug}
-                    href={`/dac-san/${sp.slug}`}
+                    href={`/diem-den/${place.slug}/am-thuc#specialty-${sp.slug}`}
                     name={sp.name}
                     slug={sp.slug}
                     images={sp.images}
