@@ -295,20 +295,28 @@ export default async function SpotPublicPage({
           },
         },
       },
-      activities: {
-        where: pub,
-        orderBy: [{ isFeatured: "desc" }, { name: "asc" }],
+      activityLinks: {
+        where: { activity: pub },
+        orderBy: { order: "asc" },
         select: {
-          slug: true,
-          name: true,
-          description: true,
-          category: true,
-          durationText: true,
-          difficulty: true,
-          seasonText: true,
-          ticketFree: true,
-          ticketTiers: true,
-          images: { where: { isCover: true }, take: 1, select: { url: true, isCover: true } },
+          blurb: true,
+          imageUrl: true,
+          imageAlt: true,
+          activity: {
+            select: {
+              slug: true,
+              name: true,
+              description: true,
+              category: true,
+              kind: true,
+              durationText: true,
+              difficulty: true,
+              seasonText: true,
+              ticketFree: true,
+              ticketTiers: true,
+              images: { where: { isCover: true }, take: 1, select: { url: true, isCover: true } },
+            },
+          },
         },
       },
       images: {
@@ -407,7 +415,7 @@ export default async function SpotPublicPage({
   const navItems: SectionItem[] = [
     spot.description && { id: "gioi-thieu", label: "Giới thiệu" },
     spot.highlights.length > 0 && { id: "diem-nhan", label: "Điểm nhấn" },
-    spot.activities.length > 0 && { id: "hoat-dong", label: "Hoạt động" },
+    spot.activityLinks.length > 0 && { id: "hoat-dong", label: "Làm gì ở đây" },
     spot.bestTimeNote && { id: "khi-nao", label: "Khi nào đẹp" },
     spot.gettingThere && { id: "cach-den", label: "Cách đến" },
     hasNearby && { id: "quanh-day", label: "Quanh đây" },
@@ -589,8 +597,8 @@ export default async function SpotPublicPage({
                 </section>
               )}
 
-              {/* Hoạt động tại đây */}
-              {spot.activities.length > 0 && (
+              {/* Làm gì ở đây — render nội dung RIÊNG theo spot (blurb/ảnh trên join) */}
+              {spot.activityLinks.length > 0 && (
                 <section id="hoat-dong" className="scroll-mt-32">
                   <div className="mb-6 flex items-center gap-3">
                     <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
@@ -598,15 +606,16 @@ export default async function SpotPublicPage({
                     </span>
                     <div>
                       <h2 className="text-xl font-bold tracking-tight sm:text-2xl">
-                        Hoạt động ở đây
+                        Làm gì ở đây
                       </h2>
                       <p className="text-sm text-muted-foreground">
-                        {spot.activities.length} trải nghiệm tại địa điểm này
+                        {spot.activityLinks.length} hoạt động tại địa điểm này
                       </p>
                     </div>
                   </div>
                   <div className="space-y-7">
-                    {spot.activities.map((a) => {
+                    {spot.activityLinks.map((link) => {
+                      const a = link.activity;
                       const meta = [
                         a.durationText,
                         difficultyPhrase(a.difficulty),
@@ -615,6 +624,10 @@ export default async function SpotPublicPage({
                       ]
                         .filter(Boolean)
                         .join(" · ");
+                      // ưu tiên nội dung riêng cho spot (blurb/ảnh), fallback về activity
+                      const body = link.blurb || a.description;
+                      const img =
+                        link.imageUrl || coverUrl(a.images, a.slug, 320, 240);
                       return (
                         <article
                           key={a.slug}
@@ -624,12 +637,12 @@ export default async function SpotPublicPage({
                             href={`/hoat-dong/${a.slug}`}
                             className="relative aspect-[4/3] w-28 shrink-0 overflow-hidden rounded-xl bg-muted sm:w-40"
                           >
-                            <Image
-                              src={coverUrl(a.images, a.slug, 320, 240)}
-                              alt={a.name}
-                              fill
-                              sizes="160px"
-                              className="object-cover transition-transform duration-300 group-hover:scale-105"
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={img}
+                              alt={link.imageAlt ?? a.name}
+                              loading="lazy"
+                              className="absolute inset-0 size-full object-cover transition-transform duration-300 group-hover:scale-105"
                             />
                           </Link>
                           <div className="min-w-0 flex-1">
@@ -646,9 +659,9 @@ export default async function SpotPublicPage({
                                 {meta}
                               </p>
                             )}
-                            {a.description && (
+                            {body && (
                               <p className="mt-2 leading-relaxed text-foreground/80">
-                                {a.description}
+                                {body}
                               </p>
                             )}
                           </div>

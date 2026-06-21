@@ -39,6 +39,7 @@ const EMPTY: ActivityFormValues = {
   slug: "",
   description: "",
   content: "",
+  kind: "common",
   category: "",
   placeId: "",
   durationText: "",
@@ -160,6 +161,25 @@ export function ActivityForm({
               placeholder="Chọn tỉnh / điểm đến…"
               searchPlaceholder="Tìm nơi…"
             />
+          </div>
+          <div className="space-y-2">
+            <Label>Mức độ</Label>
+            <Select value={values.kind} onValueChange={(v) => set("kind", v)}>
+              <SelectTrigger className="w-full sm:w-72">
+                <SelectValue placeholder="Chọn mức độ…" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="experience">
+                  Trải nghiệm / dịch vụ (tour, lớp học)
+                </SelectItem>
+                <SelectItem value="common">
+                  Hoạt động chung (lặp ở nhiều địa điểm)
+                </SelectItem>
+                <SelectItem value="spot">
+                  Đặc trưng địa điểm (chỉ 1 nơi, ẩn ở cấp điểm đến)
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
             <Label>Loại</Label>

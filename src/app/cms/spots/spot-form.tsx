@@ -58,6 +58,7 @@ const EMPTY: SpotFormValues = {
   gettingThere: "",
   tips: "",
   highlights: [],
+  activityContent: [],
   tags: "",
   provinceCode: "",
   provinceName: "",
@@ -153,6 +154,19 @@ export function SpotForm({
       ...p,
       highlights: p.highlights.map((h, i) =>
         i === index ? { ...h, [key]: value } : h,
+      ),
+    }));
+  }
+
+  function updateActivityContent(
+    index: number,
+    key: "blurb" | "imageUrl" | "imageAlt",
+    value: string,
+  ) {
+    setValues((p) => ({
+      ...p,
+      activityContent: p.activityContent.map((c, i) =>
+        i === index ? { ...c, [key]: value } : c,
       ),
     }));
   }
@@ -569,6 +583,54 @@ export function SpotForm({
               rows={3}
             />
           </div>
+        </FormSection>
+
+        {/* Nội dung hoạt động theo địa điểm (mục "Làm gì ở đây") */}
+        <FormSection
+          title="Làm gì ở đây"
+          description="Nội dung RIÊNG của từng hoạt động tại địa điểm này. Liên kết hoạt động được quản ở phần Hoạt động."
+        >
+          {values.activityContent.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Chưa có hoạt động nào liên kết tới địa điểm này. Vào phần Hoạt động
+              để gắn hoạt động vào đây, rồi quay lại viết mô tả riêng.
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {values.activityContent.map((c, i) => (
+                <div key={c.activityId} className="space-y-3 rounded-lg border p-4">
+                  <p className="text-sm font-medium">{c.name}</p>
+                  <Textarea
+                    value={c.blurb}
+                    onChange={(e) =>
+                      updateActivityContent(i, "blurb", e.target.value)
+                    }
+                    placeholder={`Mô tả "${c.name}" tại chính địa điểm này…`}
+                    rows={2}
+                    aria-label={`Mô tả ${c.name} tại địa điểm`}
+                  />
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_180px]">
+                    <Input
+                      value={c.imageUrl}
+                      onChange={(e) =>
+                        updateActivityContent(i, "imageUrl", e.target.value)
+                      }
+                      placeholder="Link ảnh riêng (tùy chọn)"
+                      aria-label={`Link ảnh ${c.name}`}
+                    />
+                    <Input
+                      value={c.imageAlt}
+                      onChange={(e) =>
+                        updateActivityContent(i, "imageAlt", e.target.value)
+                      }
+                      placeholder="Mô tả ảnh (alt)"
+                      aria-label={`Alt ảnh ${c.name}`}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </FormSection>
 
         {/* Vé vào cửa */}

@@ -23,6 +23,16 @@ export type HighlightInput = {
   imageAlt: string;
 };
 
+// Nội dung của một hoạt động TẠI spot này (sửa từ phía Spot).
+// Liên kết (activity nào) được quản từ phía Activity; ở đây chỉ sửa nội dung.
+export type SpotActivityContentInput = {
+  activityId: string;
+  name: string; // chỉ để hiển thị
+  blurb: string;
+  imageUrl: string;
+  imageAlt: string;
+};
+
 export type SpotFormInput = {
   name: string;
   slug: string;
@@ -46,6 +56,7 @@ export type SpotFormInput = {
   gettingThere: string;
   tips: string; // mỗi dòng một mẹo
   highlights: HighlightInput[];
+  activityContent: SpotActivityContentInput[];
   tags: string;
   provinceCode: string; // "" = none
   provinceName: string;
@@ -227,6 +238,18 @@ export async function updateSpot(
       highlights: { deleteMany: {}, create: res.highlights },
     },
   });
+  // Nội dung hoạt động theo spot: cập nhật blurb/ảnh cho các link đã có
+  // (không tạo/xoá link — việc đó quản từ phía Activity).
+  for (const c of input.activityContent) {
+    await prisma.spotActivity.updateMany({
+      where: { spotId: id, activityId: c.activityId },
+      data: {
+        blurb: c.blurb.trim() || null,
+        imageUrl: normalizeUrl(c.imageUrl),
+        imageAlt: c.imageAlt.trim() || null,
+      },
+    });
+  }
   revalidatePath("/cms/spots");
   revalidatePath(`/cms/spots/${id}`);
   revalidatePath(`/cms/spots/${id}/edit`);

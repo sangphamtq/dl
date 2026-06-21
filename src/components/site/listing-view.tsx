@@ -149,6 +149,7 @@ export function ListingView({
                       )}
 
                       <FactsRow facts={it.facts} stacked />
+                      <CardMeta meta={it.meta} tags={it.tags} />
                       {it.activities.length > 0 && (
                         <p className="mt-2.5 flex items-start gap-1.5 text-sm leading-relaxed text-muted-foreground">
                           <Compass

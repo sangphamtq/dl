@@ -106,6 +106,16 @@ enum ActivityDifficulty {
   hard // khó
 }
 
+// Mức độ hoạt động (xem CLAUDE.md "Spot vs Activity"):
+// experience = trải nghiệm/dịch vụ lớn (tour, lớp học) — nội dung dày, đặt chỗ;
+// common     = hoạt động lặp ở nhiều spot, nội dung riêng theo từng spot (qua SpotActivity);
+// spot       = đặc trưng nhỏ chỉ ở 1 spot, KHÔNG hiện ở cấp điểm đến.
+enum ActivityKind {
+  experience
+  common
+  spot
+}
+
 enum TransportDirection {
   getTo // đến nơi từ bên ngoài
   getAround // di chuyển tại chỗ
@@ -272,7 +282,8 @@ model Activity {
   slug        String            @unique
   name        String
   description String? // mô tả ngắn (meta SEO, card, excerpt hero)
-  content     String? // thân bài chi tiết: HTML (rich text) — tùy chọn
+  content     String? // thân bài chi tiết: HTML (rich text) — tùy chọn (chủ yếu cho experience)
+  kind        ActivityKind      @default(common)
   category    ActivityCategory?
 
   // Đơn vị khai thác / đặt chỗ (inline, không tách entity Provider)
@@ -292,7 +303,7 @@ model Activity {
   placeId String
   place   Place  @relation(fields: [placeId], references: [id], onDelete: Cascade)
 
-  spots Spot[] @relation("ActivitySpots") // M:N
+  spotLinks SpotActivity[] // M:N qua bảng nối (mang nội dung riêng theo spot)
 
   images   Image[]
   postRefs PostRef[]
@@ -354,7 +365,7 @@ model Spot {
   tips         String[] @default([]) // kinh nghiệm / mẹo — mỗi phần tử một gạch đầu dòng
   highlights   SpotHighlight[] // điểm nhấn (title + body + ảnh), sắp theo order
 
-  activities Activity[] @relation("ActivitySpots") // M:N
+  activityLinks SpotActivity[] // M:N qua bảng nối (mang nội dung riêng theo spot)
 
   images   Image[]
   postRefs PostRef[]
@@ -371,6 +382,25 @@ model Spot {
   @@index([placeId])
   @@index([category])
   @@index([status])
+}
+
+// Bảng nối Spot ↔ Activity mang nội dung RIÊNG theo từng spot.
+// experience: blurb thường để trống (dùng content chung của Activity);
+// common/spot: blurb + ảnh riêng cho spot này ("tắm biển ở Hòn Rơm"…).
+model SpotActivity {
+  id         String   @id @default(cuid())
+  spotId     String
+  spot       Spot     @relation(fields: [spotId], references: [id], onDelete: Cascade)
+  activityId String
+  activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  order      Int      @default(0)
+  blurb      String? // mô tả hoạt động này TẠI spot này
+  imageUrl   String?
+  imageAlt   String?
+
+  @@unique([spotId, activityId])
+  @@index([spotId])
+  @@index([activityId])
 }
 
 // Điểm nhấn của một địa điểm — mỗi mục có tiêu đề, mô tả và ảnh riêng.

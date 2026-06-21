@@ -203,7 +203,7 @@ async function ActivityList({ filters }: { filters: Filters }) {
         status: true,
         isFeatured: true,
         place: { select: { name: true } },
-        _count: { select: { spots: true } },
+        _count: { select: { spotLinks: true } },
         images: {
           where: { isCover: true },
           take: 1,
@@ -271,7 +271,7 @@ async function ActivityList({ filters }: { filters: Filters }) {
                       {a.place.name}
                     </span>
                     {a.category && <span>· {labelOf(ACTIVITY_CATEGORIES, a.category)}</span>}
-                    <span>· {a._count.spots} địa điểm</span>
+                    <span>· {a._count.spotLinks} địa điểm</span>
                   </p>
                 </div>
                 <Badge

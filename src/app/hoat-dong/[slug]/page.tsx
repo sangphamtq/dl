@@ -69,14 +69,18 @@ export default async function ActivityPublicPage({
       ticketTiers: true,
       tags: true,
       place: { select: { slug: true, name: true } },
-      spots: {
-        where: pub,
-        orderBy: [{ isFeatured: "desc" }, { name: "asc" }],
+      spotLinks: {
+        where: { spot: pub },
+        orderBy: { order: "asc" },
         select: {
-          slug: true,
-          name: true,
-          category: true,
-          images: { where: { isCover: true }, take: 1, select: { url: true, isCover: true } },
+          spot: {
+            select: {
+              slug: true,
+              name: true,
+              category: true,
+              images: { where: { isCover: true }, take: 1, select: { url: true, isCover: true } },
+            },
+          },
         },
       },
       images: {
@@ -228,7 +232,7 @@ export default async function ActivityPublicPage({
               )}
 
               {/* Diễn ra ở đâu */}
-              {activity.spots.length > 0 && (
+              {activity.spotLinks.length > 0 && (
                 <div className="rounded-2xl border p-5">
                   <h2 className="flex items-center gap-2 text-sm font-semibold">
                     <MapPin
@@ -238,7 +242,7 @@ export default async function ActivityPublicPage({
                     Diễn ra ở đâu
                   </h2>
                   <ul className="mt-3 space-y-0.5">
-                    {activity.spots.map((s) => (
+                    {activity.spotLinks.map(({ spot: s }) => (
                       <li key={s.slug}>
                         <Link
                           href={`/dia-diem/${s.slug}`}

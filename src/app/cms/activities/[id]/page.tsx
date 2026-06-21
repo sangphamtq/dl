@@ -56,18 +56,22 @@ export default async function ActivityDetailPage({
       createdAt: true,
       updatedAt: true,
       place: { select: { id: true, name: true } },
-      spots: {
-        orderBy: [{ isFeatured: "desc" }, { name: "asc" }],
+      spotLinks: {
+        orderBy: { order: "asc" },
         select: {
-          id: true,
-          name: true,
-          slug: true,
-          status: true,
-          category: true,
-          images: {
-            where: { isCover: true },
-            take: 1,
-            select: { url: true, isCover: true },
+          spot: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              status: true,
+              category: true,
+              images: {
+                where: { isCover: true },
+                take: 1,
+                select: { url: true, isCover: true },
+              },
+            },
           },
         },
       },
@@ -223,11 +227,11 @@ export default async function ActivityDetailPage({
           {/* Diễn ra ở đâu (Spot liên kết) */}
           <section>
             <h2 className="text-lg font-semibold tracking-tight">
-              Diễn ra ở đâu ({activity.spots.length})
+              Diễn ra ở đâu ({activity.spotLinks.length})
             </h2>
-            {activity.spots.length > 0 ? (
+            {activity.spotLinks.length > 0 ? (
               <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                {activity.spots.map((s) => (
+                {activity.spotLinks.map(({ spot: s }) => (
                   <Link
                     key={s.id}
                     href={`/cms/spots/${s.id}`}

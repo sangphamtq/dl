@@ -19,6 +19,7 @@ import {
   ACTIVITY_CATEGORY_LABELS,
   EATERY_CATEGORY_LABELS,
   ACCOMMODATION_CATEGORY_LABELS,
+  DIFFICULTY_LABELS,
   label,
 } from "@/lib/listing-labels";
 import { parseTicketTiers, formatVnd } from "@/lib/tickets";
@@ -66,10 +67,12 @@ type RawListing = {
   ticketInfo?: string | null;
   address?: string | null;
   durationText?: string | null;
+  difficulty?: string | null;
+  seasonText?: string | null;
   ticketFree?: boolean;
   ticketTiers?: unknown;
   openingHours?: string | null;
-  activities?: LinkRef[];
+  activityLinks?: { activity: LinkRef }[];
 };
 
 // Field select thêm theo từng model (để build meta / quan hệ).
@@ -77,6 +80,8 @@ const EXTRA_SELECT: Record<ListingModel, Record<string, unknown>> = {
   activity: {
     category: true,
     durationText: true,
+    difficulty: true,
+    seasonText: true,
     ticketFree: true,
     ticketTiers: true,
   },
@@ -87,12 +92,12 @@ const EXTRA_SELECT: Record<ListingModel, Record<string, unknown>> = {
     ticketFree: true,
     ticketTiers: true,
     address: true,
-    // Hoạt động diễn ra tại địa điểm này (M:N, read-only từ phía Spot).
-    activities: {
-      where: { status: "published" },
-      orderBy: [{ isFeatured: "desc" }, { name: "asc" }],
+    // Hoạt động diễn ra tại địa điểm này (qua bảng nối, read-only từ phía Spot).
+    activityLinks: {
+      where: { activity: { status: "published" } },
+      orderBy: { order: "asc" },
       take: 4,
-      select: { slug: true, name: true },
+      select: { activity: { select: { slug: true, name: true } } },
     },
   },
   specialty: {},
@@ -133,9 +138,12 @@ function buildTag(model: ListingModel, r: RawListing): string | null {
 function buildMeta(model: ListingModel, r: RawListing): string[] {
   switch (model) {
     case "activity":
-      return [r.durationText, activityPrice(r.ticketFree, r.ticketTiers)].filter(
-        Boolean,
-      ) as string[];
+      return [
+        r.durationText,
+        label(DIFFICULTY_LABELS, r.difficulty ?? null),
+        r.seasonText,
+        activityPrice(r.ticketFree, r.ticketTiers),
+      ].filter(Boolean) as string[];
     case "eatery":
       return [r.openingHours].filter(Boolean) as string[];
     default:
@@ -194,7 +202,7 @@ async function fetchListing(
     images: r.images,
     meta: buildMeta(model, r),
     facts: buildFacts(model, r),
-    activities: r.activities ?? [],
+    activities: r.activityLinks?.map((l) => l.activity) ?? [],
   }));
 }
 

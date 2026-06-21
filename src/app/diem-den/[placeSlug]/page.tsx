@@ -104,7 +104,8 @@ export default async function PlaceDetailPage({
         },
       },
       activities: {
-        where: pub,
+        // 'spot' = đặc trưng nhỏ chỉ ở 1 spot → không hiện ở cấp điểm đến.
+        where: { ...pub, kind: { not: "spot" } },
         orderBy: [{ isFeatured: "desc" }, { order: "asc" }, { name: "asc" }],
         take: 6,
         select: {
@@ -112,6 +113,7 @@ export default async function PlaceDetailPage({
           name: true,
           description: true,
           durationText: true,
+          seasonText: true,
           ticketFree: true,
           ticketTiers: true,
           images: listingImages,
@@ -400,7 +402,9 @@ export default async function PlaceDetailPage({
                     slug={a.slug}
                     images={a.images}
                     subtitle={a.description}
-                    meta={a.durationText ? [a.durationText] : []}
+                    meta={[a.durationText, a.seasonText].filter(
+                      (x): x is string => Boolean(x),
+                    )}
                     price={activityPriceBadge(a.ticketFree, a.ticketTiers)}
                   />
                 ))}

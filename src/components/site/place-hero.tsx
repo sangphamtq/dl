@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ChevronLeft, MapPin, Star } from "lucide-react";
 import { PlaceHeroStack, type HeroImage } from "@/components/site/place-hero-stack";
 import { PlaceVideos, type PlaceVideo } from "@/components/site/tiktok-videos";
+import { ShareButton } from "@/components/site/share-button";
 import type { PlaceStat } from "@/lib/place-meta";
 
 type PlaceHeroData = {
@@ -59,18 +60,23 @@ export function PlaceHero({
         <div className="grid items-center gap-10 lg:grid-cols-[1fr_1.4fr] lg:gap-12">
           {/* Trái: chữ */}
           <div>
-            {back && (
-              <Link
-                href={back.href}
-                className="group mb-5 inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
-              >
-                <ChevronLeft
-                  className="size-4 transition-transform group-hover:-translate-x-0.5"
-                  aria-hidden
-                />
-                {back.label}
-              </Link>
-            )}
+            <div className="mb-5 flex items-center justify-between gap-3">
+              {back ? (
+                <Link
+                  href={back.href}
+                  className="group inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  <ChevronLeft
+                    className="size-4 transition-transform group-hover:-translate-x-0.5"
+                    aria-hidden
+                  />
+                  {back.label}
+                </Link>
+              ) : (
+                <span />
+              )}
+              <ShareButton title={place.name} />
+            </div>
 
             {/* Tỉnh (ngữ cảnh "thuộc tỉnh nào") + nổi bật */}
             {(place.parent || place.isFeatured) && (

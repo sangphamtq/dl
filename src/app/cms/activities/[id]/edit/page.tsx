@@ -35,7 +35,8 @@ export default async function EditActivityPage({
         ticketFree: true,
         ticketTiers: true,
         tags: true,
-        spots: { select: { id: true } },
+        kind: true,
+        spotLinks: { select: { spotId: true } },
       },
     }),
     getPlaceOptions(),
@@ -54,6 +55,7 @@ export default async function EditActivityPage({
     slug: activity.slug,
     description: activity.description ?? "",
     content: activity.content ?? "",
+    kind: activity.kind,
     category: activity.category ?? "",
     placeId: activity.placeId,
     durationText: activity.durationText ?? "",
@@ -68,7 +70,7 @@ export default async function EditActivityPage({
       price: t.price == null ? "" : String(t.price),
       note: t.note ?? "",
     })),
-    spotIds: activity.spots.map((s) => s.id),
+    spotIds: activity.spotLinks.map((l) => l.spotId),
     tags: activity.tags.join(", "),
   };
 

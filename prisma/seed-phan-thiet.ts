@@ -1,11 +1,13 @@
 import "dotenv/config";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@/generated/prisma/client";
 import {
   PlaceKind,
   PublishStatus,
   SpotCategory,
   ActivityCategory,
   ActivityDifficulty,
+  ActivityKind,
   EateryCategory,
   Meal,
   AccommodationCategory,
@@ -491,109 +493,233 @@ async function main() {
   }
 
   // 4) Activities (M:N tới Spot)
-  const activities = [
+  // spots[].blurb = nội dung RIÊNG của hoạt động này TẠI spot đó (qua SpotActivity).
+  type ActivitySeed = {
+    slug: string;
+    name: string;
+    kind: ActivityKind;
+    category?: ActivityCategory;
+    difficulty?: ActivityDifficulty;
+    durationText?: string;
+    seasonText?: string;
+    operatorName?: string;
+    priceRange?: PriceRange;
+    ticketFree?: boolean;
+    ticketTiers?: { label: string; price: number; note?: string }[];
+    description?: string;
+    spots: { slug: string; blurb?: string }[];
+  };
+  const activities: ActivitySeed[] = [
     {
       slug: "truot-cat-mui-ne",
       name: "Trượt cát",
+      kind: ActivityKind.common,
       category: ActivityCategory.adventure,
       difficulty: ActivityDifficulty.easy,
       durationText: "1–2 giờ",
+      ticketTiers: [{ label: "Thuê ván trượt", price: 20000 }],
       description:
-        "Chẳng cần kinh nghiệm hay đồ nghề cầu kỳ — chỉ một tấm ván nhựa thuê ngay dưới chân đồi là bạn đã sẵn sàng. Leo lên triền cát mịn, ngồi lên ván rồi buông mình trượt một mạch xuống dốc trong tiếng cười giòn tan. Trò chơi tuổi thơ này hợp với mọi lứa tuổi, và gần như ai ghé Mũi Né cũng muốn thử cho bằng được.",
-      spots: ["doi-cat-bay-mui-ne", "bau-trang"],
+        "Chẳng cần kinh nghiệm hay đồ nghề cầu kỳ — chỉ một tấm ván nhựa thuê ngay dưới chân đồi là bạn đã sẵn sàng. Leo lên triền cát mịn, ngồi lên ván rồi buông mình trượt một mạch xuống dốc trong tiếng cười giòn tan.",
+      spots: [
+        {
+          slug: "doi-cat-bay-mui-ne",
+          blurb:
+            "Triền cát cao thoai thoải ở Đồi Cát Bay là chỗ trượt 'kinh điển' — ván thuê sẵn ngay chân đồi, trượt một mạch xuống thật đã.",
+        },
+        {
+          slug: "bau-trang",
+          blurb:
+            "Đồi cát trắng Bàu Trắng rộng và vắng hơn, trượt xong còn tha hồ chụp ảnh giữa biển cát mênh mông.",
+        },
+      ],
     },
     {
       slug: "luot-van-dieu-mui-ne",
       name: "Lướt ván diều",
+      kind: ActivityKind.common,
       category: ActivityCategory.water,
       difficulty: ActivityDifficulty.moderate,
       durationText: "Nửa ngày",
       seasonText: "Tháng 11 – 3 (mùa gió)",
+      operatorName: "Các trung tâm lướt ván ven biển",
+      ticketTiers: [
+        { label: "Thuê thiết bị / giờ", price: 300000 },
+        { label: "Khoá học nhập môn", price: 2500000, note: "khoảng 3 buổi" },
+      ],
       description:
-        "Không phải ngẫu nhiên mà dân lướt ván diều khắp thế giới gọi tên Mũi Né: gió ở đây thổi đều và mạnh suốt mùa khô, mặt biển rộng thoáng đủ chỗ cho những cánh diều sải cánh. Từ tháng 11 đến tháng 3, cả bãi biển nhuộm kín sắc màu của hàng trăm cánh diều chao liệng trên sóng. Người mới có thể đăng ký một lớp học ngay tại các trung tâm ven biển, còn dân chơi lâu năm thì tha hồ vẫy vùng.",
-      spots: ["bai-bien-mui-ne"],
+        "Mũi Né là một trong những điểm lướt ván diều tốt nhất châu Á: gió thổi đều và mạnh suốt mùa khô, mặt biển rộng thoáng cho những cánh diều sải cánh.",
+      spots: [
+        {
+          slug: "bai-bien-mui-ne",
+          blurb:
+            "Bãi biển Mũi Né gió đều, mặt nước rộng — sân chơi chính của môn lướt ván diều; mùa gió kín trời cánh diều rực rỡ.",
+        },
+      ],
     },
     {
       slug: "jeep-binh-minh-doi-cat",
       name: "Tour xe Jeep săn bình minh đồi cát",
+      kind: ActivityKind.experience,
       category: ActivityCategory.adventure,
       difficulty: ActivityDifficulty.easy,
       durationText: "Nửa buổi (sáng sớm)",
       seasonText: "Quanh năm, đẹp nhất mùa khô",
       operatorName: "Các đơn vị tour địa phương",
-      priceRange: PriceRange.moderate,
+      ticketTiers: [
+        { label: "Người lớn", price: 150000 },
+        { label: "Trẻ em", price: 80000 },
+        { label: "Thuê nguyên xe", price: 600000, note: "tối đa 5 khách" },
+      ],
       description:
-        "Khi trời còn nhập nhoạng, chiếc Jeep mui trần đón bạn lao đi trong gió sớm, kịp đặt chân lên đồi cát bay đúng lúc mặt trời ló rạng. Ánh bình minh trải vàng trên những triền cát uốn lượn là khoảnh khắc khó quên nhất của cả chuyến đi. Hành trình thường nối tiếp qua Bàu Trắng, suối Tiên rồi làng chài, gói trọn tinh hoa Mũi Né chỉ trong một buổi sáng.",
-      spots: ["doi-cat-bay-mui-ne", "bau-trang", "suoi-tien-mui-ne"],
+        "Khi trời còn nhập nhoạng, chiếc Jeep mui trần đón bạn lao đi trong gió sớm, kịp đặt chân lên đồi cát bay đúng lúc mặt trời ló rạng. Hành trình nối tiếp qua Bàu Trắng, suối Tiên rồi làng chài, gói trọn tinh hoa Mũi Né chỉ trong một buổi sáng.",
+      spots: [
+        { slug: "doi-cat-bay-mui-ne", blurb: "Điểm dừng săn bình minh chính của tour." },
+        { slug: "bau-trang", blurb: "Tour vòng qua đồi cát trắng và hồ sen Bàu Trắng." },
+        { slug: "suoi-tien-mui-ne", blurb: "Ghé lội Suối Tiên trước khi quay về." },
+      ],
     },
     {
       slug: "tam-bien-mui-ne",
       name: "Tắm biển",
+      kind: ActivityKind.common,
       category: ActivityCategory.water,
       difficulty: ActivityDifficulty.easy,
+      ticketFree: true,
       description:
-        "Biển Phan Thiết ấm áp gần như quanh năm, sóng vừa phải và bờ cát thoai thoải rất hợp để ngâm mình thư giãn. Bạn có thể chọn bãi Mũi Né đông vui, Hòn Rơm nước trong xanh hay bãi đá Ông Địa nhiều góc check-in. Sáng sớm và chiều muộn là lúc nước dịu, nắng nhẹ, dễ chịu nhất để xuống tắm.",
-      spots: ["bai-bien-mui-ne", "hon-rom", "bai-da-ong-dia"],
+        "Biển Phan Thiết ấm áp gần như quanh năm, sóng vừa phải và bờ cát thoai thoải rất hợp để ngâm mình thư giãn.",
+      spots: [
+        {
+          slug: "bai-bien-mui-ne",
+          blurb:
+            "Bãi chính dài và nhiều dịch vụ — tắm xong có thể thuê ghế, ăn uống ngay ven biển. Đông vui nhất vùng.",
+        },
+        {
+          slug: "hon-rom",
+          blurb:
+            "Nước trong xanh, sóng êm, bãi sạch và vắng — lựa chọn lý tưởng để tắm cùng gia đình và trẻ nhỏ.",
+        },
+        {
+          slug: "bai-da-ong-dia",
+          blurb:
+            "Tắm xen những ghềnh đá đen độc đáo; canh lúc chiều để vừa tắm vừa ngắm hoàng hôn.",
+        },
+      ],
     },
     {
       slug: "cheo-sup-kayak-mui-ne",
       name: "Chèo SUP & kayak",
+      kind: ActivityKind.common,
       category: ActivityCategory.water,
       difficulty: ActivityDifficulty.easy,
       durationText: "1–2 giờ",
       seasonText: "Đẹp nhất sáng sớm, biển lặng",
+      ticketTiers: [{ label: "Thuê SUP / giờ", price: 120000 }],
       description:
-        "Có gì bình yên hơn việc lướt nhẹ trên mặt biển phẳng lặng khi ngày vừa thức giấc? Buổi sớm, lúc gió chưa nổi và nước còn như gương, chèo SUP hay kayak dọc bờ là cách tuyệt vời để ngắm bình minh từ một góc rất riêng. Hoạt động nhẹ nhàng, dễ làm quen, phù hợp cả với người lần đầu cầm mái chèo.",
-      spots: ["hon-rom", "bai-bien-mui-ne"],
+        "Buổi sớm, lúc gió chưa nổi và nước còn như gương, chèo SUP hay kayak dọc bờ là cách tuyệt vời để ngắm bình minh từ một góc rất riêng.",
+      spots: [
+        {
+          slug: "hon-rom",
+          blurb:
+            "Mặt vịnh Hòn Rơm sáng sớm lặng như gương, chèo SUP ra ngắm bình minh cực yên bình.",
+        },
+        {
+          slug: "bai-bien-mui-ne",
+          blurb:
+            "Chèo dọc bờ Mũi Né lúc gió chưa nổi, vừa vận động vừa ngắm bãi biển từ ngoài khơi.",
+        },
+      ],
     },
     {
       slug: "mo-to-nuoc-mui-ne",
       name: "Mô tô nước & thể thao biển",
+      kind: ActivityKind.experience,
       category: ActivityCategory.water,
       difficulty: ActivityDifficulty.moderate,
       durationText: "30–60 phút",
       operatorName: "Dịch vụ thể thao biển tại bãi",
-      priceRange: PriceRange.moderate,
+      ticketTiers: [
+        { label: "Mô tô nước (15 phút)", price: 300000 },
+        { label: "Dù kéo", price: 250000 },
+        { label: "Chuối phao", price: 100000 },
+      ],
       description:
-        "Dành cho những ai mê cảm giác mạnh, bãi biển Mũi Né có đủ trò để tim đập nhanh: phóng mô tô nước rẽ sóng, bay bổng cùng dù kéo hay nhún nhảy trên chuối phao. Các dịch vụ đều có sẵn ngay tại bãi, trang bị áo phao và hướng dẫn đầy đủ. Chỉ vài chục phút thôi cũng đủ để adrenaline dâng trào giữa nắng và sóng.",
-      spots: ["bai-bien-mui-ne", "hon-rom"],
+        "Dành cho những ai mê cảm giác mạnh: phóng mô tô nước rẽ sóng, bay bổng cùng dù kéo hay nhún nhảy trên chuối phao. Dịch vụ có sẵn ngay tại bãi, trang bị áo phao và hướng dẫn đầy đủ.",
+      spots: [
+        { slug: "bai-bien-mui-ne", blurb: "Khu thể thao biển ngay bãi chính — mô tô nước, dù kéo, chuối phao đủ cả." },
+        { slug: "hon-rom", blurb: "Vùng nước rộng, thoáng, hợp phóng mô tô nước thả ga." },
+      ],
     },
     {
       slug: "tham-quan-thap-cham",
       name: "Tham quan tháp Chăm",
+      kind: ActivityKind.spot,
       category: ActivityCategory.culture,
       difficulty: ActivityDifficulty.easy,
       durationText: "Khoảng 1 giờ",
+      ticketTiers: [{ label: "Vé vào cửa", price: 15000 }],
       description:
-        "Trên đồi Bà Nài lộng gió, cụm tháp Po Sah Inư cổ kính lặng lẽ nhìn ra cửa biển Phan Thiết suốt hơn ngàn năm. Lối kiến trúc Chăm với những mảng gạch nung đỏ au mang vẻ đẹp trầm mặc, đầy chiều sâu lịch sử. Ghé vào lúc chiều xuống, bạn vừa khám phá di tích vừa kịp đón hoàng hôn buông trên thành phố biển.",
-      spots: ["thap-po-sah-inu"],
+        "Khám phá cụm tháp Chăm Po Sah Inư cổ kính trên đồi Bà Nài — kiến trúc gạch nung đỏ trầm mặc nhìn ra cửa biển, đẹp nhất lúc chiều xuống.",
+      spots: [{ slug: "thap-po-sah-inu" }],
     },
     {
       slug: "san-hoang-hon-phan-thiet",
       name: "Săn hoàng hôn",
+      kind: ActivityKind.common,
       category: ActivityCategory.relax,
       difficulty: ActivityDifficulty.easy,
       durationText: "Cuối ngày",
       seasonText: "Quanh năm",
+      ticketFree: true,
       description:
-        "Khi mặt trời bắt đầu hạ xuống, cả Phan Thiết như được nhuộm trong sắc cam ấm áp. Bãi đá Ông Địa, những triền cát bay hay tháp Chăm trên đồi đều là chỗ tuyệt đẹp để ngắm khoảnh khắc ngày tàn. Mang theo một ly cà phê, ngồi lặng nhìn trời chuyển màu — đó là cách lãng mạn nhất để khép lại một ngày ở thành phố biển.",
-      spots: ["bai-da-ong-dia", "doi-cat-bay-mui-ne", "thap-po-sah-inu"],
+        "Khi mặt trời hạ xuống, cả Phan Thiết nhuộm trong sắc cam ấm áp — khoảnh khắc lãng mạn nhất để khép lại một ngày ở thành phố biển.",
+      spots: [
+        {
+          slug: "bai-da-ong-dia",
+          blurb:
+            "Ghềnh đá Ông Địa là phông nền hoàng hôn 'ăn ảnh' nhất, chiều nào cũng đông bạn trẻ.",
+        },
+        {
+          slug: "doi-cat-bay-mui-ne",
+          blurb:
+            "Hoàng hôn nhuộm cam những triền cát — khung cảnh khoáng đạt khó nơi nào có.",
+        },
+        {
+          slug: "thap-po-sah-inu",
+          blurb:
+            "Trên đồi Bà Nài, ngắm mặt trời lặn sau tháp Chăm cổ, vừa tĩnh lặng vừa hoài niệm.",
+        },
+      ],
     },
   ];
 
   for (const a of activities) {
-    const { slug, name, spots: spotSlugs, ...rest } = a;
-    const connect = spotSlugs.map((sl) => ({ id: spotId[sl] }));
+    const { slug, name, spots, ticketTiers, ...rest } = a;
+    const tt =
+      ticketTiers && ticketTiers.length > 0
+        ? (ticketTiers as Prisma.InputJsonValue)
+        : Prisma.DbNull;
+    const links = spots.map((s, i) => ({
+      spotId: spotId[s.slug],
+      order: i,
+      blurb: s.blurb ?? null,
+    }));
     const row = await prisma.activity.upsert({
       where: { slug },
-      update: { ...rest, placeId: phanThiet.id, spots: { set: connect }, ...PUB },
+      update: {
+        ...rest,
+        ticketTiers: tt,
+        placeId: phanThiet.id,
+        ...PUB,
+        spotLinks: { deleteMany: {}, create: links },
+      },
       create: {
         slug,
         name,
         ...rest,
+        ticketTiers: tt,
         placeId: phanThiet.id,
-        spots: { connect },
         ...PUB,
+        spotLinks: { create: links },
       },
     });
     await setImages({ activityId: row.id }, IMAGES[slug] ?? [], name);

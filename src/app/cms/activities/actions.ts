@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
-import { ActivityCategory, PublishStatus } from "@/generated/prisma/enums";
+import { ActivityCategory, ActivityKind, PublishStatus } from "@/generated/prisma/enums";
 import { slugify, RESERVED_SLUGS } from "@/lib/slug";
 import { normalizeUrl } from "@/lib/url";
 import type { TicketTier } from "@/lib/tickets";
@@ -19,6 +19,7 @@ export type ActivityFormInput = {
   slug: string;
   description: string;
   content: string; // HTML rich text (tùy chọn)
+  kind: string; // experience | common | spot
   category: string; // "" = none
   placeId: string;
   durationText: string;
@@ -69,6 +70,11 @@ async function normalize(
       ? (input.category as ActivityCategory)
       : null;
 
+  const kind =
+    input.kind in ActivityKind
+      ? (input.kind as ActivityKind)
+      : ActivityKind.common;
+
   const tags = input.tags
     .split(",")
     .map((t) => t.trim())
@@ -98,6 +104,7 @@ async function normalize(
       slug,
       description: input.description.trim() || null,
       content: input.content.trim() || null,
+      kind,
       category,
       placeId: input.placeId,
       durationText: input.durationText.trim() || null,
@@ -124,7 +131,9 @@ export async function createActivity(
   const activity = await prisma.activity.create({
     data: {
       ...res.data,
-      spots: { connect: input.spotIds.map((id) => ({ id })) },
+      spotLinks: {
+        create: input.spotIds.map((spotId, i) => ({ spotId, order: i })),
+      },
     },
   });
   revalidatePath("/cms/activities");
@@ -139,11 +148,26 @@ export async function updateActivity(
   const res = await normalize(input, id);
   if ("error" in res) return { ok: false, error: res.error };
 
+  // Đồng bộ liên kết spot mà GIỮ nguyên nội dung riêng (blurb/ảnh) của link cũ.
+  const existing = await prisma.spotActivity.findMany({
+    where: { activityId: id },
+    select: { spotId: true },
+  });
+  const existingIds = new Set(existing.map((e) => e.spotId));
+  const wanted = new Set(input.spotIds);
+  const toAdd = input.spotIds.filter((s) => !existingIds.has(s));
+  const toRemove = [...existingIds].filter((s) => !wanted.has(s));
+
   await prisma.activity.update({
     where: { id },
     data: {
       ...res.data,
-      spots: { set: input.spotIds.map((sid) => ({ id: sid })) },
+      spotLinks: {
+        ...(toRemove.length > 0 && {
+          deleteMany: { spotId: { in: toRemove } },
+        }),
+        create: toAdd.map((spotId) => ({ spotId })),
+      },
     },
   });
   revalidatePath("/cms/activities");

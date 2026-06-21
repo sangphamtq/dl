@@ -63,9 +63,12 @@ export default async function SpotDetailPage({
       createdAt: true,
       updatedAt: true,
       place: { select: { id: true, name: true } },
-      activities: {
-        orderBy: { name: "asc" },
-        select: { id: true, name: true, status: true },
+      activityLinks: {
+        orderBy: { order: "asc" },
+        select: {
+          blurb: true,
+          activity: { select: { id: true, name: true, status: true, kind: true } },
+        },
       },
       images: {
         orderBy: [{ isCover: "desc" }, { order: "asc" }],
@@ -244,18 +247,25 @@ export default async function SpotDetailPage({
           <section>
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-lg font-semibold tracking-tight">
-                Hoạt động tại đây ({spot.activities.length})
+                Hoạt động tại đây ({spot.activityLinks.length})
               </h2>
             </div>
-            {spot.activities.length > 0 ? (
+            {spot.activityLinks.length > 0 ? (
               <ul className="mt-3 divide-y overflow-hidden rounded-xl border">
-                {spot.activities.map((a) => (
+                {spot.activityLinks.map(({ activity: a, blurb }) => (
                   <li
                     key={a.id}
                     className="flex items-center gap-3 px-4 py-3 text-sm"
                   >
                     <Compass className="size-4 shrink-0 text-muted-foreground" />
-                    <span className="flex-1 truncate font-medium">{a.name}</span>
+                    <span className="flex-1 truncate">
+                      <span className="font-medium">{a.name}</span>
+                      {blurb && (
+                        <span className="ml-1 text-xs text-muted-foreground">
+                          · có mô tả riêng
+                        </span>
+                      )}
+                    </span>
                     <Badge
                       variant={a.status === "published" ? "default" : "outline"}
                     >
