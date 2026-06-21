@@ -12,6 +12,10 @@ import { type EateryDetailData } from "@/components/site/eatery-detail";
 import { FoodSection } from "@/components/site/food-section";
 import { AccommodationSection } from "@/components/site/accommodation-section";
 import { type AccommodationDetailData } from "@/components/site/accommodation-detail";
+import {
+  TransportSection,
+  type TransportItem,
+} from "@/components/site/transport-section";
 import { PlaceHero } from "@/components/site/place-hero";
 import { PlaceTabs } from "@/components/site/place-tabs";
 import { type HeroImage } from "@/components/site/place-hero-stack";
@@ -42,6 +46,8 @@ type Loai = keyof typeof LOAI;
 
 // am-thuc = tab gộp: hiển thị chi tiết Đặc sản + Quán ăn trên cùng một trang.
 const AM_THUC = "am-thuc";
+// di-chuyen = màn hình Di chuyển (Transport) inline, không có trang chi tiết per-item.
+const DI_CHUYEN = "di-chuyen";
 
 // URL chi tiết cũ giờ gộp vào tab "am-thuc" → redirect để không 404.
 const FOOD_LEGACY = new Set(["dac-san", "quan-an"]);
@@ -300,8 +306,32 @@ async function fetchAccommodationDetails(
   });
 }
 
+// Di chuyển: màn hình riêng (inline, không có trang chi tiết per-item).
+async function fetchTransports(placeId: string): Promise<TransportItem[]> {
+  return prisma.transport.findMany({
+    where: { placeId, status: "published" },
+    orderBy: [{ order: "asc" }, { name: "asc" }],
+    select: {
+      id: true,
+      name: true,
+      direction: true,
+      mode: true,
+      fromName: true,
+      duration: true,
+      distanceKm: true,
+      priceFrom: true,
+      priceTo: true,
+      currency: true,
+      operatorName: true,
+      bookingUrl: true,
+      description: true,
+    },
+  });
+}
+
 function pageTitle(loai: string): string | null {
   if (loai === AM_THUC) return "Ẩm thực";
+  if (loai === DI_CHUYEN) return "Di chuyển";
   return LOAI[loai as Loai]?.title ?? null;
 }
 
@@ -333,8 +363,9 @@ export default async function PlaceListingPage({
   if (FOOD_LEGACY.has(loai)) redirect(`/diem-den/${placeSlug}/${AM_THUC}`);
   const isFood = loai === AM_THUC;
   const isStay = loai === "luu-tru";
+  const isTransport = loai === DI_CHUYEN;
   const cfg = LOAI[loai as Loai];
-  if (!isFood && !cfg) notFound();
+  if (!isFood && !isTransport && !cfg) notFound();
 
   const place = await getPlaceHeader(placeSlug);
   if (!place || place.status !== "published") notFound();
@@ -365,9 +396,12 @@ export default async function PlaceListingPage({
   const stays = isStay ? await fetchAccommodationDetails(place.id) : null;
   const openSlug = isStay ? (await searchParams).open : undefined;
 
+  // Di chuyển: màn hình riêng, render inline theo direction (đến nơi / tại chỗ).
+  const transports = isTransport ? await fetchTransports(place.id) : null;
+
   // Các loại khác (hoạt động, địa điểm): lưới card link tới trang chi tiết riêng.
   const groups =
-    !isFood && !isStay && cfg
+    !isFood && !isStay && !isTransport && cfg
       ? [
           {
             title: cfg.title,
@@ -413,6 +447,25 @@ export default async function PlaceListingPage({
               <p className="text-muted-foreground">Chưa có nơi lưu trú.</p>
             ) : (
               <AccommodationSection accommodations={stays} openSlug={openSlug} />
+            )
+          ) : transports ? (
+            transports.length === 0 ? (
+              <p className="text-muted-foreground">Chưa có thông tin di chuyển.</p>
+            ) : (
+              <section>
+                <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+                  Đi lại thế nào?
+                </h2>
+                <p className="mt-2 max-w-prose leading-relaxed text-muted-foreground">
+                  Cách đến {place.name} từ bên ngoài và phương tiện đi lại tại chỗ.
+                </p>
+                <div className="mt-10">
+                  <TransportSection
+                    transports={transports}
+                    placeName={place.name}
+                  />
+                </div>
+              </section>
             )
           ) : (
             <ListingView groups={groups} initialView={listingView} />

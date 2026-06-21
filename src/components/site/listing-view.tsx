@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import {
   ChevronRight,
@@ -40,12 +41,27 @@ export function ListingView({
   groups: Group[];
   initialView?: ListingViewMode;
 }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [view, setView] = useState<ListingViewMode>(initialView);
-  const [filter, setFilter] = useState<string>("all");
+  const [filter, setFilter] = useState<string>(
+    () => searchParams.get("cat") ?? "all",
+  );
 
   const choose = (v: ListingViewMode) => {
     setView(v);
     document.cookie = `listingView=${v};path=/;max-age=31536000;samesite=lax`;
+  };
+
+  // Lưu loại đang lọc vào URL (?cat=) để giữ khi chia sẻ/quay lại.
+  const chooseFilter = (f: string) => {
+    setFilter(f);
+    const params = new URLSearchParams(searchParams.toString());
+    if (f === "all") params.delete("cat");
+    else params.set("cat", f);
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   };
 
   // Các loại (tag) có trong dữ liệu — để dựng bộ lọc.
@@ -59,14 +75,14 @@ export function ListingView({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {allTags.length > 1 ? (
           <div className="flex flex-wrap items-center gap-1.5">
-            <FilterChip active={filter === "all"} onClick={() => setFilter("all")}>
+            <FilterChip active={filter === "all"} onClick={() => chooseFilter("all")}>
               Tất cả
             </FilterChip>
             {allTags.map((t) => (
               <FilterChip
                 key={t}
                 active={filter === t}
-                onClick={() => setFilter(t)}
+                onClick={() => chooseFilter(t)}
               >
                 {t}
               </FilterChip>
@@ -111,7 +127,7 @@ export function ListingView({
               Chưa có nội dung trong mục này.
             </p>
           ) : view === "grid" ? (
-            <div className="mt-7 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-7 grid grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-3 lg:grid-cols-4">
               {items.map((it) => (
                 <GridCard key={it.slug} item={it} prefix={g.prefix} />
               ))}
@@ -283,9 +299,9 @@ function CardMeta({ meta, tags }: { meta: string[]; tags: string[] }) {
   if (meta.length === 0 && tags.length === 0) return null;
   return (
     <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-      {meta.map((m) => (
+      {meta.map((m, i) => (
         <span
-          key={m}
+          key={i}
           className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-foreground/70"
         >
           {m}

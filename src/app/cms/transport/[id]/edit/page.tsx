@@ -2,8 +2,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { FormSection } from "@/components/cms/form-section";
-import { ListingImages } from "@/components/cms/listing-images";
 import { TransportForm, type TransportFormValues } from "../../transport-form";
 import { getPlaceOptions } from "../../options";
 
@@ -14,7 +12,7 @@ export default async function EditTransportPage({
 }) {
   const { id } = await params;
 
-  const [t, places, images] = await Promise.all([
+  const [t, places] = await Promise.all([
     prisma.transport.findUnique({
       where: { id },
       select: {
@@ -37,11 +35,6 @@ export default async function EditTransportPage({
       },
     }),
     getPlaceOptions(),
-    prisma.image.findMany({
-      where: { transportId: id },
-      orderBy: [{ isCover: "desc" }, { order: "asc" }],
-      select: { id: true, url: true, alt: true, isCover: true },
-    }),
   ]);
 
   if (!t) notFound();
@@ -84,15 +77,6 @@ export default async function EditTransportPage({
           places={places}
           initial={initial}
         />
-      </div>
-
-      <div className="border-t">
-        <FormSection
-          title="Ảnh"
-          description="Ảnh minh hoạ (tùy chọn) cho mục di chuyển."
-        >
-          <ListingImages ownerType="transport" ownerId={t.id} images={images} />
-        </FormSection>
       </div>
     </div>
   );

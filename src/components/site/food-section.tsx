@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { UtensilsCrossed, Store } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -40,9 +41,22 @@ export function FoodSection({
   specialties: SpecialtyDetailData[];
   eateries: EateryDetailData[];
 }) {
-  const [meal, setMeal] = useState("all");
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [meal, setMeal] = useState(() => searchParams.get("meal") ?? "all");
   const [selected, setSelected] = useState<Selected>(null);
   const hasBoth = specialties.length > 0 && eateries.length > 0;
+
+  // Lưu bữa đang lọc vào URL (?meal=) để giữ khi chia sẻ/quay lại.
+  function chooseMeal(m: string) {
+    setMeal(m);
+    const params = new URLSearchParams(searchParams.toString());
+    if (m === "all") params.delete("meal");
+    else params.set("meal", m);
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }
 
   // Scroll-spy cho thanh nhảy dính: mục nào đang ở gần đầu thì sáng.
   const [active, setActive] = useState<"dac-san" | "quan-an">(
@@ -154,7 +168,8 @@ export function FoodSection({
               <button
                 key={m}
                 type="button"
-                onClick={() => setMeal(m)}
+                onClick={() => chooseMeal(m)}
+                aria-pressed={meal === m}
                 className={cn(
                   "rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors",
                   meal === m
@@ -250,7 +265,12 @@ function FoodCard({
   onClick: () => void;
 }) {
   return (
-    <button type="button" onClick={onClick} className="group block text-left">
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={`Xem chi tiết ${name}`}
+      className="group block text-left"
+    >
       <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-muted shadow-sm shadow-black/5 transition-shadow group-hover:shadow-md">
         <Image
           src={coverUrl(images, slug)}

@@ -34,6 +34,7 @@ export default auth((req) => {
 });
 
 export const config = {
-  // Bỏ qua: api, _next/static, _next/image, favicon, và file tĩnh có đuôi mở rộng.
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)"],
+  // CHỈ chạy ở route cần auth: khu CMS + trang đăng nhập. Mọi trang công khai bỏ
+  // qua middleware (edge bundle có Google+Facebook) → điều hướng & dev nhanh hơn.
+  matcher: ["/cms/:path*", "/login"],
 };

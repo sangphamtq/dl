@@ -45,6 +45,7 @@ export function AccommodationSection({
             key={a.slug}
             type="button"
             onClick={() => setSelected(a.slug)}
+            aria-label={`Xem chi tiết ${a.name}`}
             className="group block text-left"
           >
             <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-muted shadow-sm shadow-black/5 transition-shadow group-hover:shadow-md">

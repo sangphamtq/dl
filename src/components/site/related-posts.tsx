@@ -4,13 +4,12 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import { coverUrl } from "@/lib/place-image";
 
+// Đặc sản/Quán ăn/Lưu trú không còn trang chi tiết riêng (đã chuyển drawer) nên
+// không render "Bài viết liên quan" — chỉ giữ các loại còn có trang.
 const FK = {
   place: "placeId",
   activity: "activityId",
   spot: "spotId",
-  specialty: "specialtyId",
-  eatery: "eateryId",
-  accommodation: "accommodationId",
 } as const;
 
 export type RefType = keyof typeof FK;

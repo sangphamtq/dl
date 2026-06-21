@@ -153,7 +153,7 @@ Nếu chỉ là "việc tự nhiên ở đúng một chỗ, không đơn vị, k
 | Đặc sản | `Specialty` | `placeId` bắt buộc; M:N với `Eatery` |
 | Quán ăn | `Eatery` | `placeId` bắt buộc; M:N với `Specialty` |
 | Nơi lưu trú | `Accommodation` | `placeId` bắt buộc |
-| Di chuyển | `Transport` | `placeId` bắt buộc; `direction` `getTo`/`getAround`; **inline trên trang Place, không có trang chi tiết riêng** |
+| Di chuyển | `Transport` | `placeId` bắt buộc; `direction` `getTo`/`getAround`; **màn hình riêng `/diem-den/[slug]/di-chuyen`; không có trang chi tiết per-item, không slug, không ảnh** |
 
 Mỗi entity nên có tối thiểu: `id`, `slug`, `name`, `description`, và khóa ngoại tới cha
 (`parentId` với `Place`; `placeId` với các `Listing`). Ảnh tách riêng thành entity
@@ -161,9 +161,11 @@ Mỗi entity nên có tối thiểu: `id`, `slug`, `name`, `description`, và kh
 
 ### `Transport` — chi tiết
 
-> **Khác các Listing còn lại:** `Transport` là nội dung **hướng dẫn**, **hiển thị INLINE**
-> trên trang Place (section/accordion), **không có trang chi tiết/slug/URL riêng**. Không
-> theo mẫu card→detail. Vẫn là một entity (bảng) gắn `placeId`, chỉ khác ở cách trình bày.
+> **Khác các Listing còn lại:** `Transport` là nội dung **hướng dẫn**, có **màn hình riêng**
+> `/diem-den/[placeSlug]/di-chuyen` (token `di-chuyen` trong route `[loai]`, không tạo file
+> route mới) — **KHÔNG có trang chi tiết per-item, không slug**. Không theo mẫu card→detail:
+> render dạng 2 cột "Cách đến nơi" (nhóm theo `mode`) / "Đi lại tại chỗ", icon theo phương
+> tiện (KHÔNG dùng ảnh). Vẫn là một entity (bảng) gắn `placeId`, chỉ khác ở cách trình bày.
 
 Mỗi bản ghi mô tả **một cách di chuyển**, phân biệt bằng `direction`:
 
@@ -180,7 +182,7 @@ Transport {
   operatorName?, bookingUrl?,        // hãng xe/tàu/vé (nếu có)
   description?          // hướng dẫn chi tiết, mẹo
 }
-// Không cần slug. Có thể có Image (ownerType='transport') cho section inline.
+// Không cần slug. KHÔNG dùng ảnh — hiển thị bằng icon theo `mode`.
 ```
 - **`getTo`** — cách đến nơi **từ bên ngoài** (thường có `fromName`, `duration`, `distanceKm`).
   Một `Place` có thể có nhiều bản ghi getTo cho nhiều điểm xuất phát khác nhau.
@@ -289,10 +291,11 @@ cấp thể hiện qua **breadcrumb + nội dung trang**, không qua URL.
 /diem-den/[placeSlug]/[loai]         danh sách Listing thuộc Place đó
    vd: /diem-den/ha-long  ·  /diem-den/ha-long/quan-an
 ```
-`[loai]` = **loại Listing** (đừng nhầm với field `category` của model): `hoat-dong` |
-`dia-diem` | `dac-san` | `quan-an` | `luu-tru` (Activity | Spot | Specialty | Eatery |
-Accommodation). Cùng token này dùng làm tiền tố trang chi tiết. **`Transport` KHÔNG có
-trong `[loai]`** — nó hiển thị inline trên trang Place (`/diem-den/[placeSlug]`).
+`[loai]` = **loại màn hình của Place** (đừng nhầm với field `category`): `hoat-dong`
+(Activity) | `dia-diem` (Spot) | `am-thuc` (gộp Đặc sản + Quán ăn, chi tiết qua drawer) |
+`luu-tru` (Accommodation, lưới + drawer) | `di-chuyen` (Transport, 2 cột inline). Với
+`hoat-dong`/`dia-diem`, token này còn là **tiền tố trang chi tiết riêng**; còn `am-thuc`/
+`luu-tru`/`di-chuyen` **không có trang chi tiết per-item** (xem mục mẫu hiển thị bên dưới).
 
 **Trang chi tiết Listing** — PHẲNG, tiền tố theo loại, **slug duy nhất trong từng loại**
 (5 loại; `Transport` không có trang chi tiết):

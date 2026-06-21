@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Compass } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { coverUrl } from "@/lib/place-image";
 import {
@@ -21,7 +21,6 @@ import { PlaceViewTracker } from "@/components/site/place-view-tracker";
 import { type HeroImage } from "@/components/site/place-hero-stack";
 import { PlaceHero } from "@/components/site/place-hero";
 import { PlaceTabs } from "@/components/site/place-tabs";
-import { TransportSection } from "@/components/site/transport-section";
 import { PeerBar } from "@/components/site/peer-bar";
 import { getDestinationPeerGroups } from "@/lib/peers";
 import { getTikTokInfo } from "@/lib/tiktok";
@@ -157,19 +156,6 @@ export default async function PlaceDetailPage({
           images: listingImages,
         },
       },
-      transports: {
-        where: pub,
-        orderBy: [{ order: "asc" }, { name: "asc" }],
-        select: {
-          id: true,
-          name: true,
-          direction: true,
-          mode: true,
-          fromName: true,
-          duration: true,
-          description: true,
-        },
-      },
       videos: {
         orderBy: [{ order: "asc" }, { createdAt: "asc" }],
         select: { videoId: true, caption: true },
@@ -239,6 +225,15 @@ export default async function PlaceDetailPage({
 
   const showChildren = isProvince && place.children.length > 0;
 
+  // Không có mục con nào để liệt kê → hiện trạng thái rỗng thân thiện.
+  const hasAnyContent =
+    place.children.length > 0 ||
+    place.spots.length > 0 ||
+    place.activities.length > 0 ||
+    place.specialties.length > 0 ||
+    place.accommodations.length > 0 ||
+    counts.transport > 0;
+
   const videoSeed = place.videos.map((v) => ({
     id: v.videoId,
     caption: v.caption ?? undefined,
@@ -266,7 +261,6 @@ export default async function PlaceDetailPage({
   numFor(place.activities.length > 0, "activities");
   numFor(place.specialties.length > 0, "specialties");
   numFor(place.accommodations.length > 0, "accommodations");
-  numFor(place.transports.length > 0, "transports");
 
 
   return (
@@ -470,16 +464,16 @@ export default async function PlaceDetailPage({
             </section>
           )}
 
-          {/* Di chuyển — lưới (hướng dẫn, không phải rail) */}
-          {place.transports.length > 0 && (
-            <section id="di-chuyen" className="scroll-mt-32 py-10 first:pt-0 last:pb-0">
-              <SectionHeading
-                num={sectionNum.transports}
-                eyebrow="Di chuyển"
-                title="Đi lại thế nào?"
-              />
-              <TransportSection transports={place.transports} />
-            </section>
+
+          {!hasAnyContent && (
+            <div className="rounded-2xl border border-dashed border-border/70 px-6 py-16 text-center">
+              <Compass className="mx-auto size-8 text-muted-foreground/60" aria-hidden />
+              <p className="mt-3 font-medium">Nội dung đang được cập nhật</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Điểm đến này chưa có địa điểm, trải nghiệm hay nơi lưu trú nào — quay
+                lại sau nhé.
+              </p>
+            </div>
           )}
         </div>
 

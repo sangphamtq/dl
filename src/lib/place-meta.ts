@@ -9,6 +9,7 @@ export type PlaceCounts = {
   specialty: number;
   eatery: number;
   accommodation: number;
+  transport: number;
 };
 
 
@@ -36,14 +37,16 @@ export async function getPlaceHeader(placeSlug: string) {
 }
 
 export async function getPlaceCounts(placeId: string): Promise<PlaceCounts> {
-  const [activity, spot, specialty, eatery, accommodation] = await Promise.all([
-    prisma.activity.count({ where: { placeId, ...pub } }),
-    prisma.spot.count({ where: { placeId, ...pub } }),
-    prisma.specialty.count({ where: { placeId, ...pub } }),
-    prisma.eatery.count({ where: { placeId, ...pub } }),
-    prisma.accommodation.count({ where: { placeId, ...pub } }),
-  ]);
-  return { activity, spot, specialty, eatery, accommodation };
+  const [activity, spot, specialty, eatery, accommodation, transport] =
+    await Promise.all([
+      prisma.activity.count({ where: { placeId, ...pub } }),
+      prisma.spot.count({ where: { placeId, ...pub } }),
+      prisma.specialty.count({ where: { placeId, ...pub } }),
+      prisma.eatery.count({ where: { placeId, ...pub } }),
+      prisma.accommodation.count({ where: { placeId, ...pub } }),
+      prisma.transport.count({ where: { placeId, ...pub } }),
+    ]);
+  return { activity, spot, specialty, eatery, accommodation, transport };
 }
 
 export type PlaceTab = { href: string; label: string; icon?: boolean };
@@ -61,6 +64,8 @@ export function buildPlaceTabs(placeSlug: string, counts: PlaceCounts): PlaceTab
   if (counts.activity > 0) add("hoat-dong", "Trải nghiệm");
   if (counts.specialty + counts.eatery > 0) add("am-thuc", "Ẩm thực");
   if (counts.accommodation > 0) add("luu-tru", "Nơi lưu trú");
+  // Di chuyển: màn hình riêng trong route động [loai] (không có trang chi tiết per-item).
+  if (counts.transport > 0) add("di-chuyen", "Di chuyển");
 
   return tabs;
 }

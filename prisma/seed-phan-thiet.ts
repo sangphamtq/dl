@@ -12,6 +12,8 @@ import {
   Meal,
   AccommodationCategory,
   PriceRange,
+  TransportDirection,
+  TransportMode,
   UserRole,
 } from "@/generated/prisma/enums";
 
@@ -1346,6 +1348,129 @@ async function main() {
     await setImages({ accommodationId: row.id }, IMAGES[slug] ?? [], name);
   }
 
+  // 7b) Di chuyển (Transport) — getTo: cách đến từ ngoài; getAround: tại chỗ.
+  // Không có slug → idempotent bằng deleteMany theo placeId rồi tạo lại.
+  const D = TransportDirection;
+  const M = TransportMode;
+  const transports = [
+    {
+      direction: D.getTo,
+      mode: M.bus,
+      name: "Limousine / xe khách TP.HCM → Phan Thiết",
+      fromName: "TP. Hồ Chí Minh",
+      duration: "4 – 5 giờ",
+      distanceKm: 200,
+      priceFrom: 150000,
+      priceTo: 290000,
+      operatorName: "Phương Trang (FUTA), Tâm Hạnh, Hạnh Café",
+      bookingUrl: "https://futabus.vn",
+      description:
+        "Tuyến phổ biến nhất: xe giường nằm và limousine chạy liên tục trong ngày từ bến xe Miền Đông và các văn phòng trung tâm. Limousine đón tận nơi, đi thẳng Mũi Né rất tiện.",
+    },
+    {
+      direction: D.getTo,
+      mode: M.train,
+      name: "Tàu hỏa Sài Gòn → ga Phan Thiết",
+      fromName: "Ga Sài Gòn",
+      duration: "khoảng 4 giờ",
+      distanceKm: 200,
+      priceFrom: 150000,
+      priceTo: 300000,
+      operatorName: "Đường sắt Việt Nam",
+      bookingUrl: "https://dsvn.vn",
+      description:
+        "Có tàu chạy thẳng tới ga Phan Thiết, ngắm cảnh đẹp dọc đường. Cuối tuần thường kín chỗ nên đặt vé sớm; từ ga vào trung tâm/Mũi Né đi tiếp taxi khoảng 10–25 phút.",
+    },
+    {
+      direction: D.getTo,
+      mode: M.bus,
+      name: "Xe khách Nha Trang → Phan Thiết",
+      fromName: "Nha Trang",
+      duration: "4 – 5 giờ",
+      distanceKm: 250,
+      priceFrom: 130000,
+      priceTo: 230000,
+      operatorName: "Hạnh Café, Tâm Hạnh, Sinh Tourist",
+      description:
+        "Phù hợp khách nối tuyến Nha Trang – Mũi Né. Nhiều nhà xe đón/trả tại khu Hàm Tiến, Mũi Né nên không phải vào bến.",
+    },
+    {
+      direction: D.getTo,
+      mode: M.bus,
+      name: "Xe khách Đà Lạt → Phan Thiết",
+      fromName: "Đà Lạt",
+      duration: "4 – 5 giờ",
+      distanceKm: 170,
+      priceFrom: 150000,
+      priceTo: 250000,
+      operatorName: "Phương Trang, Trung Nga",
+      description:
+        "Cung đường đèo xuống biển, cảnh đẹp. Lựa chọn quen thuộc cho hành trình kết hợp Đà Lạt – biển Mũi Né.",
+    },
+    {
+      direction: D.getTo,
+      mode: M.plane,
+      name: "Máy bay tới Cam Ranh rồi đi xe",
+      fromName: "Hà Nội / TP.HCM (qua sân bay Cam Ranh)",
+      duration: "~2 giờ bay + ~2,5 giờ xe",
+      distanceKm: 240,
+      operatorName: "Vietnam Airlines, Vietjet, Bamboo Airways",
+      description:
+        "Phan Thiết chưa có chuyến bay thương mại thường lệ, nên khách ở xa thường bay tới Cam Ranh (Nha Trang) hoặc Tân Sơn Nhất rồi đi xe/limousine về.",
+    },
+    {
+      direction: D.getAround,
+      mode: M.motorbike,
+      name: "Thuê xe máy",
+      duration: "theo ngày",
+      priceFrom: 100000,
+      priceTo: 150000,
+      operatorName: "Khách sạn / điểm cho thuê tại Mũi Né",
+      description:
+        "Cách linh hoạt nhất để khám phá đồi cát, làng chài và các bãi biển. Nhiều khách sạn cho thuê tận nơi; nhớ kiểm tra phanh, xăng và mang theo giấy phép lái xe.",
+    },
+    {
+      direction: D.getAround,
+      mode: M.taxi,
+      name: "Taxi",
+      priceFrom: 12000,
+      operatorName: "Mai Linh, Sông Bình",
+      description:
+        "Dễ bắt ở khu trung tâm và Hàm Tiến – Mũi Né. Nên đi xe có đồng hồ hoặc chốt giá trước cho các chặng dài như ra đồi cát Bàu Trắng.",
+    },
+    {
+      direction: D.getAround,
+      mode: M.grab,
+      name: "Grab / xe công nghệ",
+      operatorName: "Grab",
+      description:
+        "Có hoạt động ở Phan Thiết và Mũi Né nhưng số lượng xe ít hơn thành phố lớn, giờ cao điểm có thể chờ lâu. Tiện cho chặng ngắn trong trung tâm.",
+    },
+    {
+      direction: D.getAround,
+      mode: M.shuttle,
+      name: "Xe đưa đón của resort",
+      operatorName: "Các resort tại Hàm Tiến – Mũi Né",
+      description:
+        "Nhiều resort có xe đưa đón sân bay/bến xe và shuttle ra trung tâm theo khung giờ. Hỏi lễ tân để đặt trước, thường rẻ hơn taxi cho nhóm.",
+    },
+    {
+      direction: D.getAround,
+      mode: M.cyclo,
+      name: "Xích lô tham quan",
+      operatorName: "Khu trung tâm Phan Thiết",
+      description:
+        "Trải nghiệm chậm rãi quanh tháp nước, chợ và bờ sông Cà Ty. Nên thỏa thuận giá và lộ trình trước khi đi.",
+    },
+  ];
+
+  await prisma.transport.deleteMany({ where: { placeId: phanThiet.id } });
+  for (const [i, t] of transports.entries()) {
+    await prisma.transport.create({
+      data: { ...t, currency: "VND", order: i, placeId: phanThiet.id, ...PUB },
+    });
+  }
+
   // 8) Blog giới thiệu Phan Thiết (gắn PostRef → Place để hiện thẻ "Bài giới thiệu")
   const author =
     (await prisma.user.findFirst({
@@ -1393,7 +1518,7 @@ async function main() {
   });
 
   console.log(
-    `✓ Seed Phan Thiết xong: 1 tỉnh, 1 điểm đến, ${spots.length} địa điểm, ${activities.length} hoạt động, ${eateries.length} quán ăn, ${specialties.length} đặc sản, ${accommodations.length} lưu trú, 1 bài blog.`,
+    `✓ Seed Phan Thiết xong: 1 tỉnh, 1 điểm đến, ${spots.length} địa điểm, ${activities.length} hoạt động, ${eateries.length} quán ăn, ${specialties.length} đặc sản, ${accommodations.length} lưu trú, ${transports.length} di chuyển, 1 bài blog.`,
   );
 }
 
