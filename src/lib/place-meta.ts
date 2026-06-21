@@ -49,14 +49,18 @@ export async function getPlaceCounts(placeId: string): Promise<PlaceCounts> {
   return { activity, spot, specialty, eatery, accommodation, transport };
 }
 
-export type PlaceTab = { href: string; label: string; icon?: boolean };
+export type PlaceTab = {
+  href: string;
+  label: string;
+  icon?: "overview" | "map"; // tab dạng icon (Tổng quan / Bản đồ)
+};
 
 // Tabs sticky: "Tổng quan" về trang Place + mỗi loại listing có dữ liệu → trang "xem tất cả".
 // Đặc sản + Quán ăn gộp chung thành một tab "Ẩm thực" (trang /am-thuc hiển thị cả hai).
 export function buildPlaceTabs(placeSlug: string, counts: PlaceCounts): PlaceTab[] {
   const base = `/diem-den/${placeSlug}`;
   // Mục đầu = "Tổng quan" dạng icon (gọn); chỉ hiện khi có ≥1 loại listing.
-  const tabs: PlaceTab[] = [{ href: base, label: "Tổng quan", icon: true }];
+  const tabs: PlaceTab[] = [{ href: base, label: "Tổng quan", icon: "overview" }];
   const add = (loai: string, label: string) =>
     tabs.push({ href: `${base}/${loai}`, label });
 
@@ -66,6 +70,10 @@ export function buildPlaceTabs(placeSlug: string, counts: PlaceCounts): PlaceTab
   if (counts.accommodation > 0) add("luu-tru", "Nơi lưu trú");
   // Di chuyển: màn hình riêng trong route động [loai] (không có trang chi tiết per-item).
   if (counts.transport > 0) add("di-chuyen", "Di chuyển");
+
+  // Bản đồ: dạng icon, hiện khi có loại có toạ độ (Spot/Eatery/Accommodation).
+  if (counts.spot + counts.eatery + counts.accommodation > 0)
+    tabs.push({ href: `${base}/ban-do`, label: "Bản đồ", icon: "map" });
 
   return tabs;
 }

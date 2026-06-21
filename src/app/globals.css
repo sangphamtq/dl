@@ -141,3 +141,51 @@
     display: none;
   }
 }
+
+/* ── Bản đồ du lịch (Leaflet) ──────────────────────────────────────
+   Pin HTML tự dựng (divIcon) + tinh chỉnh popup cho khớp hệ thiết kế. */
+.dl-pin {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  background: var(--pin, var(--primary));
+  border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.3);
+  transition: transform 0.15s ease;
+}
+.dl-pin__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fff;
+}
+.dl-pin:hover {
+  transform: rotate(-45deg) scale(1.12);
+}
+/* tuyến đường định tuyến — màu theo theme (CSS stroke nhận var, khác attribute) */
+.dl-route {
+  stroke: var(--primary);
+}
+/* divIcon dùng className "dl-marker" → tự bỏ nền/viền mặc định */
+.dl-marker,
+.leaflet-div-icon {
+  background: transparent;
+  border: none;
+}
+/* Popup: bỏ padding mặc định để card ảnh tràn viền, bo góc lớn */
+.leaflet-popup-content-wrapper {
+  border-radius: 1rem;
+  padding: 0;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.15);
+}
+.leaflet-popup-content {
+  margin: 0;
+  width: 13rem !important;
+}
+.leaflet-popup-tip {
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.15);
+}

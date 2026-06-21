@@ -3,7 +3,7 @@
 import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { LayoutGrid } from "lucide-react";
+import { LayoutGrid, MapPinned } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { PlaceTab } from "@/lib/place-meta";
 import {
@@ -66,16 +66,20 @@ export function PlaceTabs({
     return () => obs.disconnect();
   }, []);
 
-  // Có ít nhất 2 tab, hoặc có video để gắn nút → mới hiện thanh.
-  if (items.length <= 1 && videos.length === 0) return null;
+  // Tab Bản đồ tách riêng → render thành nút nổi bật bên phải (không cuộn mất).
+  const mapTab = items.find((it) => it.icon === "map");
+  const navItems = items.filter((it) => it.icon !== "map");
+
+  // Có ít nhất 2 tab, hoặc có video/bản đồ để gắn nút → mới hiện thanh.
+  if (navItems.length <= 1 && videos.length === 0 && !mapTab) return null;
 
   return (
     <>
     <div ref={sentinelRef} aria-hidden className="h-0" />
     <div className="sticky top-16 z-40 border-b border-border/60 bg-background/80 backdrop-blur-lg">
       <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 sm:px-6">
-        <nav className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {items.map((it) => {
+        <nav className="flex min-w-0 items-center gap-1 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {navItems.map((it) => {
             const active = pathname === it.href;
             return (
               <Link
@@ -95,7 +99,7 @@ export function PlaceTabs({
                     : "text-muted-foreground hover:text-foreground",
                 )}
               >
-                {it.icon ? (
+                {it.icon === "overview" ? (
                   <LayoutGrid className="size-4" aria-hidden />
                 ) : (
                   <TabLabel label={it.label} />
@@ -104,16 +108,39 @@ export function PlaceTabs({
             );
           })}
         </nav>
-        <PlaceVideoTabButton
-          videos={videos}
-          placeName={placeName}
-          className={cn(
-            "transition-all duration-300",
-            stuck
-              ? "translate-x-0 opacity-100"
-              : "pointer-events-none translate-x-2 opacity-0",
+        {/* Nhóm bên phải: Video (trái) + Bản đồ (ngoài cùng phải) */}
+        <div className="ml-auto flex shrink-0 items-center gap-3">
+          <PlaceVideoTabButton
+            videos={videos}
+            placeName={placeName}
+            className={cn(
+              "transition-all duration-300",
+              stuck
+                ? "translate-x-0 opacity-100"
+                : "pointer-events-none translate-x-2 opacity-0",
+            )}
+          />
+          {mapTab && (
+            <Link
+              href={mapTab.href}
+              ref={(el) => {
+                tabRefs.current[mapTab.href] = el;
+              }}
+              aria-current={pathname === mapTab.href ? "page" : undefined}
+              className={cn(
+                "group inline-flex shrink-0 items-center gap-2 rounded-full border bg-card/70 py-1 pl-1 pr-3 shadow-sm shadow-black/5 backdrop-blur transition-all hover:-translate-y-px hover:shadow-md",
+                pathname === mapTab.href
+                  ? "border-primary/50"
+                  : "border-border/60 hover:border-primary/40",
+              )}
+            >
+              <span className="grid size-8 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground transition-transform group-hover:scale-105">
+                <MapPinned className="size-4" aria-hidden />
+              </span>
+              <span className="text-sm font-medium text-foreground">{mapTab.label}</span>
+            </Link>
           )}
-        />
+        </div>
       </div>
     </div>
     </>
