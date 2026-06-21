@@ -22,6 +22,8 @@ import { type HeroImage } from "@/components/site/place-hero-stack";
 import { PlaceHero } from "@/components/site/place-hero";
 import { PlaceTabs } from "@/components/site/place-tabs";
 import { TransportSection } from "@/components/site/transport-section";
+import { PeerBar } from "@/components/site/peer-bar";
+import { getDestinationPeerGroups } from "@/lib/peers";
 import { getTikTokInfo } from "@/lib/tiktok";
 import {
   getPlaceCounts,
@@ -87,6 +89,7 @@ export default async function PlaceDetailPage({
       isFeatured: true,
       viewCount: true,
       provinceName: true,
+      parentId: true,
       parent: { select: { slug: true, name: true } },
       images: {
         orderBy: [{ isCover: "desc" }, { order: "asc" }],
@@ -180,6 +183,9 @@ export default async function PlaceDetailPage({
   const counts = await getPlaceCounts(place.id);
   const stats = buildPlaceStats(place.viewCount, counts);
   const tabs = buildPlaceTabs(place.slug, counts);
+
+  // Thanh chuyển nhanh: mọi điểm đến lớn gom theo miền (làm nổi cái đang xem).
+  const peerGroups = await getDestinationPeerGroups();
 
   // Bài giới thiệu: post (đã xuất bản) nổi bật/mới nhất gắn với điểm đến này.
   const introPost = await prisma.post.findFirst({
@@ -482,6 +488,12 @@ export default async function PlaceDetailPage({
       </main>
 
       <SiteFooter />
+      <PeerBar
+        groups={peerGroups}
+        currentSlug={place.slug}
+        prefix="diem-den"
+        title="Điểm đến"
+      />
     </div>
   );
 }

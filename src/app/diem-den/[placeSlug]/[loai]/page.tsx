@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { coverUrl } from "@/lib/place-image";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
+import { PeerBar } from "@/components/site/peer-bar";
+import { getDestinationPeerGroups } from "@/lib/peers";
 import { ListingView } from "@/components/site/listing-view";
 import { PlaceHero } from "@/components/site/place-hero";
 import { PlaceTabs } from "@/components/site/place-tabs";
@@ -240,6 +242,7 @@ export default async function PlaceListingPage({
   const place = await getPlaceHeader(placeSlug);
   if (!place || place.status !== "published") notFound();
 
+  const peerGroups = await getDestinationPeerGroups();
   const counts = await getPlaceCounts(place.id);
   const stats = buildPlaceStats(place.viewCount, counts);
   const tabs = buildPlaceTabs(place.slug, counts);
@@ -291,6 +294,12 @@ export default async function PlaceListingPage({
       </main>
 
       <SiteFooter />
+      <PeerBar
+        groups={peerGroups}
+        currentSlug={place.slug}
+        prefix="diem-den"
+        title="Điểm đến"
+      />
     </div>
   );
 }

@@ -19,6 +19,8 @@ import {
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { RelatedPosts } from "@/components/site/related-posts";
+import { PeerBar } from "@/components/site/peer-bar";
+import { getListingPeers } from "@/lib/peers";
 import { ListingViewTracker } from "@/components/site/listing-view-tracker";
 import { isStaffViewer } from "@/lib/preview";
 import { CrossLinkCard } from "@/components/site/cross-link-card";
@@ -67,6 +69,7 @@ export default async function EateryPublicPage({
       wardName: true,
       districtName: true,
       provinceName: true,
+      placeId: true,
       place: { select: { slug: true, name: true } },
       specialties: {
         where: pub,
@@ -86,6 +89,8 @@ export default async function EateryPublicPage({
 
   const staff = await isStaffViewer();
   if (!eatery || (eatery.status !== "published" && !staff)) notFound();
+
+  const peers = await getListingPeers("eatery", eatery.placeId);
 
   const heroUrl = coverUrl(eatery.images, eatery.slug, 1800, 1000);
   const gallery = eatery.images.filter((i) => i.url !== heroUrl);
@@ -284,6 +289,12 @@ export default async function EateryPublicPage({
       </main>
 
       <SiteFooter />
+      <PeerBar
+        groups={[{ items: peers }]}
+        currentSlug={eatery.slug}
+        prefix="quan-an"
+        title="Quán ăn khác"
+      />
     </div>
   );
 }

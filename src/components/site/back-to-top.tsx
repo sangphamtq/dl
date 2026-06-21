@@ -27,7 +27,7 @@ export function BackToTop() {
         window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
       }}
       className={cn(
-        "fixed bottom-5 right-5 z-40 grid size-11 place-items-center rounded-full border border-border/60 bg-background/80 text-foreground shadow-lg shadow-black/10 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:text-primary",
+        "fixed bottom-20 right-5 z-40 grid size-11 place-items-center rounded-full border border-border/60 bg-background/80 text-foreground shadow-lg shadow-black/10 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:text-primary",
         shown
           ? "translate-y-0 opacity-100"
           : "pointer-events-none translate-y-3 opacity-0",

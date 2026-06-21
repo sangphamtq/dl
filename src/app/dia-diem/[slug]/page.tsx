@@ -41,6 +41,8 @@ import { isStaffViewer } from "@/lib/preview";
 import { ListingCard } from "@/components/site/listing-card";
 import { Rail } from "@/components/site/rail";
 import { SpotSectionNav, type SectionItem } from "@/components/site/spot-section-nav";
+import { PeerBar } from "@/components/site/peer-bar";
+import { getListingPeers } from "@/lib/peers";
 
 const pub = { status: "published" as const };
 
@@ -244,6 +246,7 @@ export default async function SpotPublicPage({
       provinceName: true,
       districtName: true,
       wardName: true,
+      placeId: true,
       place: {
         select: {
           slug: true,
@@ -328,6 +331,8 @@ export default async function SpotPublicPage({
 
   const staff = await isStaffViewer();
   if (!spot || (spot.status !== "published" && !staff)) notFound();
+
+  const spotPeers = await getListingPeers("spot", spot.placeId);
 
   // Bài viết chi tiết: post (đã xuất bản) nổi bật/mới nhất gắn với địa điểm này.
   const introPost = await prisma.post.findFirst({
@@ -1000,6 +1005,12 @@ export default async function SpotPublicPage({
       </main>
 
       <SiteFooter />
+      <PeerBar
+        groups={[{ items: spotPeers }]}
+        currentSlug={spot.slug}
+        prefix="dia-diem"
+        title="Địa điểm khác"
+      />
     </div>
   );
 }

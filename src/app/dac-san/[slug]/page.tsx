@@ -7,6 +7,8 @@ import { coverUrl } from "@/lib/place-image";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { RelatedPosts } from "@/components/site/related-posts";
+import { PeerBar } from "@/components/site/peer-bar";
+import { getListingPeers } from "@/lib/peers";
 import { ListingViewTracker } from "@/components/site/listing-view-tracker";
 import { isStaffViewer } from "@/lib/preview";
 import { CrossLinkCard } from "@/components/site/cross-link-card";
@@ -43,6 +45,7 @@ export default async function SpecialtyPublicPage({
       description: true,
       status: true,
       tags: true,
+      placeId: true,
       place: { select: { slug: true, name: true } },
       eateries: {
         where: pub,
@@ -62,6 +65,8 @@ export default async function SpecialtyPublicPage({
 
   const staff = await isStaffViewer();
   if (!specialty || (specialty.status !== "published" && !staff)) notFound();
+
+  const peers = await getListingPeers("specialty", specialty.placeId);
 
   const heroUrl = coverUrl(specialty.images, specialty.slug, 1800, 1000);
   const gallery = specialty.images.filter((i) => i.url !== heroUrl);
@@ -181,6 +186,12 @@ export default async function SpecialtyPublicPage({
       </main>
 
       <SiteFooter />
+      <PeerBar
+        groups={[{ items: peers }]}
+        currentSlug={specialty.slug}
+        prefix="dac-san"
+        title="Đặc sản khác"
+      />
     </div>
   );
 }

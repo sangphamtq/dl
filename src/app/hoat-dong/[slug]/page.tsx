@@ -24,6 +24,8 @@ import { SiteFooter } from "@/components/site/site-footer";
 import { RelatedPosts } from "@/components/site/related-posts";
 import { ListingViewTracker } from "@/components/site/listing-view-tracker";
 import { isStaffViewer } from "@/lib/preview";
+import { PeerBar } from "@/components/site/peer-bar";
+import { getListingPeers } from "@/lib/peers";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -68,6 +70,7 @@ export default async function ActivityPublicPage({
       ticketFree: true,
       ticketTiers: true,
       tags: true,
+      placeId: true,
       place: { select: { slug: true, name: true } },
       spotLinks: {
         where: { spot: pub },
@@ -92,6 +95,8 @@ export default async function ActivityPublicPage({
 
   const staff = await isStaffViewer();
   if (!activity || (activity.status !== "published" && !staff)) notFound();
+
+  const peers = await getListingPeers("activity", activity.placeId);
 
   const heroUrl = coverUrl(activity.images, activity.slug, 1800, 1000);
   const gallery = activity.images.filter((i) => i.url !== heroUrl);
@@ -341,6 +346,12 @@ export default async function ActivityPublicPage({
       </main>
 
       <SiteFooter />
+      <PeerBar
+        groups={[{ items: peers }]}
+        currentSlug={activity.slug}
+        prefix="hoat-dong"
+        title="Trải nghiệm khác"
+      />
     </div>
   );
 }

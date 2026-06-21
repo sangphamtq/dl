@@ -8,6 +8,8 @@ import { ACCOMMODATION_CATEGORY_LABELS, label } from "@/lib/listing-labels";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { RelatedPosts } from "@/components/site/related-posts";
+import { PeerBar } from "@/components/site/peer-bar";
+import { getListingPeers } from "@/lib/peers";
 import { ListingViewTracker } from "@/components/site/listing-view-tracker";
 import { isStaffViewer } from "@/lib/preview";
 
@@ -47,6 +49,7 @@ export default async function AccommodationPublicPage({
       website: true,
       bookingUrl: true,
       tags: true,
+      placeId: true,
       place: { select: { slug: true, name: true } },
       images: {
         orderBy: [{ isCover: "desc" }, { order: "asc" }],
@@ -57,6 +60,8 @@ export default async function AccommodationPublicPage({
 
   const staff = await isStaffViewer();
   if (!acc || (acc.status !== "published" && !staff)) notFound();
+
+  const peers = await getListingPeers("accommodation", acc.placeId);
 
   const heroUrl = coverUrl(acc.images, acc.slug, 1800, 1000);
   const gallery = acc.images.filter((i) => i.url !== heroUrl);
@@ -213,6 +218,12 @@ export default async function AccommodationPublicPage({
       </main>
 
       <SiteFooter />
+      <PeerBar
+        groups={[{ items: peers }]}
+        currentSlug={acc.slug}
+        prefix="luu-tru"
+        title="Lưu trú khác"
+      />
     </div>
   );
 }

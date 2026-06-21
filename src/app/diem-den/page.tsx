@@ -7,6 +7,7 @@ import {
   type DestItem,
   type ProvinceItem,
 } from "@/components/site/destination-filter";
+import { REGION_LABELS, regionOf } from "@/lib/regions";
 
 export const metadata = {
   title: "Điểm đến · Hành Trình Việt",
@@ -20,38 +21,6 @@ const cover = {
   take: 1,
   select: { url: true, isCover: true },
 } as const;
-
-// Nhóm 63 tỉnh theo miền (để danh sách có cấu trúc, gọn). slug theo seed.
-const REGIONS = [
-  {
-    label: "Miền Bắc",
-    slugs: [
-      "ha-noi", "hai-phong", "bac-giang", "bac-kan", "bac-ninh", "cao-bang",
-      "dien-bien", "ha-giang", "ha-nam", "hai-duong", "hoa-binh", "hung-yen",
-      "lai-chau", "lang-son", "lao-cai", "nam-dinh", "ninh-binh", "phu-tho",
-      "quang-ninh", "son-la", "thai-binh", "thai-nguyen", "tuyen-quang",
-      "vinh-phuc", "yen-bai",
-    ],
-  },
-  {
-    label: "Miền Trung & Tây Nguyên",
-    slugs: [
-      "thanh-hoa", "nghe-an", "ha-tinh", "quang-binh", "quang-tri",
-      "thua-thien-hue", "da-nang", "quang-nam", "quang-ngai", "binh-dinh",
-      "phu-yen", "khanh-hoa", "ninh-thuan", "binh-thuan", "kon-tum", "gia-lai",
-      "dak-lak", "dak-nong", "lam-dong",
-    ],
-  },
-  {
-    label: "Miền Nam",
-    slugs: [
-      "ho-chi-minh", "ba-ria-vung-tau", "binh-duong", "binh-phuoc", "dong-nai",
-      "tay-ninh", "an-giang", "bac-lieu", "ben-tre", "ca-mau", "can-tho",
-      "dong-thap", "hau-giang", "kien-giang", "long-an", "soc-trang",
-      "tien-giang", "tra-vinh", "vinh-long",
-    ],
-  },
-] as const;
 
 export default async function DiemDenPage() {
   const [destinations, provinces, spotCount, eateryCount, activityCount] =
@@ -105,12 +74,6 @@ export default async function DiemDenPage() {
     },
   ].filter(Boolean) as { value: number; label: string }[];
 
-  // Tính miền cho từng điểm đến (suy từ tỉnh cha) → dữ liệu cho filter client.
-  const regionOf = (slug?: string | null): string => {
-    if (!slug) return "Khác";
-    const r = REGIONS.find((x) => (x.slugs as readonly string[]).includes(slug));
-    return r ? r.label : "Khác";
-  };
   const destItems: DestItem[] = destinations.map((d) => ({
     slug: d.slug,
     name: d.name,
@@ -140,7 +103,7 @@ export default async function DiemDenPage() {
     };
   });
   // Miền có điểm đến hoặc tỉnh (giữ thứ tự Bắc → Trung → Nam → Khác).
-  const allRegions = [...REGIONS.map((r) => r.label), "Khác"].filter(
+  const allRegions = REGION_LABELS.filter(
     (label) =>
       destItems.some((d) => d.region === label) ||
       provinceItems.some((p) => p.region === label),
