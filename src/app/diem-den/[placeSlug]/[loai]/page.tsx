@@ -10,6 +10,8 @@ import { ListingView } from "@/components/site/listing-view";
 import { type SpecialtyDetailData } from "@/components/site/specialty-detail";
 import { type EateryDetailData } from "@/components/site/eatery-detail";
 import { FoodSection } from "@/components/site/food-section";
+import { AccommodationSection } from "@/components/site/accommodation-section";
+import { type AccommodationDetailData } from "@/components/site/accommodation-detail";
 import { PlaceHero } from "@/components/site/place-hero";
 import { PlaceTabs } from "@/components/site/place-tabs";
 import { type HeroImage } from "@/components/site/place-hero-stack";
@@ -274,6 +276,30 @@ async function fetchEateryDetails(placeId: string): Promise<EateryDetailData[]> 
   });
 }
 
+// Chi tiết đầy đủ Nơi lưu trú của một place — render lưới + drawer.
+async function fetchAccommodationDetails(
+  placeId: string,
+): Promise<AccommodationDetailData[]> {
+  return prisma.accommodation.findMany({
+    where: { placeId, status: "published" },
+    orderBy: FOOD_ORDER,
+    select: {
+      slug: true,
+      name: true,
+      description: true,
+      category: true,
+      address: true,
+      lat: true,
+      lng: true,
+      phone: true,
+      website: true,
+      bookingUrl: true,
+      tags: true,
+      images: gallerySelect,
+    },
+  });
+}
+
 function pageTitle(loai: string): string | null {
   if (loai === AM_THUC) return "Ẩm thực";
   return LOAI[loai as Loai]?.title ?? null;
@@ -297,13 +323,16 @@ export async function generateMetadata({
 
 export default async function PlaceListingPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ placeSlug: string; loai: string }>;
+  searchParams: Promise<{ open?: string }>;
 }) {
   const { placeSlug, loai } = await params;
   // URL chi tiết Đặc sản/Quán ăn cũ đã gộp vào tab Ẩm thực.
   if (FOOD_LEGACY.has(loai)) redirect(`/diem-den/${placeSlug}/${AM_THUC}`);
   const isFood = loai === AM_THUC;
+  const isStay = loai === "luu-tru";
   const cfg = LOAI[loai as Loai];
   if (!isFood && !cfg) notFound();
 
@@ -332,9 +361,13 @@ export default async function PlaceListingPage({
       }
     : null;
 
-  // Các loại khác: lưới card (grid/list), link tới trang chi tiết riêng.
+  // Lưu trú: lưới card + drawer chi tiết (không còn trang chi tiết riêng).
+  const stays = isStay ? await fetchAccommodationDetails(place.id) : null;
+  const openSlug = isStay ? (await searchParams).open : undefined;
+
+  // Các loại khác (hoạt động, địa điểm): lưới card link tới trang chi tiết riêng.
   const groups =
-    !isFood && cfg
+    !isFood && !isStay && cfg
       ? [
           {
             title: cfg.title,
@@ -374,6 +407,12 @@ export default async function PlaceListingPage({
                 specialties={food.specialties}
                 eateries={food.eateries}
               />
+            )
+          ) : stays ? (
+            stays.length === 0 ? (
+              <p className="text-muted-foreground">Chưa có nơi lưu trú.</p>
+            ) : (
+              <AccommodationSection accommodations={stays} openSlug={openSlug} />
             )
           ) : (
             <ListingView groups={groups} initialView={listingView} />

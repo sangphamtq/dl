@@ -83,6 +83,18 @@ const FOOD = {
   mucMotNang: F + "m9VMJOw4aGbVwxgIA6xPfv7TtDnqG58WPEKwhlSVOiFgU1ZI",
 };
 
+// Pool ảnh lưu trú (resort/khách sạn/phòng) — tái dùng để dựng gallery nhiều ảnh.
+const STAY = {
+  anantara: F + "m9VMJOw4aGbV88W20kNtSa4RYZ1IFnoHwL8POAuJXU9lpqre",
+  cliff: F + "m9VMJOw4aGbVKjSeN0eoDPNw8b4hMBxe3vjfX0JlqIyC7mio",
+  hills: F + "m9VMJOw4aGbVIMyiaWOJ3i9vQ1fIPbaTDodWErlMtRmUSn2j",
+  center: F + "m9VMJOw4aGbVnOIIS66kyNpVrswG2bXt7P5uIACShYzTBO4c",
+  sailing: F + "m9VMJOw4aGbVlwyNwz7KZuRxYfJ0sUTyC4mB3WAIvHNna9rE",
+  pandanus: F + "m9VMJOw4aGbV3brXfESxNIzSVdQsYLDi4gpfXl5Bjw0RKWoC",
+  mango: F + "m9VMJOw4aGbVGXK7LJpMeYTmuqJL4cbBoxQnCyX7ArKj0NPv",
+  villa: F + "m9VMJOw4aGbVrofNvlYb8jagp6cK5uSRW3FnfXEZDVh1xAqB",
+};
+
 const IMAGES: Record<string, ImageInput[]> = {
   // Place
   "binh-thuan": [],
@@ -216,14 +228,41 @@ const IMAGES: Record<string, ImageInput[]> = {
   ],
 
   // Lưu trú (Accommodation)
-  "anantara-mui-ne-resort": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbV88W20kNtSa4RYZ1IFnoHwL8POAuJXU9lpqre", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
-  "the-cliff-resort-mui-ne": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVKjSeN0eoDPNw8b4hMBxe3vjfX0JlqIyC7mio", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
-  "mui-ne-hills-homestay": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVIMyiaWOJ3i9vQ1fIPbaTDodWErlMtRmUSn2j", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
-  "khach-san-phan-thiet-center": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVnOIIS66kyNpVrswG2bXt7P5uIACShYzTBO4c", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
-  "sailing-club-resort-mui-ne": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVlwyNwz7KZuRxYfJ0sUTyC4mB3WAIvHNna9rE", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
-  "pandanus-resort-phan-thiet": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbV3brXfESxNIzSVdQsYLDi4gpfXl5Bjw0RKWoC", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
-  "mango-beach-hostel-mui-ne": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVGXK7LJpMeYTmuqJL4cbBoxQnCyX7ArKj0NPv", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
-  "villa-aria-mui-ne": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVrofNvlYb8jagp6cK5uSRW3FnfXEZDVh1xAqB", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
+  "anantara-mui-ne-resort": [
+    { url: STAY.anantara, alt: "Anantara Mũi Né Resort", caption: "Hồ bơi hướng biển" },
+    { url: STAY.sailing, alt: "Khuôn viên resort" },
+    { url: STAY.villa, alt: "Phòng nghỉ hướng biển" },
+  ],
+  "the-cliff-resort-mui-ne": [
+    { url: STAY.cliff, alt: "The Cliff Resort", caption: "Sắc màu Địa Trung Hải" },
+    { url: STAY.pandanus, alt: "Hồ bơi" },
+    { url: STAY.anantara, alt: "Bãi biển riêng" },
+  ],
+  "mui-ne-hills-homestay": [
+    { url: STAY.hills, alt: "Mũi Né Hills Homestay" },
+    { url: STAY.mango, alt: "Sân thượng ngắm hoàng hôn" },
+  ],
+  "khach-san-phan-thiet-center": [
+    { url: STAY.center, alt: "Khách sạn Phan Thiết Center" },
+    { url: STAY.cliff, alt: "Phòng tiêu chuẩn" },
+  ],
+  "sailing-club-resort-mui-ne": [
+    { url: STAY.sailing, alt: "Sailing Club Resort", caption: "Hồ bơi hướng biển" },
+    { url: STAY.anantara, alt: "Bãi biển" },
+    { url: STAY.villa, alt: "Khu nghỉ" },
+  ],
+  "pandanus-resort-phan-thiet": [
+    { url: STAY.pandanus, alt: "Pandanus Resort", caption: "Bãi biển riêng yên tĩnh" },
+    { url: STAY.cliff, alt: "Khuôn viên xanh" },
+  ],
+  "mango-beach-hostel-mui-ne": [
+    { url: STAY.mango, alt: "Mango Beach Hostel" },
+    { url: STAY.hills, alt: "Sân chung" },
+  ],
+  "villa-aria-mui-ne": [
+    { url: STAY.villa, alt: "Villa Aria Mũi Né", caption: "Hồ bơi riêng" },
+    { url: STAY.anantara, alt: "Bãi tắm trước villa" },
+  ],
 };
 
 async function main() {
@@ -1190,40 +1229,43 @@ async function main() {
       slug: "anantara-mui-ne-resort",
       name: "Anantara Mũi Né Resort",
       category: AccommodationCategory.resort,
-      address: "Đường Nguyễn Đình Chiểu, Hàm Tiến, Mũi Né",
+      address: "12A Nguyễn Đình Chiểu, Hàm Tiến, Mũi Né",
       lat: 10.9446,
       lng: 108.2412,
       phone: "0252 3741 888",
-      website: "https://www.anantara.com",
+      website: "https://www.anantara.com/vi/mui-ne",
+      bookingUrl: "https://www.booking.com/hotel/vn/anantara-mui-ne-resort.html",
       description:
-        "Resort nghỉ dưỡng cao cấp sát biển Hàm Tiến, hồ bơi hướng biển và spa thư giãn.",
-      tags: ["resort", "biển", "spa", "hồ bơi"],
+        "Resort 5 sao sát bãi Hàm Tiến với kiến trúc Á Đông tinh tế, hồ bơi vô cực hướng biển và spa Anantara nổi tiếng. Phòng rộng có ban công nhìn ra vườn hoặc biển, kèm nhà hàng phục vụ hải sản và ẩm thực quốc tế. Lựa chọn lý tưởng cho kỳ nghỉ dưỡng cao cấp.",
+      tags: ["resort 5 sao", "hồ bơi vô cực", "spa", "sát biển", "nhà hàng", "ăn sáng buffet"],
       isFeatured: true,
     },
     {
       slug: "the-cliff-resort-mui-ne",
       name: "The Cliff Resort & Residences",
       category: AccommodationCategory.resort,
-      address: "Khu phố 5, Phú Hài, Phan Thiết",
+      address: "Khu phố 5, Phú Hài, TP. Phan Thiết",
       lat: 10.9269,
       lng: 108.1659,
       phone: "0252 3719 111",
       website: "https://thecliffresort.com.vn",
+      bookingUrl: "https://thecliffresort.com.vn/dat-phong",
       description:
-        "Resort sắc màu Địa Trung Hải với nhiều hồ bơi, bãi biển riêng và view mũi Kê Gà phía xa.",
-      tags: ["resort", "view biển", "check-in"],
+        "Resort phong cách Địa Trung Hải rực rỡ sắc cam – xanh, nổi bật với nhiều hồ bơi tầng và bãi biển riêng. Vị trí ở Phú Hài thuận tiện đi cả Phan Thiết lẫn Mũi Né, nhìn ra mũi Kê Gà phía xa. Rất được yêu thích để chụp ảnh check-in.",
+      tags: ["resort", "view biển", "check-in", "hồ bơi", "bãi biển riêng", "gần trung tâm"],
     },
     {
       slug: "mui-ne-hills-homestay",
       name: "Mũi Né Hills Homestay",
       category: AccommodationCategory.homestay,
-      address: "Đồi Hồng, Mũi Né, Phan Thiết",
+      address: "Đồi Hồng, Mũi Né, TP. Phan Thiết",
       lat: 10.9512,
       lng: 108.2934,
       phone: "0901 234 567",
+      bookingUrl: "https://www.booking.com/hotel/vn/mui-ne-hills.html",
       description:
-        "Homestay trên đồi, phòng giá mềm, sân thượng ngắm hoàng hôn — hợp khách trẻ và phượt thủ.",
-      tags: ["homestay", "giá rẻ", "view đẹp"],
+        "Homestay nằm trên Đồi Hồng, phòng sạch giá mềm và sân thượng ngắm hoàng hôn tuyệt đẹp. Chủ nhà thân thiện, hỗ trợ thuê xe máy và tour jeep đồi cát. Hợp khách trẻ, phượt thủ và nhóm bạn.",
+      tags: ["homestay", "giá rẻ", "view đồi cát", "thuê xe máy", "sân thượng", "thân thiện"],
     },
     {
       slug: "khach-san-phan-thiet-center",
@@ -1233,34 +1275,37 @@ async function main() {
       lat: 10.9281,
       lng: 108.1019,
       phone: "0252 3822 999",
+      bookingUrl: "https://www.booking.com/hotel/vn/phan-thiet-center.html",
       description:
-        "Khách sạn trung tâm thành phố, tiện di chuyển tới chợ, bến cá và các điểm tham quan.",
-      tags: ["khách sạn", "trung tâm", "tiện nghi"],
+        "Khách sạn ngay trung tâm thành phố, vài phút tới chợ Phan Thiết, bến cá và tháp nước biểu tượng. Phòng tiện nghi đầy đủ, có thang máy và bãi đỗ xe. Phù hợp khách công tác và gia đình muốn đi lại thuận tiện.",
+      tags: ["khách sạn", "trung tâm", "tiện nghi", "bãi đỗ xe", "gần chợ", "wifi miễn phí"],
     },
     {
       slug: "sailing-club-resort-mui-ne",
       name: "Sailing Club Resort Mũi Né",
       category: AccommodationCategory.resort,
-      address: "Đường Nguyễn Đình Chiểu, Hàm Tiến, Mũi Né",
+      address: "24 Nguyễn Đình Chiểu, Hàm Tiến, Mũi Né",
       lat: 10.9461,
       lng: 108.2389,
       phone: "0252 3847 440",
       website: "https://sailingclubresortmuine.com",
+      bookingUrl: "https://sailingclubresortmuine.com/booking",
       description:
-        "Resort bên biển phong cách phóng khoáng, hồ bơi hướng biển và nhà hàng nổi tiếng.",
-      tags: ["resort", "biển", "hồ bơi"],
+        "Resort bên biển phong cách phóng khoáng, nổi tiếng với hồ bơi hướng biển và nhà hàng – bar Sailing Club sôi động. Khuôn viên nhiều cây xanh, lối đi thẳng ra bãi tắm. Cân bằng giữa nghỉ dưỡng và vui chơi.",
+      tags: ["resort", "hồ bơi hướng biển", "nhà hàng", "bar bãi biển", "sát biển", "ăn sáng"],
     },
     {
       slug: "pandanus-resort-phan-thiet",
       name: "Pandanus Resort",
       category: AccommodationCategory.resort,
-      address: "Đường Tiến Thành, Phan Thiết",
+      address: "Đường Tiến Thành, TP. Phan Thiết",
       lat: 10.8895,
       lng: 108.1456,
       phone: "0252 3849 849",
+      bookingUrl: "https://www.booking.com/hotel/vn/pandanus.html",
       description:
-        "Khu nghỉ rộng rãi nhiều cây xanh, bãi biển riêng yên tĩnh ở phía nam thành phố.",
-      tags: ["resort", "yên tĩnh", "bãi riêng"],
+        "Khu nghỉ rộng rãi ở Tiến Thành phía nam thành phố, nhiều cây xanh và bãi biển riêng yên tĩnh, ít đông đúc. Có hồ bơi, sân tennis, khu vui chơi trẻ em và xe đưa đón vào trung tâm. Hợp gia đình muốn không gian thư thái.",
+      tags: ["resort", "yên tĩnh", "bãi biển riêng", "hợp gia đình", "hồ bơi", "xe đưa đón"],
     },
     {
       slug: "mango-beach-hostel-mui-ne",
@@ -1270,9 +1315,10 @@ async function main() {
       lat: 10.9505,
       lng: 108.2876,
       phone: "0908 765 432",
+      bookingUrl: "https://www.booking.com/hotel/vn/mango-beach-hostel.html",
       description:
-        "Hostel trẻ trung sát biển, phòng dorm giá rẻ, sân chung sôi động — hợp khách Tây ba lô.",
-      tags: ["hostel", "giá rẻ", "backpacker"],
+        "Hostel trẻ trung ngay sát biển, phòng dorm và phòng đôi giá rẻ, khu bếp chung và sân hiên sôi động mỗi tối. Nhân viên nhiệt tình hỗ trợ tour và thuê xe. Điểm hẹn quen thuộc của khách Tây ba lô.",
+      tags: ["hostel", "giá rẻ", "backpacker", "bếp chung", "sát biển", "tour & xe"],
     },
     {
       slug: "villa-aria-mui-ne",
@@ -1282,9 +1328,11 @@ async function main() {
       lat: 10.9438,
       lng: 108.2301,
       phone: "0252 3743 388",
+      website: "https://villaaria-muine.com",
+      bookingUrl: "https://www.booking.com/hotel/vn/villa-aria-mui-ne.html",
       description:
-        "Biệt thự boutique sát biển, không gian riêng tư, hồ bơi và bãi tắm ngay trước villa.",
-      tags: ["villa", "biển", "riêng tư"],
+        "Biệt thự boutique sát biển ở Hàm Tiến, không gian riêng tư với hồ bơi và lối xuống bãi tắm ngay trước villa. Phòng thiết kế ấm cúng, có bếp nhỏ và khu vực ngoài trời. Lý tưởng cho cặp đôi hoặc gia đình nhỏ muốn yên tĩnh.",
+      tags: ["villa", "riêng tư", "hồ bơi riêng", "sát biển", "hợp cặp đôi", "bếp riêng"],
     },
   ];
 
