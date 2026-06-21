@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { MapLinkField } from "@/components/cms/map-link-field";
 import { AlertCircle, Loader2, Plus, Trash2 } from "lucide-react";
 import { slugify } from "@/lib/slug";
 import { cn } from "@/lib/utils";
@@ -390,6 +391,14 @@ export function SpotForm({
             />
           </div>
 
+          <MapLinkField
+            value={values.mapUrl}
+            onValueChange={(v) => set("mapUrl", v)}
+            onPick={(lat, lng) => {
+              set("lat", lat);
+              set("lng", lng);
+            }}
+          />
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="lat">Vĩ độ (lat)</Label>
@@ -413,16 +422,6 @@ export function SpotForm({
                 placeholder="107.1839"
               />
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="mapUrl">Link bản đồ</Label>
-            <Input
-              id="mapUrl"
-              value={values.mapUrl}
-              onChange={(e) => set("mapUrl", e.target.value)}
-              placeholder="https://maps.google.com/…"
-            />
           </div>
         </FormSection>
 

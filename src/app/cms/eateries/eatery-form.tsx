@@ -7,6 +7,7 @@ import { AlertCircle, Loader2 } from "lucide-react";
 import { slugify } from "@/lib/slug";
 import { cn } from "@/lib/utils";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
+import { MapLinkField } from "@/components/cms/map-link-field";
 import type { Province, District, Ward } from "@/lib/locations";
 import { loadDistricts, loadWards } from "../places/location-client";
 import { Button } from "@/components/ui/button";
@@ -405,6 +406,14 @@ export function EateryForm({
               placeholder="Số nhà, đường, khu vực…"
             />
           </div>
+          <MapLinkField
+            value={values.mapUrl}
+            onValueChange={(v) => set("mapUrl", v)}
+            onPick={(lat, lng) => {
+              set("lat", lat);
+              set("lng", lng);
+            }}
+          />
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="lat">Vĩ độ (lat)</Label>
@@ -476,15 +485,6 @@ export function EateryForm({
                 value={values.bookingUrl}
                 onChange={(e) => set("bookingUrl", e.target.value)}
                 placeholder="https://…"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="mapUrl">Link bản đồ</Label>
-              <Input
-                id="mapUrl"
-                value={values.mapUrl}
-                onChange={(e) => set("mapUrl", e.target.value)}
-                placeholder="https://maps.google.com/…"
               />
             </div>
           </div>

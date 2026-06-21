@@ -18,6 +18,7 @@ import {
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
 import { coverUrl } from "@/lib/place-image";
+import { googleEmbedSrc, parseZoom } from "@/lib/map-url";
 import {
   getDrivingDistances,
   coordKey,
@@ -389,6 +390,14 @@ export default async function SpotPublicPage({
     (hasMap
       ? `https://www.google.com/maps/search/?api=1&query=${spot.lat}%2C${spot.lng}`
       : null);
+  // Nhúng Google Maps đúng vị trí (zoom lấy theo link mapUrl nếu có).
+  const mapEmbedSrc = hasMap
+    ? googleEmbedSrc(
+        spot.lat!,
+        spot.lng!,
+        (spot.mapUrl && parseZoom(spot.mapUrl)) || 12,
+      )
+    : null;
 
   // "Quanh đây": (1) lọc thô top 8 bằng chim bay, (2) gọi routing 1 lần lấy km
   // đường đi cho mọi ứng viên, (3) sắp lại theo đường đi & cắt còn 6.
@@ -845,12 +854,13 @@ export default async function SpotPublicPage({
                       )}
                     </div>
                   )}
-                  {hasMap && (
+                  {mapEmbedSrc && (
                     <iframe
                       title={`Bản đồ ${spot.name}`}
                       className="mt-4 aspect-[4/3] w-full"
                       loading="lazy"
-                      src={`https://www.openstreetmap.org/export/embed.html?bbox=${spot.lng! - 0.01}%2C${spot.lat! - 0.01}%2C${spot.lng! + 0.01}%2C${spot.lat! + 0.01}&layer=mapnik&marker=${spot.lat}%2C${spot.lng}`}
+                      referrerPolicy="no-referrer-when-downgrade"
+                      src={mapEmbedSrc}
                     />
                   )}
                   {mapsHref && (

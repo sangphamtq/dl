@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { MapLinkField } from "@/components/cms/map-link-field";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { slugify } from "@/lib/slug";
 import { cn } from "@/lib/utils";
@@ -199,6 +200,12 @@ export function AccommodationForm({
               placeholder="Số nhà, đường, khu vực…"
             />
           </div>
+          <MapLinkField
+            onPick={(lat, lng) => {
+              set("lat", lat);
+              set("lng", lng);
+            }}
+          />
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="lat">Vĩ độ (lat)</Label>
