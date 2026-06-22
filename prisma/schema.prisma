@@ -48,6 +48,15 @@ enum ThreadType {
   discussion // Thảo luận chung
 }
 
+// Loại thông báo (tương tác lên nội dung của người nhận).
+enum NotificationType {
+  thread_comment // bình luận bài cộng đồng của bạn
+  thread_reply // trả lời bình luận cộng đồng của bạn
+  thread_like // thích bài cộng đồng của bạn
+  reply_like // thích bình luận cộng đồng của bạn
+  blog_reply // trả lời bình luận blog của bạn
+}
+
 /// Mức giá tương đối: budget=$ · moderate=$$ · premium=$$$ · luxury=$$$$
 enum PriceRange {
   budget
@@ -172,6 +181,9 @@ model User {
   threads       Thread[] // chủ đề cộng đồng đã đăng
   threadReplies ThreadReply[] // trả lời trong cộng đồng
   threadLikes   ThreadLike[] // chủ đề/trả lời đã thích
+
+  notifications      Notification[] @relation("NotifRecipient") // thông báo nhận
+  notificationsActed Notification[] @relation("NotifActor") // thông báo do mình gây ra
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -820,4 +832,23 @@ model ThreadLike {
   @@unique([threadId, userId])
   @@unique([replyId, userId])
   @@index([userId])
+}
+
+// Thông báo khi có người tương tác lên nội dung của người nhận.
+model Notification {
+  id      String           @id @default(cuid())
+  userId  String // người nhận
+  user    User             @relation("NotifRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  actorId String // người gây ra tương tác
+  actor   User             @relation("NotifActor", fields: [actorId], references: [id], onDelete: Cascade)
+  type    NotificationType
+
+  url     String // đích khi bấm vào (vd /cong-dong/<slug>)
+  excerpt String? // trích đoạn nội dung liên quan (để hiển thị ngữ cảnh)
+
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
 }

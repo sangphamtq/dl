@@ -3,10 +3,13 @@ import Image from "next/image";
 import { Search } from "lucide-react";
 import { auth } from "@/auth";
 import { getSettings } from "@/lib/settings";
+import { getUnreadCount } from "@/lib/notifications";
+import { ablyEnabled } from "@/lib/ably";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { MobileNav } from "./mobile-nav";
 import { UserMenu } from "./user-menu";
+import { NotificationBell } from "./notification-bell";
 import { HeaderSearch } from "./header-search";
 import { SiteNav } from "./site-nav";
 
@@ -19,6 +22,7 @@ const NAV_LINKS = [
 export async function SiteHeader() {
   const [session, settings] = await Promise.all([auth(), getSettings()]);
   const user = session?.user;
+  const unread = user?.id ? await getUnreadCount(user.id) : 0;
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/80 backdrop-blur-xl">
@@ -64,14 +68,21 @@ export async function SiteHeader() {
           </Link>
 
           {user ? (
-            <UserMenu
-              user={{
-                name: user.name,
-                email: user.email,
-                image: user.image,
-                role: user.role,
-              }}
-            />
+            <>
+              <NotificationBell
+                initialUnread={unread}
+                userId={user.id}
+                realtimeEnabled={ablyEnabled()}
+              />
+              <UserMenu
+                user={{
+                  name: user.name,
+                  email: user.email,
+                  image: user.image,
+                  role: user.role,
+                }}
+              />
+            </>
           ) : (
             <Link
               href="/login"

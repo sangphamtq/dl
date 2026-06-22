@@ -13,6 +13,7 @@ import {
   communityChannel,
   placeFeedChannel,
 } from "@/lib/ably";
+import { notify, notifyLike, removeLikeNotif } from "@/lib/notifications";
 
 const STAFF = ["admin", "editor"];
 const MAX_REPLY = 5000;
@@ -161,21 +162,23 @@ export async function addReply(input: {
 
   const thread = await prisma.thread.findUnique({
     where: { id: input.threadId },
-    select: { isLocked: true, place: { select: { slug: true } } },
+    select: { isLocked: true, authorId: true, place: { select: { slug: true } } },
   });
   if (!thread) return { ok: false, error: "Không tìm thấy chủ đề." };
   if (thread.isLocked) return { ok: false, error: "Chủ đề đã bị khóa." };
 
   // Reply lồng tối đa 1 cấp — reply-của-reply quy về gốc.
   let parentId: string | null = null;
+  let parentAuthorId: string | null = null;
   if (input.parentId) {
     const parent = await prisma.threadReply.findUnique({
       where: { id: input.parentId },
-      select: { threadId: true, parentId: true },
+      select: { threadId: true, parentId: true, authorId: true },
     });
     if (!parent || parent.threadId !== input.threadId)
       return { ok: false, error: "Trả lời gốc không hợp lệ." };
     parentId = parent.parentId ?? input.parentId;
+    parentAuthorId = parent.authorId;
   }
 
   await prisma.threadReply.create({
@@ -190,6 +193,18 @@ export async function addReply(input: {
     where: { id: input.threadId },
     data: { replyCount, lastActivityAt: new Date() },
   });
+
+  // Thông báo: trả lời bình luận → tác giả bình luận; còn lại → tác giả bài.
+  const url = `/cong-dong/${input.threadSlug}`;
+  const recipients = new Map<string, "thread_comment" | "thread_reply">();
+  recipients.set(thread.authorId, "thread_comment");
+  if (parentAuthorId) recipients.set(parentAuthorId, "thread_reply");
+  recipients.delete(user.id);
+  await Promise.all(
+    [...recipients].map(([userId, type]) =>
+      notify({ userId, actorId: user.id, type, url, excerpt: content }),
+    ),
+  );
 
   revalidatePath(`/cong-dong/${input.threadSlug}`);
   revalidatePath("/cong-dong");
@@ -252,10 +267,19 @@ export async function toggleThreadLike(
     where: { threadId_userId: { threadId, userId: user.id } },
     select: { id: true },
   });
+  const thread = await prisma.thread.findUnique({
+    where: { id: threadId },
+    select: { authorId: true, body: true },
+  });
+  const url = `/cong-dong/${threadSlug}`;
   if (existing) {
     await prisma.threadLike.delete({ where: { id: existing.id } });
+    if (thread)
+      await removeLikeNotif({ userId: thread.authorId, actorId: user.id, type: "thread_like", url });
   } else {
     await prisma.threadLike.create({ data: { threadId, userId: user.id } });
+    if (thread)
+      await notifyLike({ userId: thread.authorId, actorId: user.id, type: "thread_like", url, excerpt: thread.body });
   }
   const count = await prisma.threadLike.count({ where: { threadId } });
   revalidatePath(`/cong-dong/${threadSlug}`);
@@ -278,10 +302,19 @@ export async function toggleReplyLike(
     where: { replyId_userId: { replyId, userId: user.id } },
     select: { id: true },
   });
+  const reply = await prisma.threadReply.findUnique({
+    where: { id: replyId },
+    select: { authorId: true, content: true },
+  });
+  const url = `/cong-dong/${threadSlug}`;
   if (existing) {
     await prisma.threadLike.delete({ where: { id: existing.id } });
+    if (reply)
+      await removeLikeNotif({ userId: reply.authorId, actorId: user.id, type: "reply_like", url });
   } else {
     await prisma.threadLike.create({ data: { replyId, userId: user.id } });
+    if (reply)
+      await notifyLike({ userId: reply.authorId, actorId: user.id, type: "reply_like", url, excerpt: reply.content });
   }
   const count = await prisma.threadLike.count({ where: { replyId } });
   revalidatePath(`/cong-dong/${threadSlug}`);

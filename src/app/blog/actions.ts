@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { publishCommentsChanged } from "@/lib/ably";
+import { notify } from "@/lib/notifications";
 
 const STAFF = ["admin", "editor"];
 const MAX_COMMENT = 2000;
@@ -68,20 +69,32 @@ export async function addComment(input: {
 
   // Reply: parent phải tồn tại, cùng bài, và là comment gốc (lồng tối đa 1 cấp).
   let parentId: string | null = null;
+  let parentAuthorId: string | null = null;
   if (input.parentId) {
     const parent = await prisma.comment.findUnique({
       where: { id: input.parentId },
-      select: { postId: true, parentId: true },
+      select: { postId: true, parentId: true, authorId: true },
     });
     if (!parent || parent.postId !== input.postId)
       return { ok: false, error: "Bình luận gốc không hợp lệ." };
     // Nếu reply vào một reply → quy về comment gốc của nó.
     parentId = parent.parentId ?? input.parentId;
+    parentAuthorId = parent.authorId;
   }
 
   await prisma.comment.create({
     data: { postId: input.postId, authorId: user.id, content, parentId },
   });
+
+  // Thông báo: trả lời bình luận blog → tác giả bình luận gốc.
+  if (parentAuthorId)
+    await notify({
+      userId: parentAuthorId,
+      actorId: user.id,
+      type: "blog_reply",
+      url: `/blog/${input.postSlug}`,
+      excerpt: content,
+    });
 
   revalidatePath(`/blog/${input.postSlug}`);
   await publishCommentsChanged(input.postSlug);
