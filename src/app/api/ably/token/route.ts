@@ -9,7 +9,12 @@ export async function GET() {
     return NextResponse.json({ error: "Ably chưa cấu hình" }, { status: 503 });
 
   const tokenRequest = await client.auth.createTokenRequest({
-    capability: { "post:*": ["subscribe"] },
+    capability: {
+      "post:*": ["subscribe"],
+      "thread:*": ["subscribe"],
+      "place-feed:*": ["subscribe"],
+      "cong-dong": ["subscribe"],
+    },
   });
   return NextResponse.json(tokenRequest);
 }

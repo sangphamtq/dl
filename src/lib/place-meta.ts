@@ -71,6 +71,9 @@ export function buildPlaceTabs(placeSlug: string, counts: PlaceCounts): PlaceTab
   // Di chuyển: màn hình riêng trong route động [loai] (không có trang chi tiết per-item).
   if (counts.transport > 0) add("di-chuyen", "Di chuyển");
 
+  // Cộng đồng: luôn hiện (khuyến khích đăng bài kể cả khi chưa có bài).
+  add("cong-dong", "Cộng đồng");
+
   // Bản đồ: dạng icon, hiện khi có loại có toạ độ (Spot/Eatery/Accommodation).
   if (counts.spot + counts.eatery + counts.accommodation > 0)
     tabs.push({ href: `${base}/ban-do`, label: "Bản đồ", icon: "map" });

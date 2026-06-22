@@ -40,6 +40,14 @@ enum PublishStatus {
   published
 }
 
+// Loại chủ đề diễn đàn cộng đồng (chỉ là nhãn phân loại, không cấu trúc riêng).
+enum ThreadType {
+  share // Chia sẻ trải nghiệm (đã đi)
+  question // Hỏi đáp (chưa đi)
+  trip // Tìm bạn đồng hành / rủ đi (sắp đi)
+  discussion // Thảo luận chung
+}
+
 /// Mức giá tương đối: budget=$ · moderate=$$ · premium=$$$ · luxury=$$$$
 enum PriceRange {
   budget
@@ -161,6 +169,10 @@ model User {
   likes    PostLike[] // bài đã tim
   comments Comment[] // bình luận đã viết
 
+  threads       Thread[] // chủ đề cộng đồng đã đăng
+  threadReplies ThreadReply[] // trả lời trong cộng đồng
+  threadLikes   ThreadLike[] // chủ đề/trả lời đã thích
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -243,6 +255,7 @@ model Place {
   images    Image[]
   videos    PlaceVideo[] // video TikTok giới thiệu (hiển thị ở hero + modal)
   postRefs  PostRef[]
+  threads   Thread[] // chủ đề cộng đồng gắn điểm đến này
   viewStats PlaceViewStat[] // lượt xem theo ngày (để lọc trending)
 
   tags String[] @default([])
@@ -600,6 +613,8 @@ model Image {
   transport       Transport?     @relation(fields: [transportId], references: [id], onDelete: Cascade)
   postId          String?
   post            Post?          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  threadId        String?
+  thread          Thread?        @relation(fields: [threadId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
 
@@ -611,6 +626,7 @@ model Image {
   @@index([accommodationId])
   @@index([transportId])
   @@index([postId])
+  @@index([threadId])
 }
 
 // Video TikTok gắn vào Place (giới thiệu điểm đến). Chỉ lưu videoId của TikTok
@@ -725,4 +741,83 @@ model Comment {
   @@index([postId])
   @@index([parentId])
   @@index([authorId])
+}
+
+// ============================================================
+// CỘNG ĐỒNG (diễn đàn UGC) — Thread + ThreadReply + ThreadLike
+// Khác blog: do người dùng đăng, hiện ngay; staff ghim/khóa/ẩn.
+// Ảnh để inline trong body (rich-text qua Jodit/UploadThing) — không entity riêng.
+// ============================================================
+model Thread {
+  id    String     @id @default(cuid())
+  slug  String     @unique
+  title String? // tiêu đề tùy chọn (bài kiểu Facebook không cần)
+  body  String // nội dung dạng văn bản (status), hiển thị whitespace-pre-wrap
+  type  ThreadType @default(discussion)
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  placeId String? // (tùy chọn) gắn điểm đến để lọc & cross-link
+  place   Place?  @relation(fields: [placeId], references: [id], onDelete: SetNull)
+
+  tags String[] @default([])
+
+  isPinned  Boolean @default(false) // staff ghim lên đầu
+  isLocked  Boolean @default(false) // khóa không cho trả lời
+  isHidden  Boolean @default(false) // staff ẩn khỏi công khai
+
+  replyCount     Int      @default(0) // denormalize để list nhanh
+  lastActivityAt DateTime @default(now()) // sắp theo "hoạt động gần đây"
+
+  replies ThreadReply[]
+  likes   ThreadLike[]
+  images  Image[] // ảnh đính kèm (bài kiểu Facebook)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([type])
+  @@index([placeId])
+  @@index([authorId])
+  @@index([isPinned, lastActivityAt])
+}
+
+model ThreadReply {
+  id       String @id @default(cuid())
+  threadId String
+  thread   Thread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content  String // văn bản thường (hiển thị whitespace-pre-wrap)
+
+  parentId String?
+  parent   ThreadReply?  @relation("ThreadReplyChildren", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  ThreadReply[] @relation("ThreadReplyChildren")
+  likes    ThreadLike[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([threadId])
+  @@index([parentId])
+  @@index([authorId])
+}
+
+// Thích/hữu ích cho chủ đề HOẶC trả lời (exclusive arc: đúng 1 trong 2 FK).
+model ThreadLike {
+  id       String @id @default(cuid())
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  threadId String?
+  thread   Thread?      @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  replyId  String?
+  reply    ThreadReply? @relation(fields: [replyId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([threadId, userId])
+  @@unique([replyId, userId])
+  @@index([userId])
 }

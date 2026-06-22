@@ -13,6 +13,7 @@ import { SiteNav } from "./site-nav";
 const NAV_LINKS = [
   { href: "/diem-den", label: "Điểm đến" },
   { href: "/blog", label: "Cẩm nang" },
+  { href: "/cong-dong", label: "Cộng đồng" },
 ];
 
 export async function SiteHeader() {

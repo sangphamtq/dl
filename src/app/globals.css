@@ -189,3 +189,12 @@
 .leaflet-popup-tip {
   box-shadow: 0 10px 30px rgb(0 0 0 / 0.15);
 }
+
+/* Placeholder cho trình soạn thảo Tiptap (node rỗng đầu tiên). */
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--muted-foreground);
+  pointer-events: none;
+  height: 0;
+  float: left;
+}

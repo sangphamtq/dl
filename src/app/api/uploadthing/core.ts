@@ -108,6 +108,19 @@ export const ourFileRouter = {
 
       return { ok: true };
     }),
+
+  // Ảnh cho bài cộng đồng (UGC) — bất kỳ user đã đăng nhập. KHÔNG tạo Image ở
+  // đây (bài chưa tồn tại lúc upload); trả URL về client để gắn khi tạo bài.
+  communityImage: f({ image: { maxFileSize: "8MB", maxFileCount: 6 } })
+    .middleware(async () => {
+      const session = await auth();
+      if (!session?.user?.id)
+        throw new UploadThingError("Bạn cần đăng nhập để tải ảnh.");
+      return { userId: session.user.id };
+    })
+    .onUploadComplete(async ({ file }) => {
+      return { url: file.ufsUrl };
+    }),
 } satisfies FileRouter;
 
 export type OurFileRouter = typeof ourFileRouter;

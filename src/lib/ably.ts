@@ -16,18 +16,29 @@ export function getAblyRest(): Ably.Rest | null {
 
 export const ablyEnabled = () => !!process.env.ABLY_API_KEY;
 
-// Tên kênh cho từng bài viết.
+// Tên kênh.
 export const postChannel = (slug: string) => `post:${slug}`;
+export const threadChannel = (slug: string) => `thread:${slug}`;
+export const communityChannel = () => `cong-dong`;
+export const placeFeedChannel = (slug: string) => `place-feed:${slug}`;
 
-// Phát tín hiệu "bình luận có thay đổi" để client đang mở bài tự làm mới.
-export async function publishCommentsChanged(slug: string): Promise<void> {
+// Phát một sự kiện lên kênh (không chặn luồng chính nếu lỗi).
+export async function publishEvent(
+  channel: string,
+  event: string,
+  data: object = {},
+): Promise<void> {
   const client = getAblyRest();
   if (!client) return;
   try {
-    await client.channels.get(postChannel(slug)).publish("comments:changed", {});
+    await client.channels.get(channel).publish(event, data);
   } catch (e) {
-    // Không chặn luồng chính nếu publish lỗi, nhưng log để dễ chẩn đoán
-    // (vd lỗi 40160 = API key thiếu quyền Publish).
+    // vd lỗi 40160 = API key thiếu quyền Publish.
     console.error("[Ably] publish thất bại:", e);
   }
+}
+
+// Phát tín hiệu "bình luận có thay đổi" để client đang mở bài blog tự làm mới.
+export async function publishCommentsChanged(slug: string): Promise<void> {
+  await publishEvent(postChannel(slug), "comments:changed");
 }
