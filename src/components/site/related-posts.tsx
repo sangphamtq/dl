@@ -3,6 +3,7 @@ import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import { coverUrl } from "@/lib/place-image";
+import { PostStats } from "@/components/blog/post-stats";
 
 // Đặc sản/Quán ăn/Lưu trú không còn trang chi tiết riêng (đã chuyển drawer) nên
 // không render "Bài viết liên quan" — chỉ giữ các loại còn có trang.
@@ -29,6 +30,7 @@ export async function RelatedPosts({ type, id }: { type: RefType; id: string }) 
       title: true,
       excerpt: true,
       images: { where: { isCover: true }, take: 1, select: { url: true, isCover: true } },
+      _count: { select: { likes: true, comments: true } },
     },
   });
 
@@ -58,6 +60,11 @@ export async function RelatedPosts({ type, id }: { type: RefType; id: string }) 
                   {p.excerpt}
                 </p>
               )}
+              <PostStats
+                likes={p._count.likes}
+                comments={p._count.comments}
+                className="pt-0.5"
+              />
             </div>
           </Link>
         ))}

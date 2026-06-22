@@ -158,6 +158,8 @@ model User {
   accounts Account[]
   sessions Session[]
   posts    Post[] // bài blog do user này viết
+  likes    PostLike[] // bài đã tim
+  comments Comment[] // bình luận đã viết
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -641,8 +643,10 @@ model Post {
   authorId String
   author   User   @relation(fields: [authorId], references: [id])
 
-  refs   PostRef[]
-  images Image[]
+  refs     PostRef[]
+  images   Image[]
+  likes    PostLike[]
+  comments Comment[]
 
   tags        String[]      @default([])
   status      PublishStatus @default(draft)
@@ -685,4 +689,40 @@ model PostRef {
   @@index([specialtyId])
   @@index([eateryId])
   @@index([accommodationId])
+}
+
+// PostLike — "tim" bài viết (M:N User↔Post). Mỗi user tim 1 bài tối đa 1 lần.
+model PostLike {
+  id     String @id @default(cuid())
+  postId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([postId, userId])
+  @@index([userId])
+}
+
+// Comment — thảo luận dưới bài viết. Lồng 1 cấp: reply gắn parentId trỏ tới
+// một comment gốc (parentId = null). Không cho reply của reply (validate ở app).
+model Comment {
+  id       String @id @default(cuid())
+  postId   String
+  post     Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content  String
+
+  parentId String?
+  parent   Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  Comment[] @relation("CommentReplies")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([postId])
+  @@index([parentId])
+  @@index([authorId])
 }

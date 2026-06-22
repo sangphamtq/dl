@@ -9,6 +9,7 @@ import { POST_CATEGORY_LABELS, label } from "@/lib/listing-labels";
 import { buttonVariants } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
+import { PostStats } from "@/components/blog/post-stats";
 import { type PlaceCardData } from "@/components/site/place-card";
 
 const pub = { status: "published" as const };
@@ -54,6 +55,7 @@ export default async function Home() {
             take: 1,
             select: { url: true, isCover: true },
           },
+          _count: { select: { likes: true, comments: true } },
         },
       }),
     ]);
@@ -259,6 +261,7 @@ type PostData = {
   createdAt: Date;
   author: { name: string | null } | null;
   images: { url: string; isCover: boolean }[];
+  _count: { likes: number; comments: number };
 };
 
 function PostCard({ post }: { post: PostData }) {
@@ -287,10 +290,13 @@ function PostCard({ post }: { post: PostData }) {
             {post.excerpt}
           </p>
         )}
-        <p className="mt-2 text-xs text-muted-foreground">
-          {post.author?.name ? `${post.author.name} · ` : ""}
-          {dateFmt.format(post.publishedAt ?? post.createdAt)}
-        </p>
+        <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
+          <span>
+            {post.author?.name ? `${post.author.name} · ` : ""}
+            {dateFmt.format(post.publishedAt ?? post.createdAt)}
+          </span>
+          <PostStats likes={post._count.likes} comments={post._count.comments} />
+        </div>
       </div>
     </Link>
   );

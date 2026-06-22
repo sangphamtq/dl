@@ -13,8 +13,12 @@ import { SiteFooter } from "@/components/site/site-footer";
 import { Badge } from "@/components/ui/badge";
 import { ShareBar } from "@/components/blog/share-bar";
 import { ArticleToc } from "@/components/blog/article-toc";
+import { LikeButton } from "@/components/blog/like-button";
+import { CommentSection } from "@/components/blog/comment-section";
+import { PostStats } from "@/components/blog/post-stats";
 import { extractToc } from "@/lib/toc";
-import { isStaffViewer } from "@/lib/preview";
+import { ablyEnabled } from "@/lib/ably";
+import { auth } from "@/auth";
 
 const dateFmt = new Intl.DateTimeFormat("vi-VN", {
   day: "2-digit",
@@ -109,8 +113,13 @@ export default async function BlogPostPage({
     },
   });
 
-  const staff = await isStaffViewer();
-  if (!post || (post.status !== "published" && !staff)) notFound();
+  const session = await auth();
+  const currentUserId = session?.user?.id ?? null;
+  const isAuthed = !!currentUserId;
+  const role = session?.user?.role;
+  const isStaff = role === "admin" || role === "editor";
+
+  if (!post || (post.status !== "published" && !isStaff)) notFound();
 
   const cover = post.images.find((i) => i.isCover) ?? post.images[0] ?? null;
   const refs = post.refs
@@ -120,23 +129,57 @@ export default async function BlogPostPage({
   const date = post.publishedAt ?? post.createdAt;
   const { html: contentHtml, toc } = extractToc(post.content);
 
-  // Bài liên quan: cùng danh mục, mới nhất, loại trừ bài hiện tại.
-  const related = await prisma.post.findMany({
-    where: {
-      status: "published",
-      slug: { not: slug },
-      ...(post.category ? { category: post.category } : {}),
-    } satisfies Prisma.PostWhereInput,
-    orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
-    take: 4,
+  const replySelect = {
+    orderBy: { createdAt: "asc" },
     select: {
-      slug: true,
-      title: true,
+      id: true,
+      authorId: true,
+      content: true,
       createdAt: true,
-      publishedAt: true,
-      images: { where: { isCover: true }, take: 1, select: { url: true, isCover: true } },
+      author: { select: { name: true } },
     },
-  });
+  } as const;
+
+  // Bài liên quan + dữ liệu tim/bình luận.
+  const [related, likeCount, myLike, comments, commentTotal] = await Promise.all([
+    prisma.post.findMany({
+      where: {
+        status: "published",
+        slug: { not: slug },
+        ...(post.category ? { category: post.category } : {}),
+      } satisfies Prisma.PostWhereInput,
+      orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
+      take: 4,
+      select: {
+        slug: true,
+        title: true,
+        createdAt: true,
+        publishedAt: true,
+        images: { where: { isCover: true }, take: 1, select: { url: true, isCover: true } },
+        _count: { select: { likes: true, comments: true } },
+      },
+    }),
+    prisma.postLike.count({ where: { postId: post.id } }),
+    currentUserId
+      ? prisma.postLike.findUnique({
+          where: { postId_userId: { postId: post.id, userId: currentUserId } },
+          select: { id: true },
+        })
+      : Promise.resolve(null),
+    prisma.comment.findMany({
+      where: { postId: post.id, parentId: null },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        authorId: true,
+        content: true,
+        createdAt: true,
+        author: { select: { name: true } },
+        replies: replySelect,
+      },
+    }),
+    prisma.comment.count({ where: { postId: post.id } }),
+  ]);
 
   return (
     <div className="flex flex-1 flex-col">
@@ -210,8 +253,15 @@ export default async function BlogPostPage({
                 dangerouslySetInnerHTML={{ __html: contentHtml }}
               />
 
-              {/* Chia sẻ */}
-              <div className="mt-10 border-t border-border/50 pt-6">
+              {/* Tim + Chia sẻ */}
+              <div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-border/50 pt-6">
+                <LikeButton
+                  postId={post.id}
+                  postSlug={slug}
+                  initialLiked={!!myLike}
+                  initialCount={likeCount}
+                  isAuthed={isAuthed}
+                />
                 <ShareBar />
               </div>
 
@@ -242,6 +292,18 @@ export default async function BlogPostPage({
                   </ul>
                 </section>
               )}
+
+              {/* Thảo luận */}
+              <CommentSection
+                postId={post.id}
+                postSlug={slug}
+                comments={comments}
+                total={commentTotal}
+                currentUserId={currentUserId}
+                isStaff={isStaff}
+                isAuthed={isAuthed}
+                realtimeEnabled={ablyEnabled()}
+              />
             </article>
 
             {/* Sidebar */}
@@ -289,9 +351,13 @@ export default async function BlogPostPage({
                               <h3 className="line-clamp-2 text-sm font-medium leading-snug tracking-tight transition-colors group-hover:text-primary">
                                 {p.title}
                               </h3>
-                              <p className="mt-1 text-xs text-muted-foreground">
-                                {dateFmt.format(p.publishedAt ?? p.createdAt)}
-                              </p>
+                              <div className="mt-1 flex flex-wrap items-center gap-x-3 text-xs text-muted-foreground">
+                                <span>{dateFmt.format(p.publishedAt ?? p.createdAt)}</span>
+                                <PostStats
+                                  likes={p._count.likes}
+                                  comments={p._count.comments}
+                                />
+                              </div>
                             </div>
                           </Link>
                         </li>

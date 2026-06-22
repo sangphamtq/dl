@@ -9,6 +9,7 @@ import { POST_CATEGORY_LABELS, label } from "@/lib/listing-labels";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { Pagination } from "@/components/pagination";
+import { PostStats } from "@/components/blog/post-stats";
 
 export const metadata = {
   title: "Cẩm nang du lịch · Hành Trình Việt",
@@ -107,6 +108,7 @@ export default async function BlogPage({
         publishedAt: true,
         author: { select: { name: true } },
         images: coverSelect,
+        _count: { select: { likes: true, comments: true } },
       },
     }),
     prisma.post.count({ where }),
@@ -127,6 +129,7 @@ export default async function BlogPage({
         createdAt: true,
         publishedAt: true,
         images: coverSelect,
+        _count: { select: { likes: true, comments: true } },
       },
     }),
   ]);
@@ -207,11 +210,16 @@ export default async function BlogPage({
                             {p.excerpt}
                           </p>
                         )}
-                        <AuthorMeta
-                          name={p.author.name}
-                          date={p.publishedAt ?? p.createdAt}
-                          className="mt-4"
-                        />
+                        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1">
+                          <AuthorMeta
+                            name={p.author.name}
+                            date={p.publishedAt ?? p.createdAt}
+                          />
+                          <PostStats
+                            likes={p._count.likes}
+                            comments={p._count.comments}
+                          />
+                        </div>
                       </div>
                     </Link>
                   </li>
@@ -295,9 +303,13 @@ export default async function BlogPage({
                             <h3 className="line-clamp-2 text-sm font-medium leading-snug tracking-tight transition-colors group-hover:text-primary">
                               {p.title}
                             </h3>
-                            <p className="mt-1 text-xs text-muted-foreground">
-                              {dateFmt.format(p.publishedAt ?? p.createdAt)}
-                            </p>
+                            <div className="mt-1 flex flex-wrap items-center gap-x-3 text-xs text-muted-foreground">
+                              <span>{dateFmt.format(p.publishedAt ?? p.createdAt)}</span>
+                              <PostStats
+                                likes={p._count.likes}
+                                comments={p._count.comments}
+                              />
+                            </div>
                           </div>
                         </Link>
                       </li>
