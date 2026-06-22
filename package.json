@@ -10,7 +10,8 @@
     "set-role": "tsx scripts/set-role.ts",
     "seed:places": "tsx prisma/seed-places.ts",
     "seed:phan-thiet": "tsx prisma/seed-phan-thiet.ts",
-    "seed:blog": "tsx prisma/seed-blog.ts"
+    "seed:blog": "tsx prisma/seed-blog.ts",
+    "seed:blog-phan-thiet": "tsx prisma/seed-blog-phan-thiet.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",

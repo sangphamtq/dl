@@ -1,14 +1,19 @@
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { ChevronRight, User, CalendarDays } from "lucide-react";
+import { ChevronRight, Clock } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@/generated/prisma/client";
 import { POST_CATEGORY_LABELS, label } from "@/lib/listing-labels";
 import { proseClass } from "@/components/cms/rich-text-editor";
+import { coverUrl } from "@/lib/place-image";
 import { cn } from "@/lib/utils";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { Badge } from "@/components/ui/badge";
+import { ShareBar } from "@/components/blog/share-bar";
+import { ArticleToc } from "@/components/blog/article-toc";
+import { extractToc } from "@/lib/toc";
 import { isStaffViewer } from "@/lib/preview";
 
 const dateFmt = new Intl.DateTimeFormat("vi-VN", {
@@ -16,6 +21,26 @@ const dateFmt = new Intl.DateTimeFormat("vi-VN", {
   month: "2-digit",
   year: "numeric",
 });
+
+// Ước lượng thời gian đọc (~200 từ/phút) từ HTML thân bài.
+function readingMinutes(html: string): number {
+  const words = html
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&[a-z]+;/gi, " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean).length;
+  return Math.max(1, Math.round(words / 200));
+}
+
+// Chữ cái đầu của tác giả cho avatar.
+function initials(name: string | null): string {
+  if (!name) return "?";
+  const parts = name.trim().split(/\s+/);
+  const last = parts[parts.length - 1]?.[0] ?? "";
+  const first = parts[0]?.[0] ?? "";
+  return (parts.length > 1 ? first + last : first).toUpperCase();
+}
 
 export async function generateMetadata({
   params,
@@ -91,13 +116,35 @@ export default async function BlogPostPage({
   const refs = post.refs
     .map(resolveRef)
     .filter((x): x is { label: string; name: string; href: string } => x !== null);
+  const minutes = readingMinutes(post.content);
+  const date = post.publishedAt ?? post.createdAt;
+  const { html: contentHtml, toc } = extractToc(post.content);
+
+  // Bài liên quan: cùng danh mục, mới nhất, loại trừ bài hiện tại.
+  const related = await prisma.post.findMany({
+    where: {
+      status: "published",
+      slug: { not: slug },
+      ...(post.category ? { category: post.category } : {}),
+    } satisfies Prisma.PostWhereInput,
+    orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
+    take: 4,
+    select: {
+      slug: true,
+      title: true,
+      createdAt: true,
+      publishedAt: true,
+      images: { where: { isCover: true }, take: 1, select: { url: true, isCover: true } },
+    },
+  });
 
   return (
     <div className="flex flex-1 flex-col">
       <SiteHeader />
 
       <main className="flex-1">
-        <article className="mx-auto max-w-2xl px-4 py-10 sm:px-6 sm:py-14">
+        <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
+          {/* Breadcrumb */}
           <nav className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
             <Link href="/" className="hover:text-foreground">
               Trang chủ
@@ -108,80 +155,171 @@ export default async function BlogPostPage({
             </Link>
           </nav>
 
-          {post.category && (
-            <p className="mt-6 text-sm font-medium text-primary">
-              {label(POST_CATEGORY_LABELS, post.category)}
-            </p>
-          )}
-          <h1 className="mt-2 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
-            {post.title}
-          </h1>
-          <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-            <span className="inline-flex items-center gap-1.5">
-              <User className="size-4" aria-hidden />
-              {post.author.name ?? "—"}
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <CalendarDays className="size-4" aria-hidden />
-              {dateFmt.format(post.publishedAt ?? post.createdAt)}
-            </span>
-          </div>
+          <div className="mt-6 grid gap-10 lg:grid-cols-[minmax(0,1fr)_17rem] lg:gap-14">
+            {/* Cột bài viết */}
+            <article className="min-w-0">
+              {post.category && (
+                <Link
+                  href={`/blog?category=${post.category}`}
+                  className="text-sm font-semibold uppercase tracking-wide text-primary hover:underline"
+                >
+                  {label(POST_CATEGORY_LABELS, post.category)}
+                </Link>
+              )}
+              <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
+                {post.title}
+              </h1>
+              <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+                <span className="font-medium text-foreground/80">
+                  {post.author.name ?? "Ẩn danh"}
+                </span>
+                <span aria-hidden>·</span>
+                <span>{dateFmt.format(date)}</span>
+                <span aria-hidden>·</span>
+                <span className="inline-flex items-center gap-1.5">
+                  <Clock className="size-3.5" aria-hidden />
+                  {minutes} phút đọc
+                </span>
+              </div>
 
-          {cover && (
-            <div className="relative mt-6 aspect-[16/9] overflow-hidden rounded-xl bg-muted">
-              <Image
-                src={cover.url}
-                alt={cover.alt ?? post.title}
-                fill
-                priority
-                sizes="(min-width: 768px) 42rem, 100vw"
-                className="object-cover"
+              {cover && (
+                <div className="relative mt-6 aspect-[16/9] overflow-hidden rounded-2xl bg-muted">
+                  <Image
+                    src={cover.url}
+                    alt={cover.alt ?? post.title}
+                    fill
+                    priority
+                    sizes="(min-width: 1024px) 44rem, 100vw"
+                    className="object-cover"
+                  />
+                </div>
+              )}
+
+              {post.excerpt && (
+                <p className="mt-6 border-l-2 border-primary/40 pl-4 text-lg leading-relaxed text-muted-foreground">
+                  {post.excerpt}
+                </p>
+              )}
+
+              {/* Nội dung HTML (rich text) — heading có scroll-mt cho neo mục lục */}
+              <div
+                className={cn(
+                  proseClass,
+                  "mt-6 text-[1.05rem] leading-8 [&_h2]:scroll-mt-24 [&_h3]:scroll-mt-24",
+                )}
+                dangerouslySetInnerHTML={{ __html: contentHtml }}
               />
-            </div>
-          )}
 
-          {post.excerpt && (
-            <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
-              {post.excerpt}
-            </p>
-          )}
+              {/* Chia sẻ */}
+              <div className="mt-10 border-t border-border/50 pt-6">
+                <ShareBar />
+              </div>
 
-          {/* Nội dung HTML (rich text) */}
-          <div
-            className={cn(proseClass, "mt-6")}
-            dangerouslySetInnerHTML={{ __html: post.content }}
-          />
+              {/* Trong bài nhắc đến (PostRef) */}
+              {refs.length > 0 && (
+                <section className="mt-8">
+                  <h2 className="text-lg font-bold tracking-tight">
+                    Trong bài nhắc đến
+                  </h2>
+                  <ul className="mt-4 space-y-2">
+                    {refs.map((r) => (
+                      <li key={r.href}>
+                        <Link
+                          href={r.href}
+                          className="flex items-center gap-3 rounded-xl border border-border/60 px-4 py-3 text-sm transition-colors hover:border-primary/40 hover:bg-primary/5"
+                        >
+                          <Badge variant="outline" className="shrink-0">
+                            {r.label}
+                          </Badge>
+                          <span className="flex-1 truncate font-medium">{r.name}</span>
+                          <ChevronRight
+                            className="size-4 shrink-0 text-muted-foreground"
+                            aria-hidden
+                          />
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+            </article>
 
-          {/* Trong bài nhắc đến (PostRef) */}
-          {refs.length > 0 && (
-            <section className="mt-10 border-t pt-8">
-              <h2 className="text-lg font-semibold tracking-tight">
-                Trong bài nhắc đến
-              </h2>
-              <ul className="mt-4 space-y-2">
-                {refs.map((r) => (
-                  <li key={r.href}>
-                    <Link
-                      href={r.href}
-                      className="flex items-center gap-3 rounded-xl border px-4 py-3 text-sm transition-colors hover:bg-muted/50"
-                    >
-                      <Badge variant="outline" className="shrink-0">
-                        {r.label}
-                      </Badge>
-                      <span className="flex-1 truncate font-medium">
-                        {r.name}
-                      </span>
-                      <ChevronRight
-                        className="size-4 shrink-0 text-muted-foreground"
-                        aria-hidden
-                      />
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-        </article>
+            {/* Sidebar */}
+            <aside className="lg:sticky lg:top-24 lg:self-start">
+              <div className="flex flex-col gap-8">
+                {/* Mục lục */}
+                {toc.length >= 2 && <ArticleToc items={toc} />}
+
+                {/* Tác giả */}
+                <div className="flex items-center gap-3 rounded-2xl bg-muted/40 p-4">
+                  <span
+                    aria-hidden
+                    className="grid size-11 shrink-0 place-items-center rounded-full bg-primary/10 text-base font-semibold text-primary"
+                  >
+                    {initials(post.author.name)}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-xs text-muted-foreground">Viết bởi</p>
+                    <p className="truncate font-semibold tracking-tight">
+                      {post.author.name ?? "Ẩn danh"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Đọc thêm */}
+                {related.length > 0 && (
+                  <div>
+                    <h2 className="mb-3 text-sm font-semibold tracking-tight">
+                      Đọc thêm
+                    </h2>
+                    <ul className="flex flex-col gap-4">
+                      {related.map((p) => (
+                        <li key={p.slug}>
+                          <Link href={`/blog/${p.slug}`} className="group flex gap-3">
+                            <div className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-muted">
+                              <Image
+                                src={coverUrl(p.images, p.slug, 128, 128)}
+                                alt={p.title}
+                                fill
+                                sizes="64px"
+                                className="object-cover transition-transform duration-300 group-hover:scale-105"
+                              />
+                            </div>
+                            <div className="min-w-0">
+                              <h3 className="line-clamp-2 text-sm font-medium leading-snug tracking-tight transition-colors group-hover:text-primary">
+                                {p.title}
+                              </h3>
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                {dateFmt.format(p.publishedAt ?? p.createdAt)}
+                              </p>
+                            </div>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* CTA nhỏ */}
+                <div className="rounded-2xl bg-gradient-to-br from-primary/10 to-sky-50 p-5 dark:to-sky-950/20">
+                  <p className="text-sm font-semibold tracking-tight">
+                    Khám phá điểm đến
+                  </p>
+                  <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+                    Tra cứu điểm đến, hoạt động và đặc sản trên khắp Việt Nam.
+                  </p>
+                  <Link
+                    href="/diem-den"
+                    className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+                  >
+                    Xem điểm đến
+                    <ChevronRight className="size-4" />
+                  </Link>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </div>
       </main>
 
       <SiteFooter />
