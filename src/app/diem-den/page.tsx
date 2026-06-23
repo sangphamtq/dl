@@ -1,4 +1,4 @@
-import { MapPinned, Sparkles } from "lucide-react";
+import { MapPinned } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
@@ -114,31 +114,30 @@ export default async function DiemDenPage() {
       <SiteHeader />
 
       <main className="flex-1">
-        {/* Hero — typography, không ảnh: headline gradient + số liệu nổi */}
-        <section className="relative overflow-hidden border-b border-border/60 bg-gradient-to-b from-primary/[0.07] via-background to-background">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -right-24 -top-28 size-[28rem] rounded-full bg-primary/10 blur-3xl"
-          />
-          <div className="relative mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 sm:py-10 lg:flex-row lg:items-end lg:justify-between lg:gap-12">
-            <div>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card/70 px-3 py-1 text-xs font-medium text-muted-foreground backdrop-blur">
-                <Sparkles className="size-3.5 text-primary" aria-hidden />
+        {/* Hero — chữ là chính: eyebrow + headline + mô tả, số liệu inline mộc */}
+        <section className="border-b border-border/60">
+          <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:flex lg:items-end lg:justify-between lg:gap-12">
+            <div className="max-w-2xl">
+              <p className="text-sm font-semibold text-primary">
                 Khám phá Việt Nam
-              </span>
-              <h1 className="mt-3 max-w-2xl text-balance text-3xl font-bold leading-tight tracking-tight sm:text-4xl lg:text-5xl">
-                Khám phá điểm đến khắp Việt Nam
+              </p>
+              <h1 className="mt-2 text-balance text-3xl font-bold leading-tight tracking-tight sm:text-4xl lg:text-5xl">
+                Điểm đến khắp dải đất hình chữ S
               </h1>
+              <p className="mt-4 max-w-xl text-base leading-relaxed text-muted-foreground">
+                Từ núi rừng Tây Bắc đến biển đảo phương Nam — chọn một nơi để bắt
+                đầu, rồi xem nên ăn gì, chơi gì, ở đâu và đi lại thế nào.
+              </p>
             </div>
 
             {!isEmpty && (
-              <dl className="flex shrink-0 gap-8 lg:gap-10">
+              <dl className="mt-8 flex flex-wrap gap-x-8 gap-y-4 sm:gap-x-10 lg:mt-0 lg:shrink-0">
                 {stats.map((s) => (
                   <div key={s.label}>
                     <dd className="text-3xl font-bold leading-none tracking-tight tabular-nums sm:text-4xl">
                       {s.value.toLocaleString("vi-VN")}
                     </dd>
-                    <dt className="mt-2 whitespace-nowrap text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    <dt className="mt-1.5 text-sm text-muted-foreground">
                       {s.label}
                     </dt>
                   </div>

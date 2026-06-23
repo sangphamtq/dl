@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { MapPin, Search, X, Star } from "lucide-react";
@@ -79,7 +79,12 @@ export function DestinationFilter({
 }) {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortKey>("featured");
-  const [activeRegion, setActiveRegion] = useState(0);
+  // -1 = chưa xác định (không tô miền nào) → tránh nháy về miền đầu trước khi
+  // biết vị trí cuộn thật khi tải lại trang.
+  const [activeRegion, setActiveRegion] = useState(-1);
+  // Khi bấm chọn miền, scroll mượt đi ngang qua các miền giữa → khóa scroll-spy
+  // vào miền đích để nav không nhấp nháy qua miền trung gian.
+  const lockedRegion = useRef<number | null>(null);
 
   const q = norm(query);
   const matches = (d: DestItem) =>
@@ -105,27 +110,64 @@ export function DestinationFilter({
       .map((_, i) => document.getElementById(`mien-${i}`))
       .filter((el): el is HTMLElement => el !== null);
     if (els.length === 0) return;
+
+    // Tìm miền đang ở mốc ~30% chiều cao viewport.
+    const measure = () => {
+      const line = window.innerHeight * 0.3;
+      let active = 0;
+      els.forEach((el) => {
+        if (el.getBoundingClientRect().top <= line)
+          active = Number(el.id.split("-")[1]);
+      });
+      return active;
+    };
+
+    // Hoãn lần đo đầu sang frame kế (sau khi trình duyệt khôi phục vị trí cuộn)
+    // và chặn observer tới khi đo xong → không nháy về miền đầu khi tải lại trang.
+    let ready = false;
+    const raf = requestAnimationFrame(() => {
+      setActiveRegion(measure());
+      ready = true;
+    });
+
     const obs = new IntersectionObserver(
       (entries) => {
+        if (!ready) return;
         const vis = entries
           .filter((e) => e.isIntersecting)
           .sort(
             (a, b) => a.boundingClientRect.top - b.boundingClientRect.top,
           );
-        if (vis[0]) setActiveRegion(Number(vis[0].target.id.split("-")[1]));
+        if (!vis[0]) return;
+        const top = Number(vis[0].target.id.split("-")[1]);
+        // Đang cuộn theo lệnh click: bỏ qua miền giữa, chỉ nhả khóa khi tới đích.
+        if (lockedRegion.current !== null) {
+          if (top === lockedRegion.current) lockedRegion.current = null;
+          else return;
+        }
+        setActiveRegion(top);
       },
       { rootMargin: "-25% 0px -65% 0px" },
     );
     els.forEach((el) => obs.observe(el));
-    return () => obs.disconnect();
+    // Nhả khóa khi cuộn mượt kết thúc (phòng khi không tới được đúng đỉnh đích).
+    const onScrollEnd = () => {
+      lockedRegion.current = null;
+    };
+    window.addEventListener("scrollend", onScrollEnd);
+    return () => {
+      cancelAnimationFrame(raf);
+      obs.disconnect();
+      window.removeEventListener("scrollend", onScrollEnd);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, sort, sections.length]);
 
   return (
     <div>
       {/* Toolbar sticky: tìm kiếm + nav miền + sắp xếp — cùng một hàng */}
-      <div className="sticky top-16 z-30 -mx-4 border-b border-border/60 bg-background/85 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
-        <div className="flex items-center gap-3 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="sticky top-16 z-30 -mx-4 border-b border-border/60 bg-background/85 backdrop-blur sm:-mx-6">
+        <div className="flex items-center gap-3 overflow-x-auto px-4 py-3 sm:px-6 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {/* Tìm kiếm */}
           <div className="relative w-44 shrink-0 sm:w-60">
             <Search
@@ -138,7 +180,7 @@ export function DestinationFilter({
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Tìm điểm đến…"
               aria-label="Tìm điểm đến"
-              className="h-10 w-full rounded-full border border-border/60 bg-card pl-10 pr-9 text-sm outline-none transition-colors focus:border-primary/50 focus:ring-2 focus:ring-primary/15 [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none"
+              className="h-10 w-full rounded-full bg-muted pl-10 pr-9 text-sm outline-none transition-colors focus:bg-background focus:ring-2 focus:ring-ring/30 [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none"
             />
             {query && (
               <button
@@ -161,6 +203,7 @@ export function DestinationFilter({
                   active={activeRegion === i}
                   onClick={() => {
                     setActiveRegion(i);
+                    lockedRegion.current = i;
                     document
                       .getElementById(`mien-${i}`)
                       ?.scrollIntoView({ behavior: "smooth" });
@@ -195,16 +238,16 @@ export function DestinationFilter({
         <div className="mt-8 space-y-14">
           {sections.map((g, i) => (
             <section key={g.label} id={`mien-${i}`} className="scroll-mt-36">
-              <h3 className="flex items-baseline gap-2.5">
-                <span className="text-xl font-bold tracking-tight sm:text-2xl">
+              <div className="flex items-baseline gap-3">
+                <h2 className="text-xl font-bold tracking-tight sm:text-2xl">
                   {g.label}
-                </span>
+                </h2>
                 {g.dests.length > 0 && (
                   <span className="text-sm tabular-nums text-muted-foreground">
                     {g.dests.length} điểm đến
                   </span>
                 )}
-              </h3>
+              </div>
 
               {g.dests.length > 0 && (
                 <Rail
@@ -252,7 +295,7 @@ function Segmented({
       role="group"
       aria-label={label}
       className={cn(
-        "flex h-10 w-fit shrink-0 items-center rounded-full border border-border/60 bg-card p-1",
+        "flex h-10 w-fit shrink-0 items-center rounded-full bg-muted p-1",
         className,
       )}
     >
@@ -278,7 +321,7 @@ function SegButton({
       className={cn(
         "inline-flex h-full items-center whitespace-nowrap rounded-full px-3.5 text-sm font-medium transition-colors",
         active
-          ? "bg-primary text-primary-foreground"
+          ? "bg-background text-foreground shadow-sm"
           : "text-muted-foreground hover:text-foreground",
       )}
     >
@@ -303,7 +346,7 @@ function ProvinceChip({ p }: { p: ProvinceItem }) {
     <Link
       href={`/diem-den/${p.slug}`}
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card px-3 py-1.5 text-sm transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary",
+        "inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-sm transition-colors hover:bg-primary/10 hover:text-primary",
         p.isFeatured && "font-medium",
       )}
     >
@@ -326,46 +369,41 @@ function ProvinceChip({ p }: { p: ProvinceItem }) {
 
 function DestCard({ d }: { d: DestItem }) {
   return (
-    <Link
-      href={`/diem-den/${d.slug}`}
-      className="group relative block aspect-[3/4] overflow-hidden rounded-3xl bg-muted shadow-sm shadow-black/5 ring-1 ring-black/5 transition-shadow hover:shadow-xl hover:shadow-black/15"
-    >
-      <Image
-        src={coverUrl(d.images, d.slug, 600, 800)}
-        alt={d.name}
-        fill
-        sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-        className="object-cover transition-transform duration-700 group-hover:scale-[1.07]"
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/5" />
+    <Link href={`/diem-den/${d.slug}`} className="block">
+      <div className="relative aspect-[3/4] overflow-hidden rounded-2xl bg-muted">
+        <Image
+          src={coverUrl(d.images, d.slug, 600, 800)}
+          alt={d.name}
+          fill
+          sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+          className="object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent" />
 
-      {/* Badge tỉnh + nổi bật */}
-      <div className="absolute inset-x-3 top-3 flex items-center justify-between gap-2">
-        {d.parentName ? (
-          <span className="inline-flex items-center gap-1 rounded-full bg-black/35 px-2.5 py-1 text-xs font-medium text-white backdrop-blur">
-            <MapPin className="size-3" aria-hidden />
-            {d.parentName}
-          </span>
-        ) : (
-          <span />
-        )}
-        {d.isFeatured && (
-          <span className="grid size-7 place-items-center rounded-full bg-white/90 text-warm shadow-sm">
-            <Star className="size-3.5 fill-current" aria-label="Nổi bật" />
-          </span>
-        )}
-      </div>
-
-      {/* Tên + tagline */}
-      <div className="absolute inset-x-0 bottom-0 p-5">
-        <h3 className="text-balance text-xl font-bold leading-tight tracking-tight text-white drop-shadow-sm">
-          {d.name}
-        </h3>
-        {d.tagline && (
-          <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-white/85">
-            {d.tagline}
-          </p>
-        )}
+        <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5">
+          <div className="flex items-center gap-2 text-xs font-medium text-white/80">
+            {d.isFeatured && (
+              <Star
+                className="size-3.5 shrink-0 fill-current text-warm"
+                aria-label="Nổi bật"
+              />
+            )}
+            {d.parentName && (
+              <span className="inline-flex items-center gap-1">
+                <MapPin className="size-3" aria-hidden />
+                {d.parentName}
+              </span>
+            )}
+          </div>
+          <h3 className="mt-1 text-balance text-lg font-semibold leading-tight tracking-tight text-white">
+            {d.name}
+          </h3>
+          {d.tagline && (
+            <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-white/80">
+              {d.tagline}
+            </p>
+          )}
+        </div>
       </div>
     </Link>
   );

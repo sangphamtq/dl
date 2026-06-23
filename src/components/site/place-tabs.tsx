@@ -3,7 +3,7 @@
 import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { LayoutGrid, MapPinned } from "lucide-react";
+import { LayoutGrid, MapPinned, MessagesSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { PlaceTab } from "@/lib/place-meta";
 import {
@@ -66,12 +66,16 @@ export function PlaceTabs({
     return () => obs.disconnect();
   }, []);
 
-  // Tab Bản đồ tách riêng → render thành nút nổi bật bên phải (không cuộn mất).
+  // Bản đồ + Cộng đồng tách riêng → render bên phải (không cuộn mất).
   const mapTab = items.find((it) => it.icon === "map");
-  const navItems = items.filter((it) => it.icon !== "map");
+  const communityTab = items.find((it) => it.icon === "community");
+  const navItems = items.filter(
+    (it) => it.icon !== "map" && it.icon !== "community",
+  );
 
-  // Có ít nhất 2 tab, hoặc có video/bản đồ để gắn nút → mới hiện thanh.
-  if (navItems.length <= 1 && videos.length === 0 && !mapTab) return null;
+  // Có ít nhất 2 tab, hoặc có video/bản đồ/cộng đồng để gắn nút → mới hiện thanh.
+  if (navItems.length <= 1 && videos.length === 0 && !mapTab && !communityTab)
+    return null;
 
   return (
     <>
@@ -108,8 +112,8 @@ export function PlaceTabs({
             );
           })}
         </nav>
-        {/* Nhóm bên phải: Video (trái) + Bản đồ (ngoài cùng phải) */}
-        <div className="ml-auto flex shrink-0 items-center gap-3">
+        {/* Nhóm bên phải: Video + Cộng đồng + Bản đồ (ngoài cùng phải) */}
+        <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
           <PlaceVideoTabButton
             videos={videos}
             placeName={placeName}
@@ -120,6 +124,28 @@ export function PlaceTabs({
                 : "pointer-events-none translate-x-2 opacity-0",
             )}
           />
+          {communityTab && (
+            <Link
+              href={communityTab.href}
+              ref={(el) => {
+                tabRefs.current[communityTab.href] = el;
+              }}
+              aria-current={pathname === communityTab.href ? "page" : undefined}
+              className={cn(
+                "group inline-flex shrink-0 items-center gap-2 rounded-full border bg-card/70 py-1 pl-1 pr-3 shadow-sm shadow-black/5 backdrop-blur transition-all hover:-translate-y-px hover:shadow-md",
+                pathname === communityTab.href
+                  ? "border-primary/50"
+                  : "border-border/60 hover:border-primary/40",
+              )}
+            >
+              <span className="grid size-8 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground transition-transform group-hover:scale-105">
+                <MessagesSquare className="size-4" aria-hidden />
+              </span>
+              <span className="text-sm font-medium text-foreground">
+                {communityTab.label}
+              </span>
+            </Link>
+          )}
           {mapTab && (
             <Link
               href={mapTab.href}

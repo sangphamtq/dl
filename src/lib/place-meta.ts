@@ -52,7 +52,7 @@ export async function getPlaceCounts(placeId: string): Promise<PlaceCounts> {
 export type PlaceTab = {
   href: string;
   label: string;
-  icon?: "overview" | "map"; // tab dạng icon (Tổng quan / Bản đồ)
+  icon?: "overview" | "map" | "community"; // tab đặc biệt (Tổng quan / Bản đồ / Cộng đồng)
 };
 
 // Tabs sticky: "Tổng quan" về trang Place + mỗi loại listing có dữ liệu → trang "xem tất cả".
@@ -71,8 +71,8 @@ export function buildPlaceTabs(placeSlug: string, counts: PlaceCounts): PlaceTab
   // Di chuyển: màn hình riêng trong route động [loai] (không có trang chi tiết per-item).
   if (counts.transport > 0) add("di-chuyen", "Di chuyển");
 
-  // Cộng đồng: luôn hiện (khuyến khích đăng bài kể cả khi chưa có bài).
-  add("cong-dong", "Cộng đồng");
+  // Cộng đồng: luôn hiện, render riêng bên phải thanh tab (như Bản đồ).
+  tabs.push({ href: `${base}/cong-dong`, label: "Cộng đồng", icon: "community" });
 
   // Bản đồ: dạng icon, hiện khi có loại có toạ độ (Spot/Eatery/Accommodation).
   if (counts.spot + counts.eatery + counts.accommodation > 0)
