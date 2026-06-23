@@ -18,16 +18,16 @@ import { PlaceCard } from "@/components/site/place-card";
 import { ListingCard } from "@/components/site/listing-card";
 import { Rail } from "@/components/site/rail";
 import { PlaceViewTracker } from "@/components/site/place-view-tracker";
-import { type HeroImage } from "@/components/site/place-hero-stack";
 import { PlaceHero } from "@/components/site/place-hero";
 import { PlaceTabs } from "@/components/site/place-tabs";
 import { PeerBar } from "@/components/site/peer-bar";
 import { getDestinationPeerGroups } from "@/lib/peers";
-import { getTikTokInfo } from "@/lib/tiktok";
 import {
   getPlaceCounts,
   buildPlaceTabs,
   buildPlaceStats,
+  buildHeroImages,
+  resolveVideos,
 } from "@/lib/place-meta";
 
 const pub = { status: "published" as const };
@@ -85,6 +85,7 @@ export default async function PlaceDetailPage({
       tagline: true,
       description: true,
       tags: true,
+      quickInfo: true,
       isFeatured: true,
       viewCount: true,
       provinceName: true,
@@ -185,43 +186,15 @@ export default async function PlaceDetailPage({
   });
 
   const isProvince = place.kind === "province";
-  // Hero: ảnh của điểm đến trước, rồi nối ảnh bìa các "địa điểm con"
-  // (điểm đến con nếu là tỉnh + spot), chỉ lấy ảnh thật, khử trùng URL.
-  const heroImages: HeroImage[] = place.images.map((i) => ({
-    url: i.url,
-    alt: i.alt,
-    caption: i.caption,
-  }));
-  // Ảnh bìa các "địa điểm con" — caption = tên, click sang đúng trang địa điểm đó.
-  const childCovers: HeroImage[] = [
-    ...place.children.map((c) => ({
-      cover: c.images[0],
-      name: c.name,
-      href: `/diem-den/${c.slug}`,
-    })),
-    ...place.spots.map((s) => ({
-      cover: s.images[0],
-      name: s.name,
-      href: `/dia-diem/${s.slug}`,
-    })),
-  ]
-    .filter((c) => c.cover?.url)
-    .map((c) => ({
-      url: c.cover!.url,
-      alt: c.name,
-      caption: c.name,
-      href: c.href,
-    }));
-  const seenUrls = new Set(heroImages.map((i) => i.url));
-  for (const c of childCovers) {
-    if (!seenUrls.has(c.url)) {
-      heroImages.push(c);
-      seenUrls.add(c.url);
-    }
-  }
-  if (heroImages.length === 0) {
-    heroImages.push({ url: coverUrl([], place.slug, 1600, 1000), alt: place.name });
-  }
+  // Hero (giữ nguyên trên mọi tab — xem buildHeroImages): ảnh điểm đến + ảnh bìa
+  // địa điểm con (điểm đến con nếu là tỉnh + spot), khử trùng URL.
+  const heroImages = buildHeroImages(
+    place.images,
+    place.children,
+    place.spots,
+    place.slug,
+    place.name,
+  );
 
   const showChildren = isProvince && place.children.length > 0;
 
@@ -234,21 +207,11 @@ export default async function PlaceDetailPage({
     place.accommodations.length > 0 ||
     counts.transport > 0;
 
-  const videoSeed = place.videos.map((v) => ({
-    id: v.videoId,
-    caption: v.caption ?? undefined,
-  }));
-  // Lấy thumbnail thật qua oEmbed (dedupe theo id, cache trong helper).
-  const thumbById = new Map<string, string | null>();
-  await Promise.all(
-    [...new Set(videoSeed.map((v) => v.id))].map(async (id) => {
-      thumbById.set(id, (await getTikTokInfo(id)).thumbnail);
-    }),
-  );
-  const videos = videoSeed.map((v) => ({
-    ...v,
-    thumbnail: thumbById.get(v.id) ?? null,
-  }));
+  const videos = await resolveVideos(place.videos);
+
+  // "Trước khi đi": danh sách {label, value} biên tập trong CMS.
+  const quickFacts =
+    (place.quickInfo as { label: string; value: string }[] | null) ?? [];
 
   return (
     <div className="flex flex-1 flex-col">
@@ -269,16 +232,24 @@ export default async function PlaceDetailPage({
 
         <div className="mx-auto max-w-7xl space-y-16 px-4 py-14 sm:space-y-20 sm:px-6 sm:py-20">
           {/* Đôi nét */}
-          {place.description && (
+          {(place.description || quickFacts.length > 0) && (
             <section id="doi-net" className="scroll-mt-32">
               <h2 className="text-2xl font-bold tracking-tight">
                 Đôi nét về {place.name}
               </h2>
-              <div className="mt-5 grid gap-8 lg:grid-cols-[1fr_16rem] lg:items-start lg:gap-10">
-                <div>
-                  <p className="whitespace-pre-line leading-8 text-foreground/90">
-                    {place.description}
-                  </p>
+              <div
+                className={
+                  quickFacts.length > 0
+                    ? "mt-5 grid gap-8 lg:grid-cols-[1fr_20rem] lg:items-start lg:gap-16"
+                    : "mt-5"
+                }
+              >
+                <div className={quickFacts.length > 0 ? "" : "max-w-prose"}>
+                  {place.description && (
+                    <p className="whitespace-pre-line leading-8 text-foreground/90">
+                      {place.description}
+                    </p>
+                  )}
                   {place.tags.length > 0 && (
                     <div className="mt-5 flex flex-wrap gap-1.5">
                       {place.tags.map((t) => (
@@ -320,7 +291,7 @@ export default async function PlaceDetailPage({
                     </Link>
                   )}
                 </div>
-                <QuickInfo />
+                {quickFacts.length > 0 && <QuickInfo facts={quickFacts} />}
               </div>
             </section>
           )}
@@ -463,25 +434,15 @@ export default async function PlaceDetailPage({
 }
 
 
-/* ── Bảng "Trước khi đi" cạnh đoạn Giới thiệu ────────────────────── */
-// TODO: tạm để cứng cho preview — sau bổ sung field vào Place (bestSeason,
-// idealDays, weather, distanceText, budgetText) rồi đọc từ DB.
-function QuickInfo() {
-  const facts = [
-    { label: "Thời điểm đẹp", value: "Tháng 11 – tháng 4" },
-    { label: "Nên đi", value: "2 – 3 ngày" },
-    { label: "Thời tiết", value: "Nắng ấm, khô ráo" },
-    { label: "Cách TP.HCM", value: "≈ 200 km" },
-    { label: "Chi phí / ngày", value: "1 – 2 triệu" },
-  ];
-
+/* ── Thẻ "Trước khi đi" cạnh đoạn Giới thiệu (nội dung từ CMS) ─────── */
+function QuickInfo({ facts }: { facts: { label: string; value: string }[] }) {
   return (
     <div className="rounded-2xl border border-border/60 bg-muted/30 p-5">
       <p className="text-sm font-semibold">Trước khi đi</p>
       <dl className="mt-2 divide-y divide-border/60">
-        {facts.map((f) => (
+        {facts.map((f, i) => (
           <div
-            key={f.label}
+            key={i}
             className="flex items-baseline justify-between gap-4 py-2.5"
           >
             <dt className="text-sm text-muted-foreground">{f.label}</dt>

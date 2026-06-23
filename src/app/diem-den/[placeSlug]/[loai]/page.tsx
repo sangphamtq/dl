@@ -1,7 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
-import { coverUrl } from "@/lib/place-image";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { PeerBar } from "@/components/site/peer-bar";
@@ -18,9 +17,8 @@ import {
 } from "@/components/site/transport-section";
 import { PlaceHero } from "@/components/site/place-hero";
 import { PlaceTabs } from "@/components/site/place-tabs";
-import { type HeroImage } from "@/components/site/place-hero-stack";
 import {
-  getPlaceHeader,
+  getPlaceHero,
   getPlaceCounts,
   buildPlaceTabs,
   buildPlaceStats,
@@ -367,22 +365,14 @@ export default async function PlaceListingPage({
   const cfg = LOAI[loai as Loai];
   if (!isFood && !isTransport && !cfg) notFound();
 
-  const place = await getPlaceHeader(placeSlug);
-  if (!place || place.status !== "published") notFound();
+  const heroData = await getPlaceHero(placeSlug);
+  if (!heroData || heroData.place.status !== "published") notFound();
+  const place = heroData.place;
 
   const peerGroups = await getDestinationPeerGroups();
   const counts = await getPlaceCounts(place.id);
   const stats = buildPlaceStats(place.viewCount, counts);
   const tabs = buildPlaceTabs(place.slug, counts);
-
-  const heroImages: HeroImage[] = place.images.map((i) => ({
-    url: i.url,
-    alt: i.alt,
-    caption: i.caption,
-  }));
-  if (heroImages.length === 0) {
-    heroImages.push({ url: coverUrl([], place.slug, 1600, 1000), alt: place.name });
-  }
 
   // Ẩm thực: chi tiết đầy đủ Đặc sản rồi Quán ăn, xếp dọc trên cùng trang.
   const food = isFood
@@ -421,13 +411,14 @@ export default async function PlaceListingPage({
       <main className="flex-1">
         <PlaceHero
           place={place}
-          heroImages={heroImages}
+          heroImages={heroData.heroImages}
           stats={stats}
+          videos={heroData.videos}
           back={{ href: `/diem-den/${place.slug}`, label: "Tổng quan" }}
         />
 
-        {/* Thanh tab: Tổng quan + xem tất cả từng listing */}
-        <PlaceTabs items={tabs} />
+        {/* Thanh tab: Tổng quan + xem tất cả từng listing + nút Video */}
+        <PlaceTabs items={tabs} videos={heroData.videos} placeName={place.name} />
 
         <div
           className={`mx-auto px-4 py-14 sm:px-6 sm:py-20 max-w-7xl`}

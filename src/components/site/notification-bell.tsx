@@ -87,21 +87,34 @@ export function NotificationBell({
     }
 
     let client: import("ably").Realtime | null = null;
+    // Đổi trang nhanh có thể unmount trước khi import/kết nối xong → đừng tạo
+    // client mồ côi, và nuốt lỗi "Connection closed" khi đóng giữa chừng.
+    let cancelled = false;
     (async () => {
       try {
         const Ably = await import("ably");
+        if (cancelled) return;
         client = new Ably.Realtime({ authUrl: "/api/ably/token" });
-        client.channels.get(`user:${userId}`).subscribe("notif", () => {
+        // Bắt lỗi kết nối (vd đóng khi đang connect) để không thành lỗi runtime.
+        client.connection.on("failed", () => {});
+        const sub = client.channels.get(`user:${userId}`).subscribe("notif", () => {
           if (openRef.current) loadItems();
           else refreshCount();
         });
+        // subscribe (Ably v2) trả Promise — reject khi kết nối đóng lúc unmount.
+        Promise.resolve(sub).catch(() => {});
       } catch {
         /* bỏ qua — vẫn còn refresh khi mở/đổi tab */
       }
     })();
     return () => {
+      cancelled = true;
       window.removeEventListener("focus", onFocus);
-      client?.close();
+      try {
+        client?.close();
+      } catch {
+        /* bỏ qua */
+      }
     };
   }, [realtimeEnabled, userId]);
 

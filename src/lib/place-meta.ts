@@ -1,7 +1,123 @@
 import { Eye, MapPin, Compass, type LucideIcon } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { coverUrl } from "@/lib/place-image";
+import { getTikTokInfo } from "@/lib/tiktok";
+import { type HeroImage } from "@/components/site/place-hero-stack";
+import { type PlaceVideo } from "@/components/site/tiktok-videos";
 
 const pub = { status: "published" as const };
+
+// ── Hero dùng chung: GIỮ NGUYÊN trên mọi tab của trang điểm đến ──────────────
+// Gộp ảnh điểm đến + ảnh bìa "địa điểm con" (điểm đến con + spot), khử trùng URL.
+type HeroImgRow = { url: string; alt: string | null; caption: string | null };
+type HeroCoverRow = { slug: string; name: string; images: { url: string }[] };
+
+export function buildHeroImages(
+  images: HeroImgRow[],
+  children: HeroCoverRow[],
+  spots: HeroCoverRow[],
+  slug: string,
+  name: string,
+): HeroImage[] {
+  const heroImages: HeroImage[] = images.map((i) => ({
+    url: i.url,
+    alt: i.alt,
+    caption: i.caption,
+  }));
+  const childCovers: HeroImage[] = [
+    ...children.map((c) => ({
+      cover: c.images[0],
+      name: c.name,
+      href: `/diem-den/${c.slug}`,
+    })),
+    ...spots.map((s) => ({
+      cover: s.images[0],
+      name: s.name,
+      href: `/dia-diem/${s.slug}`,
+    })),
+  ]
+    .filter((c) => c.cover?.url)
+    .map((c) => ({
+      url: c.cover!.url,
+      alt: c.name,
+      caption: c.name,
+      href: c.href,
+    }));
+  const seen = new Set(heroImages.map((i) => i.url));
+  for (const c of childCovers) {
+    if (!seen.has(c.url)) {
+      heroImages.push(c);
+      seen.add(c.url);
+    }
+  }
+  if (heroImages.length === 0) {
+    heroImages.push({ url: coverUrl([], slug, 1600, 1000), alt: name });
+  }
+  return heroImages;
+}
+
+// Lấy thumbnail TikTok thật (oEmbed, dedupe, cache trong helper).
+export async function resolveVideos(
+  rows: { videoId: string; caption: string | null }[],
+): Promise<PlaceVideo[]> {
+  const seed = rows.map((v) => ({ id: v.videoId, caption: v.caption ?? undefined }));
+  const thumbById = new Map<string, string | null>();
+  await Promise.all(
+    [...new Set(seed.map((v) => v.id))].map(async (id) => {
+      thumbById.set(id, (await getTikTokInfo(id)).thumbnail);
+    }),
+  );
+  return seed.map((v) => ({ ...v, thumbnail: thumbById.get(v.id) ?? null }));
+}
+
+// Header + hero (ảnh gộp + video) đồng nhất cho trang danh sách listing.
+export async function getPlaceHero(placeSlug: string) {
+  const cover = { where: { isCover: true }, take: 1, select: { url: true } };
+  const place = await prisma.place.findUnique({
+    where: { slug: placeSlug },
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      kind: true,
+      status: true,
+      tagline: true,
+      provinceName: true,
+      isFeatured: true,
+      viewCount: true,
+      parent: { select: { slug: true, name: true } },
+      images: {
+        orderBy: [{ isCover: "desc" }, { order: "asc" }],
+        select: { url: true, alt: true, caption: true, isCover: true },
+      },
+      children: {
+        where: pub,
+        orderBy: [{ isFeatured: "desc" }, { name: "asc" }],
+        select: { slug: true, name: true, images: cover },
+      },
+      spots: {
+        where: pub,
+        orderBy: [{ isFeatured: "desc" }, { order: "asc" }, { name: "asc" }],
+        take: 6,
+        select: { slug: true, name: true, images: cover },
+      },
+      videos: {
+        orderBy: [{ order: "asc" }, { createdAt: "asc" }],
+        select: { videoId: true, caption: true },
+      },
+    },
+  });
+  if (!place) return null;
+  const heroImages = buildHeroImages(
+    place.images,
+    place.children,
+    place.spots,
+    place.slug,
+    place.name,
+  );
+  const videos = await resolveVideos(place.videos);
+  return { place, heroImages, videos };
+}
 
 export type PlaceCounts = {
   activity: number;

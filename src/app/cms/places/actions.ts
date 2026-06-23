@@ -9,6 +9,9 @@ import { slugify, RESERVED_SLUGS } from "@/lib/slug";
 
 const STAFF = ["admin", "editor"];
 
+// Một dòng "Trước khi đi": tên (label) + nội dung (value).
+export type QuickFact = { label: string; value: string };
+
 export type PlaceFormInput = {
   name: string;
   slug: string;
@@ -23,6 +26,7 @@ export type PlaceFormInput = {
   wardCode: string;
   wardName: string;
   tags: string; // chuỗi phân tách bằng dấu phẩy
+  quickInfo: QuickFact[]; // "Trước khi đi": danh sách tên + nội dung
 };
 
 export type ActionResult = { ok: true; id: string } | { ok: false; error: string };
@@ -91,6 +95,11 @@ async function normalize(
     .map((t) => t.trim())
     .filter(Boolean);
 
+  // "Trước khi đi": bỏ dòng trống (cả tên lẫn nội dung rỗng), trim.
+  const quickInfo = (input.quickInfo ?? [])
+    .map((f) => ({ label: f.label.trim(), value: f.value.trim() }))
+    .filter((f) => f.label || f.value);
+
   // Chỉ gồm trường NỘI DUNG. Các AdminFields (status/isFeatured/order) được
   // quản lý riêng ở trang chi tiết, không đụng tới khi tạo/sửa nội dung.
   return {
@@ -108,6 +117,9 @@ async function normalize(
       wardCode,
       wardName: wardCode ? input.wardName.trim() || null : null,
       tags,
+      quickInfo: quickInfo.length
+        ? (quickInfo as Prisma.InputJsonValue)
+        : Prisma.JsonNull,
     },
   };
 }

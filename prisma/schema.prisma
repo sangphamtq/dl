@@ -272,6 +272,9 @@ model Place {
 
   tags String[] @default([])
 
+  // "Trước khi đi": danh sách {label, value} biên tập trong CMS (hiển thị cạnh giới thiệu)
+  quickInfo Json?
+
   // AdminFields
   status      PublishStatus @default(draft)
   publishedAt DateTime?

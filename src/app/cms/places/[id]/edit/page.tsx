@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { FormSection } from "@/components/cms/form-section";
 import { getTikTokInfo } from "@/lib/tiktok";
 import { PlaceForm, type PlaceFormValues } from "../../place-form";
+import { type QuickFact } from "../../actions";
 import { PlaceImages } from "../../place-images";
 import { PlaceVideosManager } from "../../place-videos";
 
@@ -35,6 +36,7 @@ export default async function EditPlacePage({
         wardCode: true,
         wardName: true,
         tags: true,
+        quickInfo: true,
       },
     }),
     prisma.place.findMany({
@@ -82,6 +84,7 @@ export default async function EditPlacePage({
     wardCode: place.wardCode?.toString() ?? "",
     wardName: place.wardName ?? "",
     tags: place.tags.join(", "),
+    quickInfo: (place.quickInfo as QuickFact[] | null) ?? [],
   };
 
   return (

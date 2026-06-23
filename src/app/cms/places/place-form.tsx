@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2, Plus, X } from "lucide-react";
 import { slugify } from "@/lib/slug";
 import { cn } from "@/lib/utils";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
@@ -46,6 +46,7 @@ const EMPTY: PlaceFormValues = {
   wardCode: "",
   wardName: "",
   tags: "",
+  quickInfo: [],
 };
 
 export function PlaceForm({
@@ -83,6 +84,28 @@ export function PlaceForm({
 
   function set<K extends keyof PlaceFormValues>(key: K, v: PlaceFormValues[K]) {
     setValues((p) => ({ ...p, [key]: v }));
+  }
+
+  // "Trước khi đi" — thêm/sửa/xóa từng dòng tên + nội dung.
+  function addFact() {
+    setValues((p) => ({
+      ...p,
+      quickInfo: [...p.quickInfo, { label: "", value: "" }],
+    }));
+  }
+  function updateFact(i: number, key: "label" | "value", v: string) {
+    setValues((p) => ({
+      ...p,
+      quickInfo: p.quickInfo.map((f, idx) =>
+        idx === i ? { ...f, [key]: v } : f,
+      ),
+    }));
+  }
+  function removeFact(i: number) {
+    setValues((p) => ({
+      ...p,
+      quickInfo: p.quickInfo.filter((_, idx) => idx !== i),
+    }));
   }
 
   // Nạp huyện mỗi khi provinceCode đổi (gồm cả lần đầu khi sửa).
@@ -446,6 +469,49 @@ export function PlaceForm({
             <p className="text-xs text-muted-foreground">
               Phân tách bằng dấu phẩy.
             </p>
+          </div>
+        </FormSection>
+
+        {/* Trước khi đi — danh sách tên + nội dung */}
+        <FormSection
+          title="Trước khi đi"
+          description="Thông tin nhanh hiển thị cạnh phần giới thiệu (vd: Thời điểm đẹp — Tháng 11 đến tháng 4)."
+        >
+          <div className="space-y-2">
+            {values.quickInfo.length > 0 && (
+              <div className="space-y-2">
+                {values.quickInfo.map((f, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Input
+                      value={f.label}
+                      onChange={(e) => updateFact(i, "label", e.target.value)}
+                      placeholder="Tên (vd: Thời điểm đẹp)"
+                      className="sm:w-56"
+                    />
+                    <Input
+                      value={f.value}
+                      onChange={(e) => updateFact(i, "value", e.target.value)}
+                      placeholder="Nội dung (vd: Tháng 11 – tháng 4)"
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeFact(i)}
+                      aria-label="Xóa dòng"
+                      className="shrink-0 text-muted-foreground hover:text-destructive"
+                    >
+                      <X className="size-4" aria-hidden />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <Button type="button" variant="outline" size="sm" onClick={addFact}>
+              <Plus className="size-4" aria-hidden />
+              Thêm dòng
+            </Button>
           </div>
         </FormSection>
       </div>
