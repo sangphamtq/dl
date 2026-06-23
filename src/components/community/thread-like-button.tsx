@@ -14,6 +14,7 @@ export function ThreadLikeButton({
   initialCount,
   isAuthed,
   size = "default",
+  variant = "pill",
 }: {
   kind: "thread" | "reply";
   id: string;
@@ -22,10 +23,51 @@ export function ThreadLikeButton({
   initialCount: number;
   isAuthed: boolean;
   size?: "default" | "sm";
+  variant?: "pill" | "text";
 }) {
   const [liked, setLiked] = useState(initialLiked);
   const [count, setCount] = useState(initialCount);
   const [pending, startTransition] = useTransition();
+
+  const onClick = () => {
+    const next = !liked;
+    setLiked(next);
+    setCount((c) => c + (next ? 1 : -1));
+    startTransition(async () => {
+      const res =
+        kind === "thread"
+          ? await toggleThreadLike(id, threadSlug)
+          : await toggleReplyLike(id, threadSlug);
+      if (res.ok) {
+        setLiked(res.data.liked);
+        setCount(res.data.count);
+      } else {
+        setLiked(!next);
+        setCount((c) => c + (next ? -1 : 1));
+      }
+    });
+  };
+
+  // Biến thể text (bình luận kiểu Facebook): chữ "Thích" đậm, xanh khi đã thích.
+  if (variant === "text") {
+    const cls = cn(
+      "font-semibold transition-colors",
+      liked ? "text-red-500" : "text-muted-foreground hover:text-foreground",
+    );
+    if (!isAuthed) {
+      return (
+        <Link href={`/login?callbackUrl=/cong-dong/${threadSlug}`} className={cls}>
+          Thích
+        </Link>
+      );
+    }
+    return (
+      <button type="button" onClick={onClick} disabled={pending} className={cls}>
+        {liked ? "Đã thích" : "Thích"}
+        {count > 0 ? ` · ${count}` : ""}
+      </button>
+    );
+  }
 
   const base = cn(
     "inline-flex items-center gap-1.5 rounded-full border font-medium transition-colors",
@@ -48,25 +90,6 @@ export function ThreadLikeButton({
       </Link>
     );
   }
-
-  const onClick = () => {
-    const next = !liked;
-    setLiked(next);
-    setCount((c) => c + (next ? 1 : -1));
-    startTransition(async () => {
-      const res =
-        kind === "thread"
-          ? await toggleThreadLike(id, threadSlug)
-          : await toggleReplyLike(id, threadSlug);
-      if (res.ok) {
-        setLiked(res.data.liked);
-        setCount(res.data.count);
-      } else {
-        setLiked(!next);
-        setCount((c) => c + (next ? -1 : 1));
-      }
-    });
-  };
 
   return (
     <button

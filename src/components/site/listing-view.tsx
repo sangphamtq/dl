@@ -91,7 +91,7 @@ export function ListingView({
         ) : (
           <span />
         )}
-        <div className="inline-flex shrink-0 items-center gap-0.5 self-end rounded-full border border-border/60 bg-card p-0.5 sm:self-auto">
+        <div className="flex h-10 shrink-0 items-center self-end rounded-full bg-muted p-1 sm:self-auto">
           <ToggleBtn
             active={view === "grid"}
             onClick={() => choose("grid")}
@@ -114,9 +114,7 @@ export function ListingView({
         return (
         <section key={g.prefix}>
           <div className="flex items-end justify-between gap-4">
-            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-              {g.title}
-            </h2>
+            <h2 className="text-2xl font-bold tracking-tight">{g.title}</h2>
             <p className="shrink-0 text-sm text-muted-foreground">
               {items.length} mục
             </p>
@@ -223,34 +221,6 @@ function FilterChip({
   );
 }
 
-// Hoạt động diễn ra tại địa điểm — khối riêng có nền nhạt + nhãn.
-// (chip không-link vì cả card đã là <Link>.)
-function ActivityChips({
-  items,
-  compact = false,
-}: {
-  items: { slug: string; name: string }[];
-  compact?: boolean;
-}) {
-  if (items.length === 0) return null;
-  return (
-    <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-      <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
-        <Compass className="size-3.5 text-primary" aria-hidden />
-        {!compact && "Hoạt động ở đây"}
-      </span>
-      {items.map((a) => (
-        <span
-          key={a.slug}
-          className="rounded-full border border-border/70 px-2.5 py-0.5 text-xs font-medium text-foreground/70"
-        >
-          {a.name}
-        </span>
-      ))}
-    </div>
-  );
-}
-
 const FACT_ICON = { location: MapPin, price: Ticket, time: Clock } as const;
 
 // Facts có icon: vị trí · giá vé · mùa (Địa điểm).
@@ -322,7 +292,7 @@ function CardMeta({ meta, tags }: { meta: string[]; tags: string[] }) {
 function GridCard({ item: it, prefix }: { item: Item; prefix: string }) {
   return (
     <Link href={`/${prefix}/${it.slug}`} className="group block">
-      <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-muted shadow-sm shadow-black/5 transition-shadow group-hover:shadow-md">
+      <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-muted">
         <Image
           src={coverUrl(it.images, it.slug)}
           alt={it.name}
@@ -336,15 +306,24 @@ function GridCard({ item: it, prefix }: { item: Item; prefix: string }) {
           </span>
         )}
       </div>
-      <h3 className="mt-3 font-semibold tracking-tight line-clamp-1">{it.name}</h3>
+      <h3 className="mt-3 font-semibold tracking-tight line-clamp-1 transition-colors group-hover:text-primary">
+        {it.name}
+      </h3>
       {it.description && (
         <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
           {it.description}
         </p>
       )}
       <FactsRow facts={it.facts} />
-      <CardMeta meta={it.meta} tags={it.tags} />
-      <ActivityChips items={it.activities} compact />
+      {it.meta.length > 0 && <CardMeta meta={it.meta} tags={[]} />}
+      {it.activities.length > 0 && (
+        <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Compass className="size-3.5 shrink-0 text-primary/80" aria-hidden />
+          <span className="truncate">
+            {it.activities.map((a) => a.name).join(" · ")}
+          </span>
+        </p>
+      )}
     </Link>
   );
 }
@@ -366,9 +345,9 @@ function ToggleBtn({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors",
+        "inline-flex h-full items-center gap-1.5 rounded-full px-3.5 text-sm font-medium transition-colors",
         active
-          ? "bg-primary text-primary-foreground"
+          ? "bg-background text-foreground shadow-sm"
           : "text-muted-foreground hover:text-foreground",
       )}
     >

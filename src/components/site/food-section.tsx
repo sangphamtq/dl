@@ -112,14 +112,7 @@ export function FoodSection({
 
   return (
     <div className="space-y-8">
-      <header>
-        <p className="inline-flex items-center gap-1.5 text-sm font-medium text-primary">
-          <UtensilsCrossed className="size-4" aria-hidden /> Ẩm thực
-        </p>
-        <h2 className="mt-1.5 text-3xl font-bold tracking-tight sm:text-4xl">
-          Ăn gì ở {placeName}
-        </h2>
-      </header>
+      <h2 className="text-2xl font-bold tracking-tight">Ăn gì ở {placeName}</h2>
 
       {/* Thanh nhảy dính — luôn thấy cả hai mục khi cuộn */}
       {hasBoth && (
@@ -143,7 +136,7 @@ export function FoodSection({
 
       {specialties.length > 0 && (
         <section id="dac-san" ref={specRef} className="scroll-mt-40">
-          <SectionHead icon={UtensilsCrossed} title="Đặc sản nên thử" count={specialties.length} />
+          <SectionHead title="Đặc sản nên thử" count={specialties.length} />
           <Grid>
             {specialties.map((s) => (
               <FoodCard
@@ -162,7 +155,7 @@ export function FoodSection({
 
       {eateries.length > 0 && (
         <section id="quan-an" ref={eatRef} className="scroll-mt-40">
-          <SectionHead icon={Store} title="Quán ăn" count={eateries.length} />
+          <SectionHead title="Quán ăn" count={eateries.length} />
           <div className="mt-4 flex flex-wrap gap-2">
             {MEAL_CHIPS.map((m) => (
               <button
@@ -173,7 +166,7 @@ export function FoodSection({
                 className={cn(
                   "rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors",
                   meal === m
-                    ? "bg-primary text-primary-foreground shadow-sm"
+                    ? "bg-primary text-primary-foreground"
                     : "bg-muted text-muted-foreground hover:bg-muted/70",
                 )}
               >
@@ -271,7 +264,7 @@ function FoodCard({
       aria-label={`Xem chi tiết ${name}`}
       className="group block text-left"
     >
-      <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-muted shadow-sm shadow-black/5 transition-shadow group-hover:shadow-md">
+      <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-muted">
         <Image
           src={coverUrl(images, slug)}
           alt={name}
@@ -328,7 +321,7 @@ function JumpBtn({
       className={cn(
         "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors",
         active
-          ? "bg-primary text-primary-foreground shadow-sm"
+          ? "bg-primary text-primary-foreground"
           : "bg-muted text-muted-foreground hover:text-foreground",
       )}
     >
@@ -346,21 +339,10 @@ function JumpBtn({
   );
 }
 
-function SectionHead({
-  icon: Icon,
-  title,
-  count,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  count: number;
-}) {
+function SectionHead({ title, count }: { title: string; count: number }) {
   return (
-    <div className="flex items-center gap-3">
-      <span className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
-        <Icon className="size-5" />
-      </span>
-      <h3 className="text-xl font-bold tracking-tight sm:text-2xl">{title}</h3>
+    <div className="flex items-baseline gap-2.5">
+      <h3 className="text-xl font-bold tracking-tight">{title}</h3>
       <span className="text-sm font-medium text-muted-foreground">{count}</span>
     </div>
   );

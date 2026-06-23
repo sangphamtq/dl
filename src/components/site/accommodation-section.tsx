@@ -39,7 +39,13 @@ export function AccommodationSection({
 
   return (
     <div>
-      <div className="grid grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-3 lg:grid-cols-4">
+      <div className="flex items-end justify-between gap-4">
+        <h2 className="text-2xl font-bold tracking-tight">Nơi lưu trú</h2>
+        <p className="shrink-0 text-sm text-muted-foreground">
+          {accommodations.length} mục
+        </p>
+      </div>
+      <div className="mt-7 grid grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-3 lg:grid-cols-4">
         {accommodations.map((a) => (
           <button
             key={a.slug}
@@ -48,7 +54,7 @@ export function AccommodationSection({
             aria-label={`Xem chi tiết ${a.name}`}
             className="group block text-left"
           >
-            <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-muted shadow-sm shadow-black/5 transition-shadow group-hover:shadow-md">
+            <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-muted">
               <Image
                 src={coverUrl(a.images, a.slug)}
                 alt={a.name}

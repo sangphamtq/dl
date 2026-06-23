@@ -18,14 +18,22 @@ function GridImg({ img, className }: { img: PostImage; className?: string }) {
 }
 
 // Lưới ảnh kiểu Facebook: 1 / 2 / 3 / 4+ (ảnh thứ 4 phủ "+N" nếu còn nữa).
-export function PhotoGrid({ images }: { images: PostImage[] }) {
+// bleed = ảnh tràn viền card (không bo góc, không margin trên — như News Feed FB).
+export function PhotoGrid({
+  images,
+  bleed = false,
+}: {
+  images: PostImage[];
+  bleed?: boolean;
+}) {
   if (images.length === 0) return null;
   const shown = images.slice(0, 4);
   const extra = images.length - 4;
+  const wrap = cn("overflow-hidden", bleed ? "" : "mt-3 rounded-xl");
 
   if (shown.length === 1) {
     return (
-      <div className="mt-3 overflow-hidden rounded-xl">
+      <div className={wrap}>
         <GridImg img={shown[0]} className="aspect-[16/10]" />
       </div>
     );
@@ -33,7 +41,7 @@ export function PhotoGrid({ images }: { images: PostImage[] }) {
 
   if (shown.length === 2) {
     return (
-      <div className="mt-3 grid grid-cols-2 gap-1 overflow-hidden rounded-xl">
+      <div className={cn(wrap, "grid grid-cols-2 gap-1")}>
         {shown.map((img, i) => (
           <GridImg key={i} img={img} className="aspect-square" />
         ))}
@@ -43,7 +51,7 @@ export function PhotoGrid({ images }: { images: PostImage[] }) {
 
   if (shown.length === 3) {
     return (
-      <div className="mt-3 grid grid-cols-2 gap-1 overflow-hidden rounded-xl">
+      <div className={cn(wrap, "grid grid-cols-2 gap-1")}>
         <GridImg img={shown[0]} className="col-span-2 aspect-[16/9]" />
         <GridImg img={shown[1]} className="aspect-square" />
         <GridImg img={shown[2]} className="aspect-square" />
@@ -52,7 +60,7 @@ export function PhotoGrid({ images }: { images: PostImage[] }) {
   }
 
   return (
-    <div className="mt-3 grid grid-cols-2 gap-1 overflow-hidden rounded-xl">
+    <div className={cn(wrap, "grid grid-cols-2 gap-1")}>
       {shown.map((img, i) => (
         <div key={i} className="relative">
           <GridImg img={img} className="aspect-square" />

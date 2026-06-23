@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
-import { Lock, MapPin, MessageCircle, Pin } from "lucide-react";
+import { Heart, Lock, MapPin, MessageCircle, Pin, Share2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { initials, timeAgo } from "@/lib/format";
 import { renderPostBody } from "@/lib/post-format";
+import { toggleThreadLike } from "@/app/cong-dong/actions";
 import { ThreadTypeBadge } from "./thread-type-badge";
-import { ThreadLikeButton } from "./thread-like-button";
 import { ThreadDeleteButton } from "./thread-delete-button";
 import { PhotoGrid, type PostImage } from "./photo-grid";
 import { ReplySection, type ReplyNode } from "./reply-section";
@@ -48,11 +48,43 @@ export function PostCard({
   defaultOpen?: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
+  const [liked, setLiked] = useState(post.likedByMe);
+  const [likeCount, setLikeCount] = useState(post.likeCount);
+  const [, startLike] = useTransition();
+  const [copied, setCopied] = useState(false);
   const mayDelete =
     isStaff || (!!currentUserId && currentUserId === post.authorId);
 
+  const onLike = () => {
+    const next = !liked;
+    setLiked(next);
+    setLikeCount((c) => c + (next ? 1 : -1));
+    startLike(async () => {
+      const res = await toggleThreadLike(post.id, post.slug);
+      if (res.ok) {
+        setLiked(res.data.liked);
+        setLikeCount(res.data.count);
+      } else {
+        setLiked(!next);
+        setLikeCount((c) => c + (next ? -1 : 1));
+      }
+    });
+  };
+
+  const onShare = async () => {
+    try {
+      await navigator.clipboard.writeText(
+        `${window.location.origin}/cong-dong/${post.slug}`,
+      );
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* bỏ qua */
+    }
+  };
+
   return (
-    <article className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm shadow-black/5 transition-shadow hover:shadow-md sm:p-5">
+    <article className="rounded-2xl border border-border/60 bg-card p-4 transition-colors hover:border-border sm:p-5">
       {/* Header */}
       <div className="flex items-center gap-3">
         <span
@@ -96,31 +128,52 @@ export function PostCard({
         />
       )}
 
-      {/* Ảnh */}
-      <PhotoGrid images={post.images} />
+      {/* Ảnh — tràn viền card kiểu Facebook */}
+      {post.images.length > 0 && (
+        <div className="-mx-4 mt-3 sm:-mx-5">
+          <PhotoGrid images={post.images} bleed />
+        </div>
+      )}
 
-      {/* Thanh hành động */}
-      <div className="mt-3 flex items-center gap-2 border-t border-border/50 pt-3">
-        <ThreadLikeButton
-          kind="thread"
-          id={post.id}
-          threadSlug={post.slug}
-          initialLiked={post.likedByMe}
-          initialCount={post.likeCount}
-          isAuthed={isAuthed}
-          size="sm"
-        />
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          className={cn(
-            "inline-flex items-center gap-1.5 rounded-full border border-border/60 px-2.5 py-1 text-xs font-medium transition-colors hover:border-primary/40 hover:text-primary",
-            open ? "text-primary" : "text-muted-foreground",
+      {/* Thanh tương tác kiểu Facebook: 👍 số · 💬 số · ↗ + cụm cảm xúc */}
+      <div className="mt-3 flex items-center justify-between border-t border-border/60 pt-1">
+        <div className="flex items-center">
+          {isAuthed ? (
+            <CountButton
+              onClick={onLike}
+              liked={liked}
+              icon={Heart}
+              value={likeCount}
+              label="Thích"
+            />
+          ) : (
+            <CountButton
+              href={`/login?callbackUrl=/cong-dong/${post.slug}`}
+              icon={Heart}
+              value={likeCount}
+              label="Thích"
+            />
           )}
-        >
-          <MessageCircle className="size-3.5" aria-hidden />
-          {post.replyCount > 0 ? `${post.replyCount} bình luận` : "Bình luận"}
-        </button>
+          <Sep />
+          <CountButton
+            onClick={() => setOpen((v) => !v)}
+            icon={MessageCircle}
+            value={post.replyCount}
+            label="Bình luận"
+          />
+          <Sep />
+          <CountButton
+            onClick={onShare}
+            icon={Share2}
+            value={0}
+            label={copied ? "Đã chép" : "Chia sẻ"}
+          />
+        </div>
+        {likeCount > 0 && (
+          <span className="mr-1 grid size-[18px] shrink-0 place-items-center rounded-full bg-red-500">
+            <Heart className="size-2.5 fill-white text-white" aria-hidden />
+          </span>
+        )}
       </div>
 
       {/* Bình luận */}
@@ -141,4 +194,46 @@ export function PostCard({
       )}
     </article>
   );
+}
+
+// Nút tương tác kiểu Facebook: icon + số (hoặc nhãn khi chưa có), hover nền xám.
+function CountButton({
+  icon: Icon,
+  value,
+  label,
+  onClick,
+  href,
+  liked = false,
+}: {
+  icon: typeof Heart;
+  value: number;
+  label: string;
+  onClick?: () => void;
+  href?: string;
+  liked?: boolean;
+}) {
+  const cls = cn(
+    "inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors hover:bg-muted",
+    liked ? "text-red-500" : "text-muted-foreground",
+  );
+  const content = (
+    <>
+      <Icon className={cn("size-[18px]", liked && "fill-current")} aria-hidden />
+      {value > 0 ? value.toLocaleString("vi-VN") : label}
+    </>
+  );
+  return href ? (
+    <Link href={href} className={cls}>
+      {content}
+    </Link>
+  ) : (
+    <button type="button" onClick={onClick} className={cls}>
+      {content}
+    </button>
+  );
+}
+
+// Vạch ngăn dọc giữa các nút (kiểu Facebook).
+function Sep() {
+  return <span aria-hidden className="mx-1 h-5 w-px bg-border" />;
 }

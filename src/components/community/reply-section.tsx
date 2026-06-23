@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Lock, MessageCircle, Reply, Trash2 } from "lucide-react";
+import { Lock, MessageCircle, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { initials, timeAgo } from "@/lib/format";
 import { addReply, deleteReply } from "@/app/cong-dong/actions";
@@ -71,35 +71,43 @@ function ReplyForm({
   };
 
   return (
-    <div className="flex flex-col gap-2">
-      <textarea
-        value={value}
-        autoFocus={autoFocus}
-        onChange={(e) => setValue(e.target.value)}
-        placeholder={placeholder ?? "Viết trả lời…"}
-        rows={parentId ? 2 : 3}
-        className="w-full resize-y rounded-xl border border-border/60 bg-background px-3.5 py-2.5 text-sm leading-relaxed outline-none transition-colors focus:border-primary/50 focus:ring-2 focus:ring-primary/15"
-      />
-      {error && <p className="text-xs text-destructive">{error}</p>}
-      <div className="flex items-center gap-2">
+    <div>
+      {/* Ô nhập bình luận dạng pill kiểu Facebook */}
+      <div className="flex items-end gap-1.5 rounded-2xl bg-muted px-3 py-1">
+        <textarea
+          value={value}
+          autoFocus={autoFocus}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              submit();
+            }
+          }}
+          placeholder={placeholder ?? "Viết bình luận…"}
+          rows={1}
+          className="max-h-32 flex-1 resize-none bg-transparent py-2 text-sm leading-relaxed outline-none placeholder:text-muted-foreground"
+        />
         <button
           type="button"
           onClick={submit}
           disabled={pending || !value.trim()}
-          className="inline-flex items-center rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+          aria-label="Gửi"
+          className="mb-1 grid size-8 shrink-0 place-items-center rounded-full text-primary transition-colors hover:bg-background disabled:opacity-40"
         >
-          {pending ? "Đang gửi…" : parentId ? "Trả lời" : "Gửi"}
+          <Send className="size-4" aria-hidden />
         </button>
-        {onDone && (
-          <button
-            type="button"
-            onClick={onDone}
-            className="text-sm text-muted-foreground hover:text-foreground"
-          >
-            Hủy
-          </button>
-        )}
       </div>
+      {error && <p className="mt-1 px-1 text-xs text-destructive">{error}</p>}
+      {onDone && (
+        <button
+          type="button"
+          onClick={onDone}
+          className="mt-1 px-1 text-xs text-muted-foreground hover:text-foreground"
+        >
+          Hủy
+        </button>
+      )}
     </div>
   );
 }
@@ -139,22 +147,23 @@ function ReplyItem({
   };
 
   return (
-    <div className="group/r flex gap-3">
+    <div className="group/r flex gap-2">
       <Avatar name={reply.author.name} size={isChild ? 8 : 9} />
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">
+        {/* Bong bóng bình luận kiểu Facebook */}
+        <div className="inline-block max-w-full rounded-2xl bg-muted px-3 py-2">
+          <span className="block text-[13px] font-semibold leading-tight">
             {reply.author.name ?? "Ẩn danh"}
           </span>
-          <span className="text-xs text-muted-foreground">
+          <p className="mt-0.5 whitespace-pre-wrap break-words text-sm leading-snug text-foreground/90">
+            {reply.content}
+          </p>
+        </div>
+
+        <div className="mt-1 flex items-center gap-3 pl-3 text-xs">
+          <span className="text-muted-foreground">
             {timeAgo(reply.createdAt)}
           </span>
-        </div>
-        <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground/90">
-          {reply.content}
-        </p>
-
-        <div className="mt-2 flex items-center gap-3">
           <ThreadLikeButton
             kind="reply"
             id={reply.id}
@@ -162,15 +171,14 @@ function ReplyItem({
             initialLiked={reply.likedByMe}
             initialCount={reply.likeCount}
             isAuthed={isAuthed}
-            size="sm"
+            variant="text"
           />
           {!isChild && isAuthed && !locked && (
             <button
               type="button"
               onClick={() => setReplying((v) => !v)}
-              className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-primary"
+              className="font-semibold text-muted-foreground transition-colors hover:text-foreground"
             >
-              <Reply className="size-3.5" aria-hidden />
               Trả lời
             </button>
           )}
@@ -179,9 +187,8 @@ function ReplyItem({
               type="button"
               onClick={onDelete}
               disabled={pending}
-              className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground opacity-0 transition-all hover:text-destructive focus-visible:opacity-100 disabled:opacity-50 group-hover/r:opacity-100 max-sm:opacity-100"
+              className="font-semibold text-muted-foreground opacity-0 transition-all hover:text-destructive focus-visible:opacity-100 disabled:opacity-50 group-hover/r:opacity-100 max-sm:opacity-100"
             >
-              <Trash2 className="size-3.5" aria-hidden />
               Xóa
             </button>
           )}

@@ -60,7 +60,7 @@ export function PostComposer({
 
   if (!isAuthed) {
     return (
-      <div className="rounded-2xl border border-border/60 bg-card p-4 text-sm text-muted-foreground shadow-sm shadow-black/5">
+      <div className="rounded-2xl border border-border/60 bg-card p-4 text-sm text-muted-foreground">
         <Link
           href="/login?callbackUrl=/cong-dong"
           className="font-medium text-primary hover:underline"
@@ -132,7 +132,7 @@ export function PostComposer({
       requestAnimationFrame(() => editorRef.current?.focus());
     };
     return (
-      <div className="rounded-2xl border border-border/60 bg-card p-3 shadow-sm shadow-black/5">
+      <div className="rounded-2xl border border-border/60 bg-card p-3">
         <div className="flex items-center gap-3">
           <span
             aria-hidden
@@ -175,7 +175,7 @@ export function PostComposer({
     "grid size-9 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground";
 
   return (
-    <div className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm shadow-black/5">
+    <div className="rounded-2xl border border-border/60 bg-card p-4">
       {/* Người đăng + loại */}
       <div className="flex items-center gap-3">
         <span

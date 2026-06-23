@@ -9,6 +9,7 @@ import { getFeed, getTrips } from "@/lib/community-feed";
 import { ablyEnabled, placeFeedChannel } from "@/lib/ably";
 import {
   getPlaceHeader,
+  getPlaceHero,
   getPlaceCounts,
   buildPlaceTabs,
   buildPlaceStats,
@@ -20,7 +21,6 @@ import { SiteFooter } from "@/components/site/site-footer";
 import { PeerBar } from "@/components/site/peer-bar";
 import { PlaceHero } from "@/components/site/place-hero";
 import { PlaceTabs } from "@/components/site/place-tabs";
-import { type HeroImage } from "@/components/site/place-hero-stack";
 import { PostComposer } from "@/components/community/post-composer";
 import { PostCard } from "@/components/community/post-card";
 import { CommunityFilter } from "@/components/community/community-filter";
@@ -47,9 +47,10 @@ export default async function PlaceCommunityPage({
   searchParams: Promise<{ type?: string; sort?: string }>;
 }) {
   const { placeSlug } = await params;
-  const place = await getPlaceHeader(placeSlug);
+  const heroData = await getPlaceHero(placeSlug);
   const staff = await isStaffViewer();
-  if (!place || (place.status !== "published" && !staff)) notFound();
+  if (!heroData || (heroData.place.status !== "published" && !staff)) notFound();
+  const place = heroData.place;
 
   const sp = await searchParams;
   const type = sp.type && isThreadType(sp.type) ? sp.type : "all";
@@ -97,15 +98,6 @@ export default async function PlaceCommunityPage({
     return `${base}${qs ? `?${qs}` : ""}`;
   };
 
-  const heroImages: HeroImage[] = place.images.map((i) => ({
-    url: i.url,
-    alt: i.alt,
-    caption: i.caption,
-  }));
-  if (heroImages.length === 0) {
-    heroImages.push({ url: coverUrl([], place.slug, 1600, 1000), alt: place.name });
-  }
-
   return (
     <div className="flex flex-1 flex-col">
       <SiteHeader />
@@ -118,29 +110,23 @@ export default async function PlaceCommunityPage({
       <main className="flex-1">
         <PlaceHero
           place={place}
-          heroImages={heroImages}
+          heroImages={heroData.heroImages}
           stats={stats}
+          videos={heroData.videos}
           back={{ href: `/diem-den/${place.slug}`, label: "Tổng quan" }}
         />
 
-        <PlaceTabs items={tabs} />
+        <PlaceTabs items={tabs} videos={heroData.videos} placeName={place.name} />
 
+        <div className="bg-muted/40">
         <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
-          <div className="flex items-center gap-3">
-            <span
-              aria-hidden
-              className="grid size-10 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary"
-            >
-              <MessagesSquare className="size-5" />
-            </span>
-            <div>
-              <h2 className="text-xl font-bold tracking-tight sm:text-2xl">
-                Thảo luận cộng đồng
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                Hỏi đáp, chia sẻ và rủ nhau đi {place.name}.
-              </p>
-            </div>
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">
+              Thảo luận cộng đồng
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Hỏi đáp, chia sẻ và rủ nhau đi {place.name}.
+            </p>
           </div>
 
           <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem] lg:gap-10">
@@ -208,6 +194,7 @@ export default async function PlaceCommunityPage({
               />
             </aside>
           </div>
+        </div>
         </div>
       </main>
 

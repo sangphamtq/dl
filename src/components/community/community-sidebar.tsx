@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ChevronRight, Heart, MessagesSquare, Sparkles, Users } from "lucide-react";
+import { ChevronRight, Heart, MessagesSquare, Users } from "lucide-react";
 import { initials, timeAgo } from "@/lib/format";
 
 export type SidebarTrip = {
@@ -32,7 +32,7 @@ export function CommunitySidebar({
     <div className="flex flex-col gap-6">
       {/* Giới thiệu cộng đồng (kèm ảnh điểm đến) */}
       {about && (
-        <div className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm shadow-black/5">
+        <div className="overflow-hidden rounded-2xl border border-border/60 bg-card">
           <div className="relative aspect-[16/9]">
             <Image
               src={about.cover}
@@ -55,7 +55,7 @@ export function CommunitySidebar({
 
       {/* Đang tìm bạn đồng hành */}
       {trips.length > 0 && (
-        <div className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm shadow-black/5">
+        <div className="rounded-2xl border border-border/60 bg-card p-4">
           <h2 className="flex items-center gap-2 text-sm font-semibold tracking-tight">
             <Users className="size-4 text-primary" aria-hidden />
             Đang tìm bạn đồng hành
@@ -87,7 +87,7 @@ export function CommunitySidebar({
       )}
 
       {/* Nội quy ngắn */}
-      <div className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm shadow-black/5">
+      <div className="rounded-2xl border border-border/60 bg-card p-4">
         <h2 className="flex items-center gap-2 text-sm font-semibold tracking-tight">
           <Heart className="size-4 text-primary" aria-hidden />
           Cộng đồng văn minh
@@ -100,19 +100,16 @@ export function CommunitySidebar({
       </div>
 
       {/* Liên kết */}
-      <div className="rounded-2xl bg-gradient-to-br from-primary/10 to-sky-50 p-4 dark:to-sky-950/20">
-        <p className="flex items-center gap-2 text-sm font-semibold tracking-tight">
-          <Sparkles className="size-4 text-primary" aria-hidden />
-          Khám phá thêm
-        </p>
-        <Link
-          href={bottomLink.href}
-          className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
-        >
-          {bottomLink.label}
-          <ChevronRight className="size-4" aria-hidden />
-        </Link>
-      </div>
+      <Link
+        href={bottomLink.href}
+        className="group flex items-center justify-between gap-2 rounded-2xl border border-border/60 bg-card px-4 py-3 text-sm font-medium transition-colors hover:border-primary/40 hover:text-primary"
+      >
+        {bottomLink.label}
+        <ChevronRight
+          className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary"
+          aria-hidden
+        />
+      </Link>
     </div>
   );
 }

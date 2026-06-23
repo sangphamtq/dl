@@ -444,7 +444,7 @@ export default async function PlaceListingPage({
               <p className="text-muted-foreground">Chưa có thông tin di chuyển.</p>
             ) : (
               <section>
-                <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+                <h2 className="text-2xl font-bold tracking-tight">
                   Đi lại thế nào?
                 </h2>
                 <p className="mt-2 max-w-prose leading-relaxed text-muted-foreground">
