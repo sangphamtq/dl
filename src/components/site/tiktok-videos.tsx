@@ -215,38 +215,28 @@ export function PlaceVideoTabButton({
         }}
         aria-label="Xem video điểm đến"
         className={cn(
-          "group inline-flex shrink-0 items-center gap-2 rounded-full border border-border/60 bg-card/70 py-1 pl-1 pr-3 shadow-sm shadow-black/5 backdrop-blur transition-all hover:-translate-y-px hover:border-primary/40 hover:shadow-md",
+          "inline-flex shrink-0 items-center gap-2 py-3.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground",
           className,
         )}
       >
-        {/* Avatar thumbnail + viền gradient brand TikTok + huy hiệu góc */}
-        <span className="relative size-8 shrink-0 transition-transform group-hover:scale-105">
-          <span className="grid size-8 place-items-center rounded-full bg-gradient-to-tr from-[#25F4EE] to-[#FE2C55] p-[2px]">
-          <span className="relative grid size-full place-items-center overflow-hidden rounded-full bg-muted ring-1 ring-background">
-            {first.thumbnail && (
-              <Image
-                src={first.thumbnail}
-                alt=""
-                fill
-                sizes="32px"
-                unoptimized
-                className="object-cover"
-              />
-            )}
-            <span className="absolute inset-0 grid place-items-center bg-black/25">
-              <Play className="size-3 fill-white text-white" aria-hidden />
-            </span>
-          </span>
-          </span>
-          <span className="absolute -bottom-0.5 -right-0.5 grid size-4 place-items-center rounded-full bg-background text-foreground shadow-sm ring-1 ring-border/60">
-            <TikTokGlyph className="size-2.5" />
+        <span className="relative -my-1 size-7 shrink-0 overflow-hidden rounded-full bg-muted">
+          {first.thumbnail && (
+            <Image
+              src={first.thumbnail}
+              alt=""
+              fill
+              sizes="28px"
+              unoptimized
+              className="object-cover"
+            />
+          )}
+          <span className="absolute inset-0 grid place-items-center bg-black/30">
+            <Play className="size-3 fill-white text-white" aria-hidden />
           </span>
         </span>
-        <span className="text-sm font-medium text-foreground">Video</span>
+        Video
         {videos.length > 1 && (
-          <span className="grid h-5 min-w-[1.25rem] place-items-center rounded-full bg-primary/10 px-1 text-[11px] font-semibold tabular-nums text-primary">
-            {videos.length}
-          </span>
+          <span className="tabular-nums text-muted-foreground">{videos.length}</span>
         )}
       </button>
 

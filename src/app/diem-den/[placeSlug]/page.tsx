@@ -250,19 +250,6 @@ export default async function PlaceDetailPage({
     thumbnail: thumbById.get(v.id) ?? null,
   }));
 
-  // Đánh số section theo thứ tự xuất hiện (mục nào có dữ liệu mới được tính).
-  const sectionNum: Record<string, string> = {};
-  let nseq = 0;
-  const numFor = (present: boolean, key: string) => {
-    if (present) sectionNum[key] = String(++nseq).padStart(2, "0");
-  };
-  numFor(showChildren, "children");
-  numFor(place.spots.length > 0, "spots");
-  numFor(place.activities.length > 0, "activities");
-  numFor(place.specialties.length > 0, "specialties");
-  numFor(place.accommodations.length > 0, "accommodations");
-
-
   return (
     <div className="flex flex-1 flex-col">
       <PlaceViewTracker placeId={place.id} />
@@ -280,15 +267,15 @@ export default async function PlaceDetailPage({
         {/* Thanh tab: Tổng quan + xem tất cả từng listing + nút Video */}
         <PlaceTabs items={tabs} videos={videos} placeName={place.name} />
 
-        <div className="mx-auto max-w-7xl divide-y divide-border/60 px-4 py-14 sm:px-6 sm:py-20">
+        <div className="mx-auto max-w-7xl space-y-16 px-4 py-14 sm:space-y-20 sm:px-6 sm:py-20">
           {/* Đôi nét */}
           {place.description && (
-            <section id="doi-net" className="scroll-mt-32 py-10 first:pt-0 last:pb-0">
-              <p className="text-xs font-semibold uppercase tracking-widest text-primary">
-                Giới thiệu
-              </p>
-              <div className="mt-5 grid gap-8 lg:grid-cols-[1fr_16rem] lg:gap-14">
-                <div className="max-w-prose">
+            <section id="doi-net" className="scroll-mt-32">
+              <h2 className="text-2xl font-bold tracking-tight">
+                Đôi nét về {place.name}
+              </h2>
+              <div className="mt-5 grid gap-8 lg:grid-cols-[1fr_16rem] lg:items-start lg:gap-10">
+                <div>
                   <p className="whitespace-pre-line leading-8 text-foreground/90">
                     {place.description}
                   </p>
@@ -307,7 +294,7 @@ export default async function PlaceDetailPage({
                   {introPost && (
                     <Link
                       href={`/blog/${introPost.slug}`}
-                      className="group mt-6 inline-flex items-center gap-3 rounded-xl border border-border/60 bg-card p-2 pr-4 text-sm shadow-sm shadow-black/5 transition-all hover:border-primary/40 hover:shadow-md"
+                      className="group mt-6 inline-flex items-center gap-3 rounded-xl border border-border/60 bg-card p-2 pr-4 text-sm transition-colors hover:border-primary/40 hover:bg-muted/40"
                     >
                       <span className="relative size-11 shrink-0 overflow-hidden rounded-lg bg-muted">
                         <Image
@@ -340,12 +327,8 @@ export default async function PlaceDetailPage({
 
           {/* Điểm đến con (chỉ tỉnh) — lưới (là Place, cấp khác) */}
           {showChildren && (
-            <section id="diem-den-con" className="scroll-mt-32 py-10 first:pt-0 last:pb-0">
-              <SectionHeading
-                num={sectionNum.children}
-                eyebrow="Điểm đến"
-                title={`Điểm đến tại ${place.name}`}
-              />
+            <section id="diem-den-con" className="scroll-mt-32">
+              <SectionHeading title={`Điểm đến tại ${place.name}`} />
               <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
                 {place.children.map((c) => (
                   <PlaceCard key={c.slug} place={c} />
@@ -356,12 +339,9 @@ export default async function PlaceDetailPage({
 
           {/* Tham quan (Spot) — rail */}
           {place.spots.length > 0 && (
-            <section id="tham-quan" className="scroll-mt-32 py-10 first:pt-0 last:pb-0">
+            <section id="tham-quan" className="scroll-mt-32">
               <SectionHeading
-                num={sectionNum.spots}
-                eyebrow="Địa điểm"
                 title="Địa điểm đáng ghé"
-                description="Hang động kỳ ảo, đảo đá vịnh ngọc, di tích lịch sử — mảnh ghép của bạn."
                 href={`/diem-den/${place.slug}/dia-diem`}
                 count={counts.spot}
               />
@@ -384,12 +364,9 @@ export default async function PlaceDetailPage({
 
           {/* Trải nghiệm — rail cuộn ngang */}
           {place.activities.length > 0 && (
-            <section id="trai-nghiem" className="scroll-mt-32 py-10 first:pt-0 last:pb-0">
+            <section id="trai-nghiem" className="scroll-mt-32">
               <SectionHeading
-                num={sectionNum.activities}
-                eyebrow="Trải nghiệm"
-                title="Trải nghiệm không thể bỏ lỡ"
-                description="Từ mạo hiểm gây cấn đến thư giãn nhẹ nhàng — chọn trải nghiệm hợp gu bạn."
+                title="Trải nghiệm nổi bật"
                 href={`/diem-den/${place.slug}/hoat-dong`}
                 count={counts.activity}
               />
@@ -414,12 +391,9 @@ export default async function PlaceDetailPage({
 
           {/* Ẩm thực (đặc sản) — rail card nhỏ */}
           {place.specialties.length > 0 && (
-            <section id="am-thuc" className="scroll-mt-32 py-10 first:pt-0 last:pb-0">
+            <section id="am-thuc" className="scroll-mt-32">
               <SectionHeading
-                num={sectionNum.specialties}
-                eyebrow="Ẩm thực"
-                title="Đặc sản nên thử"
-                description="Hương vị bản địa khó quên — gợi ý món & nơi thưởng thức."
+                title="Đặc sản địa phương"
                 href={`/diem-den/${place.slug}/am-thuc`}
                 count={counts.specialty + counts.eatery}
               />
@@ -439,12 +413,9 @@ export default async function PlaceDetailPage({
 
           {/* Lưu trú — rail */}
           {place.accommodations.length > 0 && (
-            <section id="luu-tru" className="scroll-mt-32 py-10 first:pt-0 last:pb-0">
+            <section id="luu-tru" className="scroll-mt-32">
               <SectionHeading
-                num={sectionNum.accommodations}
-                eyebrow="Lưu trú"
-                title="Chỗ nghỉ gợi ý"
-                description="Resort sang trọng hay homestay ấm cúng — chọn nơi dừng chân hợp túi tiền."
+                title="Nơi lưu trú"
                 href={`/diem-den/${place.slug}/luu-tru`}
                 count={counts.accommodation}
               />
@@ -463,7 +434,6 @@ export default async function PlaceDetailPage({
               </Rail>
             </section>
           )}
-
 
           {!hasAnyContent && (
             <div className="rounded-2xl border border-dashed border-border/70 px-6 py-16 text-center">
@@ -506,73 +476,51 @@ function QuickInfo() {
   ];
 
   return (
-    <aside className="lg:sticky lg:top-32 lg:self-start">
-      <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-        Trước khi đi
-      </p>
-      <dl className="mt-3 divide-y divide-border/60 border-y border-border/60">
+    <div className="rounded-2xl border border-border/60 bg-muted/30 p-5">
+      <p className="text-sm font-semibold">Trước khi đi</p>
+      <dl className="mt-2 divide-y divide-border/60">
         {facts.map((f) => (
           <div
             key={f.label}
-            className="flex items-baseline justify-between gap-4 py-3"
+            className="flex items-baseline justify-between gap-4 py-2.5"
           >
             <dt className="text-sm text-muted-foreground">{f.label}</dt>
-            <dd className="text-right text-sm font-semibold tracking-tight">
-              {f.value}
-            </dd>
+            <dd className="text-right text-sm font-medium">{f.value}</dd>
           </div>
         ))}
       </dl>
-    </aside>
+    </div>
   );
 }
 
 /* ── Tiêu đề section ────────────────────────────────────────────── */
 function SectionHeading({
-  num,
-  eyebrow,
   title,
-  description,
   href,
   count,
 }: {
-  num: string;
-  eyebrow: string;
   title: string;
-  description?: string;
   href?: string;
   count?: number;
 }) {
   return (
-    <>
-      <div className="flex items-end justify-between gap-4">
-        <div>
-          <p className="flex items-center gap-2.5 text-xs font-semibold uppercase tracking-wide text-primary">
-            <span className="grid size-6 place-items-center rounded-full bg-primary/10 text-[10px] tabular-nums">
-              {num}
-            </span>
-            {eyebrow}
-          </p>
-          <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
-            {title}
-          </h2>
-        </div>
-        {href && (
-          <Link
-            href={href}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-primary/10 px-3.5 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-primary/15"
-          >
-            Xem tất cả
-            {count != null && (
-              <span className="tabular-nums text-primary/70">({count})</span>
-            )}
-            <ChevronRight className="size-4" aria-hidden />
-          </Link>
-        )}
-      </div>
-      {description && (
-        <p className="mt-2 max-w-2xl text-muted-foreground">{description}</p>
+    <div className="flex items-end justify-between gap-6">
+      <h2 className="text-2xl font-bold tracking-tight">{title}</h2>
+      {href && (
+        <Link
+          href={href}
+          className="group inline-flex shrink-0 items-center gap-1 pb-1 text-sm font-medium text-primary transition-colors hover:text-primary/80"
+        >
+          Xem tất cả
+          {count != null && (
+            <span className="tabular-nums text-muted-foreground">{count}</span>
+          )}
+          <ChevronRight
+            className="size-4 transition-transform group-hover:translate-x-0.5"
+            aria-hidden
+          />
+        </Link>
       )}
-    </>
+    </div>
   );
 }

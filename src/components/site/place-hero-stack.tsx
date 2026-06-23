@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useHeroAmbient } from "@/components/site/hero-frame";
 import {
   Carousel,
   CarouselContent,
@@ -45,6 +46,12 @@ export function PlaceHeroStack({
 
   const next = useCallback(() => setIndex((i) => (i + 1) % n), [n]);
   const prev = useCallback(() => setIndex((i) => (i - 1 + n) % n), [n]);
+
+  // Báo ảnh đang xem lên khung hero → nền ambient crossfade theo.
+  const setAmbient = useHeroAmbient();
+  useEffect(() => {
+    setAmbient?.(index);
+  }, [index, setAmbient]);
 
   // Tôn trọng prefers-reduced-motion: tắt autoplay.
   useEffect(() => {
@@ -108,16 +115,16 @@ export function PlaceHeroStack({
 
   const active = images[index];
 
-  // Depth tương đối: 0 = active, 1/2 = phía sau, ≥3 ẩn.
+  // Một khung ảnh phẳng, ảnh sau crossfade vào (không xếp nghiêng/đổ bóng dày).
   const depthStyles = [
-    { transform: "translate(0px,0px) rotate(0deg) scale(1)", opacity: 1 },
-    { transform: "translate(10px,14px) rotate(1deg) scale(0.97)", opacity: 0.85 },
-    { transform: "translate(20px,26px) rotate(2deg) scale(0.94)", opacity: 0.55 },
+    { transform: "scale(1)", opacity: 1 },
+    { transform: "scale(1)", opacity: 0 },
+    { transform: "scale(1)", opacity: 0 },
   ];
   const depthShadow = [
-    "0 30px 60px -20px rgba(15,23,42,.32), 0 12px 24px -12px rgba(15,23,42,.3)",
-    "0 18px 36px -18px rgba(15,23,42,.25)",
-    "0 10px 24px -16px rgba(15,23,42,.18)",
+    "0 14px 40px -28px rgba(15,23,42,.35)",
+    "none",
+    "none",
   ];
 
   return (
@@ -134,10 +141,8 @@ export function PlaceHeroStack({
                 key={i}
                 aria-hidden={!isActive}
                 className={cn(
-                  "absolute inset-0 overflow-hidden rounded-2xl select-none",
+                  "absolute inset-0 overflow-hidden rounded-xl select-none",
                   isActive && "ring-1 ring-black/5",
-                  // Mobile chỉ hiện thẻ active; desktop mới thấy chiều sâu.
-                  depth >= 1 && "hidden sm:block",
                 )}
                 style={{
                   transform: ds.transform,
@@ -225,13 +230,8 @@ export function PlaceHeroStack({
                           href={img.href}
                           className="group/badge absolute bottom-4 left-3 z-30 flex max-w-[75%] items-center gap-3 sm:bottom-5 sm:left-5"
                         >
-                          <span className="min-w-0">
-                            <span className="block text-[11px] font-medium uppercase tracking-[0.2em] text-white/70">
-                              Địa điểm
-                            </span>
-                            <span className="mt-0.5 block truncate text-base font-semibold text-white drop-shadow sm:text-lg">
-                              {img.caption}
-                            </span>
+                          <span className="min-w-0 truncate text-base font-semibold text-white drop-shadow sm:text-lg">
+                            {img.caption}
                           </span>
                           <span className="grid size-9 shrink-0 place-items-center rounded-full border border-white/30 bg-white/15 text-white opacity-100 backdrop-blur-md transition-all group-hover/badge:translate-x-0.5 group-hover/badge:bg-white/25 sm:opacity-0 sm:group-hover/heroframe:opacity-100">
                             <ArrowUpRight className="size-4" aria-hidden />

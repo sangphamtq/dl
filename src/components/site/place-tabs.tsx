@@ -3,7 +3,7 @@
 import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { LayoutGrid, MapPinned, MessagesSquare } from "lucide-react";
+import { MapPinned, MessagesSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { PlaceTab } from "@/lib/place-meta";
 import {
@@ -81,7 +81,7 @@ export function PlaceTabs({
     <>
     <div ref={sentinelRef} aria-hidden className="h-0" />
     <div className="sticky top-16 z-40 border-b border-border/60 bg-background/80 backdrop-blur-lg">
-      <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 sm:px-6">
+      <div className="mx-auto flex h-12 max-w-7xl items-center gap-3 px-4 sm:px-6">
         <nav className="flex min-w-0 items-center gap-1 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {navItems.map((it) => {
             const active = pathname === it.href;
@@ -93,21 +93,14 @@ export function PlaceTabs({
                   tabRefs.current[it.href] = el;
                 }}
                 aria-current={active ? "page" : undefined}
-                aria-label={it.icon ? it.label : undefined}
-                title={it.icon ? it.label : undefined}
                 className={cn(
-                  "shrink-0 whitespace-nowrap py-3.5 text-sm font-medium transition-colors",
-                  it.icon ? "px-3" : "px-3.5",
+                  "relative shrink-0 whitespace-nowrap px-3 py-3.5 text-sm font-medium transition-colors",
                   active
-                    ? "text-primary"
+                    ? "text-foreground after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:rounded-full after:bg-primary"
                     : "text-muted-foreground hover:text-foreground",
                 )}
               >
-                {it.icon === "overview" ? (
-                  <LayoutGrid className="size-4" aria-hidden />
-                ) : (
-                  <TabLabel label={it.label} />
-                )}
+                <TabLabel label={it.label} />
               </Link>
             );
           })}
@@ -132,18 +125,14 @@ export function PlaceTabs({
               }}
               aria-current={pathname === communityTab.href ? "page" : undefined}
               className={cn(
-                "group inline-flex shrink-0 items-center gap-2 rounded-full border bg-card/70 py-1 pl-1 pr-3 shadow-sm shadow-black/5 backdrop-blur transition-all hover:-translate-y-px hover:shadow-md",
+                "inline-flex shrink-0 items-center gap-1.5 py-3.5 text-sm font-medium transition-colors",
                 pathname === communityTab.href
-                  ? "border-primary/50"
-                  : "border-border/60 hover:border-primary/40",
+                  ? "text-primary"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
-              <span className="grid size-8 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground transition-transform group-hover:scale-105">
-                <MessagesSquare className="size-4" aria-hidden />
-              </span>
-              <span className="text-sm font-medium text-foreground">
-                {communityTab.label}
-              </span>
+              <MessagesSquare className="size-4" aria-hidden />
+              {communityTab.label}
             </Link>
           )}
           {mapTab && (
@@ -154,16 +143,14 @@ export function PlaceTabs({
               }}
               aria-current={pathname === mapTab.href ? "page" : undefined}
               className={cn(
-                "group inline-flex shrink-0 items-center gap-2 rounded-full border bg-card/70 py-1 pl-1 pr-3 shadow-sm shadow-black/5 backdrop-blur transition-all hover:-translate-y-px hover:shadow-md",
+                "inline-flex shrink-0 items-center gap-1.5 py-3.5 text-sm font-medium transition-colors",
                 pathname === mapTab.href
-                  ? "border-primary/50"
-                  : "border-border/60 hover:border-primary/40",
+                  ? "text-primary"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
-              <span className="grid size-8 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground transition-transform group-hover:scale-105">
-                <MapPinned className="size-4" aria-hidden />
-              </span>
-              <span className="text-sm font-medium text-foreground">{mapTab.label}</span>
+              <MapPinned className="size-4" aria-hidden />
+              {mapTab.label}
             </Link>
           )}
         </div>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ChevronLeft, MapPin, Star } from "lucide-react";
+import { HeroFrame } from "@/components/site/hero-frame";
 import { PlaceHeroStack, type HeroImage } from "@/components/site/place-hero-stack";
 import { PlaceVideos, type PlaceVideo } from "@/components/site/tiktok-videos";
 import { ShareButton } from "@/components/site/share-button";
@@ -31,32 +32,8 @@ export function PlaceHero({
   back?: { href: string; label: string };
 }) {
   return (
-    <section className="relative bg-gradient-to-b from-primary/[0.07] via-accent/50 to-background">
-      {/* Lớp họa tiết nền — clip riêng để không tràn, KHÔNG cắt shadow của ảnh */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
-      >
-        {/* Lưới chấm mờ dần từ trên xuống */}
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage:
-              "radial-gradient(var(--border) 1.2px, transparent 1.2px)",
-            backgroundSize: "22px 22px",
-            maskImage:
-              "radial-gradient(ellipse 80% 60% at 50% 0%, #000 30%, transparent 100%)",
-            WebkitMaskImage:
-              "radial-gradient(ellipse 80% 60% at 50% 0%, #000 30%, transparent 100%)",
-          }}
-        />
-        {/* Vầng sáng primary — trên phải */}
-        <div className="absolute -right-32 -top-28 size-[34rem] rounded-full bg-primary/10 blur-3xl" />
-        {/* Vầng sáng cam — trái dưới */}
-        <div className="absolute -left-28 top-24 size-[26rem] rounded-full bg-warm/[0.08] blur-3xl" />
-      </div>
-
-      <div className="mx-auto max-w-7xl px-4 pb-12 pt-10 sm:px-6 sm:pb-6 sm:pt-6">
+    <HeroFrame images={heroImages.map((i) => i.url)}>
+      <div className="mx-auto max-w-7xl px-4 pb-12 pt-8 sm:px-6 sm:pb-8 sm:pt-6">
         <div className="grid items-center gap-10 lg:grid-cols-[1fr_1.4fr] lg:gap-12">
           {/* Trái: chữ */}
           <div>
@@ -99,26 +76,11 @@ export function PlaceHero({
               </div>
             )}
 
-            <h1 className="mt-4 text-balance text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
+            <h1 className="mt-4 text-balance text-4xl font-bold leading-[1.08] tracking-tight sm:text-5xl">
               {place.name}
             </h1>
-            {/* Gạch nguệch ngoạc trang trí dưới tên */}
-            <svg
-              aria-hidden
-              viewBox="0 0 200 14"
-              preserveAspectRatio="none"
-              fill="none"
-              className="mt-3 h-2.5 w-36 text-warm/70"
-            >
-              <path
-                d="M3 9 C 34 2 56 2 84 8 S 150 13 197 5"
-                stroke="currentColor"
-                strokeWidth="3.5"
-                strokeLinecap="round"
-              />
-            </svg>
             {place.tagline && (
-              <p className="mt-5 max-w-lg text-lg leading-relaxed text-muted-foreground">
+              <p className="mt-4 max-w-lg text-lg leading-relaxed text-muted-foreground">
                 {place.tagline}
               </p>
             )}
@@ -128,7 +90,7 @@ export function PlaceHero({
               <dl className="mt-8 flex flex-wrap items-center gap-x-7 gap-y-3 text-sm">
                 {stats.map((s) => (
                   <div key={s.label} className="flex items-center gap-2">
-                    <s.icon className="size-4 shrink-0 text-primary" aria-hidden />
+                    <s.icon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
                     <dd className="font-semibold tabular-nums">
                       {s.value.toLocaleString("vi-VN")}
                     </dd>
@@ -154,6 +116,6 @@ export function PlaceHero({
           </div>
         </div>
       </div>
-    </section>
+    </HeroFrame>
   );
 }

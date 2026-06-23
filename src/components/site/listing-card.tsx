@@ -14,6 +14,8 @@ type ListingCardProps = {
   price?: string | null;
   // featured = card lớn, chữ phủ lên ảnh (dùng làm điểm nhấn đầu mục).
   featured?: boolean;
+  // framed = cả card trong khung viền bo góc, chữ có padding bên trong.
+  framed?: boolean;
   className?: string;
 };
 
@@ -30,6 +32,7 @@ export function ListingCard({
   meta = [],
   price,
   featured = false,
+  framed = false,
   className,
 }: ListingCardProps) {
   const hasFooter = meta.length > 0 || !!price;
@@ -39,7 +42,7 @@ export function ListingCard({
       <Link
         href={href}
         className={cn(
-          "group relative block overflow-hidden rounded-2xl shadow-sm shadow-black/5 transition-shadow hover:shadow-md",
+          "group relative block overflow-hidden rounded-xl",
           className,
         )}
       >
@@ -88,8 +91,21 @@ export function ListingCard({
   }
 
   return (
-    <Link href={href} className={cn("group block", className)}>
-      <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-muted shadow-sm shadow-black/5 transition-shadow group-hover:shadow-md">
+    <Link
+      href={href}
+      className={cn(
+        "group block",
+        framed &&
+          "overflow-hidden rounded-xl border border-border/60 bg-card transition-colors hover:border-border",
+        className,
+      )}
+    >
+      <div
+        className={cn(
+          "relative aspect-[4/3] overflow-hidden bg-muted",
+          !framed && "rounded-xl",
+        )}
+      >
         <Image
           src={coverUrl(images, slug)}
           alt={name}
@@ -103,27 +119,36 @@ export function ListingCard({
           </span>
         )}
       </div>
-      <h3 className="mt-3 font-semibold tracking-tight line-clamp-1">{name}</h3>
-      {subtitle && (
-        <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
-          {subtitle}
-        </p>
-      )}
-      {hasFooter && (
-        <div className="mt-2 flex flex-wrap items-center gap-1.5">
-          {meta.map((m, i) => (
-            <span
-              key={i}
-              className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
-            >
-              {m}
-            </span>
-          ))}
-          {price && (
-            <span className="text-sm font-semibold text-primary">{price}</span>
+      <div className={cn(framed && "p-3")}>
+        <h3
+          className={cn(
+            "font-semibold tracking-tight line-clamp-1",
+            !framed && "mt-3",
           )}
-        </div>
-      )}
+        >
+          {name}
+        </h3>
+        {subtitle && (
+          <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+            {subtitle}
+          </p>
+        )}
+        {hasFooter && (
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            {meta.map((m, i) => (
+              <span
+                key={i}
+                className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
+              >
+                {m}
+              </span>
+            ))}
+            {price && (
+              <span className="text-sm font-semibold text-primary">{price}</span>
+            )}
+          </div>
+        )}
+      </div>
     </Link>
   );
 }
