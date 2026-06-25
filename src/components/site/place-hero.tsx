@@ -33,7 +33,7 @@ export function PlaceHero({
 }) {
   return (
     <HeroFrame images={heroImages.map((i) => i.url)}>
-      <div className="mx-auto max-w-7xl px-4 pb-12 pt-8 sm:px-6 sm:pb-8 sm:pt-6">
+      <div className="mx-auto max-w-7xl px-4 pb-10 pt-6 sm:px-6 sm:pb-6 sm:pt-5">
         <div className="grid items-center gap-10 lg:grid-cols-[1fr_1.4fr] lg:gap-12">
           {/* Trái: chữ */}
           <div>

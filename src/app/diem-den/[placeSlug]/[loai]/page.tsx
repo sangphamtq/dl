@@ -63,6 +63,7 @@ type ListingItem = {
   facts: Fact[]; // fact có icon (vị trí, giá vé, mùa) — chủ yếu cho Địa điểm
   activities: LinkRef[]; // hoạt động ở địa điểm này (chỉ spot)
   images: { url: string; isCover: boolean }[];
+  isFeatured: boolean; // mục nổi bật → dùng làm card "lead" đầu danh sách
 };
 
 type ListingModel = (typeof LOAI)[Loai]["model"];
@@ -74,6 +75,7 @@ type RawListing = {
   description: string | null;
   tags: string[];
   images: { url: string; isCover: boolean }[];
+  isFeatured?: boolean;
   category?: string | null;
   bestTime?: string | null;
   ticketInfo?: string | null;
@@ -191,6 +193,7 @@ async function fetchListing(
       name: true,
       description: true,
       tags: true,
+      isFeatured: true,
       images: {
         where: { isCover: true },
         take: 1,
@@ -209,6 +212,7 @@ async function fetchListing(
     meta: buildMeta(model, r),
     facts: buildFacts(model, r),
     activities: r.activityLinks?.map((l) => l.activity) ?? [],
+    isFeatured: r.isFeatured ?? false,
   }));
 }
 

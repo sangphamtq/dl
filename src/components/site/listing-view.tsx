@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { coverUrl } from "@/lib/place-image";
 import { cn } from "@/lib/utils";
+import { ListingCard } from "@/components/site/listing-card";
 
 type Fact = { kind: "location" | "price" | "time"; text: string };
 type Item = {
@@ -27,6 +28,7 @@ type Item = {
   facts: Fact[];
   activities: { slug: string; name: string }[];
   images: { url: string; isCover: boolean }[];
+  isFeatured: boolean;
 };
 type Group = { title: string; prefix: string; items: Item[] };
 
@@ -111,6 +113,9 @@ export function ListingView({
         const items =
           filter === "all" ? g.items : g.items.filter((it) => it.tag === filter);
         if (filter !== "all" && items.length === 0) return null;
+        // List: nếu mục đầu nổi bật → tách làm card "lead" lớn, còn lại là rows.
+        const lead = view === "list" && items[0]?.isFeatured ? items[0] : null;
+        const rows = lead ? items.slice(1) : items;
         return (
         <section key={g.prefix}>
           <div className="flex items-end justify-between gap-4">
@@ -131,62 +136,78 @@ export function ListingView({
               ))}
             </div>
           ) : (
-            <ul className="mt-7 border-t border-border/60">
-              {items.map((it) => (
-                <li key={it.slug} className="border-b border-border/60">
-                  <Link
-                    href={`/${g.prefix}/${it.slug}`}
-                    className="group flex items-center gap-4 py-4 sm:gap-6"
-                  >
-                    <div className="relative aspect-[4/3] w-36 shrink-0 overflow-hidden rounded-xl bg-muted sm:w-56">
-                      <Image
-                        src={coverUrl(it.images, it.slug, 480, 360)}
-                        alt={it.name}
-                        fill
-                        sizes="(min-width: 640px) 224px, 144px"
-                        className="object-cover transition-transform duration-300 group-hover:scale-[1.04]"
-                      />
-                      {it.tag && (
-                        <span className="absolute left-2 top-2 rounded-full bg-background/90 px-2.5 py-1 text-xs font-medium shadow-sm backdrop-blur">
-                          {it.tag}
-                        </span>
-                      )}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="font-semibold tracking-tight transition-colors group-hover:text-primary sm:text-lg">
-                        {it.name}
-                      </h3>
-                      {it.description && (
-                        <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
-                          {it.description}
-                        </p>
-                      )}
-
-                      <FactsRow facts={it.facts} stacked />
-                      <CardMeta meta={it.meta} tags={it.tags} />
-                      {it.activities.length > 0 && (
-                        <p className="mt-2.5 flex items-start gap-1.5 text-sm leading-relaxed text-muted-foreground">
-                          <Compass
-                            className="mt-0.5 size-4 shrink-0 text-primary"
-                            aria-hidden
+            <div className="mt-7 space-y-7">
+              {lead && (
+                <ListingCard
+                  featured
+                  href={`/${g.prefix}/${lead.slug}`}
+                  name={lead.name}
+                  slug={lead.slug}
+                  images={lead.images}
+                  subtitle={lead.description}
+                  tag={lead.tag}
+                  meta={lead.meta}
+                />
+              )}
+              {rows.length > 0 && (
+                <ul className="border-t border-border/60">
+                  {rows.map((it) => (
+                    <li key={it.slug} className="border-b border-border/60">
+                      <Link
+                        href={`/${g.prefix}/${it.slug}`}
+                        className="group flex items-center gap-4 py-4 sm:gap-6"
+                      >
+                        <div className="relative aspect-[4/3] w-36 shrink-0 overflow-hidden rounded-xl bg-muted sm:w-56">
+                          <Image
+                            src={coverUrl(it.images, it.slug, 480, 360)}
+                            alt={it.name}
+                            fill
+                            sizes="(min-width: 640px) 224px, 144px"
+                            className="object-cover transition-transform duration-300 group-hover:scale-[1.04]"
                           />
-                          <span>
-                            <span className="font-medium text-foreground/80">
-                              Trải nghiệm:{" "}
+                          {it.tag && (
+                            <span className="absolute left-2 top-2 rounded-full bg-background/90 px-2.5 py-1 text-xs font-medium shadow-sm backdrop-blur">
+                              {it.tag}
                             </span>
-                            {it.activities.map((a) => a.name).join(", ")}
-                          </span>
-                        </p>
-                      )}
-                    </div>
-                    <ChevronRight
-                      className="hidden size-5 shrink-0 text-muted-foreground/40 transition-all group-hover:translate-x-0.5 group-hover:text-primary sm:block"
-                      aria-hidden
-                    />
-                  </Link>
-                </li>
-              ))}
-            </ul>
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-semibold tracking-tight transition-colors group-hover:text-primary sm:text-lg">
+                            {it.name}
+                          </h3>
+                          {it.description && (
+                            <p className="mt-1 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
+                              {it.description}
+                            </p>
+                          )}
+
+                          <FactsRow facts={it.facts} stacked />
+                          <CardMeta meta={it.meta} tags={it.tags} />
+                          {it.activities.length > 0 && (
+                            <p className="mt-2.5 flex items-start gap-1.5 text-sm leading-relaxed text-muted-foreground">
+                              <Compass
+                                className="mt-0.5 size-4 shrink-0 text-primary"
+                                aria-hidden
+                              />
+                              <span>
+                                <span className="font-medium text-foreground/80">
+                                  Trải nghiệm:{" "}
+                                </span>
+                                {it.activities.map((a) => a.name).join(", ")}
+                              </span>
+                            </p>
+                          )}
+                        </div>
+                        <ChevronRight
+                          className="hidden size-5 shrink-0 text-muted-foreground/40 transition-all group-hover:translate-x-0.5 group-hover:text-primary sm:block"
+                          aria-hidden
+                        />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           )}
         </section>
         );
