@@ -1,4 +1,4 @@
-import { Eye, MapPin, Compass, type LucideIcon } from "lucide-react";
+import { Eye, Footprints, type LucideIcon } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { coverUrl } from "@/lib/place-image";
 import { getTikTokInfo } from "@/lib/tiktok";
@@ -201,15 +201,14 @@ export type PlaceStat = { icon: LucideIcon; value: number; label: string };
 
 export function buildPlaceStats(
   viewCount: number,
-  counts: PlaceCounts,
+  checkInCount = 0,
 ): PlaceStat[] {
   return [
     { icon: Eye, value: viewCount, label: "lượt xem" },
-    counts.activity > 0 && {
-      icon: Compass,
-      value: counts.activity,
-      label: "trải nghiệm",
+    checkInCount > 0 && {
+      icon: Footprints,
+      value: checkInCount,
+      label: "người đã đến",
     },
-    counts.spot > 0 && { icon: MapPin, value: counts.spot, label: "điểm tham quan" },
   ].filter(Boolean) as PlaceStat[];
 }

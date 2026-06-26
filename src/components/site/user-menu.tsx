@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-import { LayoutDashboard, LogOut, Home } from "lucide-react";
+import { LayoutDashboard, LogOut, Home, MapPinCheck } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -65,6 +65,12 @@ export function UserMenu({ user }: Props) {
             <Link href="/">
               <Home className="size-4" aria-hidden />
               Trang chủ
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/tai-khoan/da-den">
+              <MapPinCheck className="size-4" aria-hidden />
+              Đã đến
             </Link>
           </DropdownMenuItem>
           {isStaff && (

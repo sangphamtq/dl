@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { ChevronRight, Compass } from "lucide-react";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { coverUrl } from "@/lib/place-image";
 import {
@@ -167,8 +168,22 @@ export default async function PlaceDetailPage({
   const staff = await isStaffViewer();
   if (!place || (place.status !== "published" && !staff)) notFound();
 
+  // Trạng thái check-in "đã đến" của user hiện tại + tổng số người đã đến.
+  const session = await auth();
+  const userId = session?.user?.id;
+  const [checkInRow, checkInCount] = await Promise.all([
+    userId
+      ? prisma.checkIn.findUnique({
+          where: { userId_placeId: { userId, placeId: place.id } },
+          select: { id: true },
+        })
+      : Promise.resolve(null),
+    prisma.checkIn.count({ where: { placeId: place.id } }),
+  ]);
+  const checkIn = { checked: !!checkInRow, isAuthed: !!userId };
+
   const counts = await getPlaceCounts(place.id);
-  const stats = buildPlaceStats(place.viewCount, counts);
+  const stats = buildPlaceStats(place.viewCount, checkInCount);
   const tabs = buildPlaceTabs(place.slug, counts);
 
   // Thanh chuyển nhanh: mọi điểm đến lớn gom theo miền (làm nổi cái đang xem).
@@ -225,6 +240,7 @@ export default async function PlaceDetailPage({
           stats={stats}
           videos={videos}
           back={{ href: "/diem-den", label: "Điểm đến" }}
+          checkIn={checkIn}
         />
 
         {/* Thanh tab: Tổng quan + xem tất cả từng listing + nút Video */}

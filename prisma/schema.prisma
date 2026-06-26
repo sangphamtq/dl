@@ -185,6 +185,8 @@ model User {
   notifications      Notification[] @relation("NotifRecipient") // thông báo nhận
   notificationsActed Notification[] @relation("NotifActor") // thông báo do mình gây ra
 
+  checkIns CheckIn[] // các điểm đến/tỉnh đã đánh dấu "đã đến"
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -269,6 +271,7 @@ model Place {
   postRefs  PostRef[]
   threads   Thread[] // chủ đề cộng đồng gắn điểm đến này
   viewStats PlaceViewStat[] // lượt xem theo ngày (để lọc trending)
+  checkIns  CheckIn[] // người dùng đã đánh dấu "đã đến" nơi này
 
   tags String[] @default([])
 
@@ -301,6 +304,25 @@ model PlaceViewStat {
 
   @@unique([placeId, date])
   @@index([date])
+}
+
+// CheckIn — người dùng đánh dấu "đã đến" một Place (tỉnh hoặc điểm đến lớn).
+// Propagate: check-in điểm đến con tự tạo CheckIn cho tỉnh cha (auto=true);
+// bỏ check-in chỉ gỡ tỉnh auto khi không còn con nào được check-in. Tỉnh đánh
+// dấu trực tiếp (auto=false) luôn giữ. Thống kê X/63 đếm CheckIn của tỉnh.
+model CheckIn {
+  id      String  @id @default(cuid())
+  userId  String
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  placeId String
+  place   Place   @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  auto    Boolean @default(false) // true = tỉnh tự đánh dấu do check-in điểm đến con
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, placeId])
+  @@index([userId])
+  @@index([placeId])
 }
 
 // ============================================================

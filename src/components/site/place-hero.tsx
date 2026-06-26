@@ -4,9 +4,11 @@ import { HeroFrame } from "@/components/site/hero-frame";
 import { PlaceHeroStack, type HeroImage } from "@/components/site/place-hero-stack";
 import { PlaceVideos, type PlaceVideo } from "@/components/site/tiktok-videos";
 import { ShareButton } from "@/components/site/share-button";
+import { CheckInButton } from "@/components/site/check-in-button";
 import type { PlaceStat } from "@/lib/place-meta";
 
 type PlaceHeroData = {
+  id: string;
   slug: string;
   name: string;
   kind: string;
@@ -24,12 +26,14 @@ export function PlaceHero({
   stats,
   videos = [],
   back,
+  checkIn,
 }: {
   place: PlaceHeroData;
   heroImages: HeroImage[];
   stats: PlaceStat[];
   videos?: PlaceVideo[];
   back?: { href: string; label: string };
+  checkIn?: { checked: boolean; isAuthed: boolean };
 }) {
   return (
     <HeroFrame images={heroImages.map((i) => i.url)}>
@@ -52,7 +56,18 @@ export function PlaceHero({
               ) : (
                 <span />
               )}
-              <ShareButton title={place.name} />
+              <div className="flex items-center gap-2">
+                {checkIn && (
+                  <CheckInButton
+                    placeId={place.id}
+                    placeSlug={place.slug}
+                    placeName={place.name}
+                    initialChecked={checkIn.checked}
+                    isAuthed={checkIn.isAuthed}
+                  />
+                )}
+                <ShareButton title={place.name} />
+              </div>
             </div>
 
             {/* Tỉnh (ngữ cảnh "thuộc tỉnh nào") + nổi bật */}

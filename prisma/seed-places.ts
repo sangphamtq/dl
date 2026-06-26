@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { prisma } from "@/lib/prisma";
 import { PlaceKind, PublishStatus } from "@/generated/prisma/enums";
+import { PROVINCE_NAMES, slugifyVi as slugify } from "@/lib/provinces";
 
 // Seed 63 tỉnh/thành (cấu trúc hành chính cũ) + vài điểm đến lớn mẫu, KHÔNG nội
 // dung chi tiết, để xem trang /diem-den. Ảnh fallback picsum theo slug.
@@ -8,34 +9,6 @@ import { PlaceKind, PublishStatus } from "@/generated/prisma/enums";
 
 const now = new Date();
 const PUB = { status: PublishStatus.published, publishedAt: now } as const;
-
-// Slug tiếng Việt không dấu.
-function slugify(s: string): string {
-  return s
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/đ/g, "d")
-    .replace(/Đ/g, "D")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
-const PROVINCE_NAMES = [
-  "An Giang", "Bà Rịa - Vũng Tàu", "Bạc Liêu", "Bắc Giang", "Bắc Kạn",
-  "Bắc Ninh", "Bến Tre", "Bình Dương", "Bình Định", "Bình Phước",
-  "Bình Thuận", "Cà Mau", "Cao Bằng", "Cần Thơ", "Đà Nẵng",
-  "Đắk Lắk", "Đắk Nông", "Điện Biên", "Đồng Nai", "Đồng Tháp",
-  "Gia Lai", "Hà Giang", "Hà Nam", "Hà Nội", "Hà Tĩnh",
-  "Hải Dương", "Hải Phòng", "Hậu Giang", "Hòa Bình", "Hưng Yên",
-  "Khánh Hòa", "Kiên Giang", "Kon Tum", "Lai Châu", "Lạng Sơn",
-  "Lào Cai", "Lâm Đồng", "Long An", "Nam Định", "Nghệ An",
-  "Ninh Bình", "Ninh Thuận", "Phú Thọ", "Phú Yên", "Quảng Bình",
-  "Quảng Nam", "Quảng Ngãi", "Quảng Ninh", "Quảng Trị", "Sóc Trăng",
-  "Sơn La", "Tây Ninh", "Thái Bình", "Thái Nguyên", "Thanh Hóa",
-  "Thừa Thiên Huế", "Tiền Giang", "Hồ Chí Minh", "Trà Vinh", "Tuyên Quang",
-  "Vĩnh Long", "Vĩnh Phúc", "Yên Bái",
-];
 
 // Tỉnh nổi bật (slug) — hiện khác trên trang danh sách.
 const FEATURED_PROVINCES = new Set(["lao-cai", "quang-ninh", "lam-dong"]);

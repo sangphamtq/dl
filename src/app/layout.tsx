@@ -1,5 +1,11 @@
 import type { Metadata } from "next";
-import { Be_Vietnam_Pro, Geist_Mono, Playfair_Display } from "next/font/google";
+import {
+  Be_Vietnam_Pro,
+  Geist_Mono,
+  Playfair_Display,
+  Mali,
+} from "next/font/google";
+import { Toaster } from "sonner";
 import { getSettings } from "@/lib/settings";
 import { BackToTop } from "@/components/site/back-to-top";
 import "./globals.css";
@@ -23,6 +29,14 @@ const geistMono = Geist_Mono({
   subsets: ["latin", "latin-ext"],
 });
 
+// Font viết tay, thân thiện (checklist "Đã đến") — gợi cảm giác poster du lịch.
+const mali = Mali({
+  variable: "--font-rounded",
+  subsets: ["latin", "latin-ext", "vietnamese"],
+  weight: ["500", "600", "700"],
+  display: "swap",
+});
+
 export async function generateMetadata(): Promise<Metadata> {
   const s = await getSettings();
   return {
@@ -39,11 +53,12 @@ export default function RootLayout({
   return (
     <html
       lang="vi"
-      className={`${beVietnamPro.variable} ${playfair.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${beVietnamPro.variable} ${playfair.variable} ${geistMono.variable} ${mali.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         {children}
         <BackToTop />
+        <Toaster richColors position="top-center" />
       </body>
     </html>
   );

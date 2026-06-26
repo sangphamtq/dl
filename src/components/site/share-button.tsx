@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Share2, Link2, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PILL_BASE, PILL_SURFACE } from "@/components/site/check-in-button";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -49,10 +50,7 @@ export function ShareButton({
         <button
           type="button"
           aria-label={`Chia sẻ ${title}`}
-          className={cn(
-            "inline-flex h-9 items-center gap-1.5 rounded-full border border-border/60 px-3.5 text-sm font-medium text-foreground transition-colors hover:bg-muted",
-            className,
-          )}
+          className={cn(PILL_BASE, PILL_SURFACE, className)}
         >
           <Share2 className="size-4" aria-hidden />
           Chia sẻ

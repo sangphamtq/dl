@@ -81,7 +81,8 @@ export default async function PlaceCommunityPage({
     getTrips({ placeId: place.id }),
   ]);
 
-  const stats = buildPlaceStats(place.viewCount, counts);
+  const checkInCount = await prisma.checkIn.count({ where: { placeId: place.id } });
+  const stats = buildPlaceStats(place.viewCount, checkInCount);
   const tabs = buildPlaceTabs(place.slug, counts);
 
   const totalAll = grouped.reduce((s, g) => s + g._count._all, 0);

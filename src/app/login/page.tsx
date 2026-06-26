@@ -1,7 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
-import { signIn } from "@/auth";
 import { Button } from "@/components/ui/button";
+import { GoogleIcon, FacebookIcon } from "@/components/site/provider-icons";
+import { signInGoogle, signInFacebook } from "./auth-actions";
 
 export default async function LoginPage({
   searchParams,
@@ -71,12 +72,7 @@ export default async function LoginPage({
           </div>
 
           <div className="space-y-3">
-            <form
-              action={async () => {
-                "use server";
-                await signIn("google", { redirectTo });
-              }}
-            >
+            <form action={signInGoogle.bind(null, redirectTo)}>
               <Button
                 type="submit"
                 variant="outline"
@@ -88,12 +84,7 @@ export default async function LoginPage({
               </Button>
             </form>
 
-            <form
-              action={async () => {
-                "use server";
-                await signIn("facebook", { redirectTo });
-              }}
-            >
+            <form action={signInFacebook.bind(null, redirectTo)}>
               <Button
                 type="submit"
                 variant="outline"
@@ -113,24 +104,5 @@ export default async function LoginPage({
         </div>
       </div>
     </main>
-  );
-}
-
-function GoogleIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden>
-      <path fill="#4285F4" d="M23.52 12.27c0-.79-.07-1.54-.2-2.27H12v4.51h6.47a5.53 5.53 0 0 1-2.4 3.63v3h3.88c2.27-2.09 3.57-5.17 3.57-8.87Z" />
-      <path fill="#34A853" d="M12 24c3.24 0 5.96-1.08 7.95-2.91l-3.88-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96H1.26v3.09A12 12 0 0 0 12 24Z" />
-      <path fill="#FBBC05" d="M5.27 14.29a7.2 7.2 0 0 1 0-4.58V6.62H1.26a12 12 0 0 0 0 10.76l4.01-3.09Z" />
-      <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.44-3.44A11.97 11.97 0 0 0 12 0 12 12 0 0 0 1.26 6.62l4.01 3.09C6.22 6.86 8.87 4.75 12 4.75Z" />
-    </svg>
-  );
-}
-
-function FacebookIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="18" height="18" fill="#1877F2" aria-hidden>
-      <path d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07c0 6.02 4.39 11.01 10.13 11.93v-8.44H7.08v-3.49h3.05V9.41c0-3.02 1.79-4.69 4.53-4.69 1.31 0 2.69.24 2.69.24v2.97h-1.52c-1.49 0-1.96.93-1.96 1.89v2.25h3.33l-.53 3.49h-2.8v8.44C19.61 23.08 24 18.09 24 12.07Z" />
-    </svg>
   );
 }

@@ -375,7 +375,8 @@ export default async function PlaceListingPage({
 
   const peerGroups = await getDestinationPeerGroups();
   const counts = await getPlaceCounts(place.id);
-  const stats = buildPlaceStats(place.viewCount, counts);
+  const checkInCount = await prisma.checkIn.count({ where: { placeId: place.id } });
+  const stats = buildPlaceStats(place.viewCount, checkInCount);
   const tabs = buildPlaceTabs(place.slug, counts);
 
   // Ẩm thực: chi tiết đầy đủ Đặc sản rồi Quán ăn, xếp dọc trên cùng trang.
