@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { MobileNav } from "./mobile-nav";
 import { UserMenu } from "./user-menu";
 import { NotificationBell } from "./notification-bell";
+import { DaDenNavLink } from "./da-den-nav-link";
 import { HeaderSearch } from "./header-search";
 import { SiteNav } from "./site-nav";
 
@@ -69,6 +70,7 @@ export async function SiteHeader() {
 
           {user ? (
             <>
+              <DaDenNavLink />
               <NotificationBell
                 initialUnread={unread}
                 userId={user.id}

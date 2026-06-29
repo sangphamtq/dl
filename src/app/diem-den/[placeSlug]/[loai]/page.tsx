@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { cookies } from "next/headers";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
@@ -379,6 +380,19 @@ export default async function PlaceListingPage({
   const stats = buildPlaceStats(place.viewCount, checkInCount);
   const tabs = buildPlaceTabs(place.slug, counts);
 
+  // Trạng thái check-in "đã đến" của user hiện tại (nút ở hero).
+  const session = await auth();
+  const userId = session?.user?.id;
+  const checkIn = {
+    checked: userId
+      ? !!(await prisma.checkIn.findUnique({
+          where: { userId_placeId: { userId, placeId: place.id } },
+          select: { id: true },
+        }))
+      : false,
+    isAuthed: !!userId,
+  };
+
   // Ẩm thực: chi tiết đầy đủ Đặc sản rồi Quán ăn, xếp dọc trên cùng trang.
   const food = isFood
     ? {
@@ -420,6 +434,7 @@ export default async function PlaceListingPage({
           stats={stats}
           videos={heroData.videos}
           back={{ href: `/diem-den/${place.slug}`, label: "Tổng quan" }}
+          checkIn={checkIn}
         />
 
         {/* Thanh tab: Tổng quan + xem tất cả từng listing + nút Video */}

@@ -85,6 +85,17 @@ export default async function PlaceCommunityPage({
   const stats = buildPlaceStats(place.viewCount, checkInCount);
   const tabs = buildPlaceTabs(place.slug, counts);
 
+  // Trạng thái check-in "đã đến" của user hiện tại (nút ở hero).
+  const checkIn = {
+    checked: currentUserId
+      ? !!(await prisma.checkIn.findUnique({
+          where: { userId_placeId: { userId: currentUserId, placeId: place.id } },
+          select: { id: true },
+        }))
+      : false,
+    isAuthed: !!currentUserId,
+  };
+
   const totalAll = grouped.reduce((s, g) => s + g._count._all, 0);
   const countOf = (v: string) =>
     v === "all" ? totalAll : (grouped.find((g) => g.type === v)?._count._all ?? 0);
@@ -115,6 +126,7 @@ export default async function PlaceCommunityPage({
           stats={stats}
           videos={heroData.videos}
           back={{ href: `/diem-den/${place.slug}`, label: "Tổng quan" }}
+          checkIn={checkIn}
         />
 
         <PlaceTabs items={tabs} videos={heroData.videos} placeName={place.name} />
