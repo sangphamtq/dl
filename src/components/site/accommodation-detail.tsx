@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import {
   MapPin,
   Phone,
@@ -10,25 +11,48 @@ import {
   ExternalLink,
   Navigation,
   ChevronDown,
+  BadgeCheck,
+  MessageCircle,
+  Link2,
+  TriangleAlert,
+  Wallet,
+  ArrowRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { coverUrl } from "@/lib/place-image";
-import { ACCOMMODATION_CATEGORY_LABELS, label } from "@/lib/listing-labels";
+import {
+  ACCOMMODATION_CATEGORY_LABELS,
+  PRICE_LABELS,
+  label,
+} from "@/lib/listing-labels";
 
 export type AccommodationDetailData = {
   slug: string;
   name: string;
   description: string | null;
   category: string | null;
+  priceRange: string | null;
   address: string | null;
   lat: number | null;
   lng: number | null;
   phone: string | null;
   website: string | null;
   bookingUrl: string | null;
+  zalo: string | null;
+  facebookUrl: string | null;
+  isVerified: boolean;
+  depositPolicy: string | null;
+  notice: string | null;
   tags: string[];
   images: { id: string; url: string; alt: string | null; isCover: boolean }[];
 };
+
+// Zalo có thể là SĐT hoặc link — chuẩn hoá thành URL chat zalo.me.
+function zaloHref(v: string): string {
+  if (/^https?:\/\//i.test(v)) return v;
+  const digits = v.replace(/[^\d]/g, "");
+  return digits ? `https://zalo.me/${digits}` : v;
+}
 
 // Nội dung chi tiết Nơi lưu trú — render trong ngăn trượt (drawer), bố cục dọc tiết kiệm.
 export function AccommodationDetail({
@@ -51,8 +75,12 @@ export function AccommodationDetail({
         ];
   const single = strip.length === 1;
 
+  const priceLabel = data.priceRange
+    ? label(PRICE_LABELS, data.priceRange)
+    : null;
   const facts = [
     { icon: MapPin, value: data.address },
+    { icon: Wallet, value: priceLabel },
     { icon: Phone, value: data.phone },
   ].filter((f) => f.value);
   const hasMap = data.lat != null && data.lng != null;
@@ -77,8 +105,14 @@ export function AccommodationDetail({
               ? label(ACCOMMODATION_CATEGORY_LABELS, data.category)
               : "Lưu trú"}
           </p>
-          <h2 className="truncate text-base font-bold tracking-tight">
+          <h2 className="flex items-center gap-1.5 truncate text-base font-bold tracking-tight">
             {data.name}
+            {data.isVerified && (
+              <BadgeCheck
+                className="size-4 shrink-0 text-emerald-600"
+                aria-label="Đã xác minh chính chủ"
+              />
+            )}
           </h2>
         </div>
       </div>
@@ -104,6 +138,31 @@ export function AccommodationDetail({
       </div>
 
       <div className="space-y-5 px-5 pt-5">
+        {data.isVerified && (
+          <div className="flex items-start gap-2 rounded-xl border border-emerald-600/30 bg-emerald-50/60 px-3.5 py-2.5 text-sm">
+            <BadgeCheck
+              className="mt-0.5 size-4 shrink-0 text-emerald-600"
+              aria-hidden
+            />
+            <span>
+              <span className="font-medium text-emerald-700">
+                Đã xác minh chính chủ.
+              </span>{" "}
+              Chỉ liên hệ &amp; chuyển khoản qua kênh hiển thị bên dưới.
+            </span>
+          </div>
+        )}
+
+        {data.notice && (
+          <div className="flex items-start gap-2 rounded-xl border border-amber-500/40 bg-amber-500/5 px-3.5 py-2.5 text-sm">
+            <TriangleAlert
+              className="mt-0.5 size-4 shrink-0 text-amber-600"
+              aria-hidden
+            />
+            <span>{data.notice}</span>
+          </div>
+        )}
+
         {facts.length > 0 && (
           <div className="grid grid-cols-1 gap-x-4 gap-y-2.5 sm:grid-cols-2">
             {facts.map((f, i) => (
@@ -118,8 +177,22 @@ export function AccommodationDetail({
           </div>
         )}
 
-        {(data.bookingUrl || data.website || hasMap) && (
+        {(data.bookingUrl ||
+          data.website ||
+          data.zalo ||
+          data.facebookUrl ||
+          hasMap) && (
           <div className="flex flex-wrap gap-2">
+            {data.zalo && (
+              <ActionLink href={zaloHref(data.zalo)} icon={MessageCircle}>
+                Zalo
+              </ActionLink>
+            )}
+            {data.facebookUrl && (
+              <ActionLink href={data.facebookUrl} icon={Link2}>
+                Facebook
+              </ActionLink>
+            )}
             {data.bookingUrl && (
               <ActionLink href={data.bookingUrl} icon={ExternalLink}>
                 Đặt phòng
@@ -166,6 +239,19 @@ export function AccommodationDetail({
           </div>
         )}
 
+        {data.depositPolicy && (
+          <div className="flex items-start gap-2 rounded-xl bg-muted/60 px-3.5 py-2.5 text-sm">
+            <Wallet
+              className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+              aria-hidden
+            />
+            <span>
+              <span className="font-medium">Cọc: </span>
+              {data.depositPolicy}
+            </span>
+          </div>
+        )}
+
         {data.description && (
           <p className="whitespace-pre-line leading-7 text-foreground/90">
             {data.description}
@@ -184,6 +270,14 @@ export function AccommodationDetail({
             ))}
           </div>
         )}
+
+        <Link
+          href={`/luu-tru/${data.slug}`}
+          className="flex items-center justify-center gap-1.5 rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+        >
+          Xem trang đầy đủ
+          <ArrowRight className="size-4" aria-hidden />
+        </Link>
       </div>
     </div>
   );

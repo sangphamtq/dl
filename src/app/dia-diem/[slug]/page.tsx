@@ -991,7 +991,7 @@ export default async function SpotPublicPage({
                     {accommodations.map((ac) => (
                       <ListingCard
                         key={ac.slug}
-                        href={`/diem-den/${spot.place.slug}/luu-tru?open=${ac.slug}`}
+                        href={`/luu-tru/${ac.slug}`}
                         name={ac.name}
                         slug={ac.slug}
                         images={ac.images}

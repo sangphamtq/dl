@@ -143,6 +143,52 @@ Nếu chỉ là "việc tự nhiên ở đúng một chỗ, không đơn vị, k
 - **Trường thực tế (đã có schema):** `Specialty`: `kind`, `whereToBuy`, `priceRange`.
   `Eatery`: `meals[]`, `notice` ("nghỉ thứ 2"/"hết sớm"). PlaceableFields của Eatery đã có.
 
+### Nơi lưu trú (`Accommodation`) — mục tiêu & định vị (ĐỌC KỸ trước khi làm phần này)
+
+> **Định vị cốt lõi:** `Accommodation` là **danh bạ chỗ ở ĐÃ XÁC MINH CHÍNH CHỦ** cho từng
+> điểm đến, **KHÔNG phải nền tảng đặt phòng (OTA)**. Giá trị độc nhất so với các group du
+> lịch Facebook là **niềm tin có cấu trúc** — đúng kênh liên hệ, đúng người, tránh page nhái
+> & lừa cọc. OTA (Booking/Agoda/Airbnb) đã lo phần đặt phòng cho khách sạn/resort lớn;
+> khoảng trống thật nằm ở **homestay nhỏ + vấn nạn nhái/lừa cọc**.
+
+**Mục tiêu (1 câu):** giúp khách *tìm đúng, liên hệ đúng, tránh bị lừa cọc* — phân loại theo
+loại hình & ngân sách, đủ thông tin vị trí/giá/liên hệ **đã kiểm chứng** để tự chốt với chủ.
+
+**Phạm vi — chốt rõ:**
+- ✅ TRONG: thông tin cơ sở (loại hình, giá tương đối, vị trí/bản đồ); **kênh liên hệ chính
+  chủ đã xác minh** (Zalo, Facebook, phone); huy hiệu **"Đã xác minh chính chủ"**; **cảnh báo
+  chống lừa cọc**; URL ổn định `/luu-tru/[slug]` để dán vào group FB.
+- ❌ NGOÀI (chưa làm): lịch phòng/kiểm tra phòng trống, thanh toán/giữ cọc qua web, booking
+  engine, review của người dùng (UGC).
+
+**Trường thực tế (đã có schema):**
+- **Lọc:** `category` (`hotel`|`homestay`|`resort`|`hostel`|`guesthouse`|`villa`), `priceRange`
+  (trục ngân sách), `tags[]`.
+- **Kênh liên hệ thật:** `zalo` (kênh chốt phòng chính ở VN), `facebookUrl` (đối chiếu tránh
+  page nhái), cùng `phone`/`website`/`bookingUrl` của PlaceableFields.
+- **Xác minh:** `isVerified` + `verifiedAt` (hiện huy hiệu khi `true`); `verifiedNote` chỉ nội
+  bộ, **không** hiện public.
+- **Chống lừa cọc:** `depositPolicy` (chính sách cọc bằng lời), `notice` ("Chỉ chuyển khoản
+  tới tài khoản chính chủ cung cấp qua kênh hiển thị tại đây").
+
+> **KHÔNG lưu số tài khoản (STK) ở giai đoạn này.** STK dễ đổi → dữ liệu cũ thành sai = vô
+> tình tiếp tay lừa đảo; gánh nặng trách nhiệm tài chính + riêng tư quá lớn cho một site
+> thông tin. Thay vào đó: huy hiệu xác minh + một bộ kênh liên hệ đã kiểm chứng + `notice`
+> cảnh báo → chặn phần lớn kịch bản lừa cọc mà không ôm rủi ro dữ liệu tài chính.
+
+**Hiển thị (drawer + trang chi tiết cùng tồn tại):**
+- **Card lưới** `/diem-den/[placeSlug]/luu-tru` (ảnh + tên + loại hình + giá + huy hiệu xác
+  minh) → bấm mở **drawer xem nhanh** (tại chỗ, không rời trang).
+- **Drawer** = xem nhanh; có nút **"Xem trang đầy đủ →"** dẫn tới trang chi tiết.
+- **Trang chi tiết** `/luu-tru/[slug]` = **canonical, ĐÍCH ĐỂ CHIA SẺ** (chủ homestay gửi/in
+  link cho khách): hero gallery, breadcrumb về Place cha, khối liên hệ chính chủ + huy hiệu
+  xác minh nổi bật, bản đồ + chỉ đường, chính sách cọc, cảnh báo an toàn, **nút chia sẻ kèm
+  mã QR** (`StayShare`). Là đích của `PostRef` (blog) → "Bài viết liên quan".
+
+> **Lưu trú là ngoại lệ trong nhóm "drawer-only":** khác Đặc sản/Quán ăn (chỉ drawer, không
+> trang chi tiết), Lưu trú CÓ trang chi tiết riêng vì cần **link ổn định để chia sẻ/chống
+> nhái** — đúng định vị "danh bạ xác minh".
+
 ### Bảng thuật ngữ (dùng nhất quán trong code & URL)
 
 | Tên tiếng Việt | Tên code (EN) | Vai trò / quan hệ |
@@ -152,7 +198,7 @@ Nếu chỉ là "việc tự nhiên ở đúng một chỗ, không đơn vị, k
 | Địa điểm nhỏ | `Spot` | `placeId` bắt buộc; M:N với `Activity` |
 | Đặc sản | `Specialty` | `placeId` bắt buộc; M:N với `Eatery` |
 | Quán ăn | `Eatery` | `placeId` bắt buộc; M:N với `Specialty` |
-| Nơi lưu trú | `Accommodation` | `placeId` bắt buộc |
+| Nơi lưu trú | `Accommodation` | `placeId` bắt buộc; **danh bạ chỗ ở đã xác minh chính chủ** (không phải OTA); có kênh liên hệ thật + huy hiệu xác minh + chống lừa cọc |
 | Di chuyển | `Transport` | `placeId` bắt buộc; `direction` `getTo`/`getAround`; **màn hình riêng `/diem-den/[slug]/di-chuyen`; không có trang chi tiết per-item, không slug, không ảnh** |
 
 Mỗi entity nên có tối thiểu: `id`, `slug`, `name`, `description`, và khóa ngoại tới cha
@@ -293,9 +339,10 @@ cấp thể hiện qua **breadcrumb + nội dung trang**, không qua URL.
 ```
 `[loai]` = **loại màn hình của Place** (đừng nhầm với field `category`): `hoat-dong`
 (Activity) | `dia-diem` (Spot) | `am-thuc` (gộp Đặc sản + Quán ăn, chi tiết qua drawer) |
-`luu-tru` (Accommodation, lưới + drawer) | `di-chuyen` (Transport, 2 cột inline). Với
-`hoat-dong`/`dia-diem`, token này còn là **tiền tố trang chi tiết riêng**; còn `am-thuc`/
-`luu-tru`/`di-chuyen` **không có trang chi tiết per-item** (xem mục mẫu hiển thị bên dưới).
+`luu-tru` (Accommodation, lưới + drawer xem nhanh **và** trang chi tiết) | `di-chuyen`
+(Transport, 2 cột inline). Với `hoat-dong`/`dia-diem`/`luu-tru`, token này còn là **tiền tố
+trang chi tiết riêng** (`/luu-tru/[slug]` là đích chia sẻ cho lưu trú); còn `am-thuc`/
+`di-chuyen` **không có trang chi tiết per-item** (xem mục mẫu hiển thị bên dưới).
 
 **Trang chi tiết Listing** — PHẲNG, tiền tố theo loại, **slug duy nhất trong từng loại**
 (5 loại; `Transport` không có trang chi tiết):

@@ -20,13 +20,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Combobox } from "@/components/ui/combobox";
+import { Switch } from "@/components/ui/switch";
 import { FormSection } from "@/components/cms/form-section";
 import {
   createAccommodation,
   updateAccommodation,
   type AccommodationFormInput,
 } from "./actions";
-import { ACCOMMODATION_CATEGORIES } from "./constants";
+import { ACCOMMODATION_CATEGORIES, PRICE_RANGES } from "./constants";
 
 export type PlaceOption = { id: string; label: string };
 export type AccommodationFormValues = AccommodationFormInput;
@@ -37,12 +38,19 @@ const EMPTY: AccommodationFormValues = {
   description: "",
   category: "",
   placeId: "",
+  priceRange: "",
   address: "",
   lat: "",
   lng: "",
   phone: "",
   website: "",
   bookingUrl: "",
+  zalo: "",
+  facebookUrl: "",
+  isVerified: false,
+  verifiedNote: "",
+  depositPolicy: "",
+  notice: "",
   tags: "",
 };
 
@@ -124,23 +132,43 @@ export function AccommodationForm({
               searchPlaceholder="Tìm nơi…"
             />
           </div>
-          <div className="space-y-2">
-            <Label>Loại hình</Label>
-            <Select
-              value={values.category}
-              onValueChange={(v) => set("category", v)}
-            >
-              <SelectTrigger className="w-full sm:w-72">
-                <SelectValue placeholder="Chọn loại hình…" />
-              </SelectTrigger>
-              <SelectContent>
-                {ACCOMMODATION_CATEGORIES.map((c) => (
-                  <SelectItem key={c.value} value={c.value}>
-                    {c.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Loại hình</Label>
+              <Select
+                value={values.category}
+                onValueChange={(v) => set("category", v)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Chọn loại hình…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ACCOMMODATION_CATEGORIES.map((c) => (
+                    <SelectItem key={c.value} value={c.value}>
+                      {c.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Mức giá</Label>
+              <Select
+                value={values.priceRange}
+                onValueChange={(v) => set("priceRange", v)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Chọn mức giá…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {PRICE_RANGES.map((p) => (
+                    <SelectItem key={p.value} value={p.value}>
+                      {p.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </FormSection>
 
@@ -256,6 +284,83 @@ export function AccommodationForm({
               value={values.bookingUrl}
               onChange={(e) => set("bookingUrl", e.target.value)}
               placeholder="https://…"
+            />
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="zalo">Zalo (chính chủ)</Label>
+              <Input
+                id="zalo"
+                value={values.zalo}
+                onChange={(e) => set("zalo", e.target.value)}
+                placeholder="SĐT hoặc link Zalo"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="facebookUrl">Facebook (chính chủ)</Label>
+              <Input
+                id="facebookUrl"
+                value={values.facebookUrl}
+                onChange={(e) => set("facebookUrl", e.target.value)}
+                placeholder="https://facebook.com/…"
+              />
+            </div>
+          </div>
+        </FormSection>
+
+        <FormSection
+          title="Xác minh chính chủ"
+          description="Bật khi đã kiểm chứng đây là chủ thật (gọi điện, gặp trực tiếp…). Hiển thị huy hiệu “Đã xác minh” trên web."
+        >
+          <div className="flex items-center justify-between gap-4 rounded-lg border px-4 py-3">
+            <div className="space-y-0.5">
+              <Label htmlFor="isVerified">Đã xác minh chính chủ</Label>
+              <p className="text-xs text-muted-foreground">
+                Khách thấy huy hiệu tin cậy ở card &amp; chi tiết.
+              </p>
+            </div>
+            <Switch
+              id="isVerified"
+              checked={values.isVerified}
+              onCheckedChange={(v) => set("isVerified", v)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="verifiedNote">Ghi chú xác minh (nội bộ)</Label>
+            <Textarea
+              id="verifiedNote"
+              value={values.verifiedNote}
+              onChange={(e) => set("verifiedNote", e.target.value)}
+              placeholder="vd: Gọi xác nhận 20/6, gặp chủ tại cơ sở…"
+              rows={2}
+            />
+            <p className="text-xs text-muted-foreground">
+              Chỉ hiển thị trong CMS, không công khai.
+            </p>
+          </div>
+        </FormSection>
+
+        <FormSection
+          title="An toàn giao dịch"
+          description="Chống lừa cọc — KHÔNG nhập số tài khoản tại đây."
+        >
+          <div className="space-y-2">
+            <Label htmlFor="depositPolicy">Chính sách cọc</Label>
+            <Textarea
+              id="depositPolicy"
+              value={values.depositPolicy}
+              onChange={(e) => set("depositPolicy", e.target.value)}
+              placeholder="vd: Cọc 50% qua chính chủ; số dư trả khi nhận phòng."
+              rows={2}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="notice">Cảnh báo / lưu ý</Label>
+            <Input
+              id="notice"
+              value={values.notice}
+              onChange={(e) => set("notice", e.target.value)}
+              placeholder="vd: Chỉ liên hệ qua kênh hiển thị tại đây."
             />
           </div>
         </FormSection>

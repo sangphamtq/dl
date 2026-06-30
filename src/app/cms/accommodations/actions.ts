@@ -4,7 +4,11 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
-import { AccommodationCategory, PublishStatus } from "@/generated/prisma/enums";
+import {
+  AccommodationCategory,
+  PriceRange,
+  PublishStatus,
+} from "@/generated/prisma/enums";
 import { slugify, RESERVED_SLUGS } from "@/lib/slug";
 import { normalizeUrl } from "@/lib/url";
 
@@ -16,12 +20,19 @@ export type AccommodationFormInput = {
   description: string;
   category: string;
   placeId: string;
+  priceRange: string;
   address: string;
   lat: string;
   lng: string;
   phone: string;
   website: string;
   bookingUrl: string;
+  zalo: string;
+  facebookUrl: string;
+  isVerified: boolean;
+  verifiedNote: string;
+  depositPolicy: string;
+  notice: string;
   tags: string;
 };
 
@@ -77,6 +88,10 @@ async function normalize(
     input.category && input.category in AccommodationCategory
       ? (input.category as AccommodationCategory)
       : null;
+  const priceRange =
+    input.priceRange && input.priceRange in PriceRange
+      ? (input.priceRange as PriceRange)
+      : null;
   const tags = input.tags
     .split(",")
     .map((t) => t.trim())
@@ -88,6 +103,7 @@ async function normalize(
       slug,
       description: input.description.trim() || null,
       category,
+      priceRange,
       placeId: input.placeId,
       address: input.address.trim() || null,
       lat,
@@ -95,6 +111,12 @@ async function normalize(
       phone: input.phone.trim() || null,
       website: normalizeUrl(input.website),
       bookingUrl: normalizeUrl(input.bookingUrl),
+      zalo: input.zalo.trim() || null,
+      facebookUrl: normalizeUrl(input.facebookUrl),
+      isVerified: input.isVerified,
+      verifiedNote: input.verifiedNote.trim() || null,
+      depositPolicy: input.depositPolicy.trim() || null,
+      notice: input.notice.trim() || null,
       tags,
     },
   };
@@ -106,7 +128,9 @@ export async function createAccommodation(
   await requireStaff();
   const res = await normalize(input);
   if ("error" in res) return { ok: false, error: res.error };
-  const row = await prisma.accommodation.create({ data: res.data });
+  const row = await prisma.accommodation.create({
+    data: { ...res.data, verifiedAt: res.data.isVerified ? new Date() : null },
+  });
   revalidatePath("/cms/accommodations");
   return { ok: true, id: row.id };
 }
@@ -118,7 +142,19 @@ export async function updateAccommodation(
   await requireStaff();
   const res = await normalize(input, id);
   if ("error" in res) return { ok: false, error: res.error };
-  await prisma.accommodation.update({ where: { id }, data: res.data });
+  // verifiedAt chỉ đổi khi trạng thái xác minh đổi: bật lần đầu → đặt mốc;
+  // tắt → xoá; giữ nguyên nếu vẫn đang xác minh (không reset mốc mỗi lần lưu).
+  const current = await prisma.accommodation.findUnique({
+    where: { id },
+    select: { verifiedAt: true },
+  });
+  const verifiedAt = res.data.isVerified
+    ? (current?.verifiedAt ?? new Date())
+    : null;
+  await prisma.accommodation.update({
+    where: { id },
+    data: { ...res.data, verifiedAt },
+  });
   revalidatePath("/cms/accommodations");
   revalidatePath(`/cms/accommodations/${id}`);
   revalidatePath(`/cms/accommodations/${id}/edit`);

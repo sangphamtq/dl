@@ -1230,6 +1230,11 @@ async function main() {
     {
       slug: "anantara-mui-ne-resort",
       name: "Anantara Mũi Né Resort",
+      priceRange: PriceRange.luxury,
+      isVerified: true,
+      zalo: "0252374188",
+      facebookUrl: "https://facebook.com/AnantaraMuiNe",
+      depositPolicy: "Đặt qua kênh chính thức/booking; chính sách cọc & huỷ theo xác nhận đặt phòng.",
       category: AccommodationCategory.resort,
       address: "12A Nguyễn Đình Chiểu, Hàm Tiến, Mũi Né",
       lat: 10.9446,
@@ -1245,6 +1250,11 @@ async function main() {
     {
       slug: "the-cliff-resort-mui-ne",
       name: "The Cliff Resort & Residences",
+      priceRange: PriceRange.premium,
+      isVerified: true,
+      zalo: "0252371911",
+      facebookUrl: "https://facebook.com/thecliffresort",
+      depositPolicy: "Cọc theo xác nhận đặt phòng trên website chính thức.",
       category: AccommodationCategory.resort,
       address: "Khu phố 5, Phú Hài, TP. Phan Thiết",
       lat: 10.9269,
@@ -1259,6 +1269,12 @@ async function main() {
     {
       slug: "mui-ne-hills-homestay",
       name: "Mũi Né Hills Homestay",
+      priceRange: PriceRange.budget,
+      isVerified: true,
+      zalo: "0901234567",
+      facebookUrl: "https://facebook.com/muinehills.homestay",
+      depositPolicy: "Cọc 30% qua chính chủ; số dư trả khi nhận phòng.",
+      notice: "Chỉ chuyển khoản tới tài khoản chính chủ cung cấp qua kênh hiển thị tại đây.",
       category: AccommodationCategory.homestay,
       address: "Đồi Hồng, Mũi Né, TP. Phan Thiết",
       lat: 10.9512,
@@ -1272,6 +1288,9 @@ async function main() {
     {
       slug: "khach-san-phan-thiet-center",
       name: "Khách sạn Phan Thiết Center",
+      priceRange: PriceRange.moderate,
+      isVerified: false,
+      zalo: "0252382299",
       category: AccommodationCategory.hotel,
       address: "Đường Tôn Đức Thắng, TP. Phan Thiết",
       lat: 10.9281,
@@ -1285,6 +1304,10 @@ async function main() {
     {
       slug: "sailing-club-resort-mui-ne",
       name: "Sailing Club Resort Mũi Né",
+      priceRange: PriceRange.premium,
+      isVerified: true,
+      zalo: "0252384744",
+      facebookUrl: "https://facebook.com/sailingclubresortmuine",
       category: AccommodationCategory.resort,
       address: "24 Nguyễn Đình Chiểu, Hàm Tiến, Mũi Né",
       lat: 10.9461,
@@ -1299,6 +1322,9 @@ async function main() {
     {
       slug: "pandanus-resort-phan-thiet",
       name: "Pandanus Resort",
+      priceRange: PriceRange.premium,
+      isVerified: true,
+      zalo: "0252384984",
       category: AccommodationCategory.resort,
       address: "Đường Tiến Thành, TP. Phan Thiết",
       lat: 10.8895,
@@ -1312,6 +1338,10 @@ async function main() {
     {
       slug: "mango-beach-hostel-mui-ne",
       name: "Mango Beach Hostel",
+      priceRange: PriceRange.budget,
+      isVerified: false,
+      zalo: "0908765432",
+      notice: "Phòng dorm thường kín vào cuối tuần — nên nhắn Zalo giữ chỗ trước.",
       category: AccommodationCategory.hostel,
       address: "Đường Huỳnh Thúc Kháng, Mũi Né",
       lat: 10.9505,
@@ -1325,6 +1355,11 @@ async function main() {
     {
       slug: "villa-aria-mui-ne",
       name: "Villa Aria Mũi Né",
+      priceRange: PriceRange.premium,
+      isVerified: true,
+      zalo: "0252374338",
+      facebookUrl: "https://facebook.com/villaaria.muine",
+      depositPolicy: "Cọc 50% qua chính chủ để giữ villa; hoàn cọc nếu huỷ trước 7 ngày.",
       category: AccommodationCategory.villa,
       address: "Đường Nguyễn Đình Chiểu, Hàm Tiến, Mũi Né",
       lat: 10.9438,
@@ -1340,10 +1375,11 @@ async function main() {
 
   for (const ac of accommodations) {
     const { slug, name, ...rest } = ac;
+    const verifiedAt = "isVerified" in ac && ac.isVerified ? now : null;
     const row = await prisma.accommodation.upsert({
       where: { slug },
-      update: { ...rest, placeId: phanThiet.id, ...PUB },
-      create: { slug, name, ...rest, placeId: phanThiet.id, ...PUB },
+      update: { ...rest, verifiedAt, placeId: phanThiet.id, ...PUB },
+      create: { slug, name, ...rest, verifiedAt, placeId: phanThiet.id, ...PUB },
     });
     await setImages({ accommodationId: row.id }, IMAGES[slug] ?? [], name);
   }

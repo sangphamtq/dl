@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import {
   PublishStatus,
   AccommodationCategory,
+  PriceRange,
 } from "@/generated/prisma/enums";
 
 // Seed thêm vài homestay tại Phan Thiết, gắn vào điểm đến `phan-thiet` đã có.
@@ -57,6 +58,12 @@ type HomestaySeed = {
   phone?: string;
   website?: string;
   bookingUrl?: string;
+  zalo?: string;
+  facebookUrl?: string;
+  priceRange?: PriceRange;
+  isVerified?: boolean;
+  depositPolicy?: string;
+  notice?: string;
   description: string;
   tags: string[];
   isFeatured?: boolean;
@@ -71,7 +78,13 @@ const homestays: HomestaySeed[] = [
     lat: 10.9442,
     lng: 108.2358,
     phone: "0905 112 233",
+    zalo: "0905112233",
+    facebookUrl: "https://facebook.com/sunnyhouse.muine",
     bookingUrl: "https://www.booking.com/hotel/vn/sunny-house-mui-ne.html",
+    priceRange: PriceRange.budget,
+    isVerified: true,
+    depositPolicy: "Cọc 30% qua chính chủ để giữ phòng; số dư trả khi nhận phòng.",
+    notice: "Chỉ liên hệ & chuyển khoản qua số/Zalo hiển thị tại đây — cảnh giác số lạ trong bình luận.",
     description:
       "Homestay nhỏ xinh nằm trong con hẻm yên tĩnh ngay khu Hàm Tiến, chỉ vài bước ra biển. Sân vườn nhiều cây xanh, võng và ghế nằm thư giãn, phòng tươi sáng giá mềm. Chủ nhà nhiệt tình chỉ chỗ ăn ngon và hỗ trợ thuê xe máy.",
     tags: ["homestay", "giá rẻ", "gần biển", "sân vườn", "thuê xe máy", "thân thiện"],
@@ -89,7 +102,12 @@ const homestays: HomestaySeed[] = [
     lat: 10.9526,
     lng: 108.2981,
     phone: "0908 445 566",
+    zalo: "0908445566",
+    facebookUrl: "https://facebook.com/cocogarden.homestay",
     bookingUrl: "https://www.booking.com/hotel/vn/coco-garden-mui-ne.html",
+    priceRange: PriceRange.moderate,
+    isVerified: true,
+    depositPolicy: "Cọc 1 đêm đầu qua chính chủ; hoàn cọc nếu báo huỷ trước 3 ngày.",
     description:
       "Khu homestay theo phong cách bungalow giữa vườn dừa xanh, có hồ bơi nhỏ và không gian chung ấm cúng. Mỗi căn riêng tư, hợp cặp đôi và nhóm bạn muốn nghỉ ngơi gần đồi cát. Buổi tối thường có BBQ và giao lưu.",
     tags: ["homestay", "bungalow", "hồ bơi", "vườn dừa", "BBQ", "hợp cặp đôi"],
@@ -106,6 +124,10 @@ const homestays: HomestaySeed[] = [
     lat: 10.9258,
     lng: 108.1043,
     phone: "0912 778 990",
+    zalo: "0912778990",
+    priceRange: PriceRange.budget,
+    isVerified: false,
+    notice: "Liên hệ trực tiếp chủ nhà qua số điện thoại; chưa nhận đặt cọc online.",
     description:
       "Homestay ngay trung tâm Phan Thiết, thuận tiện đi chợ đêm, bến cá và các quán hải sản nổi tiếng. Phòng sạch sẽ, ban công đón gió biển, có khu bếp chung cho khách tự nấu. Lựa chọn kinh tế cho gia đình và khách đi dài ngày.",
     tags: ["homestay", "trung tâm", "giá rẻ", "bếp chung", "gần chợ đêm", "ban công"],
@@ -121,7 +143,12 @@ const homestays: HomestaySeed[] = [
     lat: 10.9748,
     lng: 108.3271,
     phone: "0934 221 100",
+    zalo: "0934221100",
+    facebookUrl: "https://facebook.com/saobien.honrom",
     bookingUrl: "https://www.booking.com/hotel/vn/sao-bien-hon-rom.html",
+    priceRange: PriceRange.budget,
+    isVerified: true,
+    depositPolicy: "Cọc 50% qua chính chủ vào mùa cao điểm; ngày thường giữ phòng bằng SĐT.",
     description:
       "Homestay sát bãi Hòn Rơm yên tĩnh, nước trong và vắng, hợp gia đình có trẻ nhỏ. Có khu cắm trại, đốt lửa trại và ngắm sao buổi tối. Chủ nhà nấu hải sản tươi theo yêu cầu với giá phải chăng.",
     tags: ["homestay", "gần biển", "yên tĩnh", "lửa trại", "hợp gia đình", "hải sản"],
@@ -145,10 +172,12 @@ async function main() {
 
   for (const h of homestays) {
     const { slug, name, images, ...rest } = h;
+    const verifiedAt = h.isVerified ? now : null;
     const row = await prisma.accommodation.upsert({
       where: { slug },
       update: {
         ...rest,
+        verifiedAt,
         category: AccommodationCategory.homestay,
         placeId: phanThiet.id,
         ...PUB,
@@ -157,6 +186,7 @@ async function main() {
         slug,
         name,
         ...rest,
+        verifiedAt,
         category: AccommodationCategory.homestay,
         placeId: phanThiet.id,
         ...PUB,

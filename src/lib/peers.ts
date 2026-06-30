@@ -33,7 +33,7 @@ export async function getDestinationPeerGroups(): Promise<
 // Các listing CÙNG LOẠI, CÙNG nơi (place), đã xuất bản — gồm cả chính nó để
 // thanh chuyển nhanh làm nổi mục đang xem.
 export async function getListingPeers(
-  model: "spot" | "activity",
+  model: "spot" | "activity" | "accommodation",
   placeId: string,
 ): Promise<PeerItem[]> {
   const delegate = prisma[model] as unknown as {

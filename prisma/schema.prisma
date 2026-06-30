@@ -549,12 +549,16 @@ model Eatery {
   @@index([status])
 }
 
+// Định vị: DANH BẠ chỗ ở ĐÃ XÁC MINH CHÍNH CHỦ — không phải OTA (xem CLAUDE.md
+// "Đặc sản vs Quán ăn" / "Nơi lưu trú"). Giá trị lõi = kênh liên hệ thật đã kiểm
+// chứng + huy hiệu xác minh + cảnh báo chống lừa cọc. KHÔNG làm đặt phòng/calendar.
 model Accommodation {
   id          String                 @id @default(cuid())
   slug        String                 @unique
   name        String
   description String?
   category    AccommodationCategory?
+  priceRange  PriceRange? // mức giá tương đối — trục lọc theo ngân sách
 
   // PlaceableFields
   address      String?
@@ -564,6 +568,19 @@ model Accommodation {
   phone        String?
   website      String?
   bookingUrl   String?
+
+  // Kênh liên hệ chính chủ (thực tế VN: Zalo là kênh chốt phòng chính)
+  zalo        String? // SĐT/link Zalo chính chủ
+  facebookUrl String? // page/profile chính chủ (để khách đối chiếu, tránh page nhái)
+
+  // Xác minh chính chủ — lõi định vị (FB group KHÔNG cung cấp được)
+  isVerified   Boolean   @default(false) // đã xác minh đây là chủ thật
+  verifiedAt   DateTime? // mốc xác minh (audit)
+  verifiedNote String? // nội bộ: cách xác minh (gọi điện, gặp trực tiếp…) — KHÔNG hiện public
+
+  // An toàn giao dịch / chống lừa cọc
+  depositPolicy String? // chính sách cọc bằng lời ("Cọc 50% qua chính chủ", "Không cọc trước")
+  notice        String? // cảnh báo: "Chỉ liên hệ qua kênh hiển thị tại đây", "Hết phòng mùa lễ"…
 
   placeId String
   place   Place  @relation(fields: [placeId], references: [id], onDelete: Cascade)
@@ -583,6 +600,7 @@ model Accommodation {
   @@index([placeId])
   @@index([category])
   @@index([status])
+  @@index([isVerified])
 }
 
 // Transport: hiển thị INLINE trên trang Place — không slug, không trang chi tiết,

@@ -5,12 +5,13 @@ import { Prisma } from "@/generated/prisma/client";
 import { coverUrl } from "@/lib/place-image";
 import { PostStats } from "@/components/blog/post-stats";
 
-// Đặc sản/Quán ăn/Lưu trú không còn trang chi tiết riêng (đã chuyển drawer) nên
-// không render "Bài viết liên quan" — chỉ giữ các loại còn có trang.
+// Đặc sản/Quán ăn không có trang chi tiết riêng (hiển thị drawer) nên không
+// render "Bài viết liên quan". Lưu trú CÓ trang chi tiết (/luu-tru/[slug]) → giữ.
 const FK = {
   place: "placeId",
   activity: "activityId",
   spot: "spotId",
+  accommodation: "accommodationId",
 } as const;
 
 export type RefType = keyof typeof FK;

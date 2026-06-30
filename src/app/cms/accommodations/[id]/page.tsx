@@ -8,13 +8,18 @@ import {
   Star,
   MapPin,
   ImageOff,
+  BadgeCheck,
+  TriangleAlert,
+  Phone,
+  MessageCircle,
+  Link2,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AccommodationAdminControls } from "../admin-controls";
-import { ACCOMMODATION_CATEGORIES, labelOf } from "../constants";
+import { ACCOMMODATION_CATEGORIES, PRICE_RANGES, labelOf } from "../constants";
 
 const dateFmt = new Intl.DateTimeFormat("vi-VN", {
   day: "2-digit",
@@ -37,14 +42,23 @@ export default async function AccommodationDetailPage({
       slug: true,
       description: true,
       category: true,
+      priceRange: true,
       status: true,
       isFeatured: true,
       order: true,
       address: true,
       lat: true,
       lng: true,
+      phone: true,
       website: true,
       bookingUrl: true,
+      zalo: true,
+      facebookUrl: true,
+      isVerified: true,
+      verifiedAt: true,
+      verifiedNote: true,
+      depositPolicy: true,
+      notice: true,
       tags: true,
       updatedAt: true,
       place: { select: { id: true, name: true } },
@@ -61,12 +75,28 @@ export default async function AccommodationDetailPage({
   const cover = acc.images.find((i) => i.isCover) ?? acc.images[0] ?? null;
   const facts = [
     { label: "Loại hình", value: labelOf(ACCOMMODATION_CATEGORIES, acc.category) },
+    { label: "Mức giá", value: labelOf(PRICE_RANGES, acc.priceRange) },
     { label: "Địa chỉ", value: acc.address },
     {
       label: "Toạ độ",
       value: acc.lat != null && acc.lng != null ? `${acc.lat}, ${acc.lng}` : null,
     },
   ].filter((f) => f.value);
+  const contacts = [
+    { icon: Phone, label: "Điện thoại", value: acc.phone, href: null },
+    {
+      icon: MessageCircle,
+      label: "Zalo",
+      value: acc.zalo,
+      href: null,
+    },
+    {
+      icon: Link2,
+      label: "Facebook",
+      value: acc.facebookUrl,
+      href: acc.facebookUrl,
+    },
+  ].filter((c) => c.value);
   const hasMap = acc.lat != null && acc.lng != null;
 
   return (
@@ -114,6 +144,12 @@ export default async function AccommodationDetailPage({
                 <Badge variant={published ? "default" : "outline"}>
                   {published ? "Đã xuất bản" : "Bản nháp"}
                 </Badge>
+                {acc.isVerified && (
+                  <Badge className="gap-1 border-emerald-600/30 bg-emerald-50 text-emerald-700">
+                    <BadgeCheck className="size-3" aria-hidden />
+                    Đã xác minh
+                  </Badge>
+                )}
                 {acc.isFeatured && (
                   <Badge variant="secondary" className="gap-1">
                     <Star className="size-3 fill-current" aria-hidden />
@@ -259,6 +295,70 @@ export default async function AccommodationDetailPage({
                   Đặt phòng <ExternalLink className="size-3.5" />
                 </a>
               )}
+            </div>
+          )}
+
+          {contacts.length > 0 && (
+            <div className="rounded-xl border p-4">
+              <h3 className="text-sm font-semibold">Kênh liên hệ chính chủ</h3>
+              <dl className="mt-3 space-y-2.5 text-sm">
+                {contacts.map((c) => (
+                  <div key={c.label} className="flex items-center gap-2">
+                    <c.icon
+                      className="size-4 shrink-0 text-muted-foreground"
+                      aria-hidden
+                    />
+                    {c.href ? (
+                      <a
+                        href={c.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="truncate text-primary hover:underline"
+                      >
+                        {c.value}
+                      </a>
+                    ) : (
+                      <span className="truncate">{c.value}</span>
+                    )}
+                  </div>
+                ))}
+              </dl>
+            </div>
+          )}
+
+          {(acc.depositPolicy || acc.notice || acc.verifiedNote) && (
+            <div className="rounded-xl border p-4">
+              <h3 className="text-sm font-semibold">An toàn & nội bộ</h3>
+              <div className="mt-3 space-y-3 text-sm">
+                {acc.depositPolicy && (
+                  <div>
+                    <dt className="text-xs text-muted-foreground">
+                      Chính sách cọc
+                    </dt>
+                    <dd className="mt-0.5">{acc.depositPolicy}</dd>
+                  </div>
+                )}
+                {acc.notice && (
+                  <div className="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/5 px-3 py-2">
+                    <TriangleAlert
+                      className="mt-0.5 size-4 shrink-0 text-amber-600"
+                      aria-hidden
+                    />
+                    <span>{acc.notice}</span>
+                  </div>
+                )}
+                {acc.verifiedNote && (
+                  <div>
+                    <dt className="text-xs text-muted-foreground">
+                      Ghi chú xác minh (nội bộ)
+                      {acc.verifiedAt && ` · ${dateFmt.format(acc.verifiedAt)}`}
+                    </dt>
+                    <dd className="mt-0.5 text-muted-foreground">
+                      {acc.verifiedNote}
+                    </dd>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 

@@ -2,10 +2,15 @@
 
 import { useMemo, useState } from "react";
 import Image from "next/image";
-import { MapPin } from "lucide-react";
+import Link from "next/link";
+import { MapPin, BadgeCheck, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { coverUrl } from "@/lib/place-image";
-import { ACCOMMODATION_CATEGORY_LABELS, label } from "@/lib/listing-labels";
+import {
+  ACCOMMODATION_CATEGORY_LABELS,
+  PRICE_LABELS,
+  label,
+} from "@/lib/listing-labels";
 import {
   Sheet,
   SheetContent,
@@ -18,8 +23,9 @@ import {
   type AccommodationDetailData,
 } from "@/components/site/accommodation-detail";
 
-// Lưới Nơi lưu trú: bấm card mở ngăn trượt (drawer) chi tiết. Hỗ trợ mở sẵn theo
-// ?open=<slug> (deep-link từ trang khác / URL chi tiết cũ đã chuyển hướng về đây).
+// Lưới Nơi lưu trú: click card → trang chi tiết (/luu-tru/[slug]); hover hiện nút
+// "Xem nhanh" → mở ngăn trượt (drawer) chi tiết tại chỗ. Hỗ trợ mở sẵn drawer theo
+// ?open=<slug> (deep-link từ trang khác).
 export function AccommodationSection({
   accommodations,
   openSlug,
@@ -47,13 +53,13 @@ export function AccommodationSection({
       </div>
       <div className="mt-7 grid grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-3 lg:grid-cols-4">
         {accommodations.map((a) => (
-          <button
-            key={a.slug}
-            type="button"
-            onClick={() => setSelected(a.slug)}
-            aria-label={`Xem chi tiết ${a.name}`}
-            className="group block text-left"
-          >
+          <article key={a.slug} className="group relative">
+            {/* Link phủ toàn card → trang chi tiết (stretched link) */}
+            <Link
+              href={`/luu-tru/${a.slug}`}
+              aria-label={a.name}
+              className="absolute inset-0 z-10 rounded-xl"
+            />
             <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-muted">
               <Image
                 src={coverUrl(a.images, a.slug)}
@@ -62,15 +68,40 @@ export function AccommodationSection({
                 sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
                 className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
               />
+              {/* Lớp phủ tối nhẹ khi hover (chỉ trang trí, không chặn click) */}
+              <div className="pointer-events-none absolute inset-0 z-[15] bg-gradient-to-t from-black/25 to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
               {a.category && (
                 <span className="absolute left-2 top-2 rounded-full bg-background/90 px-2.5 py-1 text-xs font-medium shadow-sm backdrop-blur">
                   {label(ACCOMMODATION_CATEGORY_LABELS, a.category)}
                 </span>
               )}
+              {a.isVerified && (
+                <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-emerald-600/95 px-2 py-1 text-xs font-medium text-white shadow-sm">
+                  <BadgeCheck className="size-3" aria-hidden />
+                  Đã xác minh
+                </span>
+              )}
+              {/* Nút Xem nhanh (z cao hơn link) → mở drawer, không điều hướng */}
+              <button
+                type="button"
+                onClick={() => setSelected(a.slug)}
+                aria-label={`Xem nhanh ${a.name}`}
+                className="absolute bottom-2 left-1/2 z-20 inline-flex -translate-x-1/2 translate-y-1 items-center gap-1.5 rounded-full bg-background/95 px-3 py-1.5 text-xs font-semibold shadow-md backdrop-blur transition-all duration-200 hover:bg-background focus-visible:opacity-100 group-hover:translate-y-0 group-hover:opacity-100 sm:opacity-0"
+              >
+                <Eye className="size-3.5" aria-hidden />
+                Xem nhanh
+              </button>
             </div>
-            <h3 className="mt-2.5 font-semibold tracking-tight line-clamp-1">
-              {a.name}
-            </h3>
+            <div className="mt-2.5 flex items-center justify-between gap-2">
+              <h3 className="font-semibold tracking-tight line-clamp-1">
+                {a.name}
+              </h3>
+              {a.priceRange && (
+                <span className="shrink-0 text-xs font-medium text-muted-foreground">
+                  {label(PRICE_LABELS, a.priceRange)?.split(" · ")[0]}
+                </span>
+              )}
+            </div>
             {a.description && (
               <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
                 {a.description}
@@ -96,7 +127,7 @@ export function AccommodationSection({
                 ))}
               </div>
             )}
-          </button>
+          </article>
         ))}
       </div>
 
