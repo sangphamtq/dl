@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma";
 import {
   PublishStatus,
   AccommodationCategory,
-  PriceRange,
 } from "@/generated/prisma/enums";
 
 // Seed thêm vài homestay tại Phan Thiết, gắn vào điểm đến `phan-thiet` đã có.
@@ -60,7 +59,6 @@ type HomestaySeed = {
   bookingUrl?: string;
   zalo?: string;
   facebookUrl?: string;
-  priceRange?: PriceRange;
   isVerified?: boolean;
   depositPolicy?: string;
   notice?: string;
@@ -81,7 +79,6 @@ const homestays: HomestaySeed[] = [
     zalo: "0905112233",
     facebookUrl: "https://facebook.com/sunnyhouse.muine",
     bookingUrl: "https://www.booking.com/hotel/vn/sunny-house-mui-ne.html",
-    priceRange: PriceRange.budget,
     isVerified: true,
     depositPolicy: "Cọc 30% qua chính chủ để giữ phòng; số dư trả khi nhận phòng.",
     notice: "Chỉ liên hệ & chuyển khoản qua số/Zalo hiển thị tại đây — cảnh giác số lạ trong bình luận.",
@@ -105,7 +102,6 @@ const homestays: HomestaySeed[] = [
     zalo: "0908445566",
     facebookUrl: "https://facebook.com/cocogarden.homestay",
     bookingUrl: "https://www.booking.com/hotel/vn/coco-garden-mui-ne.html",
-    priceRange: PriceRange.moderate,
     isVerified: true,
     depositPolicy: "Cọc 1 đêm đầu qua chính chủ; hoàn cọc nếu báo huỷ trước 3 ngày.",
     description:
@@ -125,7 +121,6 @@ const homestays: HomestaySeed[] = [
     lng: 108.1043,
     phone: "0912 778 990",
     zalo: "0912778990",
-    priceRange: PriceRange.budget,
     isVerified: false,
     notice: "Liên hệ trực tiếp chủ nhà qua số điện thoại; chưa nhận đặt cọc online.",
     description:
@@ -146,7 +141,6 @@ const homestays: HomestaySeed[] = [
     zalo: "0934221100",
     facebookUrl: "https://facebook.com/saobien.honrom",
     bookingUrl: "https://www.booking.com/hotel/vn/sao-bien-hon-rom.html",
-    priceRange: PriceRange.budget,
     isVerified: true,
     depositPolicy: "Cọc 50% qua chính chủ vào mùa cao điểm; ngày thường giữ phòng bằng SĐT.",
     description:

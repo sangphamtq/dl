@@ -27,7 +27,7 @@ import {
   updateAccommodation,
   type AccommodationFormInput,
 } from "./actions";
-import { ACCOMMODATION_CATEGORIES, PRICE_RANGES } from "./constants";
+import { ACCOMMODATION_CATEGORIES } from "./constants";
 
 export type PlaceOption = { id: string; label: string };
 export type AccommodationFormValues = AccommodationFormInput;
@@ -38,7 +38,6 @@ const EMPTY: AccommodationFormValues = {
   description: "",
   category: "",
   placeId: "",
-  priceRange: "",
   address: "",
   lat: "",
   lng: "",
@@ -132,43 +131,23 @@ export function AccommodationForm({
               searchPlaceholder="Tìm nơi…"
             />
           </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label>Loại hình</Label>
-              <Select
-                value={values.category}
-                onValueChange={(v) => set("category", v)}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Chọn loại hình…" />
-                </SelectTrigger>
-                <SelectContent>
-                  {ACCOMMODATION_CATEGORIES.map((c) => (
-                    <SelectItem key={c.value} value={c.value}>
-                      {c.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Mức giá</Label>
-              <Select
-                value={values.priceRange}
-                onValueChange={(v) => set("priceRange", v)}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Chọn mức giá…" />
-                </SelectTrigger>
-                <SelectContent>
-                  {PRICE_RANGES.map((p) => (
-                    <SelectItem key={p.value} value={p.value}>
-                      {p.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="space-y-2">
+            <Label>Loại hình</Label>
+            <Select
+              value={values.category}
+              onValueChange={(v) => set("category", v)}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Chọn loại hình…" />
+              </SelectTrigger>
+              <SelectContent>
+                {ACCOMMODATION_CATEGORIES.map((c) => (
+                  <SelectItem key={c.value} value={c.value}>
+                    {c.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </FormSection>
 

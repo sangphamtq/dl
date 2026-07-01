@@ -6,7 +6,6 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import {
   AccommodationCategory,
-  PriceRange,
   PublishStatus,
 } from "@/generated/prisma/enums";
 import { slugify, RESERVED_SLUGS } from "@/lib/slug";
@@ -20,7 +19,6 @@ export type AccommodationFormInput = {
   description: string;
   category: string;
   placeId: string;
-  priceRange: string;
   address: string;
   lat: string;
   lng: string;
@@ -88,10 +86,6 @@ async function normalize(
     input.category && input.category in AccommodationCategory
       ? (input.category as AccommodationCategory)
       : null;
-  const priceRange =
-    input.priceRange && input.priceRange in PriceRange
-      ? (input.priceRange as PriceRange)
-      : null;
   const tags = input.tags
     .split(",")
     .map((t) => t.trim())
@@ -103,7 +97,6 @@ async function normalize(
       slug,
       description: input.description.trim() || null,
       category,
-      priceRange,
       placeId: input.placeId,
       address: input.address.trim() || null,
       lat,

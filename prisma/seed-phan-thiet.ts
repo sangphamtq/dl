@@ -1230,7 +1230,6 @@ async function main() {
     {
       slug: "anantara-mui-ne-resort",
       name: "Anantara Mũi Né Resort",
-      priceRange: PriceRange.luxury,
       isVerified: true,
       zalo: "0252374188",
       facebookUrl: "https://facebook.com/AnantaraMuiNe",
@@ -1250,7 +1249,6 @@ async function main() {
     {
       slug: "the-cliff-resort-mui-ne",
       name: "The Cliff Resort & Residences",
-      priceRange: PriceRange.premium,
       isVerified: true,
       zalo: "0252371911",
       facebookUrl: "https://facebook.com/thecliffresort",
@@ -1269,7 +1267,6 @@ async function main() {
     {
       slug: "mui-ne-hills-homestay",
       name: "Mũi Né Hills Homestay",
-      priceRange: PriceRange.budget,
       isVerified: true,
       zalo: "0901234567",
       facebookUrl: "https://facebook.com/muinehills.homestay",
@@ -1288,7 +1285,6 @@ async function main() {
     {
       slug: "khach-san-phan-thiet-center",
       name: "Khách sạn Phan Thiết Center",
-      priceRange: PriceRange.moderate,
       isVerified: false,
       zalo: "0252382299",
       category: AccommodationCategory.hotel,
@@ -1304,7 +1300,6 @@ async function main() {
     {
       slug: "sailing-club-resort-mui-ne",
       name: "Sailing Club Resort Mũi Né",
-      priceRange: PriceRange.premium,
       isVerified: true,
       zalo: "0252384744",
       facebookUrl: "https://facebook.com/sailingclubresortmuine",
@@ -1322,7 +1317,6 @@ async function main() {
     {
       slug: "pandanus-resort-phan-thiet",
       name: "Pandanus Resort",
-      priceRange: PriceRange.premium,
       isVerified: true,
       zalo: "0252384984",
       category: AccommodationCategory.resort,
@@ -1338,7 +1332,6 @@ async function main() {
     {
       slug: "mango-beach-hostel-mui-ne",
       name: "Mango Beach Hostel",
-      priceRange: PriceRange.budget,
       isVerified: false,
       zalo: "0908765432",
       notice: "Phòng dorm thường kín vào cuối tuần — nên nhắn Zalo giữ chỗ trước.",
@@ -1355,7 +1348,6 @@ async function main() {
     {
       slug: "villa-aria-mui-ne",
       name: "Villa Aria Mũi Né",
-      priceRange: PriceRange.premium,
       isVerified: true,
       zalo: "0252374338",
       facebookUrl: "https://facebook.com/villaaria.muine",

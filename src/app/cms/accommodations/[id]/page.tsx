@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AccommodationAdminControls } from "../admin-controls";
-import { ACCOMMODATION_CATEGORIES, PRICE_RANGES, labelOf } from "../constants";
+import { ACCOMMODATION_CATEGORIES, labelOf } from "../constants";
 
 const dateFmt = new Intl.DateTimeFormat("vi-VN", {
   day: "2-digit",
@@ -42,7 +42,6 @@ export default async function AccommodationDetailPage({
       slug: true,
       description: true,
       category: true,
-      priceRange: true,
       status: true,
       isFeatured: true,
       order: true,
@@ -75,7 +74,6 @@ export default async function AccommodationDetailPage({
   const cover = acc.images.find((i) => i.isCover) ?? acc.images[0] ?? null;
   const facts = [
     { label: "Loại hình", value: labelOf(ACCOMMODATION_CATEGORIES, acc.category) },
-    { label: "Mức giá", value: labelOf(PRICE_RANGES, acc.priceRange) },
     { label: "Địa chỉ", value: acc.address },
     {
       label: "Toạ độ",

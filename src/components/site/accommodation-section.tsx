@@ -8,7 +8,6 @@ import { cn } from "@/lib/utils";
 import { coverUrl } from "@/lib/place-image";
 import {
   ACCOMMODATION_CATEGORY_LABELS,
-  PRICE_LABELS,
   label,
 } from "@/lib/listing-labels";
 import {
@@ -92,16 +91,9 @@ export function AccommodationSection({
                 Xem nhanh
               </button>
             </div>
-            <div className="mt-2.5 flex items-center justify-between gap-2">
-              <h3 className="font-semibold tracking-tight line-clamp-1">
-                {a.name}
-              </h3>
-              {a.priceRange && (
-                <span className="shrink-0 text-xs font-medium text-muted-foreground">
-                  {label(PRICE_LABELS, a.priceRange)?.split(" · ")[0]}
-                </span>
-              )}
-            </div>
+            <h3 className="mt-2.5 font-semibold tracking-tight line-clamp-1">
+              {a.name}
+            </h3>
             {a.description && (
               <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
                 {a.description}

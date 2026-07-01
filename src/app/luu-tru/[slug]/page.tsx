@@ -18,7 +18,6 @@ import { coverUrl } from "@/lib/place-image";
 import { googleEmbedSrc } from "@/lib/map-url";
 import {
   ACCOMMODATION_CATEGORY_LABELS,
-  PRICE_LABELS,
   label,
 } from "@/lib/listing-labels";
 import { SiteHeader } from "@/components/site/site-header";
@@ -77,7 +76,6 @@ export default async function AccommodationPublicPage({
       slug: true,
       description: true,
       category: true,
-      priceRange: true,
       status: true,
       address: true,
       lat: true,
@@ -134,7 +132,6 @@ export default async function AccommodationPublicPage({
   }
 
   const categoryLabel = label(ACCOMMODATION_CATEGORY_LABELS, acc.category);
-  const priceLabel = label(PRICE_LABELS, acc.priceRange);
   const hasMap = acc.lat != null && acc.lng != null;
   const mapsHref = hasMap
     ? `https://www.google.com/maps/search/?api=1&query=${acc.lat}%2C${acc.lng}`
@@ -209,9 +206,6 @@ export default async function AccommodationPublicPage({
                 </h1>
 
                 <dl className="mt-6 flex flex-wrap gap-x-7 gap-y-4 text-sm">
-                  {priceLabel && (
-                    <HeroFact icon={Wallet} label="Mức giá" value={priceLabel} />
-                  )}
                   {acc.address && (
                     <HeroFact
                       icon={MapPin}

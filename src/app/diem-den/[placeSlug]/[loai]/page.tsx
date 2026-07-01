@@ -297,7 +297,6 @@ async function fetchAccommodationDetails(
       name: true,
       description: true,
       category: true,
-      priceRange: true,
       address: true,
       lat: true,
       lng: true,

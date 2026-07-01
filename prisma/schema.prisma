@@ -558,7 +558,6 @@ model Accommodation {
   name        String
   description String?
   category    AccommodationCategory?
-  priceRange  PriceRange? // mức giá tương đối — trục lọc theo ngân sách
 
   // PlaceableFields
   address      String?

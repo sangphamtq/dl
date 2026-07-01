@@ -22,7 +22,6 @@ import { cn } from "@/lib/utils";
 import { coverUrl } from "@/lib/place-image";
 import {
   ACCOMMODATION_CATEGORY_LABELS,
-  PRICE_LABELS,
   label,
 } from "@/lib/listing-labels";
 
@@ -31,7 +30,6 @@ export type AccommodationDetailData = {
   name: string;
   description: string | null;
   category: string | null;
-  priceRange: string | null;
   address: string | null;
   lat: number | null;
   lng: number | null;
@@ -75,12 +73,8 @@ export function AccommodationDetail({
         ];
   const single = strip.length === 1;
 
-  const priceLabel = data.priceRange
-    ? label(PRICE_LABELS, data.priceRange)
-    : null;
   const facts = [
     { icon: MapPin, value: data.address },
-    { icon: Wallet, value: priceLabel },
     { icon: Phone, value: data.phone },
   ].filter((f) => f.value);
   const hasMap = data.lat != null && data.lng != null;
