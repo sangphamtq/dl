@@ -144,9 +144,9 @@ export function NotificationBell({
         <button
           type="button"
           aria-label="Thông báo"
-          className="relative grid size-9 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="relative grid size-9 place-items-center rounded-full text-foreground transition-colors hover:bg-muted"
         >
-          <Bell className="size-5" aria-hidden />
+          <Bell className="size-4" aria-hidden />
           {unread > 0 && (
             <span className="absolute -right-0.5 -top-0.5 grid min-w-4 place-items-center rounded-full bg-warm px-1 text-[0.625rem] font-semibold leading-4 text-warm-foreground">
               {unread > 9 ? "9+" : unread}

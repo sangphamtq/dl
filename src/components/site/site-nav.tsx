@@ -15,7 +15,7 @@ export function SiteNav({
   const pathname = usePathname();
 
   return (
-    <nav className={cn("items-center gap-1", className)}>
+    <nav className={cn("items-center gap-1 h-full", className)}>
       {links.map((l) => {
         const active = pathname === l.href || pathname.startsWith(`${l.href}/`);
         return (
@@ -24,20 +24,13 @@ export function SiteNav({
             href={l.href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "group relative px-3 py-2 text-sm font-medium transition-colors",
+              "relative px-3 pt-2.5 pb-1.5 text-sm transition-colors uppercase h-full flex items-center",
               active
-                ? "text-foreground"
-                : "text-muted-foreground hover:text-foreground",
+                ? "text-primary drop-shadow-sm"
+                : "text-foreground hover:text-primary",
             )}
           >
             {l.label}
-            <span
-              aria-hidden
-              className={cn(
-                "pointer-events-none absolute inset-x-3 -bottom-0.5 h-0.5 origin-center rounded-full bg-primary transition-transform duration-300 ease-out",
-                active ? "scale-x-100" : "scale-x-0 group-hover:scale-x-50",
-              )}
-            />
           </Link>
         );
       })}

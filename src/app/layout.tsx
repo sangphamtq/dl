@@ -1,26 +1,20 @@
 import type { Metadata } from "next";
-import {
-  Be_Vietnam_Pro,
-  Geist_Mono,
-  Playfair_Display,
-  Mali,
-} from "next/font/google";
+import { Cabin, Geist_Mono, Roboto, Mali } from "next/font/google";
 import { Toaster } from "sonner";
 import { getSettings } from "@/lib/settings";
 import { BackToTop } from "@/components/site/back-to-top";
 import "./globals.css";
 
-const beVietnamPro = Be_Vietnam_Pro({
+const cabin = Cabin({
   variable: "--font-sans",
   subsets: ["latin", "latin-ext", "vietnamese"],
-  weight: ["300", "400", "500", "600", "700", "800"],
   display: "swap",
 });
 
-const playfair = Playfair_Display({
+// Font tiêu đề (heading h1–h6) — trung tính, chắc khỏe, dấu tiếng Việt gọn.
+const roboto = Roboto({
   variable: "--font-display",
   subsets: ["latin", "latin-ext", "vietnamese"],
-  weight: ["500", "600", "700", "800"],
   display: "swap",
 });
 
@@ -53,7 +47,7 @@ export default function RootLayout({
   return (
     <html
       lang="vi"
-      className={`${beVietnamPro.variable} ${playfair.variable} ${geistMono.variable} ${mali.variable} h-full antialiased`}
+      className={`${cabin.variable} ${roboto.variable} ${geistMono.variable} ${mali.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         {children}

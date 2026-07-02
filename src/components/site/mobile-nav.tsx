@@ -38,15 +38,14 @@ export function MobileNav({ links, isAuthed }: Props) {
       </SheetTrigger>
       <SheetContent side="left" className="w-72 gap-0 p-0">
         <SheetHeader className="border-b">
-          <SheetTitle className="flex items-center gap-2">
+          <SheetTitle>
             <Image
-              src="/icon-192.png"
-              alt=""
-              width={20}
-              height={20}
-              className="size-5 rounded"
+              src="/logo_horizontal_trim.png"
+              alt="halivivu"
+              width={106}
+              height={36}
+              className="h-8 w-auto"
             />
-            Hành Trình Việt
           </SheetTitle>
         </SheetHeader>
         <nav className="flex flex-col gap-1 p-4">
