@@ -13,7 +13,8 @@
     "seed:homestay-phan-thiet": "tsx prisma/seed-homestay-phan-thiet.ts",
     "seed:blog": "tsx prisma/seed-blog.ts",
     "seed:blog-phan-thiet": "tsx prisma/seed-blog-phan-thiet.ts",
-    "seed:community": "tsx prisma/seed-community.ts"
+    "seed:community": "tsx prisma/seed-community.ts",
+    "seed:sales": "tsx prisma/seed-sales.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",

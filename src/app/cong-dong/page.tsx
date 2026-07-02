@@ -40,7 +40,7 @@ export default async function CommunityPage({
   const isStaff = role === "admin" || role === "editor";
   const rt = ablyEnabled();
 
-  const [{ posts, total }, grouped, places, trips] = await Promise.all([
+  const [{ posts, total }, grouped, places, trips, mySale] = await Promise.all([
     getFeed({
       type: type === "all" ? undefined : (type as ThreadType),
       sort,
@@ -61,7 +61,14 @@ export default async function CommunityPage({
         })
       : Promise.resolve([]),
     getTrips({}),
+    currentUserId
+      ? prisma.saleProfile.findUnique({
+          where: { userId: currentUserId },
+          select: { status: true },
+        })
+      : Promise.resolve(null),
   ]);
+  const canPostSale = mySale?.status === "approved";
 
   const totalAll = grouped.reduce((s, g) => s + g._count._all, 0);
   const countOf = (v: string) =>
@@ -104,6 +111,7 @@ export default async function CommunityPage({
             isAuthed={isAuthed}
             currentUserName={session?.user?.name ?? null}
             places={places}
+            canPostSale={canPostSale}
           />
 
           {/* Lọc theo loại + sắp xếp */}

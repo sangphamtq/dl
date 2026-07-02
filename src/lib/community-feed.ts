@@ -31,7 +31,12 @@ function threadSelect(meId: string) {
     isHidden: true,
     createdAt: true,
     authorId: true,
-    author: { select: { name: true } },
+    author: {
+      select: {
+        name: true,
+        saleProfile: { select: { status: true, slug: true } },
+      },
+    },
     place: { select: { slug: true, name: true } },
     images: { orderBy: { order: "asc" }, select: { url: true, alt: true } },
     _count: { select: { likes: true, replies: true } },
@@ -81,7 +86,10 @@ type RawThread = {
   isHidden: boolean;
   createdAt: Date;
   authorId: string;
-  author: { name: string | null };
+  author: {
+    name: string | null;
+    saleProfile: { status: string; slug: string } | null;
+  };
   place: { slug: string; name: string } | null;
   images: { url: string; alt: string | null }[];
   _count: { likes: number; replies: number };

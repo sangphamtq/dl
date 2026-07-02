@@ -76,6 +76,19 @@ export async function createThread(input: {
     ? input.type
     : "discussion";
 
+  // "sale" là loại đặc quyền: chỉ CTV có hồ sơ ĐÃ DUYỆT mới đăng được.
+  if (type === "sale") {
+    const sale = await prisma.saleProfile.findUnique({
+      where: { userId: user.id },
+      select: { status: true },
+    });
+    if (sale?.status !== "approved")
+      return {
+        ok: false,
+        error: "Chỉ CTV đã được duyệt mới đăng được tin rao dịch vụ.",
+      };
+  }
+
   // Điểm đến (tùy chọn) — chỉ gắn nếu tồn tại; lấy slug để phát realtime feed.
   let placeId: string | null = null;
   let placeSlug: string | null = null;

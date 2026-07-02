@@ -12,12 +12,15 @@ import { UserMenu } from "./user-menu";
 import { NotificationBell } from "./notification-bell";
 import { DaDenNavLink } from "./da-den-nav-link";
 import { HeaderSearch } from "./header-search";
+import { HeaderShell } from "./header-shell";
 import { SiteNav } from "./site-nav";
 
 const NAV_LINKS = [
   { href: "/diem-den", label: "Điểm đến" },
   { href: "/blog", label: "Cẩm nang" },
   { href: "/cong-dong", label: "Cộng đồng" },
+  { href: "/sale", label: "Cộng tác viên" },
+  { href: "/kiem-tra", label: "Kiểm tra uy tín" },
 ];
 
 export async function SiteHeader() {
@@ -26,34 +29,35 @@ export async function SiteHeader() {
   const unread = user?.id ? await getUnreadCount(user.id) : 0;
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/80 backdrop-blur-xl">
-      <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 sm:px-6">
+    <HeaderShell>
+      <div className="mx-auto flex h-16 max-w-7xl items-center gap-2 px-4 sm:gap-3 sm:px-6">
         <MobileNav links={NAV_LINKS} isAuthed={!!user} />
 
         {/* Logo */}
         <Link
           href="/"
-          className="group flex items-center gap-2.5 font-bold tracking-tight"
+          aria-label={settings.siteName}
+          className="group mr-1 flex shrink-0 items-center gap-2.5"
         >
-          <span className="grid size-9 place-items-center overflow-hidden rounded-xl ring-1 ring-border/60 transition-transform group-hover:-rotate-3">
+          <span className="grid size-9 place-items-center overflow-hidden rounded-xl shadow-sm ring-1 ring-border/70 transition duration-300 group-hover:-rotate-6 group-hover:ring-primary/50">
             <Image
               src="/icon-192.png"
-              alt={settings.siteName}
+              alt=""
               width={36}
               height={36}
               className="size-full object-cover"
             />
           </span>
-          <span className="hidden text-base sm:inline">
+          <span className="hidden text-[15px] font-bold leading-none tracking-tight text-foreground sm:inline">
             {settings.siteName}
           </span>
         </Link>
 
         {/* Desktop nav */}
-        <SiteNav links={NAV_LINKS} className="ml-3 hidden md:flex" />
+        <SiteNav links={NAV_LINKS} className="hidden md:flex" />
 
         {/* Right side */}
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-1 sm:gap-1.5">
           {/* Search (desktop): gợi ý live */}
           <HeaderSearch />
           {/* Search icon (mobile/tablet) */}
@@ -88,13 +92,13 @@ export async function SiteHeader() {
           ) : (
             <Link
               href="/login"
-              className="inline-flex h-9 items-center rounded-full bg-warm px-4 text-sm font-semibold text-warm-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:bg-warm/90"
+              className="ml-1 inline-flex h-9 items-center rounded-full bg-warm px-4 text-sm font-semibold text-warm-foreground shadow-sm shadow-warm/25 transition-all duration-200 hover:-translate-y-0.5 hover:bg-warm/90 hover:shadow-md hover:shadow-warm/30"
             >
               Đăng nhập
             </Link>
           )}
         </div>
       </div>
-    </header>
+    </HeaderShell>
   );
 }

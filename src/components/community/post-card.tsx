@@ -2,7 +2,15 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { Heart, Lock, MapPin, MessageCircle, Pin, Share2 } from "lucide-react";
+import {
+  BadgeCheck,
+  Heart,
+  Lock,
+  MapPin,
+  MessageCircle,
+  Pin,
+  Share2,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { initials, timeAgo } from "@/lib/format";
 import { renderPostBody } from "@/lib/post-format";
@@ -20,7 +28,10 @@ export type PostData = {
   isPinned: boolean;
   isLocked: boolean;
   createdAt: Date;
-  author: { name: string | null };
+  author: {
+    name: string | null;
+    saleProfile?: { status: string; slug: string } | null;
+  };
   authorId: string;
   place: { slug: string; name: string } | null;
   images: PostImage[];
@@ -94,8 +105,18 @@ export function PostCard({
           {initials(post.author.name)}
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold">
+          <p className="flex items-center gap-1.5 truncate text-sm font-semibold">
             {post.author.name ?? "Ẩn danh"}
+            {post.author.saleProfile?.status === "approved" && (
+              <Link
+                href={`/sale/${post.author.saleProfile.slug}`}
+                className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary"
+                title="Cộng tác viên đã xác minh"
+              >
+                <BadgeCheck className="size-3" aria-hidden />
+                CTV
+              </Link>
+            )}
           </p>
           <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             <Link href={`/cong-dong/${post.slug}`} className="hover:underline">

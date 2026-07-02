@@ -8,7 +8,7 @@ import { Bold, ImagePlus, Italic, Loader2, Smile, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { initials } from "@/lib/format";
 import { useUploadThing } from "@/lib/uploadthing";
-import { THREAD_TYPES, type ThreadTypeValue } from "@/lib/community";
+import { COMPOSER_THREAD_TYPES, type ThreadTypeValue } from "@/lib/community";
 import { createThread } from "@/app/cong-dong/actions";
 
 export type PlaceOption = { id: string; name: string };
@@ -30,13 +30,19 @@ export function PostComposer({
   places,
   fixedPlaceId,
   defaultType = "discussion",
+  canPostSale = false,
 }: {
   isAuthed: boolean;
   currentUserName?: string | null;
   places?: PlaceOption[];
   fixedPlaceId?: string;
   defaultType?: ThreadTypeValue;
+  canPostSale?: boolean;
 }) {
+  // CTV đã duyệt được thêm lựa chọn "Rao dịch vụ".
+  const typeOptions = canPostSale
+    ? [...COMPOSER_THREAD_TYPES, { value: "sale", label: "Rao dịch vụ" }]
+    : COMPOSER_THREAD_TYPES;
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
@@ -193,7 +199,7 @@ export function PostComposer({
             onChange={(e) => setType(e.target.value as ThreadTypeValue)}
             className="mt-0.5 rounded-md bg-muted/60 px-2 py-0.5 text-xs font-medium text-foreground outline-none transition-colors hover:bg-muted focus:ring-2 focus:ring-primary/15"
           >
-            {THREAD_TYPES.map((t) => (
+            {typeOptions.map((t) => (
               <option key={t.value} value={t.value}>
                 {t.label}
               </option>

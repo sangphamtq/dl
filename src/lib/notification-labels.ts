@@ -5,6 +5,8 @@ export const NOTIF_MESSAGES: Record<string, string> = {
   thread_like: "đã thích bài viết của bạn",
   reply_like: "đã thích bình luận của bạn",
   blog_reply: "đã trả lời bình luận của bạn",
+  sale_approved: "đã duyệt hồ sơ CTV của bạn",
+  sale_rejected: "đã từ chối hồ sơ CTV của bạn",
 };
 
 export const notifMessage = (type: string): string =>

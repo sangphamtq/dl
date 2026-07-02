@@ -3,7 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -20,6 +22,7 @@ type Props = {
 
 export function MobileNav({ links, isAuthed }: Props) {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -47,21 +50,37 @@ export function MobileNav({ links, isAuthed }: Props) {
           </SheetTitle>
         </SheetHeader>
         <nav className="flex flex-col gap-1 p-4">
-          {links.map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              onClick={() => setOpen(false)}
-              className="rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            >
-              {l.label}
-            </Link>
-          ))}
+          {links.map((l) => {
+            const active =
+              pathname === l.href || pathname.startsWith(`${l.href}/`);
+            return (
+              <Link
+                key={l.href}
+                href={l.href}
+                onClick={() => setOpen(false)}
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "relative rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                  active
+                    ? "bg-primary/10 text-foreground"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                )}
+              >
+                {active && (
+                  <span
+                    aria-hidden
+                    className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-primary"
+                  />
+                )}
+                {l.label}
+              </Link>
+            );
+          })}
           {!isAuthed && (
             <Link
               href="/login"
               onClick={() => setOpen(false)}
-              className="mt-2 rounded-lg bg-primary px-3 py-2.5 text-center text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
+              className="mt-2 rounded-full bg-warm px-3 py-2.5 text-center text-sm font-semibold text-warm-foreground shadow-sm shadow-warm/25 transition hover:bg-warm/90"
             >
               Đăng nhập
             </Link>

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
-// Nav desktop với tô đậm mục đang xem (underline accent).
+// Nav desktop kiểu biên tập: chữ gọn, gạch chân ngắn (accent) cho mục đang xem.
 export function SiteNav({
   links,
   className,
@@ -24,13 +24,20 @@ export function SiteNav({
             href={l.href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "rounded-full px-3.5 py-2 text-sm font-medium transition-colors",
+              "group relative px-3 py-2 text-sm font-medium transition-colors",
               active
-                ? "bg-muted text-foreground"
-                : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                ? "text-foreground"
+                : "text-muted-foreground hover:text-foreground",
             )}
           >
             {l.label}
+            <span
+              aria-hidden
+              className={cn(
+                "pointer-events-none absolute inset-x-3 -bottom-0.5 h-0.5 origin-center rounded-full bg-primary transition-transform duration-300 ease-out",
+                active ? "scale-x-100" : "scale-x-0 group-hover:scale-x-50",
+              )}
+            />
           </Link>
         );
       })}

@@ -2,6 +2,7 @@ import {
   HelpCircle,
   MessageSquare,
   Sparkles,
+  Tag,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -13,12 +14,14 @@ const ICONS: Record<string, LucideIcon> = {
   question: HelpCircle,
   trip: Users,
   discussion: MessageSquare,
+  sale: Tag,
 };
 
 export const threadTypeIcon = (type: string): LucideIcon =>
   ICONS[type] ?? MessageSquare;
 
 // Nhãn loại bài — trung tính (nền muted), phân biệt bằng icon.
+// Riêng "sale" (rao dịch vụ) tô tông primary để nổi bật.
 export function ThreadTypeBadge({
   type,
   className,
@@ -30,7 +33,10 @@ export function ThreadTypeBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground",
+        "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium",
+        type === "sale"
+          ? "bg-primary/10 text-primary"
+          : "bg-muted text-muted-foreground",
         className,
       )}
     >

@@ -46,6 +46,29 @@ enum ThreadType {
   question // Hỏi đáp (chưa đi)
   trip // Tìm bạn đồng hành / rủ đi (sắp đi)
   discussion // Thảo luận chung
+  sale // Rao dịch vụ — CHỈ CTV (SaleProfile) đã duyệt mới đăng được
+}
+
+// Trạng thái duyệt hồ sơ CTV (người bán). pending → approved | rejected.
+enum SaleStatus {
+  pending // vừa nộp, chờ staff duyệt
+  approved // đã duyệt → công khai + có huy hiệu
+  rejected // bị từ chối (kèm lý do)
+}
+
+// Loại kênh bị tố lừa đảo (công cụ kiểm tra uy tín).
+enum ScamChannel {
+  phone // SĐT / Zalo
+  facebook // link/trang Facebook
+  website // website
+  bank_account // số tài khoản ngân hàng
+}
+
+// Trạng thái báo cáo lừa đảo. Chỉ confirmed mới hiện/đếm công khai.
+enum ScamReportStatus {
+  pending // chờ kiểm duyệt
+  confirmed // đã xác nhận (hiện công khai)
+  rejected // bác bỏ
 }
 
 // Loại thông báo (tương tác lên nội dung của người nhận).
@@ -55,6 +78,8 @@ enum NotificationType {
   thread_like // thích bài cộng đồng của bạn
   reply_like // thích bình luận cộng đồng của bạn
   blog_reply // trả lời bình luận blog của bạn
+  sale_approved // hồ sơ CTV được duyệt
+  sale_rejected // hồ sơ CTV bị từ chối
 }
 
 /// Mức giá tương đối: budget=$ · moderate=$$ · premium=$$$ · luxury=$$$$
@@ -187,6 +212,9 @@ model User {
 
   checkIns CheckIn[] // các điểm đến/tỉnh đã đánh dấu "đã đến"
 
+  saleProfile   SaleProfile?  @relation("SaleOwner") // hồ sơ CTV (nếu có) — đăng ký làm người bán
+  salesReviewed SaleProfile[] @relation("SaleReviewer") // hồ sơ CTV mình đã duyệt (staff)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -266,12 +294,13 @@ model Place {
   accommodations Accommodation[]
   transports     Transport[]
 
-  images    Image[]
-  videos    PlaceVideo[] // video TikTok giới thiệu (hiển thị ở hero + modal)
-  postRefs  PostRef[]
-  threads   Thread[] // chủ đề cộng đồng gắn điểm đến này
-  viewStats PlaceViewStat[] // lượt xem theo ngày (để lọc trending)
-  checkIns  CheckIn[] // người dùng đã đánh dấu "đã đến" nơi này
+  images       Image[]
+  videos       PlaceVideo[] // video TikTok giới thiệu (hiển thị ở hero + modal)
+  postRefs     PostRef[]
+  threads      Thread[] // chủ đề cộng đồng gắn điểm đến này
+  saleProfiles SaleProfile[]   @relation("SaleAreas") // CTV phục vụ nơi này (M:N)
+  viewStats    PlaceViewStat[] // lượt xem theo ngày (để lọc trending)
+  checkIns     CheckIn[] // người dùng đã đánh dấu "đã đến" nơi này
 
   tags String[] @default([])
 
@@ -407,14 +436,14 @@ model Spot {
   // Thực tế về chỗ (xem CLAUDE.md "Spot vs Activity")
   bestTime     String? // mùa/giờ đẹp nhất — ngắn, cho chip hero ("sáng sớm")
   bestTimeNote String? // diễn giải "khi nào đẹp nhất" — đoạn cho mục riêng
-  ticketFree  Boolean @default(false) // miễn phí vào cửa
-  ticketTiers Json? // [{ label, price, note }] — giá VND, null/0 = miễn phí (xem lib/tickets)
-  ticketInfo  String? // ghi chú vé chung (giờ bán vé, ưu đãi…)
-  notice      String? // cảnh báo truy cập: "Tạm đóng", "Cần xin phép leo"
+  ticketFree   Boolean @default(false) // miễn phí vào cửa
+  ticketTiers  Json? // [{ label, price, note }] — giá VND, null/0 = miễn phí (xem lib/tickets)
+  ticketInfo   String? // ghi chú vé chung (giờ bán vé, ưu đãi…)
+  notice       String? // cảnh báo truy cập: "Tạm đóng", "Cần xin phép leo"
 
   // Nội dung biên tập có khuôn (thay rich-text tự do)
   gettingThere String? // cách đến riêng cho địa điểm này (hướng dẫn, mẹo đường đi)
-  tips         String[] @default([]) // kinh nghiệm / mẹo — mỗi phần tử một gạch đầu dòng
+  tips         String[]        @default([]) // kinh nghiệm / mẹo — mỗi phần tử một gạch đầu dòng
   highlights   SpotHighlight[] // điểm nhấn (title + body + ảnh), sắp theo order
 
   activityLinks SpotActivity[] // M:N qua bảng nối (mang nội dung riêng theo spot)
@@ -473,8 +502,8 @@ model SpotHighlight {
 }
 
 model Specialty {
-  id          String        @id @default(cuid())
-  slug        String        @unique
+  id          String  @id @default(cuid())
+  slug        String  @unique
   name        String
   description String?
 
@@ -817,9 +846,9 @@ model Thread {
 
   tags String[] @default([])
 
-  isPinned  Boolean @default(false) // staff ghim lên đầu
-  isLocked  Boolean @default(false) // khóa không cho trả lời
-  isHidden  Boolean @default(false) // staff ẩn khỏi công khai
+  isPinned Boolean @default(false) // staff ghim lên đầu
+  isLocked Boolean @default(false) // khóa không cho trả lời
+  isHidden Boolean @default(false) // staff ẩn khỏi công khai
 
   replyCount     Int      @default(0) // denormalize để list nhanh
   lastActivityAt DateTime @default(now()) // sắp theo "hoạt động gần đây"
@@ -860,9 +889,9 @@ model ThreadReply {
 
 // Thích/hữu ích cho chủ đề HOẶC trả lời (exclusive arc: đúng 1 trong 2 FK).
 model ThreadLike {
-  id       String @id @default(cuid())
-  userId   String
-  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   threadId String?
   thread   Thread?      @relation(fields: [threadId], references: [id], onDelete: Cascade)
@@ -874,6 +903,72 @@ model ThreadLike {
   @@unique([threadId, userId])
   @@unique([replyId, userId])
   @@index([userId])
+}
+
+// Hồ sơ CTV / người bán (sale) — DANH BẠ người bán ĐÃ XÁC MINH, song song với
+// Accommodation. Người dùng tự đăng ký (pending) → staff duyệt (approved) → hiện
+// huy hiệu + được đăng Thread(type=sale) + có trang cá nhân /sale/[slug].
+// 1:1 với User: sự tồn tại của hồ sơ = "là sale"; status=approved = huy hiệu công khai.
+model SaleProfile {
+  id     String @id @default(cuid())
+  slug   String @unique
+  userId String @unique
+  user   User   @relation("SaleOwner", fields: [userId], references: [id], onDelete: Cascade)
+
+  displayName String
+  bio         String?
+  services    String[] @default([]) // bán gì: tour | phong | ve | combo | thue-xe | tour-tu-thiet-ke ...
+
+  // Kênh liên hệ (như Accommodation) — được đối chiếu whitelist khi kiểm tra uy tín
+  zalo        String?
+  phone       String?
+  facebookUrl String?
+  website     String?
+
+  avatarUrl String? // ảnh đại diện công khai (fallback User.image)
+
+  // Duyệt / xác minh
+  status            SaleStatus @default(pending)
+  verifiedAt        DateTime? // mốc được duyệt (approved)
+  reVerifyDueAt     DateTime? // hạn tái xác minh (uy tín cũ đi)
+  verificationLevel String? // basic | standard | high (theo SOP)
+  verifiedNote      String? // NỘI BỘ: đã xác minh gì — KHÔNG hiện public
+  evidenceUrls      String[]   @default([]) // NỘI BỘ: ảnh bằng chứng (GPKD, MST…) — chỉ staff xem
+  rejectReason      String? // lý do từ chối (hiện cho chính chủ)
+  reviewedById      String?
+  reviewedBy        User?      @relation("SaleReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  notice String? // cảnh báo an toàn hiển thị cho khách
+
+  areas Place[] @relation("SaleAreas") // khu vực phục vụ (M:N)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+}
+
+// Báo cáo lừa đảo từ cộng đồng (blacklist) — cho công cụ kiểm tra uy tín.
+// BẮT BUỘC bằng chứng + kiểm duyệt; chỉ confirmed mới hiện/đếm công khai.
+// reporterId/reviewedById lưu dạng cột thường (không FK) để đỡ ràng buộc.
+model ScamReport {
+  id              String           @id @default(cuid())
+  channel         ScamChannel
+  valueNorm       String // giá trị đã chuẩn hoá — để đối chiếu khi tra
+  valueRaw        String // giá trị gốc người báo nhập
+  reason          String? // lý do ngắn (vd "lừa cọc", "page nhái")
+  description     String? // mô tả chi tiết sự việc
+  evidenceUrls    String[]         @default([]) // ảnh bằng chứng (bắt buộc ≥1)
+  reporterId      String? // user báo cáo (nếu đăng nhập)
+  reporterContact String? // liên hệ người báo (nếu ẩn danh)
+  status          ScamReportStatus @default(pending)
+  reviewedById    String? // staff đã kiểm duyệt
+  reviewNote      String? // ghi chú kiểm duyệt (nội bộ)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([channel, valueNorm])
+  @@index([status])
 }
 
 // Thông báo khi có người tương tác lên nội dung của người nhận.
