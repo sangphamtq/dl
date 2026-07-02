@@ -3,37 +3,58 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { NavGroupMenu } from "./nav-group-menu";
 
-// Nav desktop kiểu biên tập: chữ gọn, gạch chân ngắn (accent) cho mục đang xem.
+export type NavLink = { href: string; label: string; badge?: string };
+export type NavGroup = { label: string; href: string; items: NavLink[] };
+export type NavEntry = NavLink | NavGroup;
+
+// Nav desktop: mỗi entry là link phẳng, hoặc nhóm dropdown (khi có `items`).
 export function SiteNav({
-  links,
+  entries,
   className,
 }: {
-  links: { href: string; label: string }[];
+  entries: NavEntry[];
   className?: string;
 }) {
   const pathname = usePathname();
 
   return (
     <nav className={cn("items-center gap-1 h-full", className)}>
-      {links.map((l) => {
-        const active = pathname === l.href || pathname.startsWith(`${l.href}/`);
-        return (
+      {entries.map((e) =>
+        "items" in e ? (
+          <NavGroupMenu
+            key={e.label}
+            label={e.label}
+            href={e.href}
+            items={e.items}
+          />
+        ) : (
           <Link
-            key={l.href}
-            href={l.href}
-            aria-current={active ? "page" : undefined}
+            key={e.href}
+            href={e.href}
+            aria-current={
+              pathname === e.href || pathname.startsWith(`${e.href}/`)
+                ? "page"
+                : undefined
+            }
             className={cn(
-              "relative px-3 pt-2.5 pb-1.5 text-sm transition-colors uppercase h-full flex items-center",
-              active
+              "relative flex h-full items-center px-3 text-sm uppercase transition-colors",
+              pathname === e.href || pathname.startsWith(`${e.href}/`)
                 ? "text-primary drop-shadow-sm"
                 : "text-foreground hover:text-primary",
             )}
           >
-            {l.label}
+            {e.label}
+            {e.badge && (
+              <Badge className="ml-1 h-4 shrink-0 -translate-y-1.5 border-transparent bg-warm/15 px-1 text-[0.6rem] font-semibold normal-case leading-none text-warm">
+                {e.badge}
+              </Badge>
+            )}
           </Link>
-        );
-      })}
+        ),
+      )}
     </nav>
   );
 }

@@ -3,6 +3,7 @@ import { Cabin, Geist_Mono, Roboto, Mali } from "next/font/google";
 import { Toaster } from "sonner";
 import { getSettings } from "@/lib/settings";
 import { BackToTop } from "@/components/site/back-to-top";
+import { ItineraryFab } from "@/components/site/itinerary-fab";
 import "./globals.css";
 
 const cabin = Cabin({
@@ -51,6 +52,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         {children}
+        <ItineraryFab />
         <BackToTop />
         <Toaster richColors position="top-center" />
       </body>

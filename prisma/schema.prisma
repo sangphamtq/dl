@@ -196,6 +196,7 @@ model User {
   emailVerified DateTime?
   image         String?
   role          UserRole  @default(user)
+  homeProvince  String? // tỉnh/thành người dùng chọn (nơi ở / xuất phát) — cá nhân hoá sau này
 
   accounts Account[]
   sessions Session[]

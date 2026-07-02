@@ -2,8 +2,16 @@
 
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-import { LayoutDashboard, LogOut, Home, MapPinCheck } from "lucide-react";
+import {
+  LayoutDashboard,
+  LogOut,
+  Home,
+  MapPinCheck,
+  Route,
+} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,8 +56,22 @@ export function UserMenu({ user }: Props) {
         <DropdownMenuGroup>
           <DropdownMenuLabel>
             <div className="flex flex-col">
-              <span className="truncate text-sm font-medium">
-                {user.name ?? "Tài khoản"}
+              <span className="flex items-center gap-1.5">
+                <span className="truncate text-sm font-medium">
+                  {user.name ?? "Tài khoản"}
+                </span>
+                {isStaff && (
+                  <Badge
+                    className={cn(
+                      "shrink-0 border-transparent px-1.5 text-[0.7rem] font-semibold",
+                      user.role === "admin"
+                        ? "bg-primary/10 text-primary"
+                        : "bg-muted text-muted-foreground",
+                    )}
+                  >
+                    {user.role === "admin" ? "Admin" : "Editor"}
+                  </Badge>
+                )}
               </span>
               {user.email && (
                 <span className="truncate text-xs font-normal text-muted-foreground">
@@ -70,7 +92,16 @@ export function UserMenu({ user }: Props) {
           <DropdownMenuItem asChild>
             <Link href="/tai-khoan/da-den">
               <MapPinCheck className="size-4" aria-hidden />
-              Đã đến
+              Dấu chân
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/lich-trinh">
+              <Route className="size-4" aria-hidden />
+              Lịch trình của tôi
+              <Badge className="ml-auto h-4 border-transparent bg-warm/15 px-1 text-[0.6rem] font-semibold text-warm">
+                Sắp có
+              </Badge>
             </Link>
           </DropdownMenuItem>
           {isStaff && (

@@ -14,18 +14,18 @@ export function DaDenNavLink() {
   return (
     <Link
       href="/tai-khoan/da-den"
-      title="Nơi tôi đã đến"
-      aria-label="Nơi tôi đã đến"
+      title="Dấu chân — nơi tôi đã đến"
+      aria-label="Dấu chân — nơi tôi đã đến"
       aria-current={active ? "page" : undefined}
       className={cn(
-        "inline-flex h-9 w-9 items-center justify-center gap-1.5 rounded-full text-sm font-medium transition-colors lg:w-auto lg:px-3",
+        "inline-flex h-9 w-9 items-center justify-center gap-1.5 rounded-full text-sm font-normal transition-colors xl:w-auto xl:px-3",
         active
           ? "text-primary drop-shadow-sm"
           : "text-foreground hover:text-primary",
       )}
     >
       <MapPinCheck className="size-4" />
-      <span className="hidden lg:inline">Đã đến</span>
+      <span className="hidden xl:inline">Dấu chân</span>
     </Link>
   );
 }

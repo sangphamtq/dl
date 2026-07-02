@@ -5,7 +5,7 @@ import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { DaDenBoard } from "@/components/account/da-den-board";
 
-export const metadata = { title: "Đã đến · Hành Trình Việt" };
+export const metadata = { title: "Dấu chân · Hành Trình Việt" };
 
 export default async function DaDenPage() {
   const session = await auth();
@@ -43,7 +43,7 @@ export default async function DaDenPage() {
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
           <p className="text-sm font-medium text-warm">Hành trình của bạn</p>
           <h1 className="mt-1 text-3xl font-bold tracking-tight sm:text-4xl">
-            Bản đồ nơi tôi đã đến
+            Dấu chân của bạn
           </h1>
 
           <DaDenBoard initialVisited={initialVisited} slugToId={slugToId} />

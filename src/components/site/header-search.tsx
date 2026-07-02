@@ -42,7 +42,7 @@ export function HeaderSearch() {
   return (
     <form
       action="/tim-kiem"
-      className="group relative hidden lg:block"
+      className="group relative hidden 2xl:block"
       onFocusCapture={() => {
         if (blurTimer.current) clearTimeout(blurTimer.current);
         setOpen(true);
@@ -61,7 +61,7 @@ export function HeaderSearch() {
         onChange={(e) => onChange(e.target.value)}
         autoComplete="off"
         placeholder="Tìm điểm đến, quán ăn…"
-        className="h-9 w-56 rounded-md border border-transparent bg-muted/60 pl-9 pr-8 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/40 focus:bg-background xl:w-64"
+        className="h-9 w-60 rounded-md border border-transparent bg-muted/60 pl-9 pr-8 text-sm outline-none transition-colors placeholder:text-muted-foreground hover:bg-muted focus:border-primary/40 focus:bg-background"
       />
       {loading && (
         <Loader2 className="absolute right-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground" />

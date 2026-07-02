@@ -16,20 +16,23 @@ export async function SiteFooter() {
     <footer className="mt-auto border-t">
       <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 text-sm text-muted-foreground sm:flex-row sm:items-start sm:justify-between sm:px-6">
         <div>
-          <Link
-            href="/"
-            className="flex w-fit items-center gap-2 font-medium text-foreground"
-          >
+          <Link href="/" className="flex w-fit items-center gap-2">
             <Image
-              src="/icon-192.png"
+              src="/logo_mark.png"
               alt=""
-              width={20}
-              height={20}
-              className="size-5 rounded"
+              width={31}
+              height={36}
+              className="h-8 w-auto"
             />
-            {s.siteName}
+            <Image
+              src="/logo_wordmark.png"
+              alt={s.siteName}
+              width={77}
+              height={16}
+              className="h-4 w-auto"
+            />
           </Link>
-          <p className="mt-2 max-w-sm">{s.tagline}</p>
+          <p className="mt-3 max-w-sm">{s.tagline}</p>
         </div>
 
         <div className="flex flex-col gap-3 sm:items-end">
