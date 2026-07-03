@@ -7,7 +7,17 @@ import { Badge } from "@/components/ui/badge";
 import { NavGroupMenu } from "./nav-group-menu";
 
 export type NavLink = { href: string; label: string; badge?: string };
-export type NavGroup = { label: string; href: string; items: NavLink[] };
+export type NavColumn = {
+  href: string;
+  title: string;
+  desc?: string;
+  badge?: string;
+};
+// Group có HOẶC danh sách (items) HOẶC mega-menu theo cột (columns) — bắt buộc một.
+export type NavGroup = { label: string; href: string } & (
+  | { items: NavLink[]; columns?: never }
+  | { columns: NavColumn[]; items?: never }
+);
 export type NavEntry = NavLink | NavGroup;
 
 // Nav desktop: mỗi entry là link phẳng, hoặc nhóm dropdown (khi có `items`).
@@ -23,12 +33,13 @@ export function SiteNav({
   return (
     <nav className={cn("items-center gap-1 h-full", className)}>
       {entries.map((e) =>
-        "items" in e ? (
+        "items" in e || "columns" in e ? (
           <NavGroupMenu
             key={e.label}
             label={e.label}
             href={e.href}
             items={e.items}
+            columns={e.columns}
           />
         ) : (
           <Link

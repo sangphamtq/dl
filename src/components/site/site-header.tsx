@@ -1,6 +1,5 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Search, Route } from "lucide-react";
 import { auth } from "@/auth";
 import { getSettings } from "@/lib/settings";
 import { getUnreadCount } from "@/lib/notifications";
@@ -11,9 +10,10 @@ import { MobileNav } from "./mobile-nav";
 import { UserMenu } from "./user-menu";
 import { NotificationBell } from "./notification-bell";
 import { DaDenNavLink } from "./da-den-nav-link";
+import { LichTrinhNavLink } from "./lich-trinh-nav-link";
 import { HeaderSearch } from "./header-search";
 import { HomeProvincePicker } from "./home-province-picker";
-import { SiteNav, type NavEntry } from "./site-nav";
+import { SiteNav, type NavEntry, type NavLink } from "./site-nav";
 import { Badge } from "@/components/ui/badge";
 
 // Badge vai trò cạnh avatar — chỉ hiện cho staff (admin/editor).
@@ -36,10 +36,25 @@ const NAV: NavEntry[] = [
   {
     label: "Dịch vụ",
     href: "/dich-vu",
-    items: [
-      { href: "/luu-tru", label: "Lưu trú", badge: "Sắp có" },
-      { href: "/thue-xe", label: "Thuê xe", badge: "Sắp có" },
-      { href: "/trai-nghiem", label: "Tour & trải nghiệm", badge: "Sắp có" },
+    columns: [
+      {
+        href: "/luu-tru",
+        title: "Lưu trú",
+        desc: "Homestay, khách sạn, resort đã xác minh",
+        badge: "Sắp có",
+      },
+      {
+        href: "/thue-xe",
+        title: "Thuê xe",
+        desc: "Xe máy, ô tô, đưa đón sân bay",
+        badge: "Sắp có",
+      },
+      {
+        href: "/trai-nghiem",
+        title: "Tour & trải nghiệm",
+        desc: "Tour, vé tham quan, hoạt động",
+        badge: "Sắp có",
+      },
     ],
   },
   { href: "/blog", label: "Cẩm nang" },
@@ -55,12 +70,16 @@ const NAV: NavEntry[] = [
 ];
 
 // Mobile: sheet liệt kê phẳng toàn bộ (nhóm dropdown trải thành các mục con).
-const MOBILE_LINKS = NAV.flatMap((e) => ("items" in e ? e.items : [e]));
-
-// Ngôn ngữ chung cho mọi nút biểu tượng bên phải (search, đã đến, chuông) —
-// giữ cụm tiện ích đồng nhất một kiểu.
-export const HEADER_ICON_BTN =
-  "grid size-9 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground";
+const MOBILE_LINKS: NavLink[] = NAV.flatMap((e) => {
+  if ("columns" in e && e.columns)
+    return e.columns.map((c) => ({
+      href: c.href,
+      label: c.title,
+      badge: c.badge,
+    }));
+  if ("items" in e && e.items) return e.items;
+  return [e as NavLink];
+});
 
 export async function SiteHeader() {
   const [session, settings, provinces] = await Promise.all([
@@ -116,16 +135,8 @@ export async function SiteHeader() {
           <div className="mr-0.5 hidden lg:flex">
             <HomeProvincePicker provinces={provinceNames} value={homeProvince} />
           </div>
-          {/* Search (desktop rộng): gợi ý live */}
+          {/* Tìm kiếm — ô bấm + Command palette (⌘K); dưới lg là icon */}
           <HeaderSearch />
-          {/* Search icon (mobile → trước 2xl) */}
-          <Link
-            href="/tim-kiem"
-            aria-label="Tìm kiếm"
-            className={`${HEADER_ICON_BTN} 2xl:hidden`}
-          >
-            <Search className="size-5" />
-          </Link>
 
           {user ? (
             <>
@@ -136,14 +147,7 @@ export async function SiteHeader() {
               <DaDenNavLink />
               {/* Lịch trình của tôi (ẩn trên màn rất hẹp — vẫn có trong menu + nút nổi) */}
               <div className="hidden sm:flex">
-                <Link
-                  href="/lich-trinh"
-                  aria-label="Lịch trình của tôi"
-                  title="Lịch trình của tôi"
-                  className={HEADER_ICON_BTN}
-                >
-                  <Route className="size-5" />
-                </Link>
+                <LichTrinhNavLink />
               </div>
               <NotificationBell
                 initialUnread={unread}

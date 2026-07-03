@@ -92,7 +92,7 @@ export function UserMenu({ user }: Props) {
           <DropdownMenuItem asChild>
             <Link href="/tai-khoan/da-den">
               <MapPinCheck className="size-4" aria-hidden />
-              Dấu chân
+              Nơi đã đến
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>

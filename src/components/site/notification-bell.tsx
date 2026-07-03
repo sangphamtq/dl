@@ -144,7 +144,12 @@ export function NotificationBell({
         <button
           type="button"
           aria-label="Thông báo"
-          className="relative grid size-9 place-items-center rounded-full text-foreground transition-colors hover:bg-muted"
+          className={cn(
+            "relative grid size-9 place-items-center rounded-full transition-colors",
+            open
+              ? "bg-primary/10 text-primary"
+              : "text-foreground hover:bg-muted",
+          )}
         >
           <Bell className="size-4" aria-hidden />
           {unread > 0 && (
