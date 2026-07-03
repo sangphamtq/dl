@@ -18,9 +18,9 @@ export function PlaceCard({ place }: { place: PlaceCardData }) {
   return (
     <Link
       href={`/diem-den/${place.slug}`}
-      className="group block overflow-hidden rounded-xl"
+      className="group block overflow-hidden rounded-lg"
     >
-      <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-muted">
+      <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-muted">
         <Image
           src={coverUrl(place.images, place.slug)}
           alt={place.name}

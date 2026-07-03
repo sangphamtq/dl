@@ -180,14 +180,14 @@ export function DestinationFilter({
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Tìm điểm đến…"
               aria-label="Tìm điểm đến"
-              className="h-10 w-full rounded-full bg-muted pl-10 pr-9 text-sm outline-none transition-colors focus:bg-background focus:ring-2 focus:ring-ring/30 [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none"
+              className="h-10 w-full rounded-md border border-transparent bg-muted pl-10 pr-9 text-sm outline-none transition-colors focus:border-primary/40 focus:bg-background [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none"
             />
             {query && (
               <button
                 type="button"
                 onClick={() => setQuery("")}
                 aria-label="Xóa tìm kiếm"
-                className="absolute right-3 top-1/2 grid size-5 -translate-y-1/2 place-items-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+                className="absolute right-3 top-1/2 grid size-5 -translate-y-1/2 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
               >
                 <X className="size-3.5" aria-hidden />
               </button>
@@ -251,7 +251,7 @@ export function DestinationFilter({
 
               {g.dests.length > 0 && (
                 <Rail
-                  itemClassName="basis-[82%] sm:basis-[52%] lg:basis-[37%] xl:basis-[29%]"
+                  itemClassName="basis-[68%] sm:basis-[42%] lg:basis-[29%] xl:basis-[23%]"
                   arrowClassName="top-1/2 -translate-y-1/2"
                 >
                   {g.dests.map((d) => (
@@ -295,7 +295,7 @@ function Segmented({
       role="group"
       aria-label={label}
       className={cn(
-        "flex h-10 w-fit shrink-0 items-center rounded-full bg-muted p-1",
+        "flex h-10 w-fit shrink-0 items-center rounded-lg bg-muted p-1",
         className,
       )}
     >
@@ -319,7 +319,7 @@ function SegButton({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "inline-flex h-full items-center whitespace-nowrap rounded-full px-3.5 text-sm font-medium transition-colors",
+        "inline-flex h-full items-center whitespace-nowrap rounded-md px-3.5 text-sm font-medium transition-colors",
         active
           ? "bg-background text-foreground shadow-sm"
           : "text-muted-foreground hover:text-foreground",
@@ -336,7 +336,7 @@ function ProvinceChip({ p }: { p: ProvinceItem }) {
       <span
         aria-disabled="true"
         title="Đang cập nhật"
-        className="inline-flex cursor-not-allowed items-center rounded-full border border-dashed border-border/50 px-3 py-1.5 text-sm text-muted-foreground/50"
+        className="inline-flex cursor-not-allowed items-center rounded-md border border-dashed border-border/50 px-3 py-1.5 text-sm text-muted-foreground/50"
       >
         {p.name}
       </span>
@@ -346,7 +346,7 @@ function ProvinceChip({ p }: { p: ProvinceItem }) {
     <Link
       href={`/diem-den/${p.slug}`}
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-sm transition-colors hover:bg-primary/10 hover:text-primary",
+        "inline-flex items-center gap-1.5 rounded-md bg-muted px-3 py-1.5 text-sm transition-colors hover:bg-primary/10 hover:text-primary",
         p.isFeatured && "font-medium",
       )}
     >
@@ -358,7 +358,7 @@ function ProvinceChip({ p }: { p: ProvinceItem }) {
         <span
           title={`${p.childCount} điểm đến`}
           aria-label={`${p.childCount} điểm đến`}
-          className="grid h-4 min-w-4 place-items-center rounded-full bg-primary/10 px-1 text-[10px] font-semibold tabular-nums text-primary"
+          className="grid h-4 min-w-4 place-items-center rounded-sm bg-primary/10 px-1 text-[10px] font-semibold tabular-nums text-primary"
         >
           {p.childCount}
         </span>
@@ -370,7 +370,7 @@ function ProvinceChip({ p }: { p: ProvinceItem }) {
 function DestCard({ d }: { d: DestItem }) {
   return (
     <Link href={`/diem-den/${d.slug}`} className="block">
-      <div className="relative aspect-[3/4] overflow-hidden rounded-2xl bg-muted">
+      <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-muted">
         <Image
           src={coverUrl(d.images, d.slug, 600, 800)}
           alt={d.name}
@@ -395,7 +395,7 @@ function DestCard({ d }: { d: DestItem }) {
               </span>
             )}
           </div>
-          <h3 className="mt-1 text-balance text-lg font-semibold leading-tight tracking-tight text-white">
+          <h3 className="mt-1 text-balance text-xl font-bold leading-tight tracking-tight text-white sm:text-2xl">
             {d.name}
           </h3>
           {d.tagline && (
