@@ -10,7 +10,7 @@ import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { markAllNotificationsRead } from "./actions";
 
-export const metadata = { title: "Thông báo · Hành Trình Việt" };
+export const metadata = { title: "Thông báo · Halivivu" };
 
 export default async function NotificationsPage() {
   const session = await auth();

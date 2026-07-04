@@ -1510,7 +1510,7 @@ async function main() {
       update: {},
       create: {
         email: "seed@hanhtrinhviet.local",
-        name: "Hành Trình Việt",
+        name: "Halivivu",
         role: UserRole.editor,
       },
     }));

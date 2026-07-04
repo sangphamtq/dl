@@ -1,4 +1,4 @@
-import { Eye, Footprints, type LucideIcon } from "lucide-react";
+import { Eye, type LucideIcon } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { coverUrl } from "@/lib/place-image";
 import { getTikTokInfo } from "@/lib/tiktok";
@@ -199,16 +199,8 @@ export function buildPlaceTabs(placeSlug: string, counts: PlaceCounts): PlaceTab
 
 export type PlaceStat = { icon: LucideIcon; value: number; label: string };
 
-export function buildPlaceStats(
-  viewCount: number,
-  checkInCount = 0,
-): PlaceStat[] {
-  return [
-    { icon: Eye, value: viewCount, label: "lượt xem" },
-    checkInCount > 0 && {
-      icon: Footprints,
-      value: checkInCount,
-      label: "người đã đến",
-    },
-  ].filter(Boolean) as PlaceStat[];
+// Check-in ("Vivu-er đã đến") KHÔNG còn ở đây — hiển thị bằng avatar stack + danh
+// sách người (xem CheckInFaces trên hero trang tổng quan).
+export function buildPlaceStats(viewCount: number): PlaceStat[] {
+  return [{ icon: Eye, value: viewCount, label: "lượt xem" }];
 }

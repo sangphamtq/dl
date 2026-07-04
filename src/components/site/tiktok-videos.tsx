@@ -151,7 +151,7 @@ export function PlaceVideos({
         }}
         aria-label={`Xem ${label}${videos.length > 1 ? ` (+${videos.length - 1} video)` : ""}`}
         className={cn(
-          "group relative aspect-[9/16] overflow-hidden rounded-xl border-2 border-background bg-muted shadow-xl shadow-black/25 transition-transform hover:scale-[1.03]",
+          "group relative aspect-[9/16] overflow-hidden rounded-xl border-2 border-background bg-muted shadow-sm shadow-black/25 transition-transform hover:scale-[1.03]",
           className,
         )}
       >

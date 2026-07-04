@@ -6,7 +6,7 @@ import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SearchResults } from "@/components/site/search-results";
 
-export const metadata = { title: "Tìm kiếm · Hành Trình Việt" };
+export const metadata = { title: "Tìm kiếm · Halivivu" };
 
 export default async function SearchPage({
   searchParams,

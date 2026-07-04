@@ -3,7 +3,7 @@ import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { ComingSoon } from "@/components/site/coming-soon";
 
-export const metadata = { title: "Lịch trình · Hành Trình Việt" };
+export const metadata = { title: "Lịch trình · Halivivu" };
 
 // Placeholder — trình lập lịch trình chuyến đi đang phát triển.
 export default function LichTrinhPage() {

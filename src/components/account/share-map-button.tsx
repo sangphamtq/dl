@@ -36,7 +36,7 @@ const DEFAULTS: ShareOptions = {
   eyebrow: "HÀNH TRÌNH VIỆT",
   headline: "Tôi đã đến {n} tỉnh thành",
   name: "",
-  watermark: "Khám phá Việt Nam cùng Hành Trình Việt",
+  watermark: "Khám phá Việt Nam cùng Halivivu",
   accent: "#e3852f",
   showMap: true,
   showList: true,

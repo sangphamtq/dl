@@ -34,7 +34,7 @@ export default async function LoginPage({
               height={28}
               className="size-7 rounded-lg"
             />
-            <span className="tracking-tight">Hành Trình Việt</span>
+            <span className="tracking-tight">Halivivu</span>
           </Link>
           <blockquote className="max-w-md space-y-3">
             <p className="text-2xl font-medium leading-relaxed tracking-tight">
@@ -63,7 +63,7 @@ export default async function LoginPage({
                 height={24}
                 className="size-6 rounded"
               />
-              <span>Hành Trình Việt</span>
+              <span>Halivivu</span>
             </Link>
             <h1 className="text-3xl font-semibold tracking-tight">Đăng nhập</h1>
             <p className="text-muted-foreground">

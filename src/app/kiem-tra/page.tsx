@@ -5,7 +5,7 @@ import { SiteFooter } from "@/components/site/site-footer";
 import { TrustChecker } from "./trust-checker";
 
 export const metadata = {
-  title: "Kiểm tra uy tín · Hành Trình Việt",
+  title: "Kiểm tra uy tín · Halivivu",
   description:
     "Tra cứu SĐT, Facebook, website, số tài khoản: đã xác minh hay bị báo cáo lừa đảo.",
 };

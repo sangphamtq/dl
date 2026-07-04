@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
-export const alt = "Hành Trình Việt";
+export const alt = "Halivivu";
 
 export default async function Image({
   params,
@@ -16,7 +16,7 @@ export default async function Image({
     select: { name: true, tagline: true, kind: true },
   });
 
-  const name = place?.name ?? "Hành Trình Việt";
+  const name = place?.name ?? "Halivivu";
   const tagline =
     place?.tagline ??
     (place?.kind === "province" ? "Tỉnh / Thành phố" : "Điểm đến");
@@ -36,7 +36,7 @@ export default async function Image({
         }}
       >
         <div style={{ fontSize: 30, opacity: 0.85, display: "flex" }}>
-          Hành Trình Việt
+          Halivivu
         </div>
         <div style={{ fontSize: 84, fontWeight: 700, lineHeight: 1.1, marginTop: 16 }}>
           {name}

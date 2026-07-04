@@ -3,7 +3,7 @@ import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { ComingSoon } from "@/components/site/coming-soon";
 
-export const metadata = { title: "Lưu trú · Hành Trình Việt" };
+export const metadata = { title: "Lưu trú · Halivivu" };
 
 // Placeholder — danh bạ lưu trú toàn quốc đang phát triển.
 export default function LuuTruPage() {

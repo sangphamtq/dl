@@ -381,8 +381,7 @@ export default async function PlaceListingPage({
 
   const peerGroups = await getDestinationPeerGroups();
   const counts = await getPlaceCounts(place.id);
-  const checkInCount = await prisma.checkIn.count({ where: { placeId: place.id } });
-  const stats = buildPlaceStats(place.viewCount, checkInCount);
+  const stats = buildPlaceStats(place.viewCount);
   const tabs = buildPlaceTabs(place.slug, counts);
 
   // Trạng thái check-in "đã đến" của user hiện tại (nút ở hero).

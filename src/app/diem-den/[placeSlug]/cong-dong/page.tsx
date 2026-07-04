@@ -36,7 +36,7 @@ export async function generateMetadata({
   const { placeSlug } = await params;
   const place = await getPlaceHeader(placeSlug);
   if (!place) return {};
-  return { title: `Cộng đồng ${place.name} · Hành Trình Việt` };
+  return { title: `Cộng đồng ${place.name} · Halivivu` };
 }
 
 export default async function PlaceCommunityPage({
@@ -81,8 +81,7 @@ export default async function PlaceCommunityPage({
     getTrips({ placeId: place.id }),
   ]);
 
-  const checkInCount = await prisma.checkIn.count({ where: { placeId: place.id } });
-  const stats = buildPlaceStats(place.viewCount, checkInCount);
+  const stats = buildPlaceStats(place.viewCount);
   const tabs = buildPlaceTabs(place.slug, counts);
 
   // Trạng thái check-in "đã đến" của user hiện tại (nút ở hero).

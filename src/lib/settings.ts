@@ -14,7 +14,7 @@ export type SiteSettings = {
 
 // Giá trị mặc định khi chưa lưu cấu hình.
 const DEFAULTS: SiteSettings = {
-  siteName: "Hành Trình Việt",
+  siteName: "Halivivu",
   tagline: "Hỗ trợ thông tin du lịch Việt Nam.",
   description:
     "Tra cứu và khám phá điểm đến Việt Nam: ăn gì, chơi gì, ở đâu, đi lại thế nào.",

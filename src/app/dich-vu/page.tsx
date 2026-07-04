@@ -3,7 +3,7 @@ import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { ComingSoon } from "@/components/site/coming-soon";
 
-export const metadata = { title: "Dịch vụ · Hành Trình Việt" };
+export const metadata = { title: "Dịch vụ · Halivivu" };
 
 // Placeholder — hub dịch vụ du lịch (lưu trú, thuê xe, tour…) đang phát triển.
 export default function DichVuPage() {

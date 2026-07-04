@@ -80,7 +80,14 @@ export function PlaceTabs({
   return (
     <>
     <div ref={sentinelRef} aria-hidden className="h-0" />
-    <div className="sticky top-16 z-40 border-b border-border/60 bg-background/80 backdrop-blur-lg">
+    {/* Hero đã bỏ viền → hairline dưới thanh tab là đường phân cách duy nhất (luôn hiện).
+        Khi đã dính lên dưới header: thêm bóng mềm để nổi khỏi nội dung cuộn. */}
+    <div
+      className={cn(
+        "sticky top-16 z-40 border-b border-border/60 bg-background/80 backdrop-blur-lg transition-shadow duration-200",
+        stuck && "shadow-sm",
+      )}
+    >
       <div className="mx-auto flex h-12 max-w-7xl items-center gap-3 px-4 sm:px-6">
         <nav className="flex min-w-0 items-center gap-1 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {navItems.map((it) => {

@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
-export const alt = "Hành Trình Việt — Cẩm nang";
+export const alt = "Halivivu — Cẩm nang";
 
 export default async function Image({
   params,
@@ -33,7 +33,7 @@ export default async function Image({
         }}
       >
         <div style={{ fontSize: 30, opacity: 0.85, display: "flex" }}>
-          Cẩm nang · Hành Trình Việt
+          Cẩm nang · Halivivu
         </div>
         <div
           style={{

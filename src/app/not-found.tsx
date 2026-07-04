@@ -6,7 +6,7 @@ import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
 
 export const metadata = {
-  title: "Không tìm thấy trang · Hành Trình Việt",
+  title: "Không tìm thấy trang · Halivivu",
 };
 
 export default function NotFound() {

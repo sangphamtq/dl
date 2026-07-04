@@ -15,7 +15,7 @@ export async function generateMetadata({
   const { placeSlug } = await params;
   const place = await getPlaceHeader(placeSlug);
   if (!place || place.status !== "published") return {};
-  return { title: `Bản đồ ${place.name} · Hành Trình Việt` };
+  return { title: `Bản đồ ${place.name} · Halivivu` };
 }
 
 export default async function PlaceMapPage({

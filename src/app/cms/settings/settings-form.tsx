@@ -63,7 +63,7 @@ export function SettingsForm({
               id="siteName"
               value={values.siteName}
               onChange={(e) => set("siteName", e.target.value)}
-              placeholder="Hành Trình Việt"
+              placeholder="Halivivu"
               required
             />
           </div>

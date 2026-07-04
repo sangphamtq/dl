@@ -7,7 +7,7 @@ import { SaleRegisterForm } from "./sale-form";
 import type { ComboboxOption } from "@/components/ui/combobox";
 
 export const metadata = {
-  title: "Đăng ký làm CTV · Hành Trình Việt",
+  title: "Đăng ký làm CTV · Halivivu",
   description: "Đăng ký trở thành cộng tác viên bán dịch vụ du lịch đã xác minh.",
 };
 

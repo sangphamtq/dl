@@ -11,13 +11,21 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 
+// Icon trần: nền tròn CHỈ hiện khi hover — tiện ích phụ, không đeo vỏ glass cố định,
+// nhường phân cấp cho hành động chính (đánh dấu). Đồng bộ ngôn ngữ editorial của hero.
+const SHARE_ICON =
+  "inline-flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
+
 // Nút chia sẻ: sao chép liên kết + gửi qua Messenger.
+// iconOnly: nút tròn chỉ có icon (dùng cạnh một hành động chính có nhãn).
 export function ShareButton({
   title,
   className,
+  iconOnly = false,
 }: {
   title: string;
   className?: string;
+  iconOnly?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -50,10 +58,14 @@ export function ShareButton({
         <button
           type="button"
           aria-label={`Chia sẻ ${title}`}
-          className={cn(PILL_BASE, PILL_SURFACE, className)}
+          title={iconOnly ? "Chia sẻ" : undefined}
+          className={cn(
+            iconOnly ? SHARE_ICON : cn(PILL_BASE, PILL_SURFACE),
+            className,
+          )}
         >
           <Share2 className="size-4" aria-hidden />
-          Chia sẻ
+          {!iconOnly && "Chia sẻ"}
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-52">

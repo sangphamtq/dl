@@ -22,7 +22,7 @@ export function HeroFrame({
 
   return (
     <HeroAmbientCtx.Provider value={setActive}>
-      <section className="relative isolate overflow-hidden border-b border-border/60 bg-background">
+      <section className="relative isolate overflow-hidden bg-background">
         {images.length > 0 && (
           <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
             {images.map((url, i) => (

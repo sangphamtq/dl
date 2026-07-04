@@ -10,7 +10,7 @@ import {
 import { REGION_LABELS, regionOf } from "@/lib/regions";
 
 export const metadata = {
-  title: "Điểm đến · Hành Trình Việt",
+  title: "Điểm đến · Halivivu",
   description: "Khám phá các điểm đến nổi bật và tỉnh thành khắp Việt Nam.",
 };
 

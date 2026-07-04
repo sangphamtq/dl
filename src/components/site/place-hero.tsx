@@ -5,6 +5,7 @@ import { PlaceHeroStack, type HeroImage } from "@/components/site/place-hero-sta
 import { PlaceVideos, type PlaceVideo } from "@/components/site/tiktok-videos";
 import { ShareButton } from "@/components/site/share-button";
 import { CheckInButton } from "@/components/site/check-in-button";
+import { CheckInFaces, type CheckInPerson } from "@/components/site/check-in-faces";
 import type { PlaceStat } from "@/lib/place-meta";
 
 type PlaceHeroData = {
@@ -27,6 +28,7 @@ export function PlaceHero({
   videos = [],
   back,
   checkIn,
+  visitors,
 }: {
   place: PlaceHeroData;
   heroImages: HeroImage[];
@@ -34,6 +36,7 @@ export function PlaceHero({
   videos?: PlaceVideo[];
   back?: { href: string; label: string };
   checkIn?: { checked: boolean; isAuthed: boolean };
+  visitors?: { total: number; people: CheckInPerson[] };
 }) {
   return (
     <HeroFrame images={heroImages.map((i) => i.url)}>
@@ -66,7 +69,7 @@ export function PlaceHero({
                     isAuthed={checkIn.isAuthed}
                   />
                 )}
-                <ShareButton title={place.name} />
+                <ShareButton title={place.name} iconOnly />
               </div>
             </div>
 
@@ -100,21 +103,30 @@ export function PlaceHero({
               </p>
             )}
 
-            {/* Dải thống kê */}
-            {stats.length > 0 && (
-              <dl className="mt-8 flex flex-wrap items-center gap-x-7 gap-y-3 text-sm">
-                {stats.map((s) => (
-                  <div key={s.label} className="flex items-center gap-2">
-                    <s.icon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-                    <dd className="font-semibold tabular-nums">
-                      {s.value.toLocaleString("vi-VN")}
-                    </dd>
-                    <dt className="text-muted-foreground">{s.label}</dt>
-                  </div>
-                ))}
-              </dl>
+            {/* Dải thống kê + Vivu-er đã đến (cùng hàng) */}
+            {(stats.length > 0 || (visitors && visitors.total > 0)) && (
+              <div className="mt-8 flex flex-wrap items-center gap-x-7 gap-y-3 text-sm">
+                {stats.length > 0 && (
+                  <dl className="flex flex-wrap items-center gap-x-7 gap-y-3">
+                    {stats.map((s) => (
+                      <div key={s.label} className="flex items-center gap-2">
+                        <s.icon
+                          className="size-4 shrink-0 text-muted-foreground"
+                          aria-hidden
+                        />
+                        <dd className="font-semibold tabular-nums">
+                          {s.value.toLocaleString("vi-VN")}
+                        </dd>
+                        <dt className="text-muted-foreground">{s.label}</dt>
+                      </div>
+                    ))}
+                  </dl>
+                )}
+                {visitors && visitors.total > 0 && (
+                  <CheckInFaces people={visitors.people} total={visitors.total} />
+                )}
+              </div>
             )}
-
           </div>
 
           {/* Phải: chồng ảnh — z cao hơn sticky tab (z-40) để shadow đè lên,

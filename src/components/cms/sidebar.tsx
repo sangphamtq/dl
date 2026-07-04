@@ -114,13 +114,13 @@ export function AppSidebar({ user }: Props) {
               <Link href="/cms">
                 <Image
                   src="/icon-192.png"
-                  alt="Hành Trình Việt"
+                  alt="Halivivu"
                   width={32}
                   height={32}
                   className="aspect-square size-8 rounded-lg"
                 />
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">Hành Trình Việt</span>
+                  <span className="truncate font-semibold">Halivivu</span>
                   <span className="truncate text-xs text-muted-foreground">
                     Quản trị nội dung
                   </span>

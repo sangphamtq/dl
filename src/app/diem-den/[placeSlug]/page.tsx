@@ -63,7 +63,7 @@ export async function generateMetadata({
   });
   if (!place || place.status !== "published") return {};
   return {
-    title: `${place.name} · Hành Trình Việt`,
+    title: `${place.name} · Halivivu`,
     description: place.description ?? undefined,
   };
 }
@@ -171,7 +171,7 @@ export default async function PlaceDetailPage({
   // Trạng thái check-in "đã đến" của user hiện tại + tổng số người đã đến.
   const session = await auth();
   const userId = session?.user?.id;
-  const [checkInRow, checkInCount] = await Promise.all([
+  const [checkInRow, checkInCount, checkInFaces] = await Promise.all([
     userId
       ? prisma.checkIn.findUnique({
           where: { userId_placeId: { userId, placeId: place.id } },
@@ -179,11 +179,21 @@ export default async function PlaceDetailPage({
         })
       : Promise.resolve(null),
     prisma.checkIn.count({ where: { placeId: place.id } }),
+    prisma.checkIn.findMany({
+      where: { placeId: place.id },
+      orderBy: { createdAt: "desc" },
+      take: 60,
+      select: { user: { select: { id: true, name: true, image: true } } },
+    }),
   ]);
   const checkIn = { checked: !!checkInRow, isAuthed: !!userId };
+  const visitors = {
+    total: checkInCount,
+    people: checkInFaces.map((c) => c.user),
+  };
 
   const counts = await getPlaceCounts(place.id);
-  const stats = buildPlaceStats(place.viewCount, checkInCount);
+  const stats = buildPlaceStats(place.viewCount);
   const tabs = buildPlaceTabs(place.slug, counts);
 
   // Thanh chuyển nhanh: mọi điểm đến lớn gom theo miền (làm nổi cái đang xem).
@@ -241,6 +251,7 @@ export default async function PlaceDetailPage({
           videos={videos}
           back={{ href: "/diem-den", label: "Điểm đến" }}
           checkIn={checkIn}
+          visitors={visitors}
         />
 
         {/* Thanh tab: Tổng quan + xem tất cả từng listing + nút Video */}
@@ -250,9 +261,7 @@ export default async function PlaceDetailPage({
           {/* Đôi nét */}
           {(place.description || quickFacts.length > 0) && (
             <section id="doi-net" className="scroll-mt-32">
-              <h2 className="text-2xl font-bold tracking-tight">
-                Đôi nét về {place.name}
-              </h2>
+              <SectionHeading title={`Đôi nét về ${place.name}`} />
               <div
                 className={
                   quickFacts.length > 0
@@ -481,12 +490,12 @@ function SectionHeading({
   count?: number;
 }) {
   return (
-    <div className="flex items-end justify-between gap-6">
+    <div className="flex items-baseline justify-between gap-6">
       <h2 className="text-2xl font-bold tracking-tight">{title}</h2>
       {href && (
         <Link
           href={href}
-          className="group inline-flex shrink-0 items-center gap-1 pb-1 text-sm font-medium text-primary transition-colors hover:text-primary/80"
+          className="group inline-flex shrink-0 items-center gap-1 text-sm font-medium text-primary transition-colors hover:text-primary/80"
         >
           Xem tất cả
           {count != null && (

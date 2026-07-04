@@ -25,7 +25,7 @@ enum PlaceKind {
 // Cấu hình site dạng singleton (luôn 1 bản ghi id="singleton").
 model SiteSetting {
   id           String   @id @default("singleton")
-  siteName     String   @default("Hành Trình Việt")
+  siteName     String   @default("Halivivu")
   tagline      String?
   description  String? // mô tả meta (SEO)
   contactEmail String?

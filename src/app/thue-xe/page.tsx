@@ -3,7 +3,7 @@ import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { ComingSoon } from "@/components/site/coming-soon";
 
-export const metadata = { title: "Thuê xe · Hành Trình Việt" };
+export const metadata = { title: "Thuê xe · Halivivu" };
 
 // Placeholder — dịch vụ thuê xe / đưa đón đang phát triển.
 export default function ThueXePage() {

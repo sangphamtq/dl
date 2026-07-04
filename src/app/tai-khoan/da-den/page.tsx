@@ -5,7 +5,7 @@ import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { DaDenBoard } from "@/components/account/da-den-board";
 
-export const metadata = { title: "Nơi đã đến · Hành Trình Việt" };
+export const metadata = { title: "Nơi đã đến · Halivivu" };
 
 export default async function DaDenPage() {
   const session = await auth();

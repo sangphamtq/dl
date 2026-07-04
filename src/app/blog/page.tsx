@@ -12,7 +12,7 @@ import { Pagination } from "@/components/pagination";
 import { PostStats } from "@/components/blog/post-stats";
 
 export const metadata = {
-  title: "Cẩm nang du lịch · Hành Trình Việt",
+  title: "Cẩm nang du lịch · Halivivu",
   description: "Cẩm nang, kinh nghiệm và gợi ý du lịch Việt Nam.",
 };
 
@@ -161,7 +161,7 @@ export default async function BlogPage({
             className="pointer-events-none absolute -right-24 -top-24 size-72 rounded-full bg-primary/5 blur-2xl"
           />
           <div className="mx-auto max-w-7xl px-4 pb-8 pt-12 sm:px-6 sm:pb-10 sm:pt-16">
-            <p className="text-sm font-medium text-primary">Hành Trình Việt</p>
+            <p className="text-sm font-medium text-primary">Halivivu</p>
             <h1 className="mt-2 max-w-2xl text-3xl font-bold tracking-tight sm:text-5xl">
               Cẩm nang du lịch
             </h1>

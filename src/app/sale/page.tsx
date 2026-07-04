@@ -9,7 +9,7 @@ import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
 
 export const metadata = {
-  title: "Cộng tác viên du lịch đã xác minh · Hành Trình Việt",
+  title: "Cộng tác viên du lịch đã xác minh · Halivivu",
   description:
     "Danh bạ cộng tác viên bán tour, phòng, vé… đã được xác minh uy tín.",
 };
