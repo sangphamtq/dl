@@ -42,6 +42,7 @@ export default async function CmsReviewsPage({
         isHidden: true,
         author: { select: { name: true } },
         place: { select: { name: true, slug: true } },
+        spot: { select: { name: true, slug: true } },
       },
     }),
     prisma.review.count(),
@@ -84,6 +85,11 @@ export default async function CmsReviewsPage({
         <ul className="mt-6 space-y-4">
           {rows.map((r) => {
             const meta = stanceMeta(r.stance);
+            const target = r.place
+              ? { href: `/diem-den/${r.place.slug}`, name: r.place.name, kind: "Điểm đến" }
+              : r.spot
+                ? { href: `/dia-diem/${r.spot.slug}`, name: r.spot.name, kind: "Địa điểm" }
+                : { href: "#", name: "—", kind: "" };
             return (
               <li
                 key={r.id}
@@ -93,11 +99,16 @@ export default async function CmsReviewsPage({
                 )}
               >
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+                  {target.kind && (
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                      {target.kind}
+                    </span>
+                  )}
                   <Link
-                    href={`/diem-den/${r.place.slug}`}
+                    href={target.href}
                     className="font-semibold text-primary hover:underline"
                   >
-                    {r.place.name}
+                    {target.name}
                   </Link>
                   <span className="text-muted-foreground">
                     · {r.author.name ?? "Ẩn danh"}

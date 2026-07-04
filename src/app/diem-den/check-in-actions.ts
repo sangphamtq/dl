@@ -5,6 +5,9 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import type { ActionResult } from "@/app/blog/actions";
 
+// Đích check-in: điểm đến (place) hoặc địa điểm (spot).
+export type CheckTarget = { kind: "place" | "spot"; id: string };
+
 async function requireUserId(): Promise<string> {
   const session = await auth();
   const id = session?.user?.id;
@@ -12,14 +15,9 @@ async function requireUserId(): Promise<string> {
   return id;
 }
 
-// Đánh dấu / bỏ đánh dấu "đã đến" một Place (tỉnh hoặc điểm đến lớn).
-//
-// Propagate (xem CLAUDE.md "Place" + schema CheckIn):
-// - Check-in điểm đến con ⇒ tự tạo CheckIn tỉnh cha (auto=true) nếu chưa có.
-// - Bỏ check-in con ⇒ chỉ gỡ tỉnh cha khi tỉnh đó là auto VÀ không còn con nào.
-// - Tỉnh đánh dấu trực tiếp (auto=false) luôn giữ; bỏ tỉnh có con đã đến ⇒ hạ về auto.
+// Đánh dấu / bỏ đánh dấu "đã đến" một điểm đến HOẶC địa điểm.
 export async function toggleCheckIn(
-  placeId: string,
+  target: CheckTarget,
 ): Promise<ActionResult<{ checked: boolean }>> {
   let userId: string;
   try {
@@ -28,6 +26,48 @@ export async function toggleCheckIn(
     return { ok: false, error: "Bạn cần đăng nhập để đánh dấu đã đến." };
   }
 
+  return target.kind === "spot"
+    ? toggleSpotCheckIn(userId, target.id)
+    : togglePlaceCheckIn(userId, target.id);
+}
+
+// Spot: đơn giản, không propagate (khác Place).
+async function toggleSpotCheckIn(
+  userId: string,
+  spotId: string,
+): Promise<ActionResult<{ checked: boolean }>> {
+  const spot = await prisma.spot.findUnique({
+    where: { id: spotId },
+    select: { id: true, slug: true },
+  });
+  if (!spot) return { ok: false, error: "Không tìm thấy địa điểm." };
+
+  const existing = await prisma.checkIn.findUnique({
+    where: { userId_spotId: { userId, spotId } },
+    select: { id: true },
+  });
+
+  let checked: boolean;
+  if (existing) {
+    await prisma.checkIn.delete({ where: { id: existing.id } });
+    checked = false;
+  } else {
+    await prisma.checkIn.create({ data: { userId, spotId } });
+    checked = true;
+  }
+
+  revalidatePath(`/dia-diem/${spot.slug}`);
+  return { ok: true, data: { checked } };
+}
+
+// Place: có propagate tỉnh cha (xem CLAUDE.md "Place" + schema CheckIn):
+// - Check-in điểm đến con ⇒ tự tạo CheckIn tỉnh cha (auto=true) nếu chưa có.
+// - Bỏ check-in con ⇒ chỉ gỡ tỉnh cha khi tỉnh đó là auto VÀ không còn con nào.
+// - Tỉnh đánh dấu trực tiếp (auto=false) luôn giữ; bỏ tỉnh có con đã đến ⇒ hạ về auto.
+async function togglePlaceCheckIn(
+  userId: string,
+  placeId: string,
+): Promise<ActionResult<{ checked: boolean }>> {
   const place = await prisma.place.findUnique({
     where: { id: placeId },
     select: { id: true, slug: true, kind: true, parentId: true },
@@ -39,7 +79,6 @@ export async function toggleCheckIn(
     select: { id: true },
   });
 
-  // Đếm số điểm đến con (cùng tỉnh) của user đang được check-in.
   const countCheckedChildren = (provinceId: string) =>
     prisma.checkIn.count({
       where: { userId, place: { parentId: provinceId } },
@@ -48,11 +87,9 @@ export async function toggleCheckIn(
   let checked: boolean;
 
   if (!existing) {
-    // ── Đánh dấu đã đến ───────────────────────────────────────────────
     await prisma.$transaction(async (tx) => {
       await tx.checkIn.create({ data: { userId, placeId, auto: false } });
       if (place.kind === "destination" && place.parentId) {
-        // Tạo CheckIn tỉnh cha nếu chưa có (auto=true); giữ nguyên nếu đã có.
         await tx.checkIn.upsert({
           where: { userId_placeId: { userId, placeId: place.parentId } },
           create: { userId, placeId: place.parentId, auto: true },
@@ -62,12 +99,10 @@ export async function toggleCheckIn(
     });
     checked = true;
   } else {
-    // ── Bỏ đánh dấu ──────────────────────────────────────────────────
     await prisma.$transaction(async (tx) => {
       await tx.checkIn.delete({ where: { id: existing.id } });
 
       if (place.kind === "destination" && place.parentId) {
-        // Gỡ tỉnh cha nếu nó là auto và không còn con nào được check-in.
         const parent = await tx.checkIn.findUnique({
           where: { userId_placeId: { userId, placeId: place.parentId } },
           select: { id: true, auto: true },
@@ -83,13 +118,10 @@ export async function toggleCheckIn(
     });
     checked = false;
 
-    // Tỉnh đánh dấu trực tiếp nhưng còn con đã đến ⇒ giữ lại dưới dạng auto.
     if (place.kind === "province") {
       const remaining = await countCheckedChildren(place.id);
       if (remaining > 0) {
-        await prisma.checkIn.create({
-          data: { userId, placeId, auto: true },
-        });
+        await prisma.checkIn.create({ data: { userId, placeId, auto: true } });
         checked = true;
       }
     }

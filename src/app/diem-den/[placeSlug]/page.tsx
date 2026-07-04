@@ -21,7 +21,7 @@ import { Rail } from "@/components/site/rail";
 import { PlaceViewTracker } from "@/components/site/place-view-tracker";
 import { PlaceHero } from "@/components/site/place-hero";
 import { PlaceTabs } from "@/components/site/place-tabs";
-import { PlaceReviews, type ReviewListItem } from "@/components/site/place-reviews";
+import { ReviewsSection, type ReviewListItem } from "@/components/site/place-reviews";
 import { summarizeReviews } from "@/lib/review-meta";
 import { PeerBar } from "@/components/site/peer-bar";
 import { getDestinationPeerGroups } from "@/lib/peers";
@@ -31,6 +31,7 @@ import {
   buildPlaceStats,
   buildHeroImages,
   resolveVideos,
+  getVisitors,
 } from "@/lib/place-meta";
 
 const pub = { status: "published" as const };
@@ -173,26 +174,16 @@ export default async function PlaceDetailPage({
   // Trạng thái check-in "đã đến" của user hiện tại + tổng số người đã đến.
   const session = await auth();
   const userId = session?.user?.id;
-  const [checkInRow, checkInCount, checkInFaces] = await Promise.all([
+  const [checkInRow, visitors] = await Promise.all([
     userId
       ? prisma.checkIn.findUnique({
           where: { userId_placeId: { userId, placeId: place.id } },
           select: { id: true },
         })
       : Promise.resolve(null),
-    prisma.checkIn.count({ where: { placeId: place.id } }),
-    prisma.checkIn.findMany({
-      where: { placeId: place.id },
-      orderBy: { createdAt: "desc" },
-      take: 60,
-      select: { user: { select: { id: true, name: true, image: true } } },
-    }),
+    getVisitors("place", place.id),
   ]);
   const checkIn = { checked: !!checkInRow, isAuthed: !!userId };
-  const visitors = {
-    total: checkInCount,
-    people: checkInFaces.map((c) => c.user),
-  };
 
   // Đánh giá (chỉ điểm đến lớn): tổng hợp review đang hiện + review của chính user.
   const isDestination = place.kind === "destination";
@@ -496,16 +487,18 @@ export default async function PlaceDetailPage({
 
           {/* Đánh giá của Vivu-er (chỉ điểm đến lớn) */}
           {isDestination && (
-            <PlaceReviews
-              placeId={place.id}
-              placeSlug={place.slug}
-              placeName={place.name}
-              placeImage={coverUrl(place.images, place.slug, 96, 96)}
+            <ReviewsSection
+              target={{
+                kind: "place",
+                id: place.id,
+                slug: place.slug,
+                name: place.name,
+                image: coverUrl(place.images, place.slug, 96, 96),
+              }}
               summary={reviewSummary}
               reviews={reviewItems}
               myReview={myReviewRow}
               isAuthed={checkIn.isAuthed}
-              checkedIn={checkIn.checked}
             />
           )}
         </div>

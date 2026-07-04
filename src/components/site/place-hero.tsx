@@ -62,11 +62,14 @@ export function PlaceHero({
               <div className="flex items-center gap-2">
                 {checkIn && (
                   <CheckInButton
-                    placeId={place.id}
-                    placeSlug={place.slug}
-                    placeName={place.name}
+                    targetKind="place"
+                    targetId={place.id}
+                    targetName={place.name}
+                    targetImage={heroImages[0]?.url ?? null}
+                    redirectTo={`/diem-den/${place.slug}`}
                     initialChecked={checkIn.checked}
                     isAuthed={checkIn.isAuthed}
+                    reviewable={place.kind === "destination"}
                   />
                 )}
                 <ShareButton title={place.name} iconOnly />

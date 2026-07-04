@@ -1,11 +1,24 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { Loader2, MapPinCheckInside, MapPinPlus } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { LoginDrawer } from "@/components/site/login-drawer";
 import { toggleCheckIn } from "@/app/diem-den/check-in-actions";
+import { ReviewForm } from "@/components/site/place-reviews";
+
+type TargetKind = "place" | "spot";
 
 // Pill mờ cho các nút chia sẻ ngoài hero (StaySeek, ShareMap…). Hero điểm đến
 // KHÔNG dùng nữa — ở đó nút là hành động editorial trần (xem className bên dưới).
@@ -21,43 +34,87 @@ export { PILL_BASE, PILL_SURFACE };
 const ACTION_BASE =
   "group inline-flex items-center gap-1.5 rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-60";
 
-// Nút "Đã đến" trên trang chi tiết Place. Cập nhật PESSIMISTIC: chờ server xác
-// nhận rồi mới đổi trạng thái + toast. Người dùng ẩn danh → mở login drawer.
+// Nút "Đã đến" cho điểm đến HOẶC địa điểm.
+// - Chưa đến: bấm → mở form đánh giá (đánh giá = xác nhận đã đến). Huỷ/bỏ qua → KHÔNG đánh dấu.
+// - Đã đến: bấm → hỏi xác nhận → bỏ đánh dấu.
 export function CheckInButton({
-  placeId,
-  placeSlug,
-  placeName,
+  targetKind,
+  targetId,
+  targetName,
+  targetImage,
+  redirectTo,
   initialChecked,
   isAuthed,
+  reviewable = true,
 }: {
-  placeId: string;
-  placeSlug: string;
-  placeName: string;
+  targetKind: TargetKind;
+  targetId: string;
+  targetName: string;
+  targetImage?: string | null;
+  redirectTo: string;
   initialChecked: boolean;
   isAuthed: boolean;
+  // Có đánh giá được không (điểm đến lớn & spot = true; tỉnh = false → toggle trực tiếp).
+  reviewable?: boolean;
 }) {
   const [checked, setChecked] = useState(initialChecked);
   const [pending, startTransition] = useTransition();
   const [loginOpen, setLoginOpen] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [openKey, setOpenKey] = useState(0);
+
+  // Review được gửi (từ form này hoặc từ section) → đã đến.
+  useEffect(() => {
+    function onCheckedin(e: Event) {
+      if ((e as CustomEvent<{ id: string }>).detail?.id !== targetId) return;
+      setChecked(true);
+    }
+    window.addEventListener("halivivu:checkedin", onCheckedin);
+    return () => window.removeEventListener("halivivu:checkedin", onCheckedin);
+  }, [targetId]);
 
   function onClick() {
     if (!isAuthed) {
       setLoginOpen(true);
       return;
     }
+    if (!checked) {
+      if (reviewable) {
+        // Đánh dấu đã đến = viết đánh giá trước (huỷ → không đánh dấu).
+        setOpenKey((k) => k + 1);
+        setReviewOpen(true);
+      } else {
+        // Tỉnh: đánh dấu trực tiếp.
+        startTransition(async () => {
+          const res = await toggleCheckIn({ kind: targetKind, id: targetId });
+          if (!res.ok) {
+            toast.error(res.error);
+            return;
+          }
+          setChecked(res.data.checked);
+          if (res.data.checked)
+            toast.success(`Đã đánh dấu đã đến ${targetName}`);
+        });
+      }
+      return;
+    }
+    // Bỏ đánh dấu — mở popup xác nhận.
+    setConfirmOpen(true);
+  }
+
+  function doUncheck() {
     startTransition(async () => {
-      const res = await toggleCheckIn(placeId);
+      const res = await toggleCheckIn({ kind: targetKind, id: targetId });
       if (!res.ok) {
         toast.error(res.error);
         return;
       }
-      setChecked(res.data.checked);
-      // PlaceReviews (nếu có trên trang) lắng nghe: check-in → gợi ý đánh giá
-      // nhanh; bỏ đánh dấu → ẩn đánh giá (không tính) & đồng bộ lại.
-      const evt = res.data.checked ? "halivivu:checkin" : "halivivu:uncheckin";
-      window.dispatchEvent(new CustomEvent(evt, { detail: { placeId } }));
-      if (res.data.checked) toast.success(`Đã đánh dấu đã đến ${placeName}`);
-      else toast(`Đã bỏ đánh dấu ${placeName}`);
+      setChecked(false);
+      window.dispatchEvent(
+        new CustomEvent("halivivu:uncheckin", { detail: { id: targetId } }),
+      );
+      toast(`Đã bỏ đánh dấu ${targetName}`);
     });
   }
 
@@ -83,11 +140,49 @@ export function CheckInButton({
         {checked ? "Đã đến" : "Đánh dấu đã đến"}
       </button>
 
+      {isAuthed && reviewable && (
+        <ReviewForm
+          key={openKey}
+          open={reviewOpen}
+          onOpenChange={setReviewOpen}
+          defaultExpanded={false}
+          target={{
+            kind: targetKind,
+            id: targetId,
+            name: targetName,
+            image: targetImage,
+          }}
+          initial={null}
+        />
+      )}
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Bỏ đánh dấu đã đến?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {reviewable
+                ? `Bỏ đánh dấu đã đến ${targetName} sẽ ẩn đánh giá của bạn khỏi công khai (đánh dấu lại để hiện lại).`
+                : `Bỏ đánh dấu đã đến ${targetName}?`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Huỷ</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={doUncheck}
+              className="bg-warm text-warm-foreground hover:bg-warm/90"
+            >
+              Bỏ đánh dấu
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {!isAuthed && (
         <LoginDrawer
           open={loginOpen}
           onOpenChange={setLoginOpen}
-          redirectTo={`/diem-den/${placeSlug}`}
+          redirectTo={redirectTo}
         />
       )}
     </>

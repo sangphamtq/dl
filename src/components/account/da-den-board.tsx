@@ -55,7 +55,7 @@ export function DaDenBoard({
     const was = visited.has(slug);
     setMark(slug, !was); // optimistic
     startTransition(async () => {
-      const res = await toggleCheckIn(id);
+      const res = await toggleCheckIn({ kind: "place", id });
       if (!res.ok) {
         setMark(slug, was);
         toast.error(res.error);

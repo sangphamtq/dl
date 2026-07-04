@@ -15,9 +15,12 @@ import {
   Star,
   Check,
 } from "lucide-react";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
 import { coverUrl } from "@/lib/place-image";
+import { getVisitors } from "@/lib/place-meta";
+import { summarizeReviews } from "@/lib/review-meta";
 import { googleEmbedSrc, parseZoom } from "@/lib/map-url";
 import {
   getDrivingDistances,
@@ -44,6 +47,12 @@ import { Rail } from "@/components/site/rail";
 import { SpotSectionNav, type SectionItem } from "@/components/site/spot-section-nav";
 import { PeerBar } from "@/components/site/peer-bar";
 import { getListingPeers } from "@/lib/peers";
+import { CheckInButton } from "@/components/site/check-in-button";
+import { CheckInFaces } from "@/components/site/check-in-faces";
+import {
+  ReviewsSection,
+  type ReviewListItem,
+} from "@/components/site/place-reviews";
 
 const pub = { status: "published" as const };
 
@@ -333,6 +342,59 @@ export default async function SpotPublicPage({
   const staff = await isStaffViewer();
   if (!spot || (spot.status !== "published" && !staff)) notFound();
 
+  // Check-in "đã đến" + Vivu-er đã đến + đánh giá (giống trang điểm đến).
+  const session = await auth();
+  const userId = session?.user?.id;
+  const [checkInRow, visitors, reviewRows, myReviewRow] = await Promise.all([
+    userId
+      ? prisma.checkIn.findUnique({
+          where: { userId_spotId: { userId, spotId: spot.id } },
+          select: { id: true },
+        })
+      : Promise.resolve(null),
+    getVisitors("spot", spot.id),
+    prisma.review.findMany({
+      where: {
+        spotId: spot.id,
+        isHidden: false,
+        author: { checkIns: { some: { spotId: spot.id } } },
+      },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        stance: true,
+        highlights: true,
+        caveats: true,
+        content: true,
+        createdAt: true,
+        author: { select: { id: true, name: true, image: true } },
+      },
+    }),
+    userId
+      ? prisma.review.findUnique({
+          where: { spotId_authorId: { spotId: spot.id, authorId: userId } },
+          select: {
+            stance: true,
+            highlights: true,
+            caveats: true,
+            content: true,
+          },
+        })
+      : Promise.resolve(null),
+  ]);
+  const checkIn = { checked: !!checkInRow, isAuthed: !!userId };
+  const reviewSummary = summarizeReviews(reviewRows);
+  const reviewItems: ReviewListItem[] = reviewRows.map((r) => ({
+    id: r.id,
+    author: r.author,
+    stance: r.stance,
+    highlights: r.highlights,
+    caveats: r.caveats,
+    content: r.content,
+    createdAt: r.createdAt.toISOString(),
+    isMine: r.author.id === userId,
+  }));
+
   const spotPeers = await getListingPeers("spot", spot.placeId);
 
   // Bài viết chi tiết: post (đã xuất bản) nổi bật/mới nhất gắn với địa điểm này.
@@ -468,17 +530,28 @@ export default async function SpotPublicPage({
             <div className="grid items-center gap-7 lg:grid-cols-[1fr_400px] lg:gap-10">
               {/* Trái: chữ */}
               <div>
-                {/* Quay lại danh sách địa điểm của điểm đến */}
-                <Link
-                  href={`/diem-den/${spot.place.slug}/dia-diem`}
-                  className="group mb-5 inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  <ChevronLeft
-                    className="size-4 transition-transform group-hover:-translate-x-0.5"
-                    aria-hidden
+                {/* Quay lại + đánh dấu đã đến */}
+                <div className="mb-5 flex items-center justify-between gap-3">
+                  <Link
+                    href={`/diem-den/${spot.place.slug}/dia-diem`}
+                    className="group inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    <ChevronLeft
+                      className="size-4 transition-transform group-hover:-translate-x-0.5"
+                      aria-hidden
+                    />
+                    Địa điểm tại {spot.place.name}
+                  </Link>
+                  <CheckInButton
+                    targetKind="spot"
+                    targetId={spot.id}
+                    targetName={spot.name}
+                    targetImage={coverUrl(spot.images, spot.slug, 96, 96)}
+                    redirectTo={`/dia-diem/${spot.slug}`}
+                    initialChecked={checkIn.checked}
+                    isAuthed={checkIn.isAuthed}
                   />
-                  Địa điểm tại {spot.place.name}
-                </Link>
+                </div>
 
                 <div className="flex flex-wrap items-center gap-3 text-sm font-medium">
                   {categoryLabel && (
@@ -538,6 +611,16 @@ export default async function SpotPublicPage({
                       </div>
                     ))}
                   </dl>
+                )}
+
+                {/* Vivu-er đã đến */}
+                {visitors.total > 0 && (
+                  <div className="mt-6">
+                    <CheckInFaces
+                      people={visitors.people}
+                      total={visitors.total}
+                    />
+                  </div>
                 )}
               </div>
 
@@ -1011,6 +1094,24 @@ export default async function SpotPublicPage({
             </div>
           )}
         </div>
+
+        {/* Đánh giá của Vivu-er cho địa điểm này */}
+        <div className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 sm:pb-20">
+          <ReviewsSection
+            target={{
+              kind: "spot",
+              id: spot.id,
+              slug: spot.slug,
+              name: spot.name,
+              image: coverUrl(spot.images, spot.slug, 96, 96),
+            }}
+            summary={reviewSummary}
+            reviews={reviewItems}
+            myReview={myReviewRow}
+            isAuthed={checkIn.isAuthed}
+          />
+        </div>
+
         <RelatedPosts type="spot" id={spot.id} />
       </main>
 

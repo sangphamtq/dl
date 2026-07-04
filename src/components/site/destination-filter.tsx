@@ -380,11 +380,11 @@ function DestCard({ d }: { d: DestItem }) {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent" />
 
-        <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5">
-          <div className="flex items-center gap-2 text-xs font-medium text-white/80">
+        <div className="absolute inset-x-0 bottom-0 p-5">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-white/70">
             {d.isFeatured && (
               <Star
-                className="size-3.5 shrink-0 fill-current text-warm"
+                className="size-3 shrink-0 fill-current text-warm"
                 aria-label="Nổi bật"
               />
             )}
@@ -395,11 +395,11 @@ function DestCard({ d }: { d: DestItem }) {
               </span>
             )}
           </div>
-          <h3 className="mt-1 text-balance text-xl font-bold leading-tight tracking-tight text-white sm:text-2xl">
+          <h3 className="mt-2 text-balance text-lg font-bold leading-snug tracking-tight text-white sm:text-xl">
             {d.name}
           </h3>
           {d.tagline && (
-            <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-white/80">
+            <p className="mt-1.5 line-clamp-2 text-[13px] leading-relaxed text-white/70">
               {d.tagline}
             </p>
           )}

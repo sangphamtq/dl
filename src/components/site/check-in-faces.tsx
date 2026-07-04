@@ -7,6 +7,7 @@ import {
   AvatarFallback,
   AvatarImage,
   AvatarGroup,
+  AvatarGroupCount,
 } from "@/components/ui/avatar";
 import {
   Dialog,
@@ -16,12 +17,23 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
+import { stanceMeta, type ReviewStance } from "@/lib/review-meta";
 
 export type CheckInPerson = {
   id: string;
   name: string | null;
   image: string | null;
+  stance?: ReviewStance | null;
 };
+
+// Pill cảm nhận: tích cực xanh, tiêu cực xám (khớp danh sách review).
+function stancePill(stance: ReviewStance) {
+  const { tone } = stanceMeta(stance);
+  return tone === "positive" || tone === "posSoft"
+    ? "bg-primary/10 text-primary"
+    : "bg-muted text-muted-foreground";
+}
 
 const FACES = 5;
 const initial = (name: string | null) =>
@@ -39,6 +51,7 @@ export function CheckInFaces({
   if (total <= 0 || people.length === 0) return null;
 
   const faces = people.slice(0, FACES);
+  const overflow = total - faces.length;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -57,14 +70,14 @@ export function CheckInFaces({
                 <AvatarFallback>{initial(p.name)}</AvatarFallback>
               </Avatar>
             ))}
+            {overflow > 0 && (
+              <AvatarGroupCount>
+                +{overflow > 99 ? "99" : overflow}
+              </AvatarGroupCount>
+            )}
           </AvatarGroup>
-          <span className="text-sm">
-            <span className="font-semibold tabular-nums">
-              {total.toLocaleString("vi-VN")}
-            </span>{" "}
-            <span className="text-muted-foreground group-hover:text-foreground">
-              Vivu-er đã đến
-            </span>
+          <span className="text-sm text-muted-foreground group-hover:text-foreground">
+            Vivu-er đã đến
           </span>
         </button>
       </DialogTrigger>
@@ -92,9 +105,19 @@ export function CheckInFaces({
                 )}
                 <AvatarFallback>{initial(p.name)}</AvatarFallback>
               </Avatar>
-              <span className="truncate text-sm font-medium">
+              <span className="min-w-0 flex-1 truncate text-sm font-medium">
                 {p.name ?? "Vivu-er ẩn danh"}
               </span>
+              {p.stance && (
+                <span
+                  className={cn(
+                    "shrink-0 rounded-full px-2 py-0.5 text-xs font-medium",
+                    stancePill(p.stance),
+                  )}
+                >
+                  {stanceMeta(p.stance).label}
+                </span>
+              )}
             </li>
           ))}
         </ul>

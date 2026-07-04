@@ -354,15 +354,20 @@ model CheckIn {
   id      String  @id @default(cuid())
   userId  String
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  placeId String
-  place   Place   @relation(fields: [placeId], references: [id], onDelete: Cascade)
-  auto    Boolean @default(false) // true = tỉnh tự đánh dấu do check-in điểm đến con
+  // Exclusive arc: đúng 1 trong place/spot được set (kiểm ở app).
+  placeId String?
+  place   Place?  @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  spotId  String?
+  spot    Spot?   @relation(fields: [spotId], references: [id], onDelete: Cascade)
+  auto    Boolean @default(false) // true = tỉnh tự đánh dấu do check-in điểm đến con (chỉ place)
 
   createdAt DateTime @default(now())
 
   @@unique([userId, placeId])
+  @@unique([userId, spotId])
   @@index([userId])
   @@index([placeId])
+  @@index([spotId])
 }
 
 // Review điểm đến — CHỈ kind=destination (validate ở app). Gate app-level:
@@ -371,8 +376,11 @@ model CheckIn {
 // (tùy chọn). Hiện ngay; staff ẩn nếu cần. 1 review/người/điểm đến, sửa được.
 model Review {
   id       String @id @default(cuid())
-  placeId  String
-  place    Place  @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  // Exclusive arc: đúng 1 trong place/spot được set (kiểm ở app).
+  placeId  String?
+  place    Place?  @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  spotId   String?
+  spot     Spot?   @relation(fields: [spotId], references: [id], onDelete: Cascade)
   authorId String
   author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
@@ -387,7 +395,9 @@ model Review {
   updatedAt DateTime @updatedAt
 
   @@unique([placeId, authorId])
+  @@unique([spotId, authorId])
   @@index([placeId])
+  @@index([spotId])
   @@index([authorId])
 }
 
@@ -484,6 +494,9 @@ model Spot {
   highlights   SpotHighlight[] // điểm nhấn (title + body + ảnh), sắp theo order
 
   activityLinks SpotActivity[] // M:N qua bảng nối (mang nội dung riêng theo spot)
+
+  checkIns CheckIn[] // người dùng đã đánh dấu "đã đến" địa điểm này
+  reviews  Review[] // đánh giá của Vivu-er cho địa điểm này
 
   images   Image[]
   postRefs PostRef[]

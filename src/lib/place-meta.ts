@@ -206,15 +206,43 @@ export function buildPlaceStats(viewCount: number): PlaceStat[] {
 }
 
 // "Vivu-er đã đến" cho hero: tổng số check-in + N người mới nhất (avatar stack).
-export async function getPlaceVisitors(placeId: string, take = 60) {
+// Dùng cho cả điểm đến (place) và địa điểm (spot).
+export async function getVisitors(
+  kind: "place" | "spot",
+  id: string,
+  take = 60,
+) {
+  const where = kind === "place" ? { placeId: id } : { spotId: id };
   const [total, faces] = await Promise.all([
-    prisma.checkIn.count({ where: { placeId } }),
+    prisma.checkIn.count({ where }),
     prisma.checkIn.findMany({
-      where: { placeId },
+      where,
       orderBy: { createdAt: "desc" },
       take,
-      select: { user: { select: { id: true, name: true, image: true } } },
+      select: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+            // Cảm nhận của họ cho chính nơi này (nếu có review công khai).
+            reviews: {
+              where: { ...where, isHidden: false },
+              select: { stance: true },
+              take: 1,
+            },
+          },
+        },
+      },
     }),
   ]);
-  return { total, people: faces.map((c) => c.user) };
+  return {
+    total,
+    people: faces.map((c) => ({
+      id: c.user.id,
+      name: c.user.name,
+      image: c.user.image,
+      stance: c.user.reviews[0]?.stance ?? null,
+    })),
+  };
 }

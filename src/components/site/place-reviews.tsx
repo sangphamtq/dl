@@ -15,6 +15,7 @@ import {
   ThumbsUp,
   TriangleAlert,
   MapPinCheckInside,
+  MapPinPlus,
   MapPin,
   Plus,
   MoreHorizontal,
@@ -124,82 +125,63 @@ function fmtDate(iso: string) {
   return `${date} · ${time}`;
 }
 
+// Đích đánh giá: điểm đến (place) hoặc địa điểm (spot).
+export type ReviewTarget = {
+  kind: "place" | "spot";
+  id: string;
+  slug: string;
+  name: string;
+  image?: string | null;
+};
+
+function targetHref(t: ReviewTarget) {
+  return t.kind === "place" ? `/diem-den/${t.slug}` : `/dia-diem/${t.slug}`;
+}
+
 // ── Section chính ─────────────────────────────────────────────────
-export function PlaceReviews({
-  placeId,
-  placeSlug,
-  placeName,
-  placeImage,
+export function ReviewsSection({
+  target,
   summary,
   reviews,
   myReview,
   isAuthed,
-  checkedIn,
 }: {
-  placeId: string;
-  placeSlug: string;
-  placeName: string;
-  placeImage?: string | null;
+  target: ReviewTarget;
   summary: ReviewSummary;
   reviews: ReviewListItem[];
   myReview: MyReview | null;
   isAuthed: boolean;
-  checkedIn: boolean;
 }) {
   const [loginOpen, setLoginOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
-  const [formExpanded, setFormExpanded] = useState(false);
-  const [justCheckedIn, setJustCheckedIn] = useState(false);
   const [openKey, setOpenKey] = useState(0); // đổi mỗi lần mở → remount form
   const [showAll, setShowAll] = useState(false);
   const [stanceFilter, setStanceFilter] = useState<ReviewStance | null>(null);
   const [contentOnly, setContentOnly] = useState(false);
   const router = useRouter();
-  const effectiveCheckedIn = checkedIn || justCheckedIn;
 
-  // Đồng bộ với nút check-in ở hero (sự kiện toàn cục, lọc theo placeId):
-  // - check-in → mở form đánh giá NHANH + refresh (review cũ đang ẩn hiện lại).
-  // - bỏ đánh dấu → refresh (review của mình tự ẩn khỏi danh sách & tổng hợp).
+  // Đồng bộ khi check-in/bỏ đánh dấu xảy ra ở nơi khác (nút hero, form khác):
+  // refresh để danh sách + tổng hợp cập nhật (review hiện/ẩn theo check-in).
   useEffect(() => {
-    function onCheckin(e: Event) {
-      if ((e as CustomEvent<{ placeId: string }>).detail?.placeId !== placeId)
-        return;
-      setJustCheckedIn(true);
-      setFormExpanded(false);
-      setOpenKey((k) => k + 1);
-      setFormOpen(true);
-      router.refresh();
-    }
-    function onUncheckin(e: Event) {
-      if ((e as CustomEvent<{ placeId: string }>).detail?.placeId !== placeId)
-        return;
-      setJustCheckedIn(false);
+    function onSync(e: Event) {
+      if ((e as CustomEvent<{ id: string }>).detail?.id !== target.id) return;
       setFormOpen(false);
       router.refresh();
     }
-    window.addEventListener("halivivu:checkin", onCheckin);
-    window.addEventListener("halivivu:uncheckin", onUncheckin);
+    window.addEventListener("halivivu:checkedin", onSync);
+    window.addEventListener("halivivu:uncheckin", onSync);
     return () => {
-      window.removeEventListener("halivivu:checkin", onCheckin);
-      window.removeEventListener("halivivu:uncheckin", onUncheckin);
+      window.removeEventListener("halivivu:checkedin", onSync);
+      window.removeEventListener("halivivu:uncheckin", onSync);
     };
-  }, [placeId, router]);
+  }, [target.id, router]);
 
-  // Mở từ section đánh giá → mở FULL (bung sẵn nhãn + ô viết).
+  // Mở form đánh giá (đánh giá = xác nhận đã đến — submit sẽ tự check-in).
   function onWrite() {
     if (!isAuthed) {
       setLoginOpen(true);
       return;
     }
-    if (!effectiveCheckedIn) {
-      toast.info(
-        myReview
-          ? "Đánh giá của bạn đang ẩn vì đã bỏ đánh dấu. Đánh dấu đã đến lại để hiển thị và chỉnh sửa."
-          : "Bạn cần đánh dấu đã đến nơi này trước khi đánh giá.",
-      );
-      return;
-    }
-    setFormExpanded(true);
     setOpenKey((k) => k + 1);
     setFormOpen(true);
   }
@@ -217,7 +199,7 @@ export function PlaceReviews({
     <section id="danh-gia" className="scroll-mt-32">
       <div className="flex items-baseline justify-between gap-6">
         <h2 className="text-2xl font-bold tracking-tight">
-          Vivu-er nói gì về {placeName}
+          Vivu-er nói gì về {target.name}
         </h2>
         <button
           type="button"
@@ -292,7 +274,7 @@ export function PlaceReviews({
                   <ReviewCard
                     key={r.id}
                     review={r}
-                    placeId={placeId}
+                    target={target}
                     onEdit={onWrite}
                   />
                 ))}
@@ -324,7 +306,7 @@ export function PlaceReviews({
           />
           <p className="font-medium">Chưa có đánh giá nào</p>
           <p className="max-w-sm text-sm text-muted-foreground">
-            Là Vivu-er đầu tiên chia sẻ cảm nhận về {placeName}.
+            Là Vivu-er đầu tiên chia sẻ cảm nhận về {target.name}.
           </p>
           <button
             type="button"
@@ -332,7 +314,7 @@ export function PlaceReviews({
             className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
             <PenLine className="size-4" aria-hidden />
-            Viết đánh giá đầu tiên
+            Đánh dấu đã đến & đánh giá
           </button>
         </div>
       )}
@@ -341,20 +323,18 @@ export function PlaceReviews({
         <LoginDrawer
           open={loginOpen}
           onOpenChange={setLoginOpen}
-          redirectTo={`/diem-den/${placeSlug}`}
+          redirectTo={targetHref(target)}
           title="Đăng nhập để đánh giá"
           description="Đăng nhập và đánh dấu đã đến để chia sẻ cảm nhận của bạn."
         />
       )}
-      {isAuthed && effectiveCheckedIn && (
+      {isAuthed && (
         <ReviewForm
           key={openKey}
           open={formOpen}
           onOpenChange={setFormOpen}
-          defaultExpanded={formExpanded}
-          placeId={placeId}
-          placeName={placeName}
-          placeImage={placeImage}
+          defaultExpanded
+          target={target}
           initial={myReview}
         />
       )}
@@ -522,11 +502,11 @@ function SummaryPanel({
 // ── Một review ────────────────────────────────────────────────────
 function ReviewCard({
   review,
-  placeId,
+  target,
   onEdit,
 }: {
   review: ReviewListItem;
-  placeId: string;
+  target: ReviewTarget;
   onEdit: () => void;
 }) {
   const router = useRouter();
@@ -536,7 +516,7 @@ function ReviewCard({
   function onDelete() {
     if (!confirm("Xoá đánh giá của bạn?")) return;
     startTransition(async () => {
-      const res = await deleteReview(placeId);
+      const res = await deleteReview({ kind: target.kind, id: target.id });
       if (!res.ok) {
         toast.error(res.error);
         return;
@@ -635,21 +615,25 @@ function ReviewCard({
 }
 
 // ── Form viết / sửa ───────────────────────────────────────────────
-function ReviewForm({
+// Target rút gọn cho form (không cần slug/region) — dùng chung ReviewsSection & CheckInButton.
+export type ReviewFormTarget = {
+  kind: "place" | "spot";
+  id: string;
+  name: string;
+  image?: string | null;
+};
+
+export function ReviewForm({
   open,
   onOpenChange,
   defaultExpanded,
-  placeId,
-  placeName,
-  placeImage,
+  target,
   initial,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   defaultExpanded: boolean;
-  placeId: string;
-  placeName: string;
-  placeImage?: string | null;
+  target: ReviewFormTarget;
   initial: MyReview | null;
 }) {
   const router = useRouter();
@@ -687,7 +671,7 @@ function ReviewForm({
     }
     startTransition(async () => {
       const res = await submitReview({
-        placeId,
+        target: { kind: target.kind, id: target.id },
         stance,
         highlights,
         caveats,
@@ -697,7 +681,11 @@ function ReviewForm({
         toast.error(res.error);
         return;
       }
-      toast.success("Đã lưu đánh giá của bạn.");
+      // Gửi review = đã xác nhận "đã đến": báo cho nút check-in + section cập nhật.
+      window.dispatchEvent(
+        new CustomEvent("halivivu:checkedin", { detail: { id: target.id } }),
+      );
+      toast.success("Đã lưu đánh giá — đã đánh dấu đã đến.");
       onOpenChange(false);
       router.refresh();
     });
@@ -709,9 +697,9 @@ function ReviewForm({
         {/* Header — bối cảnh nơi + xác nhận đã đánh dấu */}
         <div className="flex items-center gap-3 border-b border-border/60 px-5 py-3 pr-12">
           <div className="relative size-10 shrink-0 overflow-hidden rounded-lg bg-muted">
-            {placeImage ? (
+            {target.image ? (
               <Image
-                src={placeImage}
+                src={target.image}
                 alt=""
                 fill
                 sizes="40px"
@@ -725,12 +713,19 @@ function ReviewForm({
           </div>
           <div className="min-w-0">
             <DialogTitle className="truncate text-base leading-tight">
-              Đánh giá {placeName}
+              {initial ? "Sửa đánh giá" : "Đánh giá"} {target.name}
             </DialogTitle>
-            <p className="mt-0.5 flex items-center gap-1 text-xs font-medium text-primary">
-              <MapPinCheckInside className="size-3.5 shrink-0" aria-hidden />
-              Bạn đã đánh dấu đã đến
-            </p>
+            {initial ? (
+              <p className="mt-0.5 flex items-center gap-1 text-xs font-medium text-primary">
+                <MapPinCheckInside className="size-3.5 shrink-0" aria-hidden />
+                Bạn đã đến đây
+              </p>
+            ) : (
+              <p className="mt-0.5 flex items-center gap-1 text-xs font-medium text-warm">
+                <MapPinPlus className="size-3.5 shrink-0" aria-hidden />
+                Gửi đánh giá để xác nhận đã đến
+              </p>
+            )}
           </div>
         </div>
         <DialogDescription className="sr-only">
@@ -832,7 +827,7 @@ function ReviewForm({
                   onChange={(e) =>
                     setContent(e.target.value.slice(0, MAX_CONTENT))
                   }
-                  placeholder={`Điều gì khiến chuyến đi ${placeName} đáng nhớ? Mẹo cho người đi sau?`}
+                  placeholder={`Điều gì khiến chuyến đi ${target.name} đáng nhớ? Mẹo cho người đi sau?`}
                   rows={3}
                   className="mt-2 resize-none"
                 />
@@ -856,7 +851,9 @@ function ReviewForm({
         {/* Footer */}
         <div className="flex items-center justify-between gap-3 border-t border-border/60 px-5 py-3">
           <p className="hidden text-xs leading-snug text-muted-foreground sm:block">
-            Hiển thị công khai kèm tên bạn.
+            {initial
+              ? "Hiển thị công khai kèm tên bạn."
+              : "Gửi = đánh dấu đã đến."}
             <br />
             Sửa hoặc xoá bất cứ lúc nào.
           </p>
@@ -870,7 +867,7 @@ function ReviewForm({
             </Button>
             <Button onClick={onSubmit} disabled={pending || !stance}>
               {pending && <Loader2 className="size-4 animate-spin" />}
-              {initial ? "Cập nhật" : "Gửi đánh giá"}
+              {initial ? "Cập nhật" : "Đánh dấu đã đến"}
             </Button>
           </div>
         </div>

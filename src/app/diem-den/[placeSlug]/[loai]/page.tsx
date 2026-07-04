@@ -23,7 +23,7 @@ import {
   getPlaceCounts,
   buildPlaceTabs,
   buildPlaceStats,
-  getPlaceVisitors,
+  getVisitors,
 } from "@/lib/place-meta";
 import {
   SPOT_CATEGORY_LABELS,
@@ -397,7 +397,7 @@ export default async function PlaceListingPage({
       : false,
     isAuthed: !!userId,
   };
-  const visitors = await getPlaceVisitors(place.id);
+  const visitors = await getVisitors("place", place.id);
 
   // Ẩm thực: chi tiết đầy đủ Đặc sản rồi Quán ăn, xếp dọc trên cùng trang.
   const food = isFood

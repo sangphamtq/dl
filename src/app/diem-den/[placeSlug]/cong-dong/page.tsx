@@ -13,7 +13,7 @@ import {
   getPlaceCounts,
   buildPlaceTabs,
   buildPlaceStats,
-  getPlaceVisitors,
+  getVisitors,
 } from "@/lib/place-meta";
 import { getDestinationPeerGroups } from "@/lib/peers";
 import { isStaffViewer } from "@/lib/preview";
@@ -95,7 +95,7 @@ export default async function PlaceCommunityPage({
       : false,
     isAuthed: !!currentUserId,
   };
-  const visitors = await getPlaceVisitors(place.id);
+  const visitors = await getVisitors("place", place.id);
 
   const totalAll = grouped.reduce((s, g) => s + g._count._all, 0);
   const countOf = (v: string) =>

@@ -23,7 +23,9 @@ export default async function DaDenPage() {
     }),
   ]);
 
-  const initialVisited = rows.map((r) => r.place.slug);
+  const initialVisited = rows
+    .map((r) => r.place?.slug)
+    .filter((s): s is string => !!s);
   const slugToId = Object.fromEntries(provinces.map((p) => [p.slug, p.id]));
 
   return (

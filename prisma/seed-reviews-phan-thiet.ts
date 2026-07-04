@@ -139,6 +139,46 @@ async function main() {
   }
 
   console.log(`✔ Seed ${REVIEWS.length} đánh giá mẫu cho ${place.name}.`);
+
+  // Cũng seed cho một ĐỊA ĐIỂM (spot) để demo review spot — dùng lại 4 user đầu.
+  const spot = await prisma.spot.findUnique({
+    where: { slug: "doi-cat-bay-mui-ne" },
+    select: { id: true, name: true },
+  });
+  if (spot) {
+    for (const r of REVIEWS.slice(0, 4)) {
+      const user = await prisma.user.findUnique({
+        where: { email: r.email },
+        select: { id: true },
+      });
+      if (!user) continue;
+      await prisma.checkIn.upsert({
+        where: { userId_spotId: { userId: user.id, spotId: spot.id } },
+        update: {},
+        create: { userId: user.id, spotId: spot.id },
+      });
+      const createdAt = new Date(Date.now() - r.daysAgo * 24 * 60 * 60 * 1000);
+      await prisma.review.upsert({
+        where: { spotId_authorId: { spotId: spot.id, authorId: user.id } },
+        update: {
+          stance: r.stance,
+          highlights: r.highlights,
+          caveats: r.caveats,
+          content: r.content,
+        },
+        create: {
+          spotId: spot.id,
+          authorId: user.id,
+          stance: r.stance,
+          highlights: r.highlights,
+          caveats: r.caveats,
+          content: r.content,
+          createdAt,
+        },
+      });
+    }
+    console.log(`✔ Seed 4 đánh giá mẫu cho địa điểm ${spot.name}.`);
+  }
 }
 
 main()
