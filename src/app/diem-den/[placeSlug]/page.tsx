@@ -21,6 +21,8 @@ import { Rail } from "@/components/site/rail";
 import { PlaceViewTracker } from "@/components/site/place-view-tracker";
 import { PlaceHero } from "@/components/site/place-hero";
 import { PlaceTabs } from "@/components/site/place-tabs";
+import { PlaceReviews, type ReviewListItem } from "@/components/site/place-reviews";
+import { summarizeReviews } from "@/lib/review-meta";
 import { PeerBar } from "@/components/site/peer-bar";
 import { getDestinationPeerGroups } from "@/lib/peers";
 import {
@@ -191,6 +193,56 @@ export default async function PlaceDetailPage({
     total: checkInCount,
     people: checkInFaces.map((c) => c.user),
   };
+
+  // Đánh giá (chỉ điểm đến lớn): tổng hợp review đang hiện + review của chính user.
+  const isDestination = place.kind === "destination";
+  const [reviewRows, myReviewRow] = isDestination
+    ? await Promise.all([
+        prisma.review.findMany({
+          // Chỉ hiện review khi tác giả HIỆN còn đánh dấu đã đến nơi này (bỏ đánh
+          // dấu → tự ẩn & không tính vào tổng hợp; đánh dấu lại → tự hiện).
+          where: {
+            placeId: place.id,
+            isHidden: false,
+            author: { checkIns: { some: { placeId: place.id } } },
+          },
+          orderBy: { createdAt: "desc" },
+          select: {
+            id: true,
+            stance: true,
+            highlights: true,
+            caveats: true,
+            content: true,
+            createdAt: true,
+            author: { select: { id: true, name: true, image: true } },
+          },
+        }),
+        userId
+          ? prisma.review.findUnique({
+              where: {
+                placeId_authorId: { placeId: place.id, authorId: userId },
+              },
+              select: {
+                stance: true,
+                highlights: true,
+                caveats: true,
+                content: true,
+              },
+            })
+          : Promise.resolve(null),
+      ])
+    : [[], null];
+  const reviewSummary = summarizeReviews(reviewRows);
+  const reviewItems: ReviewListItem[] = reviewRows.map((r) => ({
+    id: r.id,
+    author: r.author,
+    stance: r.stance,
+    highlights: r.highlights,
+    caveats: r.caveats,
+    content: r.content,
+    createdAt: r.createdAt.toISOString(),
+    isMine: r.author.id === userId,
+  }));
 
   const counts = await getPlaceCounts(place.id);
   const stats = buildPlaceStats(place.viewCount);
@@ -440,6 +492,21 @@ export default async function PlaceDetailPage({
                 lại sau nhé.
               </p>
             </div>
+          )}
+
+          {/* Đánh giá của Vivu-er (chỉ điểm đến lớn) */}
+          {isDestination && (
+            <PlaceReviews
+              placeId={place.id}
+              placeSlug={place.slug}
+              placeName={place.name}
+              placeImage={coverUrl(place.images, place.slug, 96, 96)}
+              summary={reviewSummary}
+              reviews={reviewItems}
+              myReview={myReviewRow}
+              isAuthed={checkIn.isAuthed}
+              checkedIn={checkIn.checked}
+            />
           )}
         </div>
 

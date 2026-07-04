@@ -52,6 +52,10 @@ export function CheckInButton({
         return;
       }
       setChecked(res.data.checked);
+      // PlaceReviews (nếu có trên trang) lắng nghe: check-in → gợi ý đánh giá
+      // nhanh; bỏ đánh dấu → ẩn đánh giá (không tính) & đồng bộ lại.
+      const evt = res.data.checked ? "halivivu:checkin" : "halivivu:uncheckin";
+      window.dispatchEvent(new CustomEvent(evt, { detail: { placeId } }));
       if (res.data.checked) toast.success(`Đã đánh dấu đã đến ${placeName}`);
       else toast(`Đã bỏ đánh dấu ${placeName}`);
     });

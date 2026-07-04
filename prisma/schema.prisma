@@ -82,6 +82,14 @@ enum NotificationType {
   sale_rejected // hồ sơ CTV bị từ chối
 }
 
+// Cảm nhận chung của một review điểm đến (chọn 1) — thang 4 mức thay cho số sao.
+enum ReviewStance {
+  love // tuyệt vời, muốn quay lại
+  worthOnce // đáng đi một lần
+  meh // không có gì đặc biệt
+  bad // thất vọng, không nên đi
+}
+
 /// Mức giá tương đối: budget=$ · moderate=$$ · premium=$$$ · luxury=$$$$
 enum PriceRange {
   budget
@@ -212,6 +220,7 @@ model User {
   notificationsActed Notification[] @relation("NotifActor") // thông báo do mình gây ra
 
   checkIns CheckIn[] // các điểm đến/tỉnh đã đánh dấu "đã đến"
+  reviews  Review[] // đánh giá điểm đến đã viết
 
   saleProfile   SaleProfile?  @relation("SaleOwner") // hồ sơ CTV (nếu có) — đăng ký làm người bán
   salesReviewed SaleProfile[] @relation("SaleReviewer") // hồ sơ CTV mình đã duyệt (staff)
@@ -302,6 +311,7 @@ model Place {
   saleProfiles SaleProfile[]   @relation("SaleAreas") // CTV phục vụ nơi này (M:N)
   viewStats    PlaceViewStat[] // lượt xem theo ngày (để lọc trending)
   checkIns     CheckIn[] // người dùng đã đánh dấu "đã đến" nơi này
+  reviews      Review[] // đánh giá của Vivu-er (chỉ điểm đến lớn)
 
   tags String[] @default([])
 
@@ -353,6 +363,32 @@ model CheckIn {
   @@unique([userId, placeId])
   @@index([userId])
   @@index([placeId])
+}
+
+// Review điểm đến — CHỈ kind=destination (validate ở app). Gate app-level:
+// author phải có CheckIn với place. Cảm nhận chung (stance, bắt buộc) + nhãn
+// điểm cộng/cần lưu ý (vocab định nghĩa trong code, lưu String[]) + nội dung viết
+// (tùy chọn). Hiện ngay; staff ẩn nếu cần. 1 review/người/điểm đến, sửa được.
+model Review {
+  id       String @id @default(cuid())
+  placeId  String
+  place    Place  @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  stance     ReviewStance
+  highlights String[] @default([]) // nhãn "điểm cộng" đã chọn
+  caveats    String[] @default([]) // nhãn "cần lưu ý" đã chọn
+  content    String? // nội dung viết (tùy chọn)
+
+  isHidden Boolean @default(false) // staff ẩn khỏi công khai (không tính vào tổng hợp)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([placeId, authorId])
+  @@index([placeId])
+  @@index([authorId])
 }
 
 // ============================================================

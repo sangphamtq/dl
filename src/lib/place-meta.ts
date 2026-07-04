@@ -204,3 +204,17 @@ export type PlaceStat = { icon: LucideIcon; value: number; label: string };
 export function buildPlaceStats(viewCount: number): PlaceStat[] {
   return [{ icon: Eye, value: viewCount, label: "lượt xem" }];
 }
+
+// "Vivu-er đã đến" cho hero: tổng số check-in + N người mới nhất (avatar stack).
+export async function getPlaceVisitors(placeId: string, take = 60) {
+  const [total, faces] = await Promise.all([
+    prisma.checkIn.count({ where: { placeId } }),
+    prisma.checkIn.findMany({
+      where: { placeId },
+      orderBy: { createdAt: "desc" },
+      take,
+      select: { user: { select: { id: true, name: true, image: true } } },
+    }),
+  ]);
+  return { total, people: faces.map((c) => c.user) };
+}

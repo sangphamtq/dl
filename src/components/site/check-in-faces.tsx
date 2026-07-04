@@ -7,7 +7,6 @@ import {
   AvatarFallback,
   AvatarImage,
   AvatarGroup,
-  AvatarGroupCount,
 } from "@/components/ui/avatar";
 import {
   Dialog,
@@ -40,7 +39,6 @@ export function CheckInFaces({
   if (total <= 0 || people.length === 0) return null;
 
   const faces = people.slice(0, FACES);
-  const overflow = total - faces.length;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -59,11 +57,6 @@ export function CheckInFaces({
                 <AvatarFallback>{initial(p.name)}</AvatarFallback>
               </Avatar>
             ))}
-            {overflow > 0 && (
-              <AvatarGroupCount>
-                +{overflow > 99 ? "99" : overflow}
-              </AvatarGroupCount>
-            )}
           </AvatarGroup>
           <span className="text-sm">
             <span className="font-semibold tabular-nums">

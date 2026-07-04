@@ -14,6 +14,7 @@ import {
   BedDouble,
   Bus,
   Newspaper,
+  MessageSquareText,
   BadgeCheck,
   ShieldAlert,
   Image as ImageIcon,
@@ -73,6 +74,12 @@ const NAV: NavGroup[] = [
   {
     label: "Blog",
     items: [{ href: "/cms/posts", label: "Bài viết", icon: Newspaper }],
+  },
+  {
+    label: "Cộng đồng",
+    items: [
+      { href: "/cms/reviews", label: "Đánh giá", icon: MessageSquareText },
+    ],
   },
   {
     label: "Uy tín",

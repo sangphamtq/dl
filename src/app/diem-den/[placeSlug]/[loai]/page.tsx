@@ -23,6 +23,7 @@ import {
   getPlaceCounts,
   buildPlaceTabs,
   buildPlaceStats,
+  getPlaceVisitors,
 } from "@/lib/place-meta";
 import {
   SPOT_CATEGORY_LABELS,
@@ -396,6 +397,7 @@ export default async function PlaceListingPage({
       : false,
     isAuthed: !!userId,
   };
+  const visitors = await getPlaceVisitors(place.id);
 
   // Ẩm thực: chi tiết đầy đủ Đặc sản rồi Quán ăn, xếp dọc trên cùng trang.
   const food = isFood
@@ -439,6 +441,7 @@ export default async function PlaceListingPage({
           videos={heroData.videos}
           back={{ href: `/diem-den/${place.slug}`, label: "Tổng quan" }}
           checkIn={checkIn}
+          visitors={visitors}
         />
 
         {/* Thanh tab: Tổng quan + xem tất cả từng listing + nút Video */}
