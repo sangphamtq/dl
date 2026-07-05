@@ -36,6 +36,7 @@ export type SpotActivityContentInput = {
 export type SpotFormInput = {
   name: string;
   slug: string;
+  tagline: string;
   description: string;
   category: string; // "" = none
   placeId: string;
@@ -180,6 +181,7 @@ async function normalize(
     data: {
       name,
       slug,
+      tagline: input.tagline.trim() || null,
       description: input.description.trim() || null,
       category,
       placeId: input.placeId,

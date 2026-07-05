@@ -320,6 +320,7 @@ async function main() {
   type SpotSeed = {
     slug: string;
     name: string;
+    tagline?: string;
     category?: SpotCategory;
     lat?: number;
     lng?: number;
@@ -335,6 +336,7 @@ async function main() {
     {
       slug: "bai-bien-mui-ne",
       name: "Bãi biển Mũi Né",
+      tagline: "Bờ dừa nghiêng gió, thiên đường lướt ván diều châu Á.",
       category: SpotCategory.beach,
       lat: 10.9333,
       lng: 108.287,
@@ -370,6 +372,7 @@ async function main() {
     {
       slug: "doi-cat-bay-mui-ne",
       name: "Đồi cát bay Mũi Né",
+      tagline: "Triền cát đổi màu theo nắng, đổi hình theo gió.",
       category: SpotCategory.viewpoint,
       lat: 10.952,
       lng: 108.303,
@@ -411,6 +414,7 @@ async function main() {
     {
       slug: "bau-trang",
       name: "Bàu Trắng",
+      tagline: "Hồ sen thơ mộng giữa 'tiểu sa mạc' cát trắng.",
       category: SpotCategory.lake,
       lat: 11.179,
       lng: 108.413,
@@ -446,6 +450,7 @@ async function main() {
     {
       slug: "suoi-tien-mui-ne",
       name: "Suối Tiên",
+      tagline: "Dòng suối đỏ cam len giữa vách cát vàng kỳ ảo.",
       category: SpotCategory.other,
       lat: 10.9486,
       lng: 108.288,
@@ -475,6 +480,7 @@ async function main() {
     {
       slug: "lang-chai-mui-ne",
       name: "Làng chài Mũi Né",
+      tagline: "Chợ hải sản sớm mai rộn ràng bên thúng chai.",
       category: SpotCategory.village,
       lat: 10.956,
       lng: 108.287,
@@ -509,6 +515,7 @@ async function main() {
     {
       slug: "thap-po-sah-inu",
       name: "Tháp Po Sah Inư",
+      tagline: "Cụm tháp Chăm cổ trầm mặc trên đồi Bà Nài.",
       category: SpotCategory.temple,
       lat: 10.929,
       lng: 108.128,
@@ -544,6 +551,7 @@ async function main() {
     {
       slug: "hon-rom",
       name: "Hòn Rơm",
+      tagline: "Biển hoang sơ, nước trong veo, bãi vắng yên bình.",
       category: SpotCategory.beach,
       lat: 10.976,
       lng: 108.329,
@@ -573,6 +581,7 @@ async function main() {
     {
       slug: "bai-da-ong-dia",
       name: "Bãi đá Ông Địa",
+      tagline: "Ghềnh đá xếp lớp, điểm ngắm hoàng hôn bên sóng.",
       category: SpotCategory.beach,
       lat: 10.927,
       lng: 108.256,

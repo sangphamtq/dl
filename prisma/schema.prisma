@@ -454,6 +454,7 @@ model Spot {
   id          String        @id @default(cuid())
   slug        String        @unique
   name        String
+  tagline     String? // câu slogan ngắn hiển thị dưới tên (khác description)
   description String? // mô tả ngắn / mở bài (meta SEO, card, excerpt hero)
   category    SpotCategory?
 

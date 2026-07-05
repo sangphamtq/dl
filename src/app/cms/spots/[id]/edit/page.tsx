@@ -23,6 +23,7 @@ export default async function EditSpotPage({
         id: true,
         name: true,
         slug: true,
+        tagline: true,
         description: true,
         category: true,
         placeId: true,
@@ -79,6 +80,7 @@ export default async function EditSpotPage({
   const initial: Partial<SpotFormValues> = {
     name: spot.name,
     slug: spot.slug,
+    tagline: spot.tagline ?? "",
     description: spot.description ?? "",
     category: spot.category ?? "",
     placeId: spot.placeId,

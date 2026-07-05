@@ -1,7 +1,13 @@
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { ChevronRight, Compass } from "lucide-react";
+import {
+  ChevronRight,
+  Compass,
+  Clock,
+  CalendarDays,
+  type LucideIcon,
+} from "lucide-react";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { coverUrl } from "@/lib/place-image";
@@ -10,13 +16,14 @@ import {
   ACCOMMODATION_CATEGORY_LABELS,
   label,
 } from "@/lib/listing-labels";
-import { parseTicketTiers, formatVnd } from "@/lib/tickets";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { RelatedPosts } from "@/components/site/related-posts";
 import { isStaffViewer } from "@/lib/preview";
 import { PlaceCard } from "@/components/site/place-card";
 import { ListingCard } from "@/components/site/listing-card";
+import { SectionHeading } from "@/components/site/section-heading";
+import { SpotShowcase } from "@/components/site/spot-showcase";
 import { Rail } from "@/components/site/rail";
 import { PlaceViewTracker } from "@/components/site/place-view-tracker";
 import { PlaceHero } from "@/components/site/place-hero";
@@ -36,18 +43,48 @@ import {
 
 const pub = { status: "published" as const };
 
-// Nhãn giá hoạt động lấy từ ticketFree / ticketTiers (KHÔNG dùng priceRange cũ).
-function activityPriceBadge(
-  ticketFree: boolean,
-  ticketTiers: unknown,
-): string | null {
-  if (ticketFree) return "Miễn phí";
-  const prices = parseTicketTiers(ticketTiers)
-    .map((t) => t.price)
-    .filter((p): p is number => p != null && p > 0);
-  if (prices.length === 0) return null;
-  return `Từ ${formatVnd(Math.min(...prices))}`;
+// Card trải nghiệm — ảnh làm chủ, tên + dòng fact (thời lượng · mùa) (Layout A).
+function ExperienceCard({
+  href,
+  name,
+  slug,
+  images,
+  facts,
+}: {
+  href: string;
+  name: string;
+  slug: string;
+  images: { url: string; isCover: boolean }[];
+  facts: { icon: LucideIcon; text: string }[];
+}) {
+  return (
+    <Link href={href} className="group block">
+      <div className="relative aspect-[5/4] overflow-hidden rounded-2xl bg-muted">
+        <Image
+          src={coverUrl(images, slug)}
+          alt={name}
+          fill
+          sizes="(min-width: 1024px) 25vw, (min-width: 640px) 40vw, 80vw"
+          className="object-cover transition-transform duration-500 group-hover:scale-105"
+        />
+      </div>
+      <h3 className="mt-3 text-lg font-semibold tracking-tight transition-colors group-hover:text-primary">
+        {name}
+      </h3>
+      {facts.length > 0 && (
+        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+          {facts.map((f, i) => (
+            <span key={i} className="inline-flex items-center gap-1.5">
+              <f.icon className="size-3.5 shrink-0" aria-hidden />
+              {f.text}
+            </span>
+          ))}
+        </div>
+      )}
+    </Link>
+  );
 }
+
 const listingImages = {
   where: { isCover: true },
   take: 1,
@@ -118,34 +155,23 @@ export default async function PlaceDetailPage({
         select: {
           slug: true,
           name: true,
-          description: true,
           durationText: true,
           seasonText: true,
-          ticketFree: true,
-          ticketTiers: true,
           images: listingImages,
         },
       },
       spots: {
         where: pub,
         orderBy: [{ isFeatured: "desc" }, { order: "asc" }, { name: "asc" }],
-        take: 6,
+        take: 7,
         select: {
           slug: true,
           name: true,
+          tagline: true,
           category: true,
+          wardName: true,
+          districtName: true,
           images: listingImages,
-          highlights: {
-            orderBy: { order: "asc" },
-            take: 3,
-            select: { title: true },
-          },
-          activityLinks: {
-            where: { activity: pub },
-            orderBy: { order: "asc" },
-            take: 3,
-            select: { activity: { select: { name: true } } },
-          },
         },
       },
       specialties: {
@@ -393,34 +419,21 @@ export default async function PlaceDetailPage({
           {/* Tham quan (Spot) — rail */}
           {place.spots.length > 0 && (
             <section id="tham-quan" className="scroll-mt-32">
-              <SectionHeading
+              <SpotShowcase
                 title="Địa điểm đáng ghé"
-                href={`/diem-den/${place.slug}/dia-diem`}
                 count={counts.spot}
+                allHref={`/diem-den/${place.slug}/dia-diem`}
+                spots={place.spots.map((s) => ({
+                  slug: s.slug,
+                  name: s.name,
+                  category: s.category
+                    ? label(SPOT_CATEGORY_LABELS, s.category)
+                    : null,
+                  location: s.wardName ?? s.districtName ?? null,
+                  image: coverUrl(s.images, s.slug),
+                  tagline: s.tagline,
+                }))}
               />
-              <Rail itemClassName="basis-4/5 sm:basis-1/2 lg:basis-1/3">
-                {place.spots.map((s) => (
-                  <ListingCard
-                    key={s.slug}
-                    href={`/dia-diem/${s.slug}`}
-                    name={s.name}
-                    slug={s.slug}
-                    images={s.images}
-                    aspectClass="aspect-[3/2]"
-                    tag={s.category ? label(SPOT_CATEGORY_LABELS, s.category) : null}
-                    sections={[
-                      {
-                        label: "Điểm nhấn",
-                        items: s.highlights.map((h) => h.title),
-                      },
-                      {
-                        label: "Làm gì",
-                        items: s.activityLinks.map((l) => l.activity.name),
-                      },
-                    ].filter((sec) => sec.items.length > 0)}
-                  />
-                ))}
-              </Rail>
             </section>
           )}
 
@@ -431,20 +444,25 @@ export default async function PlaceDetailPage({
                 title="Trải nghiệm nổi bật"
                 href={`/diem-den/${place.slug}/hoat-dong`}
                 count={counts.activity}
+                unit="trải nghiệm"
               />
-              <Rail itemClassName="basis-1/2 sm:basis-1/3 lg:basis-1/4">
+              <Rail itemClassName="basis-4/5 sm:basis-2/5 lg:basis-1/4">
                 {place.activities.map((a) => (
-                  <ListingCard
+                  <ExperienceCard
                     key={a.slug}
                     href={`/hoat-dong/${a.slug}`}
                     name={a.name}
                     slug={a.slug}
                     images={a.images}
-                    subtitle={a.description}
-                    meta={[a.durationText, a.seasonText].filter(
-                      (x): x is string => Boolean(x),
+                    facts={[
+                      a.durationText && { icon: Clock, text: a.durationText },
+                      a.seasonText && {
+                        icon: CalendarDays,
+                        text: a.seasonText,
+                      },
+                    ].filter(
+                      (x): x is { icon: LucideIcon; text: string } => Boolean(x),
                     )}
-                    price={activityPriceBadge(a.ticketFree, a.ticketTiers)}
                   />
                 ))}
               </Rail>
@@ -458,6 +476,7 @@ export default async function PlaceDetailPage({
                 title="Đặc sản địa phương"
                 href={`/diem-den/${place.slug}/am-thuc`}
                 count={counts.specialty + counts.eatery}
+                unit="món"
               />
               <Rail itemClassName="basis-1/3 sm:basis-1/4 lg:basis-1/6">
                 {place.specialties.map((sp) => (
@@ -480,6 +499,7 @@ export default async function PlaceDetailPage({
                 title="Nơi lưu trú"
                 href={`/diem-den/${place.slug}/luu-tru`}
                 count={counts.accommodation}
+                unit="chỗ ở"
               />
               <Rail itemClassName="basis-1/2 sm:basis-1/3 lg:basis-1/4">
                 {place.accommodations.map((ac) => (
@@ -562,34 +582,3 @@ function QuickInfo({ facts }: { facts: { label: string; value: string }[] }) {
   );
 }
 
-/* ── Tiêu đề section ────────────────────────────────────────────── */
-function SectionHeading({
-  title,
-  href,
-  count,
-}: {
-  title: string;
-  href?: string;
-  count?: number;
-}) {
-  return (
-    <div className="flex items-baseline justify-between gap-6">
-      <h2 className="text-2xl font-bold tracking-tight">
-        {title}
-        {count != null && (
-          <span className="ml-2.5 align-baseline text-lg font-normal tabular-nums text-muted-foreground">
-            {count}
-          </span>
-        )}
-      </h2>
-      {href && (
-        <Link
-          href={href}
-          className="shrink-0 text-sm text-muted-foreground underline decoration-border decoration-1 underline-offset-4 transition-colors hover:text-foreground hover:decoration-foreground"
-        >
-          Xem tất cả
-        </Link>
-      )}
-    </div>
-  );
-}

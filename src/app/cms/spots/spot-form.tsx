@@ -39,6 +39,7 @@ export type SpotFormValues = SpotFormInput;
 const EMPTY: SpotFormValues = {
   name: "",
   slug: "",
+  tagline: "",
   description: "",
   category: "",
   placeId: "",
@@ -455,6 +456,18 @@ export function SpotForm({
             <p className="text-xs text-muted-foreground">
               Đường dẫn:{" "}
               <span className="font-mono">/dia-diem/{slugPreview || "…"}</span>
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="tagline">Tagline</Label>
+            <Input
+              id="tagline"
+              value={values.tagline}
+              onChange={(e) => set("tagline", e.target.value)}
+              placeholder="vd: Đồi cát đổi màu theo ánh nắng"
+            />
+            <p className="text-xs text-muted-foreground">
+              Câu slogan ngắn hiển thị dưới tên (khác mô tả).
             </p>
           </div>
           <div className="space-y-2">
