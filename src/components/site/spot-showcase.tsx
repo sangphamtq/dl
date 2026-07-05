@@ -53,7 +53,7 @@ export function SpotShowcase({
             alt={featured.name}
             fill
             sizes="(min-width: 1024px) 33vw, 100vw"
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            className="object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
           <div className="absolute inset-x-0 bottom-0 p-6">
@@ -87,7 +87,7 @@ export function SpotShowcase({
                   alt={s.name}
                   fill
                   sizes="96px"
-                  className="object-cover transition-transform duration-300 group-hover:scale-105"
+                  className="object-cover"
                 />
               </div>
               <div className="min-w-0 flex-1">

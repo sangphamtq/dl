@@ -6,6 +6,7 @@ import {
   Compass,
   Clock,
   CalendarDays,
+  BadgeCheck,
   type LucideIcon,
 } from "lucide-react";
 import { auth } from "@/auth";
@@ -21,7 +22,6 @@ import { SiteFooter } from "@/components/site/site-footer";
 import { RelatedPosts } from "@/components/site/related-posts";
 import { isStaffViewer } from "@/lib/preview";
 import { PlaceCard } from "@/components/site/place-card";
-import { ListingCard } from "@/components/site/listing-card";
 import { SectionHeading } from "@/components/site/section-heading";
 import { SpotShowcase } from "@/components/site/spot-showcase";
 import { Rail } from "@/components/site/rail";
@@ -65,7 +65,7 @@ function ExperienceCard({
           alt={name}
           fill
           sizes="(min-width: 1024px) 25vw, (min-width: 640px) 40vw, 80vw"
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
+          className="object-cover"
         />
       </div>
       <h3 className="mt-3 text-lg font-semibold tracking-tight transition-colors group-hover:text-primary">
@@ -81,6 +81,86 @@ function ExperienceCard({
           ))}
         </div>
       )}
+    </Link>
+  );
+}
+
+// Card đặc sản — gallery ảnh vuông, tên phủ lên đáy ("ăn ảnh").
+function SpecialtyCard({
+  href,
+  name,
+  slug,
+  images,
+}: {
+  href: string;
+  name: string;
+  slug: string;
+  images: { url: string; isCover: boolean }[];
+}) {
+  return (
+    <Link
+      href={href}
+      className="group relative block aspect-square overflow-hidden rounded-2xl bg-muted"
+    >
+      <Image
+        src={coverUrl(images, slug)}
+        alt={name}
+        fill
+        sizes="(min-width: 1024px) 20vw, (min-width: 640px) 25vw, 40vw"
+        className="object-cover"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/5 to-transparent" />
+      <h3 className="absolute inset-x-0 bottom-0 text-balance p-3.5 text-base font-bold leading-snug tracking-tight text-white drop-shadow-md">
+        {name}
+      </h3>
+    </Link>
+  );
+}
+
+// Card lưu trú — ảnh + tên + loại hình + huy hiệu đã xác minh (danh bạ chính chủ).
+function StayCard({
+  href,
+  name,
+  slug,
+  images,
+  category,
+  isVerified,
+}: {
+  href: string;
+  name: string;
+  slug: string;
+  images: { url: string; isCover: boolean }[];
+  category: string | null;
+  isVerified: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className="group block overflow-hidden rounded-2xl border border-border/60 bg-card transition-all hover:border-border hover:shadow-md hover:shadow-black/5"
+    >
+      <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+        <Image
+          src={coverUrl(images, slug)}
+          alt={name}
+          fill
+          sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 90vw"
+          className="object-cover"
+        />
+      </div>
+      <div className="p-4">
+        <h3 className="line-clamp-1 text-lg font-semibold tracking-tight transition-colors group-hover:text-primary">
+          {name}
+        </h3>
+        <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-sm">
+          {category && <span className="text-muted-foreground">{category}</span>}
+          {isVerified && (
+            <span className="inline-flex items-center gap-1 font-medium text-primary">
+              <BadgeCheck className="size-4 shrink-0" aria-hidden />
+              Đã xác minh
+            </span>
+          )}
+        </div>
+      </div>
     </Link>
   );
 }
@@ -187,12 +267,12 @@ export default async function PlaceDetailPage({
       accommodations: {
         where: pub,
         orderBy: [{ isFeatured: "desc" }, { order: "asc" }, { name: "asc" }],
-        take: 8,
+        take: 4,
         select: {
           slug: true,
           name: true,
           category: true,
-          description: true,
+          isVerified: true,
           images: listingImages,
         },
       },
@@ -478,9 +558,9 @@ export default async function PlaceDetailPage({
                 count={counts.specialty + counts.eatery}
                 unit="món"
               />
-              <Rail itemClassName="basis-1/3 sm:basis-1/4 lg:basis-1/6">
+              <Rail itemClassName="basis-2/5 sm:basis-1/4 lg:basis-1/5">
                 {place.specialties.map((sp) => (
-                  <ListingCard
+                  <SpecialtyCard
                     key={sp.slug}
                     href={`/diem-den/${place.slug}/am-thuc#specialty-${sp.slug}`}
                     name={sp.name}
@@ -501,19 +581,23 @@ export default async function PlaceDetailPage({
                 count={counts.accommodation}
                 unit="chỗ ở"
               />
-              <Rail itemClassName="basis-1/2 sm:basis-1/3 lg:basis-1/4">
+              <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
                 {place.accommodations.map((ac) => (
-                  <ListingCard
+                  <StayCard
                     key={ac.slug}
                     href={`/luu-tru/${ac.slug}`}
                     name={ac.name}
                     slug={ac.slug}
                     images={ac.images}
-                    subtitle={ac.description}
-                    tag={ac.category ? label(ACCOMMODATION_CATEGORY_LABELS, ac.category) : null}
+                    category={
+                      ac.category
+                        ? label(ACCOMMODATION_CATEGORY_LABELS, ac.category)
+                        : null
+                    }
+                    isVerified={ac.isVerified}
                   />
                 ))}
-              </Rail>
+              </div>
             </section>
           )}
 
