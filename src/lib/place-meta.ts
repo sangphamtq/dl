@@ -258,3 +258,46 @@ export async function getReviewSummary(kind: "place" | "spot", id: string) {
   });
   return summarizeReviews(rows);
 }
+
+// Tổng hợp đánh giá cho NHIỀU spot cùng lúc (danh sách địa điểm) — 1 truy vấn,
+// cùng bộ lọc "tác giả HIỆN còn đánh dấu đã đến chính spot đó".
+export async function getSpotReviewSummaries(
+  spotIds: string[],
+): Promise<Map<string, { stars: number; total: number }>> {
+  const out = new Map<string, { stars: number; total: number }>();
+  if (spotIds.length === 0) return out;
+  const rows = await prisma.review.findMany({
+    where: { spotId: { in: spotIds }, isHidden: false },
+    select: {
+      spotId: true,
+      stance: true,
+      highlights: true,
+      caveats: true,
+      author: {
+        select: {
+          checkIns: {
+            where: { spotId: { in: spotIds } },
+            select: { spotId: true },
+          },
+        },
+      },
+    },
+  });
+  const bySpot = new Map<
+    string,
+    { stance: (typeof rows)[number]["stance"]; highlights: string[]; caveats: string[] }[]
+  >();
+  for (const r of rows) {
+    if (!r.spotId) continue;
+    // Chỉ tính review khi tác giả còn đánh dấu đã đến chính spot này.
+    if (!r.author.checkIns.some((c) => c.spotId === r.spotId)) continue;
+    const arr = bySpot.get(r.spotId) ?? [];
+    arr.push({ stance: r.stance, highlights: r.highlights, caveats: r.caveats });
+    bySpot.set(r.spotId, arr);
+  }
+  for (const [sid, rws] of bySpot) {
+    const s = summarizeReviews(rws);
+    if (s.total > 0) out.set(sid, { stars: s.stars, total: s.total });
+  }
+  return out;
+}

@@ -4,24 +4,20 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import {
-  ChevronRight,
-  Clock,
-  Compass,
-  LayoutGrid,
-  List,
-  MapPin,
-  Ticket,
-} from "lucide-react";
+import { LayoutGrid, List } from "lucide-react";
 import { coverUrl } from "@/lib/place-image";
 import { cn } from "@/lib/utils";
-import { ListingCard } from "@/components/site/listing-card";
+import { StarRating } from "@/components/site/star-rating";
 
 type Fact = { kind: "location" | "price" | "time"; text: string };
 type Item = {
   slug: string;
   name: string;
+  tagline: string | null;
   description: string | null;
+  review: { stars: number; total: number } | null;
+  price: string | null;
+  highlights: string[];
   tag: string | null;
   tags: string[];
   meta: string[];
@@ -33,6 +29,26 @@ type Item = {
 type Group = { title: string; prefix: string; items: Item[] };
 
 export type ListingViewMode = "grid" | "list";
+type SortMode = "featured" | "rating" | "name";
+
+const SORT_OPTIONS: { value: SortMode; label: string }[] = [
+  { value: "featured", label: "Nổi bật" },
+  { value: "rating", label: "Đánh giá cao" },
+  { value: "name", label: "Tên A–Z" },
+];
+
+// Sắp xếp client-side (dữ liệu đã tải sẵn). "featured" = giữ thứ tự từ DB
+// (nổi bật → order → phổ biến → tên).
+function sortItems(items: Item[], sort: SortMode): Item[] {
+  if (sort === "featured") return items;
+  const arr = [...items];
+  if (sort === "rating") {
+    arr.sort((a, b) => (b.review?.stars ?? -1) - (a.review?.stars ?? -1));
+  } else if (sort === "name") {
+    arr.sort((a, b) => a.name.localeCompare(b.name, "vi"));
+  }
+  return arr;
+}
 
 // Trang danh sách listing: chuyển Lưới ↔ Danh sách. Lựa chọn lưu vào cookie
 // (server đọc & render đúng view ngay từ đầu → không nhảy khi load lại).
@@ -50,6 +66,7 @@ export function ListingView({
   const [filter, setFilter] = useState<string>(
     () => searchParams.get("cat") ?? "all",
   );
+  const [sort, setSort] = useState<SortMode>("featured");
 
   const choose = (v: ListingViewMode) => {
     setView(v);
@@ -72,151 +89,118 @@ export function ListingView({
   ) as string[];
 
   return (
-    <div className="space-y-14">
-      {/* Toolbar: lọc theo loại + chuyển Lưới/Danh sách */}
+    <div className="space-y-8">
+      {/* Toolbar: lọc loại · sắp xếp · Lưới/Danh sách — segmented như trang danh sách điểm đến */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {allTags.length > 1 ? (
-          <div className="flex flex-wrap items-center gap-1.5">
-            <FilterChip active={filter === "all"} onClick={() => chooseFilter("all")}>
-              Tất cả
-            </FilterChip>
-            {allTags.map((t) => (
-              <FilterChip
-                key={t}
-                active={filter === t}
-                onClick={() => chooseFilter(t)}
+          <div className="max-w-full overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <Segmented label="Lọc loại">
+              <SegButton
+                active={filter === "all"}
+                onClick={() => chooseFilter("all")}
               >
-                {t}
-              </FilterChip>
-            ))}
+                Tất cả
+              </SegButton>
+              {allTags.map((t) => (
+                <SegButton
+                  key={t}
+                  active={filter === t}
+                  onClick={() => chooseFilter(t)}
+                >
+                  {t}
+                </SegButton>
+              ))}
+            </Segmented>
           </div>
         ) : (
           <span />
         )}
-        <div className="flex h-10 shrink-0 items-center self-end rounded-full bg-muted p-1 sm:self-auto">
-          <ToggleBtn
-            active={view === "grid"}
-            onClick={() => choose("grid")}
-            icon={LayoutGrid}
-            label="Lưới"
-          />
-          <ToggleBtn
-            active={view === "list"}
-            onClick={() => choose("list")}
-            icon={List}
-            label="Danh sách"
-          />
+        <div className="flex shrink-0 items-center gap-3 self-end sm:self-auto">
+          <Segmented label="Sắp xếp">
+            {SORT_OPTIONS.map((o) => (
+              <SegButton
+                key={o.value}
+                active={sort === o.value}
+                onClick={() => setSort(o.value)}
+              >
+                {o.label}
+              </SegButton>
+            ))}
+          </Segmented>
+          <Segmented label="Kiểu hiển thị">
+            <SegButton active={view === "grid"} onClick={() => choose("grid")}>
+              <LayoutGrid className="size-4" aria-hidden />
+              <span className="hidden sm:inline">Lưới</span>
+            </SegButton>
+            <SegButton active={view === "list"} onClick={() => choose("list")}>
+              <List className="size-4" aria-hidden />
+              <span className="hidden sm:inline">Danh sách</span>
+            </SegButton>
+          </Segmented>
         </div>
       </div>
 
       {groups.map((g) => {
-        const items =
+        const filtered =
           filter === "all" ? g.items : g.items.filter((it) => it.tag === filter);
-        if (filter !== "all" && items.length === 0) return null;
-        // List: nếu mục đầu nổi bật → tách làm card "lead" lớn, còn lại là rows.
-        const lead = view === "list" && items[0]?.isFeatured ? items[0] : null;
-        const rows = lead ? items.slice(1) : items;
+        if (filter !== "all" && filtered.length === 0) return null;
+        const items = sortItems(filtered, sort);
         return (
-        <section key={g.prefix}>
-          <div className="flex items-end justify-between gap-4">
-            <h2 className="text-2xl font-bold tracking-tight">{g.title}</h2>
-            <p className="shrink-0 text-sm text-muted-foreground">
-              {items.length} mục
-            </p>
-          </div>
-
-          {items.length === 0 ? (
-            <p className="py-16 text-center text-muted-foreground">
-              Chưa có nội dung trong mục này.
-            </p>
-          ) : view === "grid" ? (
-            <div className="mt-7 grid grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-3 lg:grid-cols-4">
-              {items.map((it) => (
-                <GridCard key={it.slug} item={it} prefix={g.prefix} />
-              ))}
+          <section key={g.prefix}>
+            <div className="flex items-end justify-between gap-4">
+              <h2 className="text-2xl font-bold tracking-tight">{g.title}</h2>
+              <p className="shrink-0 text-sm text-muted-foreground">
+                {items.length} mục
+              </p>
             </div>
-          ) : (
-            <div className="mt-7 space-y-7">
-              {lead && (
-                <ListingCard
-                  featured
-                  href={`/${g.prefix}/${lead.slug}`}
-                  name={lead.name}
-                  slug={lead.slug}
-                  images={lead.images}
-                  subtitle={lead.description}
-                  tag={lead.tag}
-                  meta={lead.meta}
-                />
-              )}
-              {rows.length > 0 && (
-                <ul className="border-t border-border/60">
-                  {rows.map((it) => (
-                    <li key={it.slug} className="border-b border-border/60">
-                      <Link
-                        href={`/${g.prefix}/${it.slug}`}
-                        className="group flex items-center gap-4 py-4 sm:gap-6"
-                      >
-                        <div className="relative aspect-[4/3] w-36 shrink-0 overflow-hidden rounded-xl bg-muted sm:w-56">
-                          <Image
-                            src={coverUrl(it.images, it.slug, 480, 360)}
-                            alt={it.name}
-                            fill
-                            sizes="(min-width: 640px) 224px, 144px"
-                            className="object-cover transition-transform duration-300 group-hover:scale-[1.04]"
-                          />
-                          {it.tag && (
-                            <span className="absolute left-2 top-2 rounded-full bg-background/90 px-2.5 py-1 text-xs font-medium shadow-sm backdrop-blur">
-                              {it.tag}
-                            </span>
-                          )}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <h3 className="font-semibold tracking-tight transition-colors group-hover:text-primary sm:text-lg">
-                            {it.name}
-                          </h3>
-                          {it.description && (
-                            <p className="mt-1 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
-                              {it.description}
-                            </p>
-                          )}
 
-                          <FactsRow facts={it.facts} stacked />
-                          <CardMeta meta={it.meta} tags={it.tags} />
-                          {it.activities.length > 0 && (
-                            <p className="mt-2.5 flex items-start gap-1.5 text-sm leading-relaxed text-muted-foreground">
-                              <Compass
-                                className="mt-0.5 size-4 shrink-0 text-primary"
-                                aria-hidden
-                              />
-                              <span>
-                                <span className="font-medium text-foreground/80">
-                                  Trải nghiệm:{" "}
-                                </span>
-                                {it.activities.map((a) => a.name).join(", ")}
-                              </span>
-                            </p>
-                          )}
-                        </div>
-                        <ChevronRight
-                          className="hidden size-5 shrink-0 text-muted-foreground/40 transition-all group-hover:translate-x-0.5 group-hover:text-primary sm:block"
-                          aria-hidden
-                        />
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
-        </section>
+            {items.length === 0 ? (
+              <p className="py-16 text-center text-muted-foreground">
+                Chưa có nội dung trong mục này.
+              </p>
+            ) : view === "grid" ? (
+              <div className="mt-7 grid grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-3 lg:grid-cols-4">
+                {items.map((it) => (
+                  <GridCard key={it.slug} item={it} prefix={g.prefix} />
+                ))}
+              </div>
+            ) : (
+              <ul className="mt-7 border-t border-border/60">
+                {items.map((it) => (
+                  <li key={it.slug} className="border-b border-border/60">
+                    <ListRow item={it} prefix={g.prefix} />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
         );
       })}
     </div>
   );
 }
 
-function FilterChip({
+// Segmented control dùng chung (Lọc loại · Sắp xếp · Kiểu hiển thị) — giống
+// trang danh sách điểm đến: track bo góc nền muted, nút active nền nổi + bóng.
+function Segmented({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      role="group"
+      aria-label={label}
+      className="flex h-10 w-fit shrink-0 items-center rounded-lg bg-muted p-1"
+    >
+      {children}
+    </div>
+  );
+}
+
+function SegButton({
   active,
   onClick,
   children,
@@ -231,10 +215,10 @@ function FilterChip({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "rounded-full px-3 py-1 text-sm font-medium transition-colors",
+        "inline-flex h-full items-center gap-1.5 whitespace-nowrap rounded-md px-3.5 text-sm font-medium transition-colors",
         active
-          ? "bg-foreground text-background"
-          : "bg-muted text-muted-foreground hover:text-foreground",
+          ? "bg-background text-foreground shadow-sm"
+          : "text-muted-foreground hover:text-foreground",
       )}
     >
       {children}
@@ -242,75 +226,19 @@ function FilterChip({
   );
 }
 
-const FACT_ICON = { location: MapPin, price: Ticket, time: Clock } as const;
-
-// Facts có icon: vị trí · giá vé · mùa (Địa điểm).
-// stacked = xếp dọc (list, rõ ràng hơn); ngược lại inline gọn (grid).
-function FactsRow({ facts, stacked = false }: { facts: Fact[]; stacked?: boolean }) {
-  if (facts.length === 0) return null;
+// Đánh giá sao (chỉ Địa điểm có review) — 5 sao, fill theo điểm.
+function Rating({ stars, total }: { stars: number; total: number }) {
   return (
-    <div
-      className={cn(
-        "text-muted-foreground",
-        stacked
-          ? "mt-2.5 flex flex-col gap-1.5 text-sm"
-          : "mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs",
-      )}
-    >
-      {facts.map((f, i) => {
-        const Icon = FACT_ICON[f.kind];
-        const free = f.kind === "price" && /miễn phí/i.test(f.text);
-        return (
-          <span
-            key={i}
-            className={cn(
-              "inline-flex items-center gap-1.5",
-              free && "font-semibold text-primary",
-            )}
-          >
-            <Icon
-              className={cn(
-                "shrink-0",
-                stacked ? "size-4" : "size-3.5",
-                free ? "text-primary" : "text-muted-foreground/70",
-              )}
-              aria-hidden
-            />
-            {f.text}
-          </span>
-        );
-      })}
-    </div>
+    <span className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+      <StarRating value={stars} showValue />
+      <span className="text-muted-foreground">· {total} đánh giá</span>
+    </span>
   );
 }
 
-// Meta (fact: loại, giá, giờ…) + tags — dùng chung grid & list.
-// Meta = pill bo nhẹ, đậm hơn (thông tin chính); tags = pill bo tròn, nhạt.
-function CardMeta({ meta, tags }: { meta: string[]; tags: string[] }) {
-  if (meta.length === 0 && tags.length === 0) return null;
-  return (
-    <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-      {meta.map((m, i) => (
-        <span
-          key={i}
-          className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-foreground/70"
-        >
-          {m}
-        </span>
-      ))}
-      {tags.slice(0, 3).map((t) => (
-        <span
-          key={t}
-          className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground"
-        >
-          {t}
-        </span>
-      ))}
-    </div>
-  );
-}
-
+// Card lưới — ảnh + loại (kicker) + tên + subline. Gọn, không badge/pill.
 function GridCard({ item: it, prefix }: { item: Item; prefix: string }) {
+  const subline = it.tagline ?? it.description;
   return (
     <Link href={`/${prefix}/${it.slug}`} className="group block">
       <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-muted">
@@ -319,61 +247,102 @@ function GridCard({ item: it, prefix }: { item: Item; prefix: string }) {
           alt={it.name}
           fill
           sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
-          className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+          className="object-cover"
         />
-        {it.tag && (
-          <span className="absolute left-2 top-2 rounded-full bg-background/90 px-2.5 py-1 text-xs font-medium shadow-sm backdrop-blur">
-            {it.tag}
-          </span>
-        )}
       </div>
-      <h3 className="mt-3 font-semibold tracking-tight line-clamp-1 transition-colors group-hover:text-primary">
+      {it.tag && (
+        <p className="mt-3 text-xs font-medium text-muted-foreground">{it.tag}</p>
+      )}
+      <h3
+        className={cn(
+          "line-clamp-1 font-semibold tracking-tight transition-colors group-hover:text-primary",
+          it.tag ? "mt-0.5" : "mt-3",
+        )}
+      >
         {it.name}
       </h3>
-      {it.description && (
-        <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
-          {it.description}
+      {it.review && <Rating stars={it.review.stars} total={it.review.total} />}
+      {subline && (
+        <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+          {subline}
         </p>
       )}
-      <FactsRow facts={it.facts} />
-      {it.meta.length > 0 && <CardMeta meta={it.meta} tags={[]} />}
-      {it.activities.length > 0 && (
-        <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Compass className="size-3.5 shrink-0 text-primary/80" aria-hidden />
-          <span className="truncate">
-            {it.activities.map((a) => a.name).join(" · ")}
-          </span>
-        </p>
+      {it.price && (
+        <p className="mt-2 text-sm font-semibold text-primary">{it.price}</p>
       )}
     </Link>
   );
 }
 
-function ToggleBtn({
-  active,
-  onClick,
-  icon: Icon,
-  label,
-}: {
-  active: boolean;
-  onClick: () => void;
-  icon: typeof LayoutGrid;
-  label: string;
-}) {
+// Hàng danh sách — ảnh trái · nội dung giữa · cột phải (đánh giá + giá).
+function ListRow({ item: it, prefix }: { item: Item; prefix: string }) {
+  const subline = it.tagline ?? it.description;
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={cn(
-        "inline-flex h-full items-center gap-1.5 rounded-full px-3.5 text-sm font-medium transition-colors",
-        active
-          ? "bg-background text-foreground shadow-sm"
-          : "text-muted-foreground hover:text-foreground",
-      )}
+    <Link
+      href={`/${prefix}/${it.slug}`}
+      className="group flex items-stretch gap-5 py-5 sm:gap-6"
     >
-      <Icon className="size-4" aria-hidden />
-      <span className="hidden sm:inline">{label}</span>
-    </button>
+      <div className="relative aspect-[4/3] w-36 shrink-0 self-center overflow-hidden rounded-xl bg-muted sm:w-52">
+        <Image
+          src={coverUrl(it.images, it.slug, 480, 360)}
+          alt={it.name}
+          fill
+          sizes="(min-width: 640px) 208px, 144px"
+          className="object-cover"
+        />
+      </div>
+
+      <div className="flex min-w-0 flex-1 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
+        {/* Giữa */}
+        <div className="min-w-0">
+          {it.tag && (
+            <p className="text-xs font-medium text-muted-foreground">{it.tag}</p>
+          )}
+          <h3 className="mt-0.5 text-lg font-semibold tracking-tight transition-colors group-hover:text-primary sm:text-xl">
+            {it.name}
+          </h3>
+          {subline && (
+            <p className="mt-2 line-clamp-2 leading-relaxed text-muted-foreground">
+              {subline}
+            </p>
+          )}
+          {it.highlights.length > 0 && (
+            <div className="mt-2.5 flex flex-wrap gap-1.5">
+              {it.highlights.map((h, i) => (
+                <span
+                  key={i}
+                  className="rounded-md border border-border/70 px-2 py-0.5 text-xs font-medium text-muted-foreground"
+                >
+                  {h}
+                </span>
+              ))}
+            </div>
+          )}
+          {it.meta.length > 0 && (
+            <p className="mt-2 text-sm text-muted-foreground/80">
+              {it.meta.join("  ·  ")}
+            </p>
+          )}
+        </div>
+
+        {/* Phải: đánh giá + giá (thông tin quyết định) */}
+        {(it.review || it.price) && (
+          <div className="flex shrink-0 items-center gap-6 sm:w-44 sm:flex-col sm:items-end sm:gap-2.5 sm:self-center sm:border-l sm:border-border/60 sm:pl-6 sm:text-right">
+            {it.review && (
+              <div>
+                <StarRating value={it.review.stars} showValue />
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {it.review.total} đánh giá
+                </p>
+              </div>
+            )}
+            {it.price && (
+              <p className="text-base font-semibold text-primary">{it.price}</p>
+            )}
+          </div>
+        )}
+      </div>
+    </Link>
   );
 }
+

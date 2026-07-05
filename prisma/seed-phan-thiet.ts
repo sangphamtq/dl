@@ -345,7 +345,6 @@ async function main() {
       bestTime: "Sáng sớm & chiều mát",
       bestTimeNote:
         "Sáng sớm và chiều muộn là lúc nước dịu, nắng nhẹ và bãi vắng nhất để tắm. Nếu mê lướt ván diều, hãy đến vào mùa gió tháng 11–3 — gió thổi đều, mặt biển kín cánh diều. Mùa hè biển êm hơn, hợp tắm cùng gia đình.",
-      ticketInfo: "Miễn phí",
       highlights: [
         {
           title: "Thiên đường lướt ván diều",
@@ -381,7 +380,6 @@ async function main() {
       bestTime: "Bình minh hoặc hoàng hôn",
       bestTimeNote:
         "Đẹp nhất vào lúc bình minh (5h30–6h30) và hoàng hôn (17h–18h), khi nắng xiên làm nổi rõ đường nét và sắc cát, đồng thời cát còn mát chân. Nên đi vào mùa khô (tháng 11–4) trời trong, ít mưa. Tránh khung giữa trưa: nắng gắt, cát nóng và ảnh dễ bị bệt màu.",
-      ticketInfo: "Vé gửi xe ~10k",
       highlights: [
         {
           title: "Cát đổi màu theo nắng",
@@ -423,7 +421,6 @@ async function main() {
       bestTime: "Sáng sớm",
       bestTimeNote:
         "Đến lúc sáng sớm để tránh nắng gắt, cát còn mát và mặt hồ trong trẻo. Sen rộ nhất khoảng tháng 5–7. Mùa khô (tháng 11–4) trời ổn định, dễ di chuyển trên cát hơn.",
-      ticketInfo: "Vé vào ~15k",
       highlights: [
         {
           title: "Hồ sen giữa sa mạc cát",
@@ -459,7 +456,6 @@ async function main() {
       bestTime: "Sáng sớm",
       bestTimeNote:
         "Buổi sáng là lúc nắng dịu, nước mát và vách cát đỏ lên màu đẹp nhất cho ảnh. Tránh đi ngay sau mưa lớn vì nước có thể đục và chảy xiết. Mùa khô (tháng 11–4) dòng suối trong và dễ lội.",
-      ticketInfo: "Miễn phí",
       highlights: [
         {
           title: "Lội bộ giữa vách cát đỏ – trắng",
@@ -524,7 +520,6 @@ async function main() {
       bestTime: "Chiều mát",
       bestTimeNote:
         "Đẹp nhất vào cuối chiều khi nắng dịu, gạch tháp lên màu ấm và bạn có thể ở lại đón hoàng hôn trên đồi nhìn ra biển. Mùa khô (tháng 11–4) trời trong, thuận cho tham quan và chụp ảnh.",
-      ticketInfo: "Vé ~15k",
       highlights: [
         {
           title: "Kiến trúc Chăm ngàn năm",
@@ -560,7 +555,6 @@ async function main() {
       bestTime: "Sáng & chiều mát",
       bestTimeNote:
         "Nước trong và êm nhất vào buổi sáng; chiều mát thì dễ chịu để tắm và dạo bãi. Mùa hè (tháng 4–8) biển lặng, hợp tắm; mùa gió cuối năm sóng lớn hơn, cần để ý khi xuống nước.",
-      ticketInfo: "Miễn phí",
       highlights: [
         {
           title: "Bãi tắm trong xanh, ít người",
@@ -590,7 +584,6 @@ async function main() {
       bestTime: "Hoàng hôn",
       bestTimeNote:
         "Đẹp nhất lúc hoàng hôn khi nắng vàng đổ lên ghềnh đá và mặt biển — khung giờ check-in được yêu thích nhất. Sáng sớm cũng yên tĩnh, sóng vỗ ghềnh đá đẹp. Khi triều xuống, bãi đá lộ ra nhiều, dễ leo trèo chụp ảnh.",
-      ticketInfo: "Miễn phí",
       highlights: [
         {
           title: "Tảng đá hình Ông Địa",

@@ -25,6 +25,7 @@ import {
   buildPlaceStats,
   getVisitors,
   getReviewSummary,
+  getSpotReviewSummaries,
 } from "@/lib/place-meta";
 import {
   SPOT_CATEGORY_LABELS,
@@ -59,8 +60,12 @@ type Fact = { kind: "location" | "price" | "time"; text: string };
 type ListingItem = {
   slug: string;
   name: string;
+  tagline: string | null; // slogan ngắn (chỉ spot) — ưu tiên làm subline
   description: string | null;
-  tag: string | null; // loại (category) — hiển thị làm badge trên ảnh
+  review: { stars: number; total: number } | null; // đánh giá (chỉ spot)
+  price: string | null; // giá vé / giá tham gia (nổi bật)
+  highlights: string[]; // điểm nhấn / đặc trưng (chỉ spot)
+  tag: string | null; // loại (category) — hiển thị làm kicker
   tags: string[];
   meta: string[]; // fact ngắn theo loại (thời lượng, giá, giờ…)
   facts: Fact[]; // fact có icon (vị trí, giá vé, mùa) — chủ yếu cho Địa điểm
@@ -73,9 +78,12 @@ type ListingModel = (typeof LOAI)[Loai]["model"];
 
 // Dòng thô từ DB — các field thêm theo loại (optional).
 type RawListing = {
+  id: string;
   slug: string;
   name: string;
   description: string | null;
+  tagline?: string | null;
+  highlights?: { title: string }[];
   tags: string[];
   images: { url: string; isCover: boolean }[];
   isFeatured?: boolean;
@@ -103,12 +111,19 @@ const EXTRA_SELECT: Record<ListingModel, Record<string, unknown>> = {
     ticketTiers: true,
   },
   spot: {
+    tagline: true,
     category: true,
     bestTime: true,
     ticketInfo: true,
     ticketFree: true,
     ticketTiers: true,
     address: true,
+    // Điểm nhấn (đặc trưng) của địa điểm.
+    highlights: {
+      orderBy: { order: "asc" },
+      take: 4,
+      select: { title: true },
+    },
     // Hoạt động diễn ra tại địa điểm này (qua bảng nối, read-only từ phía Spot).
     activityLinks: {
       where: { activity: { status: "published" } },
@@ -147,7 +162,7 @@ function buildTag(model: ListingModel, r: RawListing): string | null {
   }
 }
 
-// Fact dạng pill (ngoài category): thời lượng, giá, giờ… (cho các loại không phải spot).
+// Meta phụ (thời lượng, mùa…) — giá tách riêng ra buildPrice.
 function buildMeta(model: ListingModel, r: RawListing): string[] {
   switch (model) {
     case "activity":
@@ -155,22 +170,27 @@ function buildMeta(model: ListingModel, r: RawListing): string[] {
         r.durationText,
         label(DIFFICULTY_LABELS, r.difficulty ?? null),
         r.seasonText,
-        activityPrice(r.ticketFree, r.ticketTiers),
       ].filter(Boolean) as string[];
     default:
       return [];
   }
 }
 
-// Fact có icon (vị trí / giá vé / mùa) — dành riêng cho Địa điểm (spot).
+// Giá vé / giá tham gia — hiển thị nổi bật riêng (primary). "Miễn phí" khi free.
+function buildPrice(model: ListingModel, r: RawListing): string | null {
+  if (model === "spot")
+    return (
+      activityPrice(r.ticketFree, r.ticketTiers) || r.ticketInfo?.trim() || null
+    );
+  if (model === "activity") return activityPrice(r.ticketFree, r.ticketTiers);
+  return null;
+}
+
+// Fact phụ (vị trí / mùa) — dành riêng cho Địa điểm (spot); giá đã tách riêng.
 function buildFacts(model: ListingModel, r: RawListing): Fact[] {
   if (model !== "spot") return [];
-  // Giá vé: ưu tiên giá thật (miễn phí / bảng giá); ghi chú chỉ dùng khi không có giá.
-  const price =
-    activityPrice(r.ticketFree, r.ticketTiers) || r.ticketInfo?.trim() || null;
   return [
     r.address ? { kind: "location" as const, text: r.address } : null,
-    price ? { kind: "price" as const, text: price } : null,
     r.bestTime ? { kind: "time" as const, text: `Đẹp nhất: ${r.bestTime}` } : null,
   ].filter(Boolean) as Fact[];
 }
@@ -192,6 +212,7 @@ async function fetchListing(
       { name: "asc" },
     ],
     select: {
+      id: true,
       slug: true,
       name: true,
       description: true,
@@ -205,10 +226,19 @@ async function fetchListing(
       ...EXTRA_SELECT[model],
     },
   });
+  // Đánh giá theo từng spot (chỉ Địa điểm có review) — gộp 1 truy vấn.
+  const reviews =
+    model === "spot"
+      ? await getSpotReviewSummaries(rows.map((r) => r.id))
+      : null;
   return rows.map((r) => ({
     slug: r.slug,
     name: r.name,
+    tagline: r.tagline ?? null,
     description: r.description,
+    review: reviews?.get(r.id) ?? null,
+    price: buildPrice(model, r),
+    highlights: r.highlights?.map((h) => h.title) ?? [],
     tag: buildTag(model, r),
     tags: r.tags,
     images: r.images,
