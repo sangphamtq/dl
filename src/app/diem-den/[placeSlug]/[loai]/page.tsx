@@ -24,6 +24,7 @@ import {
   buildPlaceTabs,
   buildPlaceStats,
   getVisitors,
+  getReviewSummary,
 } from "@/lib/place-meta";
 import {
   SPOT_CATEGORY_LABELS,
@@ -398,6 +399,10 @@ export default async function PlaceListingPage({
     isAuthed: !!userId,
   };
   const visitors = await getVisitors("place", place.id);
+  const reviewSummary =
+    place.kind === "destination"
+      ? await getReviewSummary("place", place.id)
+      : null;
 
   // Ẩm thực: chi tiết đầy đủ Đặc sản rồi Quán ăn, xếp dọc trên cùng trang.
   const food = isFood
@@ -442,6 +447,11 @@ export default async function PlaceListingPage({
           back={{ href: `/diem-den/${place.slug}`, label: "Tổng quan" }}
           checkIn={checkIn}
           visitors={visitors}
+          reviews={
+            reviewSummary && reviewSummary.total > 0
+              ? { stars: reviewSummary.stars, total: reviewSummary.total }
+              : undefined
+          }
         />
 
         {/* Thanh tab: Tổng quan + xem tất cả từng listing + nút Video */}

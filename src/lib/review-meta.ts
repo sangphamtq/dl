@@ -25,6 +25,22 @@ export const REVIEW_STANCES = [
 // 2 mức đầu được coi là "đáng đi" (dùng cho headline % tổng hợp).
 export const WORTH_GOING: ReviewStance[] = ["love", "worthOnce"];
 
+// "Điểm đáng đi" (0–100) = trọng-số-dương / (dương + âm). Mỗi review luôn đẩy
+// điểm một hướng cố định (dương → tăng, âm → giảm), theo tỉ lệ trọng số.
+// ĐỔI TRỌNG SỐ Ở ĐÂY — hiện: love ×2, worthOnce ×1 (dương); meh ×1, bad ×2 (âm).
+export const SCORE_POS: Record<ReviewStance, number> = {
+  love: 2,
+  worthOnce: 1,
+  meh: 0,
+  bad: 0,
+};
+export const SCORE_NEG: Record<ReviewStance, number> = {
+  love: 0,
+  worthOnce: 0,
+  meh: 1,
+  bad: 2,
+};
+
 // Nhãn "điểm cộng" — chọn nhiều (tùy chọn).
 export const REVIEW_HIGHLIGHTS = [
   { value: "scenery", label: "Cảnh đẹp" },
@@ -98,6 +114,8 @@ export type ReviewSummary = {
   total: number;
   worthGoingPct: number; // % "đáng đi" (love + worthOnce) — headline thay số sao
   lovePct: number; // % "muốn quay lại" (love)
+  score: number; // điểm đáng đi 0–100 (trọng số, xem SCORE_POS/SCORE_NEG) — engine
+  stars: number; // = score/20, làm tròn 1 số lẻ (0–5) — dạng hiển thị
   stance: { value: ReviewStance; label: string; tone: StanceTone; count: number; pct: number }[];
   highlights: AspectCount[];
   caveats: AspectCount[];
@@ -127,10 +145,19 @@ export function summarizeReviews(rows: ReviewRow[]): ReviewSummary {
     (n, v) => n + stanceCount[v],
     0,
   );
+  let pos = 0;
+  let neg = 0;
+  for (const s of REVIEW_STANCES) {
+    pos += SCORE_POS[s.value] * stanceCount[s.value];
+    neg += SCORE_NEG[s.value] * stanceCount[s.value];
+  }
+  const ratio = pos + neg > 0 ? pos / (pos + neg) : 0;
   return {
     total,
     worthGoingPct: total ? Math.round((worthGoingCount / total) * 100) : 0,
     lovePct: total ? Math.round((stanceCount.love / total) * 100) : 0,
+    score: Math.round(ratio * 100),
+    stars: Math.round(ratio * 5 * 10) / 10,
     stance: REVIEW_STANCES.map((s) => ({
       value: s.value,
       label: s.label,

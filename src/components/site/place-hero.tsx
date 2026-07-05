@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronLeft, MapPin, Star } from "lucide-react";
+import { ChevronLeft, ChevronDown, MapPin, Star, Sparkles } from "lucide-react";
 import { HeroFrame } from "@/components/site/hero-frame";
 import { PlaceHeroStack, type HeroImage } from "@/components/site/place-hero-stack";
 import { PlaceVideos, type PlaceVideo } from "@/components/site/tiktok-videos";
@@ -29,6 +29,7 @@ export function PlaceHero({
   back,
   checkIn,
   visitors,
+  reviews,
 }: {
   place: PlaceHeroData;
   heroImages: HeroImage[];
@@ -37,6 +38,7 @@ export function PlaceHero({
   back?: { href: string; label: string };
   checkIn?: { checked: boolean; isAuthed: boolean };
   visitors?: { total: number; people: CheckInPerson[] };
+  reviews?: { stars: number; total: number };
 }) {
   return (
     <HeroFrame images={heroImages.map((i) => i.url)}>
@@ -90,7 +92,7 @@ export function PlaceHero({
                 )}
                 {place.isFeatured && (
                   <span className="inline-flex items-center gap-1.5 text-warm">
-                    <Star className="size-3.5 fill-current" aria-hidden />
+                    <Sparkles className="size-3.5" aria-hidden />
                     Nổi bật
                   </span>
                 )}
@@ -106,8 +108,10 @@ export function PlaceHero({
               </p>
             )}
 
-            {/* Dải thống kê + Vivu-er đã đến (cùng hàng) */}
-            {(stats.length > 0 || (visitors && visitors.total > 0)) && (
+            {/* Dải thống kê + Vivu-er đã đến + tổng quan đánh giá (cùng hàng) */}
+            {(stats.length > 0 ||
+              (visitors && visitors.total > 0) ||
+              (reviews && reviews.total > 0)) && (
               <div className="mt-8 flex flex-wrap items-center gap-x-7 gap-y-3 text-sm">
                 {stats.length > 0 && (
                   <dl className="flex flex-wrap items-center gap-x-7 gap-y-3">
@@ -124,6 +128,28 @@ export function PlaceHero({
                       </div>
                     ))}
                   </dl>
+                )}
+                {reviews && reviews.total > 0 && (
+                  <Link
+                    href={`/diem-den/${place.slug}#danh-gia`}
+                    scroll
+                    className="group inline-flex items-center gap-1.5"
+                  >
+                    <Star
+                      className="size-4 shrink-0 fill-warm text-warm"
+                      aria-hidden
+                    />
+                    <span className="font-semibold tabular-nums">
+                      {reviews.stars.toFixed(1).replace(".", ",")}
+                    </span>
+                    <span className="text-muted-foreground transition-colors group-hover:text-foreground">
+                      · {reviews.total} đánh giá
+                    </span>
+                    <ChevronDown
+                      className="size-4 text-muted-foreground transition-transform group-hover:translate-y-0.5"
+                      aria-hidden
+                    />
+                  </Link>
                 )}
                 {visitors && visitors.total > 0 && (
                   <CheckInFaces people={visitors.people} total={visitors.total} />

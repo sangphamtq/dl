@@ -20,6 +20,7 @@ import {
   Plus,
   MoreHorizontal,
   Check,
+  Info,
   type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -39,7 +40,13 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
 import { LoginDrawer } from "@/components/site/login-drawer";
+import { StarRating } from "@/components/site/star-rating";
 import { submitReview, deleteReview } from "@/app/diem-den/review-actions";
 import {
   REVIEW_STANCES,
@@ -48,6 +55,8 @@ import {
   stanceMeta,
   labelsFor,
   MAX_CONTENT,
+  SCORE_POS,
+  SCORE_NEG,
   type ReviewStance,
   type ReviewSummary,
   type StanceTone,
@@ -351,6 +360,57 @@ function verdictLead(pct: number) {
   return "Nhiều người thấy chưa đáng đi";
 }
 
+// Nút ⓘ giải thích cách tính điểm — tự đọc trọng số SCORE_POS/SCORE_NEG (đổi
+// trọng số trong review-meta là bảng này tự cập nhật).
+function ScoreInfo() {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label="Cách tính điểm đáng đi"
+          className="text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <Info className="size-4" aria-hidden />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-72">
+        <p className="text-sm font-semibold">Sao tổng hợp từ cảm nhận</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Không phải sao khách tự chấm — sao suy từ cảm nhận của Vivu-er theo
+          trọng số (mỗi đánh giá luôn đẩy một hướng cố định):
+        </p>
+        <ul className="mt-2 space-y-1 text-sm">
+          {REVIEW_STANCES.map((s) => {
+            const pos = SCORE_POS[s.value];
+            const neg = SCORE_NEG[s.value];
+            return (
+              <li
+                key={s.value}
+                className="flex items-center justify-between gap-3"
+              >
+                <span className="text-muted-foreground">{s.label}</span>
+                <span className="shrink-0 tabular-nums font-medium">
+                  {pos > 0 ? (
+                    <span className="text-primary">+{pos} điểm</span>
+                  ) : neg > 0 ? (
+                    <span className="text-warm">−{neg} điểm</span>
+                  ) : (
+                    <span className="text-muted-foreground">trung tính</span>
+                  )}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+        <p className="mt-2.5 border-t border-border/50 pt-2 text-xs text-muted-foreground">
+          Sao = phần cộng ÷ (cộng + trừ) × 5.
+        </p>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 // Biểu đồ phân bố 4 mức cảm nhận — thanh ngang, nhãn trực tiếp (không color-alone).
 // Mỗi hàng là một nút lọc: bấm để chỉ xem review ở mức đó.
 function StanceChart({
@@ -451,16 +511,18 @@ function SummaryPanel({
   const topCv = summary.caveats.slice(0, 3);
   return (
     <div className="rounded-2xl bg-card p-6 shadow-lg shadow-black/5">
-      <div className="flex items-baseline gap-2.5">
-        <span className="text-5xl font-bold tabular-nums leading-none text-primary">
-          {summary.worthGoingPct}%
+      <div className="flex items-baseline gap-2">
+        <span className="text-4xl font-bold tabular-nums leading-none">
+          {summary.stars.toFixed(1).replace(".", ",")}
         </span>
-        <span className="text-sm font-medium text-muted-foreground">
-          thấy đáng đi
-        </span>
+        <span className="text-sm font-medium text-muted-foreground">/ 5</span>
+        <ScoreInfo />
       </div>
-      <p className="mt-2.5 text-sm">
-        <span className="font-semibold">{verdictLead(summary.worthGoingPct)}</span>
+      <div className="mt-2">
+        <StarRating value={summary.stars} size="size-4" />
+      </div>
+      <p className="mt-2 text-sm">
+        <span className="font-semibold">{verdictLead(summary.score)}</span>
         <span className="text-muted-foreground"> · {summary.total} đánh giá</span>
       </p>
 

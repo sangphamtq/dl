@@ -5,15 +5,15 @@ import { Loader2, MapPinCheckInside, MapPinPlus } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { LoginDrawer } from "@/components/site/login-drawer";
 import { toggleCheckIn } from "@/app/diem-den/check-in-actions";
 import { ReviewForm } from "@/components/site/place-reviews";
@@ -156,27 +156,32 @@ export function CheckInButton({
         />
       )}
 
-      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Bỏ đánh dấu đã đến?</AlertDialogTitle>
-            <AlertDialogDescription>
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Bỏ đánh dấu đã đến?</DialogTitle>
+            <DialogDescription>
               {reviewable
                 ? `Bỏ đánh dấu đã đến ${targetName} sẽ ẩn đánh giá của bạn khỏi công khai (đánh dấu lại để hiện lại).`
                 : `Bỏ đánh dấu đã đến ${targetName}?`}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Huỷ</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={doUncheck}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Huỷ</Button>
+            </DialogClose>
+            <Button
+              onClick={() => {
+                setConfirmOpen(false);
+                doUncheck();
+              }}
               className="bg-warm text-warm-foreground hover:bg-warm/90"
             >
               Bỏ đánh dấu
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {!isAuthed && (
         <LoginDrawer

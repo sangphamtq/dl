@@ -14,6 +14,7 @@ import {
   buildPlaceTabs,
   buildPlaceStats,
   getVisitors,
+  getReviewSummary,
 } from "@/lib/place-meta";
 import { getDestinationPeerGroups } from "@/lib/peers";
 import { isStaffViewer } from "@/lib/preview";
@@ -96,6 +97,10 @@ export default async function PlaceCommunityPage({
     isAuthed: !!currentUserId,
   };
   const visitors = await getVisitors("place", place.id);
+  const reviewSummary =
+    place.kind === "destination"
+      ? await getReviewSummary("place", place.id)
+      : null;
 
   const totalAll = grouped.reduce((s, g) => s + g._count._all, 0);
   const countOf = (v: string) =>
@@ -129,6 +134,11 @@ export default async function PlaceCommunityPage({
           back={{ href: `/diem-den/${place.slug}`, label: "Tổng quan" }}
           checkIn={checkIn}
           visitors={visitors}
+          reviews={
+            reviewSummary && reviewSummary.total > 0
+              ? { stars: reviewSummary.stars, total: reviewSummary.total }
+              : undefined
+          }
         />
 
         <PlaceTabs items={tabs} videos={heroData.videos} placeName={place.name} />

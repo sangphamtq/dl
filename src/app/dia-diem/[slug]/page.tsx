@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import {
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   MapPin,
   Clock,
   Phone,
@@ -613,13 +614,36 @@ export default async function SpotPublicPage({
                   </dl>
                 )}
 
-                {/* Vivu-er đã đến */}
-                {visitors.total > 0 && (
-                  <div className="mt-6">
-                    <CheckInFaces
-                      people={visitors.people}
-                      total={visitors.total}
-                    />
+                {/* Vivu-er đã đến + tổng quan đánh giá */}
+                {(visitors.total > 0 || reviewSummary.total > 0) && (
+                  <div className="mt-6 flex flex-wrap items-center gap-x-7 gap-y-3 text-sm">
+                    {visitors.total > 0 && (
+                      <CheckInFaces
+                        people={visitors.people}
+                        total={visitors.total}
+                      />
+                    )}
+                    {reviewSummary.total > 0 && (
+                      <a
+                        href="#danh-gia"
+                        className="group inline-flex items-center gap-1.5"
+                      >
+                        <Star
+                          className="size-4 shrink-0 fill-warm text-warm"
+                          aria-hidden
+                        />
+                        <span className="font-semibold tabular-nums">
+                          {reviewSummary.stars.toFixed(1).replace(".", ",")}
+                        </span>
+                        <span className="text-muted-foreground transition-colors group-hover:text-foreground">
+                          · {reviewSummary.total} đánh giá
+                        </span>
+                        <ChevronDown
+                          className="size-4 text-muted-foreground transition-transform group-hover:translate-y-0.5"
+                          aria-hidden
+                        />
+                      </a>
+                    )}
                   </div>
                 )}
               </div>

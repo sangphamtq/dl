@@ -9,9 +9,13 @@ type ListingCardProps = {
   slug: string;
   images: { url: string; isCover: boolean }[];
   subtitle?: string | null;
+  // Nhóm có nhãn (vd "Điểm nhấn", "Làm gì") — mỗi nhóm một dòng "Nhãn: a · b · c". Ưu tiên hơn subtitle.
+  sections?: { label: string; items: string[] }[];
   tag?: string | null;
   meta?: string[];
   price?: string | null;
+  // Tỉ lệ khung ảnh (class Tailwind) — mặc định 4:3. Vd 3-up dùng "aspect-[3/2]".
+  aspectClass?: string;
   // featured = card lớn, chữ phủ lên ảnh (dùng làm điểm nhấn đầu mục).
   featured?: boolean;
   // framed = cả card trong khung viền bo góc, chữ có padding bên trong.
@@ -28,9 +32,11 @@ export function ListingCard({
   slug,
   images,
   subtitle,
+  sections = [],
   tag,
   meta = [],
   price,
+  aspectClass = "aspect-[4/3]",
   featured = false,
   framed = false,
   className,
@@ -102,7 +108,8 @@ export function ListingCard({
     >
       <div
         className={cn(
-          "relative aspect-[4/3] overflow-hidden bg-muted",
+          "relative overflow-hidden bg-muted",
+          aspectClass,
           !framed && "rounded-xl",
         )}
       >
@@ -128,10 +135,23 @@ export function ListingCard({
         >
           {name}
         </h3>
-        {subtitle && (
-          <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
-            {subtitle}
-          </p>
+        {sections.length > 0 ? (
+          <div className="mt-2 space-y-1">
+            {sections.map((s, i) => (
+              <p key={i} className="text-sm leading-snug">
+                <span className="font-medium text-foreground">{s.label}: </span>
+                <span className="text-muted-foreground">
+                  {s.items.join(" · ")}
+                </span>
+              </p>
+            ))}
+          </div>
+        ) : (
+          subtitle && (
+            <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+              {subtitle}
+            </p>
+          )
         )}
         {hasFooter && (
           <div className="mt-2 flex flex-wrap items-center gap-1.5">

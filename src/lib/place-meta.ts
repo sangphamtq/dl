@@ -1,5 +1,6 @@
 import { Eye, type LucideIcon } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { summarizeReviews } from "@/lib/review-meta";
 import { coverUrl } from "@/lib/place-image";
 import { getTikTokInfo } from "@/lib/tiktok";
 import { type HeroImage } from "@/components/site/place-hero-stack";
@@ -245,4 +246,15 @@ export async function getVisitors(
       stance: c.user.reviews[0]?.stance ?? null,
     })),
   };
+}
+
+// Tổng hợp đánh giá (stars/total…) cho hero — chỉ review công khai của tác giả
+// HIỆN còn đánh dấu đã đến. Dùng chung mọi trang có hero (tab tổng quan & tab khác).
+export async function getReviewSummary(kind: "place" | "spot", id: string) {
+  const target = kind === "place" ? { placeId: id } : { spotId: id };
+  const rows = await prisma.review.findMany({
+    where: { ...target, isHidden: false, author: { checkIns: { some: target } } },
+    select: { stance: true, highlights: true, caveats: true },
+  });
+  return summarizeReviews(rows);
 }

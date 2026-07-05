@@ -133,10 +133,19 @@ export default async function PlaceDetailPage({
         select: {
           slug: true,
           name: true,
-          description: true,
           category: true,
-          tags: true,
           images: listingImages,
+          highlights: {
+            orderBy: { order: "asc" },
+            take: 3,
+            select: { title: true },
+          },
+          activityLinks: {
+            where: { activity: pub },
+            orderBy: { order: "asc" },
+            take: 3,
+            select: { activity: { select: { name: true } } },
+          },
         },
       },
       specialties: {
@@ -295,6 +304,11 @@ export default async function PlaceDetailPage({
           back={{ href: "/diem-den", label: "Điểm đến" }}
           checkIn={checkIn}
           visitors={visitors}
+          reviews={
+            isDestination && reviewSummary.total > 0
+              ? { stars: reviewSummary.stars, total: reviewSummary.total }
+              : undefined
+          }
         />
 
         {/* Thanh tab: Tổng quan + xem tất cả từng listing + nút Video */}
@@ -384,7 +398,7 @@ export default async function PlaceDetailPage({
                 href={`/diem-den/${place.slug}/dia-diem`}
                 count={counts.spot}
               />
-              <Rail itemClassName="basis-1/2 sm:basis-1/3 lg:basis-1/4">
+              <Rail itemClassName="basis-4/5 sm:basis-1/2 lg:basis-1/3">
                 {place.spots.map((s) => (
                   <ListingCard
                     key={s.slug}
@@ -392,9 +406,18 @@ export default async function PlaceDetailPage({
                     name={s.name}
                     slug={s.slug}
                     images={s.images}
-                    subtitle={s.description}
+                    aspectClass="aspect-[3/2]"
                     tag={s.category ? label(SPOT_CATEGORY_LABELS, s.category) : null}
-                    meta={s.tags[0] ? [s.tags[0]] : []}
+                    sections={[
+                      {
+                        label: "Điểm nhấn",
+                        items: s.highlights.map((h) => h.title),
+                      },
+                      {
+                        label: "Làm gì",
+                        items: s.activityLinks.map((l) => l.activity.name),
+                      },
+                    ].filter((sec) => sec.items.length > 0)}
                   />
                 ))}
               </Rail>
@@ -551,20 +574,20 @@ function SectionHeading({
 }) {
   return (
     <div className="flex items-baseline justify-between gap-6">
-      <h2 className="text-2xl font-bold tracking-tight">{title}</h2>
+      <h2 className="text-2xl font-bold tracking-tight">
+        {title}
+        {count != null && (
+          <span className="ml-2.5 align-baseline text-lg font-normal tabular-nums text-muted-foreground">
+            {count}
+          </span>
+        )}
+      </h2>
       {href && (
         <Link
           href={href}
-          className="group inline-flex shrink-0 items-center gap-1 text-sm font-medium text-primary transition-colors hover:text-primary/80"
+          className="shrink-0 text-sm text-muted-foreground underline decoration-border decoration-1 underline-offset-4 transition-colors hover:text-foreground hover:decoration-foreground"
         >
           Xem tất cả
-          {count != null && (
-            <span className="tabular-nums text-muted-foreground">{count}</span>
-          )}
-          <ChevronRight
-            className="size-4 transition-transform group-hover:translate-x-0.5"
-            aria-hidden
-          />
         </Link>
       )}
     </div>
