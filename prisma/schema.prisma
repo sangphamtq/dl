@@ -542,9 +542,7 @@ model SpotHighlight {
   spot     Spot    @relation(fields: [spotId], references: [id], onDelete: Cascade)
   order    Int     @default(0)
   title    String
-  body     String? // mô tả ngắn cho điểm nhấn
-  imageUrl String? // ảnh minh hoạ (URL)
-  imageAlt String?
+  body     String? // mô tả ngắn (rich text HTML)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

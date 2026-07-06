@@ -24,6 +24,7 @@ import {
 import { Combobox } from "@/components/ui/combobox";
 import { Switch } from "@/components/ui/switch";
 import { FormSection } from "@/components/cms/form-section";
+import { RichTextEditor } from "@/components/cms/rich-text-editor";
 import {
   createSpot,
   updateSpot,
@@ -133,10 +134,7 @@ export function SpotForm({
   function addHighlight() {
     setValues((p) => ({
       ...p,
-      highlights: [
-        ...p.highlights,
-        { title: "", body: "", imageUrl: "", imageAlt: "" },
-      ],
+      highlights: [...p.highlights, { title: "", body: "" }],
     }));
   }
 
@@ -486,10 +484,10 @@ export function SpotForm({
           </div>
         </FormSection>
 
-        {/* Điểm nhấn — title + mô tả + ảnh, sắp theo thứ tự */}
+        {/* Điểm nhấn — tiêu đề + mô tả rich text, sắp theo thứ tự */}
         <FormSection
           title="Điểm nhấn"
-          description="Những điều đặc biệt của địa điểm — mỗi mục có tiêu đề, mô tả và ảnh riêng."
+          description="Những điều đặc biệt của địa điểm — mỗi mục có tiêu đề và mô tả ngắn."
         >
           {values.highlights.length > 0 && (
             <div className="space-y-4">
@@ -518,31 +516,10 @@ export function SpotForm({
                       <Trash2 className="size-4" aria-hidden />
                     </Button>
                   </div>
-                  <Textarea
+                  <RichTextEditor
                     value={h.body}
-                    onChange={(e) => updateHighlight(i, "body", e.target.value)}
-                    placeholder="Mô tả ngắn cho điểm nhấn này…"
-                    rows={2}
-                    aria-label="Mô tả điểm nhấn"
+                    onChange={(html) => updateHighlight(i, "body", html)}
                   />
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_180px]">
-                    <Input
-                      value={h.imageUrl}
-                      onChange={(e) =>
-                        updateHighlight(i, "imageUrl", e.target.value)
-                      }
-                      placeholder="Link ảnh (https://…)"
-                      aria-label="Link ảnh điểm nhấn"
-                    />
-                    <Input
-                      value={h.imageAlt}
-                      onChange={(e) =>
-                        updateHighlight(i, "imageAlt", e.target.value)
-                      }
-                      placeholder="Mô tả ảnh (alt)"
-                      aria-label="Alt ảnh điểm nhấn"
-                    />
-                  </div>
                 </div>
               ))}
             </div>

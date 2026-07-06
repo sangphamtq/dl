@@ -1,7 +1,7 @@
 import Link from "next/link";
-import Image from "next/image";
 import { coverUrl } from "@/lib/place-image";
 import { cn } from "@/lib/utils";
+import { CoverImage } from "@/components/site/cover-image";
 
 type ListingCardProps = {
   href: string;
@@ -53,8 +53,9 @@ export function ListingCard({
         )}
       >
         <div className="relative aspect-[16/10] sm:aspect-[2/1]">
-          <Image
+          <CoverImage
             src={coverUrl(images, slug, 1200, 600)}
+            fallbackSrc={coverUrl([], slug, 1200, 600)}
             alt={name}
             fill
             sizes="(min-width: 1024px) 66vw, 100vw"
@@ -113,8 +114,9 @@ export function ListingCard({
           !framed && "rounded-xl",
         )}
       >
-        <Image
+        <CoverImage
           src={coverUrl(images, slug)}
+          fallbackSrc={coverUrl([], slug)}
           alt={name}
           fill
           sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"

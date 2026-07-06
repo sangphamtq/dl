@@ -200,3 +200,28 @@
   height: 0;
   float: left;
 }
+
+/* Thư viện ảnh: 1..N ảnh rộng bằng nhau trên một hàng, tự xuống hàng, cùng tỉ
+   lệ 3:2 (object-cover) nên cân nhau. Dùng ở trang công khai; editor style bằng
+   Tailwind trong NodeView. data-image-group là định dạng CŨ (tương thích ngược). */
+[data-gallery],
+[data-image-group] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+[data-gallery] > *,
+[data-image-group] > * {
+  flex: 1 1 0;
+  min-width: 8rem;
+}
+[data-gallery] img,
+[data-image-group] img {
+  display: block;
+  width: 100%;
+  margin: 0;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  border-radius: var(--radius-lg);
+}

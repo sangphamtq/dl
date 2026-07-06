@@ -1,9 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useEditor, EditorContent } from "@tiptap/react";
+import {
+  useEditor,
+  EditorContent,
+  Node,
+  ReactNodeViewRenderer,
+  NodeViewWrapper,
+  type NodeViewProps,
+} from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import ImageExt from "@tiptap/extension-image";
 import Placeholder from "@tiptap/extension-placeholder";
 import TextAlign from "@tiptap/extension-text-align";
 import {
@@ -11,6 +17,8 @@ import {
   AlignLeft,
   AlignRight,
   Bold,
+  ChevronLeft,
+  ChevronRight,
   Heading2,
   Heading3,
   ImagePlus,
@@ -22,6 +30,7 @@ import {
   Quote,
   Redo2,
   Strikethrough,
+  Trash2,
   Underline,
   Undo2,
 } from "lucide-react";
@@ -31,6 +40,21 @@ import { cn } from "@/lib/utils";
 // và cũng dùng làm style cho vùng soạn thảo Tiptap (WYSIWYG khớp lúc xem).
 export const proseClass =
   "max-w-none break-words leading-7 text-foreground/90 [&_h1]:mt-6 [&_h1]:text-2xl [&_h1]:font-semibold [&_h2]:mt-6 [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:mt-4 [&_h3]:text-lg [&_h3]:font-semibold [&_p]:my-3 [&_ul]:my-3 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-3 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:my-1 [&_a]:text-primary [&_a]:underline [&_a]:break-words [&_blockquote]:my-4 [&_blockquote]:border-l-2 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-muted-foreground [&_img]:my-3 [&_img]:h-auto [&_img]:max-w-full [&_img]:rounded-lg [&_iframe]:max-w-full [&_pre]:max-w-full [&_pre]:overflow-x-auto [&_table]:my-4 [&_table]:block [&_table]:max-w-full [&_table]:overflow-x-auto [&_td]:border [&_td]:p-2 [&_th]:border [&_th]:p-2";
+
+type GalleryImage = { src: string; alt: string };
+
+// Tải nhiều ảnh lên UploadThing (qua /api/editor-upload), trả về [{src,alt}].
+async function uploadFiles(files: File[]): Promise<GalleryImage[]> {
+  const out: GalleryImage[] = [];
+  for (const file of files) {
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch("/api/editor-upload", { method: "POST", body: fd });
+    const json = await res.json();
+    if (json?.url) out.push({ src: json.url, alt: file.name });
+  }
+  return out;
+}
 
 function TBtn({
   onClick,
@@ -68,6 +92,183 @@ function Sep() {
   return <span className="mx-0.5 h-5 w-px shrink-0 bg-border/60" aria-hidden />;
 }
 
+/* ── Thư viện ảnh: 1..N ảnh rộng bằng nhau trên một hàng (tự xuống hàng) ──
+   Lưu danh sách ảnh trong 1 attribute; thêm/bớt/đổi thứ tự bằng nút. */
+function GalleryView({
+  node,
+  updateAttributes,
+  deleteNode,
+  selected,
+}: NodeViewProps) {
+  const images = (node.attrs.images ?? []) as GalleryImage[];
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const addFiles = async (files: File[]) => {
+    if (files.length === 0) return;
+    setUploading(true);
+    try {
+      const added = await uploadFiles(files);
+      if (added.length) updateAttributes({ images: [...images, ...added] });
+    } finally {
+      setUploading(false);
+    }
+  };
+  const removeAt = (i: number) => {
+    if (images.length <= 1) {
+      deleteNode();
+      return;
+    }
+    updateAttributes({ images: images.filter((_, j) => j !== i) });
+  };
+  const move = (i: number, dir: -1 | 1) => {
+    const j = i + dir;
+    if (j < 0 || j >= images.length) return;
+    const next = images.slice();
+    [next[i], next[j]] = [next[j], next[i]];
+    updateAttributes({ images: next });
+  };
+
+  return (
+    <NodeViewWrapper
+      className={cn(
+        "my-3 rounded-lg",
+        selected && "outline outline-2 outline-offset-2 outline-primary",
+      )}
+    >
+      <div className="flex flex-wrap gap-2">
+        {images.map((im, i) => (
+          <div key={i} className="relative min-w-[8rem] flex-1">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={im.src}
+              alt={im.alt}
+              draggable={false}
+              className="block aspect-[3/2] w-full rounded-lg object-cover"
+            />
+            {selected && (
+              <div
+                contentEditable={false}
+                className="absolute inset-x-1 top-1 flex items-center justify-between"
+              >
+                <div className="flex gap-0.5">
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => move(i, -1)}
+                    disabled={i === 0}
+                    aria-label="Chuyển trái"
+                    className="grid size-6 place-items-center rounded-md bg-background/90 text-foreground shadow-sm backdrop-blur transition-colors hover:bg-background disabled:opacity-40"
+                  >
+                    <ChevronLeft className="size-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => move(i, 1)}
+                    disabled={i === images.length - 1}
+                    aria-label="Chuyển phải"
+                    className="grid size-6 place-items-center rounded-md bg-background/90 text-foreground shadow-sm backdrop-blur transition-colors hover:bg-background disabled:opacity-40"
+                  >
+                    <ChevronRight className="size-3.5" />
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => removeAt(i)}
+                  aria-label="Xoá ảnh"
+                  className="grid size-6 place-items-center rounded-md bg-background/90 text-destructive shadow-sm backdrop-blur transition-colors hover:bg-destructive hover:text-white"
+                >
+                  <Trash2 className="size-3.5" />
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {selected && (
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => fileRef.current?.click()}
+          disabled={uploading}
+          className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-dashed border-border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground disabled:opacity-60"
+        >
+          {uploading ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <ImagePlus className="size-4" />
+          )}
+          Thêm ảnh
+        </button>
+      )}
+
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        multiple
+        hidden
+        onChange={(e) => {
+          const files = e.target.files ? Array.from(e.target.files) : [];
+          if (files.length) addFiles(files);
+          e.target.value = "";
+        }}
+      />
+    </NodeViewWrapper>
+  );
+}
+
+// Node thư viện: atom (không con), chứa danh sách ảnh trong attribute.
+// parseHTML nhận cả div[data-gallery] MỚI, div[data-image-group] CŨ, và <img> lẻ.
+const Gallery = Node.create({
+  name: "gallery",
+  group: "block",
+  atom: true,
+  draggable: true,
+  addAttributes() {
+    return {
+      images: {
+        default: [] as GalleryImage[],
+        parseHTML: (el) => {
+          const node = el as HTMLElement;
+          if (node.tagName === "IMG") {
+            const im = node as HTMLImageElement;
+            const src = im.getAttribute("src");
+            return src ? [{ src, alt: im.getAttribute("alt") ?? "" }] : [];
+          }
+          return Array.from(node.querySelectorAll("img"))
+            .map((i) => ({
+              src: i.getAttribute("src") ?? "",
+              alt: i.getAttribute("alt") ?? "",
+            }))
+            .filter((x) => x.src);
+        },
+      },
+    };
+  },
+  parseHTML() {
+    return [
+      { tag: "div[data-gallery]" },
+      { tag: "div[data-image-group]" },
+      { tag: "img" },
+    ];
+  },
+  renderHTML({ node }) {
+    const images = (node.attrs.images ?? []) as GalleryImage[];
+    return [
+      "div",
+      { "data-gallery": "" },
+      ...images.map((im) => ["img", { src: im.src, alt: im.alt || "" }]),
+    ];
+  },
+  addNodeView() {
+    return ReactNodeViewRenderer(GalleryView);
+  },
+});
+
 export function RichTextEditor({
   value,
   onChange,
@@ -97,7 +298,7 @@ export function RichTextEditor({
           HTMLAttributes: { rel: "noopener noreferrer", target: "_blank" },
         },
       }),
-      ImageExt.configure({ inline: false }),
+      Gallery,
       Placeholder.configure({ placeholder: placeholder ?? "Viết nội dung…" }),
       TextAlign.configure({ types: ["heading", "paragraph"] }),
     ],
@@ -122,6 +323,20 @@ export function RichTextEditor({
     }
   }, [value, editor]);
 
+  // TipTap v3: useEditor KHÔNG tự re-render khi selection đổi → trạng thái nút
+  // active bị "đứng". Ép re-render theo selectionUpdate/transaction.
+  const [, forceRerender] = useState(0);
+  useEffect(() => {
+    if (!editor) return;
+    const rerender = () => forceRerender((n) => n + 1);
+    editor.on("selectionUpdate", rerender);
+    editor.on("transaction", rerender);
+    return () => {
+      editor.off("selectionUpdate", rerender);
+      editor.off("transaction", rerender);
+    };
+  }, [editor]);
+
   if (!editor) {
     return (
       <div
@@ -133,15 +348,18 @@ export function RichTextEditor({
     );
   }
 
-  const uploadImage = async (file: File) => {
+  // Chèn thư viện ảnh (1..N ảnh) tại con trỏ.
+  const insertGallery = async (files: File[]) => {
+    if (files.length === 0) return;
     setUploading(true);
     try {
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch("/api/editor-upload", { method: "POST", body: fd });
-      const json = await res.json();
-      if (json?.url)
-        editor.chain().focus().setImage({ src: json.url, alt: file.name }).run();
+      const images = await uploadFiles(files);
+      if (images.length)
+        editor
+          .chain()
+          .focus()
+          .insertContent({ type: "gallery", attrs: { images } })
+          .run();
     } finally {
       setUploading(false);
     }
@@ -311,10 +529,11 @@ export function RichTextEditor({
         ref={fileRef}
         type="file"
         accept="image/*"
+        multiple
         hidden
         onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (f) uploadImage(f);
+          const files = e.target.files ? Array.from(e.target.files) : [];
+          if (files.length) insertGallery(files);
           e.target.value = "";
         }}
       />

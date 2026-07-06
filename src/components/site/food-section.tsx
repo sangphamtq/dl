@@ -105,6 +105,23 @@ export function FoodSection({
   const openEatery = (slug: string) =>
     eateryBySlug.has(slug) && setSelected({ type: "eatery", slug });
 
+  // Deep-link từ trang khác (vd card "Quán ăn gần đây" ở /dia-diem):
+  // #eatery-<slug> / #specialty-<slug> → mở đúng drawer khi vào trang.
+  // hash chỉ đọc được ở browser nên phải nằm trong effect (không đưa vào
+  // useState initializer được — SSR không có window, mở Sheet ngay lúc
+  // hydrate cũng gây mismatch).
+  useEffect(() => {
+    const m = window.location.hash.match(/^#(eatery|specialty)-(.+)$/);
+    if (!m) return;
+    const slug = decodeURIComponent(m[2]);
+    if (m[1] === "eatery" && eateryBySlug.has(slug))
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSelected({ type: "eatery", slug });
+    else if (m[1] === "specialty" && specBySlug.has(slug))
+      setSelected({ type: "specialty", slug });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // chỉ đọc hash lúc mount
+
   const activeSpecialty =
     selected?.type === "specialty" ? specBySlug.get(selected.slug) : undefined;
   const activeEatery =

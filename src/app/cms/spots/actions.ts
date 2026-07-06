@@ -15,12 +15,10 @@ const STAFF = ["admin", "editor"];
 // Một dòng loại vé ở form (giá nhập text); chuẩn hóa thành number ở normalize.
 export type TicketTierInput = { label: string; price: string; note: string };
 
-// Một điểm nhấn ở form (tiêu đề + mô tả + ảnh).
+// Một điểm nhấn ở form (tiêu đề + mô tả rich text).
 export type HighlightInput = {
   title: string;
   body: string;
-  imageUrl: string;
-  imageAlt: string;
 };
 
 // Nội dung của một hoạt động TẠI spot này (sửa từ phía Spot).
@@ -92,8 +90,6 @@ type HighlightData = {
   order: number;
   title: string;
   body: string | null;
-  imageUrl: string | null;
-  imageAlt: string | null;
 };
 
 async function normalize(
@@ -156,8 +152,6 @@ async function normalize(
       order: highlights.length,
       title,
       body: h.body.trim() || null,
-      imageUrl: normalizeUrl(h.imageUrl),
-      imageAlt: h.imageAlt.trim() || null,
     });
   }
 

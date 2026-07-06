@@ -6,12 +6,10 @@ import {
   ChevronRight,
   ChevronDown,
   MapPin,
-  Clock,
   Phone,
+  Globe,
   Ticket,
-  CalendarDays,
   TriangleAlert,
-  ExternalLink,
   Sparkles,
   Star,
   Check,
@@ -22,14 +20,19 @@ import { cn } from "@/lib/utils";
 import { coverUrl } from "@/lib/place-image";
 import { getVisitors } from "@/lib/place-meta";
 import { summarizeReviews } from "@/lib/review-meta";
-import { googleEmbedSrc, parseZoom } from "@/lib/map-url";
+import { googleEmbedSrc, parseZoom, parseLatLng } from "@/lib/map-url";
 import {
   getDrivingDistances,
   coordKey,
   type LatLng,
   type Ride,
 } from "@/lib/routing";
-import { parseTicketTiers, tierPriceLabel, formatVnd } from "@/lib/tickets";
+import {
+  parseTicketTiers,
+  tierPriceLabel,
+  formatVnd,
+  type TicketTier,
+} from "@/lib/tickets";
 import {
   SPOT_CATEGORY_LABELS,
   EATERY_CATEGORY_LABELS,
@@ -40,6 +43,9 @@ import {
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { PlaceHeroStack, type HeroImage } from "@/components/site/place-hero-stack";
+import { HeroFrame } from "@/components/site/hero-frame";
+import { proseClass } from "@/components/cms/rich-text-editor";
+import { ShareButton } from "@/components/site/share-button";
 import { RelatedPosts } from "@/components/site/related-posts";
 import { ListingViewTracker } from "@/components/site/listing-view-tracker";
 import { isStaffViewer } from "@/lib/preview";
@@ -118,8 +124,8 @@ function difficultyPhrase(d: string | null): string | null {
   return null;
 }
 
-// Nhãn giá hoạt động từ ticketFree / ticketTiers (không dùng priceRange cũ).
-function activityPrice(ticketFree: boolean, ticketTiers: unknown): string | null {
+// Nhãn giá vé từ ticketFree / ticketTiers (dùng cho cả spot lẫn activity).
+function ticketPriceLabel(ticketFree: boolean, ticketTiers: unknown): string | null {
   if (ticketFree) return "Miễn phí";
   const prices = parseTicketTiers(ticketTiers)
     .map((t) => t.price)
@@ -142,8 +148,12 @@ type Nearby<T> = T & {
   drivingMin: number | null;
 };
 
-// Gắn km đường đi từ drivingMap, sắp gần→xa (ưu tiên đường đi, fallback chim
-// bay), rồi cắt còn `take`.
+// Bán kính tối đa cho mục "gần đây" — xa hơn thì đừng gọi là gần (km đường đi).
+const NEARBY_MAX_KM = 15;
+
+// Gắn km đường đi từ drivingMap, bỏ mục xa quá NEARBY_MAX_KM, sắp gần→xa
+// (ưu tiên đường đi, fallback chim bay), rồi cắt còn `take`. Mục thiếu toạ độ
+// (không đo được) vẫn giữ, dồn cuối.
 function rankNearby<T extends { lat: number | null; lng: number | null; distanceKm: number | null }>(
   items: T[],
   driving: Record<string, Ride>,
@@ -161,6 +171,7 @@ function rankNearby<T extends { lat: number | null; lng: number | null; distance
         drivingMin: r?.min ?? null,
       };
     })
+    .filter((it) => (it.drivingKm ?? it.distanceKm ?? 0) <= NEARBY_MAX_KM)
     .sort(
       (a, b) =>
         (a.drivingKm ?? a.distanceKm ?? Infinity) -
@@ -229,6 +240,7 @@ export default async function SpotPublicPage({
       id: true,
       name: true,
       slug: true,
+      tagline: true,
       description: true,
       category: true,
       status: true,
@@ -251,7 +263,7 @@ export default async function SpotPublicPage({
       tips: true,
       highlights: {
         orderBy: { order: "asc" },
-        select: { id: true, title: true, body: true, imageUrl: true, imageAlt: true },
+        select: { id: true, title: true, body: true },
       },
       tags: true,
       provinceName: true,
@@ -405,7 +417,6 @@ export default async function SpotPublicPage({
     select: {
       slug: true,
       title: true,
-      excerpt: true,
       images: { where: { isCover: true }, take: 1, select: { url: true, isCover: true } },
     },
   });
@@ -422,20 +433,14 @@ export default async function SpotPublicPage({
   const tiers = parseTicketTiers(spot.ticketTiers);
 
   // Fact nhanh hiển thị trên thanh nổi dưới hero (không gồm địa chỉ — để cạnh bản đồ).
-  // Giờ mở cửa luôn hiện: chưa nhập thì báo "Tự do, không giới hạn giờ" (mờ) để
-  // khách biết đây là điểm tham quan mở, không phải thiếu thông tin.
+  // Giá ưu tiên vé thật (ticketFree/ticketTiers), fallback thang priceRange cũ.
   const quickFacts = [
-    {
-      icon: Clock,
-      label: "Giờ mở cửa",
-      value: spot.openingHours || "Tự do, không giới hạn giờ",
-      muted: !spot.openingHours,
-    },
-    { icon: CalendarDays, label: "Thời điểm đẹp", value: spot.bestTime, muted: false },
     {
       icon: Ticket,
       label: "Mức giá",
-      value: label(PRICE_LABELS, spot.priceRange),
+      value:
+        ticketPriceLabel(spot.ticketFree, spot.ticketTiers) ??
+        label(PRICE_LABELS, spot.priceRange),
       muted: false,
     },
   ].filter((f) => f.value);
@@ -447,17 +452,16 @@ export default async function SpotPublicPage({
   const adminAddress = [spot.wardName, spot.districtName, spot.provinceName]
     .filter(Boolean)
     .join(", ");
-  // Link bản đồ ngoài: ưu tiên mapUrl biên tập nhập, sau đó toạ độ.
-  const mapsHref =
-    spot.mapUrl ||
-    (hasMap
-      ? `https://www.google.com/maps/search/?api=1&query=${spot.lat}%2C${spot.lng}`
-      : null);
-  // Nhúng Google Maps đúng vị trí (zoom lấy theo link mapUrl nếu có).
-  const mapEmbedSrc = hasMap
+  // Một điểm duy nhất cho CẢ iframe lẫn nút "Chỉ đường" để chúng luôn khớp:
+  // ưu tiên toạ độ trích thẳng từ mapUrl (điểm Google thật), rồi mới tới lat/lng.
+  const mapPoint =
+    (spot.mapUrl ? parseLatLng(spot.mapUrl) : null) ??
+    (hasMap ? { lat: spot.lat!, lng: spot.lng! } : null);
+  // Nhúng Google Maps theo mapPoint (zoom lấy theo link mapUrl nếu có).
+  const mapEmbedSrc = mapPoint
     ? googleEmbedSrc(
-        spot.lat!,
-        spot.lng!,
+        mapPoint.lat,
+        mapPoint.lng,
         (spot.mapUrl && parseZoom(spot.mapUrl)) || 12,
       )
     : null;
@@ -488,14 +492,19 @@ export default async function SpotPublicPage({
     nearbyEateries.length > 0 ||
     accommodations.length > 0;
 
-  // Mục cho thanh điều hướng dính (chỉ liệt kê mục có dữ liệu).
+  // Mục cho thanh điều hướng dính (chỉ liệt kê mục có dữ liệu, theo đúng thứ tự trang).
   const navItems: SectionItem[] = [
-    spot.description && { id: "gioi-thieu", label: "Giới thiệu" },
+    (spot.description || introPost) && { id: "gioi-thieu", label: "Giới thiệu" },
     spot.highlights.length > 0 && { id: "diem-nhan", label: "Điểm nhấn" },
     spot.activityLinks.length > 0 && { id: "hoat-dong", label: "Làm gì ở đây" },
+    (spot.tips.length > 0 || spot.notice) && {
+      id: "kinh-nghiem",
+      label: "Kinh nghiệm",
+    },
     spot.bestTimeNote && { id: "khi-nao", label: "Khi nào đẹp" },
     spot.gettingThere && { id: "cach-den", label: "Cách đến" },
     hasNearby && { id: "quanh-day", label: "Quanh đây" },
+    { id: "danh-gia", label: "Đánh giá" },
   ].filter((x): x is SectionItem => Boolean(x));
 
   return (
@@ -504,31 +513,10 @@ export default async function SpotPublicPage({
       <ListingViewTracker type="spot" id={spot.id} />
 
       <main className="flex-1">
-        {/* Hero — theo mô-típ trang chi tiết điểm đến */}
-        <section className="relative bg-gradient-to-b from-primary/[0.07] via-accent/50 to-background">
-          {/* Họa tiết nền */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
-          >
-            <div
-              className="absolute inset-0"
-              style={{
-                backgroundImage:
-                  "radial-gradient(var(--border) 1.2px, transparent 1.2px)",
-                backgroundSize: "22px 22px",
-                maskImage:
-                  "radial-gradient(ellipse 80% 60% at 50% 0%, #000 30%, transparent 100%)",
-                WebkitMaskImage:
-                  "radial-gradient(ellipse 80% 60% at 50% 0%, #000 30%, transparent 100%)",
-              }}
-            />
-            <div className="absolute -right-32 -top-28 size-[34rem] rounded-full bg-primary/10 blur-3xl" />
-            <div className="absolute -left-28 top-24 size-[26rem] rounded-full bg-warm/[0.08] blur-3xl" />
-          </div>
-
-          <div className="mx-auto max-w-7xl px-4 pb-6 pt-6 sm:px-6 sm:pb-5 sm:pt-5">
-            <div className="grid items-center gap-7 lg:grid-cols-[1fr_400px] lg:gap-10">
+        {/* Hero — dùng chung mô-típ nền ambient của trang chi tiết điểm đến */}
+        <HeroFrame images={heroImages.map((i) => i.url)}>
+          <div className="mx-auto max-w-7xl px-4 pb-10 pt-6 sm:px-6 sm:pb-6 sm:pt-5">
+            <div className="grid items-center gap-10 lg:grid-cols-[1fr_1.4fr] lg:gap-12">
               {/* Trái: chữ */}
               <div>
                 {/* Quay lại + đánh dấu đã đến */}
@@ -543,18 +531,21 @@ export default async function SpotPublicPage({
                     />
                     Địa điểm tại {spot.place.name}
                   </Link>
-                  <CheckInButton
-                    targetKind="spot"
-                    targetId={spot.id}
-                    targetName={spot.name}
-                    targetImage={coverUrl(spot.images, spot.slug, 96, 96)}
-                    redirectTo={`/dia-diem/${spot.slug}`}
-                    initialChecked={checkIn.checked}
-                    isAuthed={checkIn.isAuthed}
-                  />
+                  <div className="flex items-center gap-2">
+                    <CheckInButton
+                      targetKind="spot"
+                      targetId={spot.id}
+                      targetName={spot.name}
+                      targetImage={coverUrl(spot.images, spot.slug, 96, 96)}
+                      redirectTo={`/dia-diem/${spot.slug}`}
+                      initialChecked={checkIn.checked}
+                      isAuthed={checkIn.isAuthed}
+                    />
+                    <ShareButton title={spot.name} iconOnly />
+                  </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3 text-sm font-medium">
+                <div className="flex flex-wrap items-center gap-4 text-sm font-medium">
                   {categoryLabel && (
                     <span className="rounded-full bg-primary/10 px-3 py-1 text-xs text-primary">
                       {categoryLabel}
@@ -569,24 +560,14 @@ export default async function SpotPublicPage({
                   </Link>
                 </div>
 
-                <h1 className="mt-3 text-balance text-3xl font-bold leading-[1.08] tracking-tight sm:text-4xl lg:text-5xl">
+                <h1 className="mt-4 text-balance text-4xl font-bold leading-[1.08] tracking-tight sm:text-5xl">
                   {spot.name}
                 </h1>
-                {/* Gạch nguệch ngoạc trang trí */}
-                <svg
-                  aria-hidden
-                  viewBox="0 0 200 14"
-                  preserveAspectRatio="none"
-                  fill="none"
-                  className="mt-3 h-2.5 w-36 text-warm/70"
-                >
-                  <path
-                    d="M3 9 C 34 2 56 2 84 8 S 150 13 197 5"
-                    stroke="currentColor"
-                    strokeWidth="3.5"
-                    strokeLinecap="round"
-                  />
-                </svg>
+                {spot.tagline && (
+                  <p className="mt-4 max-w-lg text-lg leading-relaxed text-muted-foreground">
+                    {spot.tagline}
+                  </p>
+                )}
                 {/* Fact nhanh */}
                 {quickFacts.length > 0 && (
                   <dl className="mt-6 flex flex-wrap gap-x-7 gap-y-4 text-sm">
@@ -654,65 +635,82 @@ export default async function SpotPublicPage({
               </div>
             </div>
           </div>
-        </section>
+        </HeroFrame>
 
         <SpotSectionNav items={navItems} />
 
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16">
           <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_288px] lg:gap-12">
             <div className="min-w-0 space-y-14">
-              {/* Giới thiệu — mô tả ngắn (không tiêu đề) */}
-              {spot.description && (
+              {/* Giới thiệu — mô tả ngắn + bài giới thiệu (như trang điểm đến) */}
+              {(spot.description || introPost) && (
                 <section id="gioi-thieu" className="scroll-mt-32">
-                  <p className="whitespace-pre-line text-lg leading-8 text-foreground/90">
-                    {spot.description}
-                  </p>
+                  {spot.description && (
+                    <p className="max-w-3xl whitespace-pre-line text-lg leading-8 text-foreground/90">
+                      {spot.description}
+                    </p>
+                  )}
+                  {introPost && (
+                    <Link
+                      href={`/blog/${introPost.slug}`}
+                      className="group mt-6 inline-flex items-center gap-3 rounded-xl border border-border/60 bg-card p-2 pr-4 text-sm transition-colors hover:border-primary/40 hover:bg-muted/40"
+                    >
+                      <span className="relative size-11 shrink-0 overflow-hidden rounded-lg bg-muted">
+                        <Image
+                          src={coverUrl(introPost.images, introPost.slug, 96, 96)}
+                          alt=""
+                          fill
+                          sizes="44px"
+                          className="object-cover"
+                        />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-xs text-muted-foreground">
+                          Bài giới thiệu
+                        </span>
+                        <span className="block truncate font-medium">
+                          {introPost.title}
+                        </span>
+                      </span>
+                      <ChevronRight
+                        className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary"
+                        aria-hidden
+                      />
+                    </Link>
+                  )}
                 </section>
               )}
 
-              {/* Điểm nhấn — block ảnh + chữ, so le trái/phải */}
+              {/* Điểm nhấn — danh sách đánh số kiểu biên tập, ảnh lớn khi có */}
               {spot.highlights.length > 0 && (
                 <section id="diem-nhan" className="scroll-mt-32">
-                  <div className="mb-6 flex items-center gap-3">
-                    <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
-                      <Star className="size-5" aria-hidden />
-                    </span>
-                    <h2 className="text-xl font-bold tracking-tight sm:text-2xl">
-                      Điểm nhấn
-                    </h2>
-                  </div>
-                  <div className="space-y-8">
+                  <h2 className="mb-6 text-xl font-bold tracking-tight sm:text-2xl">
+                    Điểm nhấn
+                  </h2>
+                  <div className="divide-y divide-border/60">
                     {spot.highlights.map((h, i) => (
-                      <div
+                      <article
                         key={h.id}
-                        className={cn(
-                          "flex flex-col gap-5",
-                          h.imageUrl && "sm:flex-row sm:items-center",
-                          h.imageUrl && i % 2 === 1 && "sm:flex-row-reverse",
-                        )}
+                        className="flex gap-4 py-7 first:pt-0 last:pb-0 sm:gap-6"
                       >
-                        {h.imageUrl && (
-                          <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden rounded-2xl bg-muted sm:w-2/5">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={h.imageUrl}
-                              alt={h.imageAlt ?? h.title}
-                              loading="lazy"
-                              className="absolute inset-0 size-full object-cover"
-                            />
-                          </div>
-                        )}
+                        <span
+                          aria-hidden
+                          className="mt-0.5 shrink-0 text-2xl font-bold leading-none tabular-nums text-primary/30 sm:text-3xl"
+                        >
+                          {String(i + 1).padStart(2, "0")}
+                        </span>
                         <div className="min-w-0 flex-1">
                           <h3 className="text-lg font-semibold tracking-tight sm:text-xl">
                             {h.title}
                           </h3>
                           {h.body && (
-                            <p className="mt-2 leading-relaxed text-foreground/80">
-                              {h.body}
-                            </p>
+                            <div
+                              className={cn(proseClass, "mt-2")}
+                              dangerouslySetInnerHTML={{ __html: h.body }}
+                            />
                           )}
                         </div>
-                      </div>
+                      </article>
                     ))}
                   </div>
                 </section>
@@ -741,7 +739,7 @@ export default async function SpotPublicPage({
                         a.durationText,
                         difficultyPhrase(a.difficulty),
                         a.seasonText,
-                        activityPrice(a.ticketFree, a.ticketTiers),
+                        ticketPriceLabel(a.ticketFree, a.ticketTiers),
                       ]
                         .filter(Boolean)
                         .join(" · ");
@@ -795,7 +793,7 @@ export default async function SpotPublicPage({
 
               {/* Kinh nghiệm / mẹo */}
               {(spot.tips.length > 0 || spot.notice) && (
-                <section className="scroll-mt-32">
+                <section id="kinh-nghiem" className="scroll-mt-32">
                   <h2 className="mb-4 text-xl font-bold tracking-tight sm:text-2xl">
                     Kinh nghiệm &amp; mẹo
                   </h2>
@@ -834,12 +832,8 @@ export default async function SpotPublicPage({
                   <h2 className="mb-4 text-xl font-bold tracking-tight sm:text-2xl">
                     Khi nào đẹp nhất?
                   </h2>
-                  {spot.bestTime && (
-                    <p className="mb-2 font-semibold text-primary">
-                      {spot.bestTime}
-                    </p>
-                  )}
-                  <p className="whitespace-pre-line leading-relaxed text-foreground/85">
+                  {/* bestTime (giá trị ngắn) đã hiện ở card sidebar — ở đây chỉ diễn giải */}
+                  <p className="max-w-3xl whitespace-pre-line leading-relaxed text-foreground/85">
                     {spot.bestTimeNote}
                   </p>
                 </section>
@@ -851,167 +845,58 @@ export default async function SpotPublicPage({
                   <h2 className="mb-4 text-xl font-bold tracking-tight sm:text-2xl">
                     Cách đến
                   </h2>
-                  <p className="whitespace-pre-line leading-relaxed text-foreground/85">
+                  <p className="max-w-3xl whitespace-pre-line leading-relaxed text-foreground/85">
                     {spot.gettingThere}
                   </p>
                 </section>
               )}
 
-              {/* Bài viết chi tiết liên kết (link ra blog, không nhúng) */}
-              {introPost && (
-                <Link
-                  href={`/blog/${introPost.slug}`}
-                  className="group flex items-center gap-4 rounded-2xl border border-border/60 bg-card p-3 pr-5 shadow-sm shadow-black/5 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg hover:shadow-black/5"
-                >
-                  <span className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-muted">
-                    <Image
-                      src={coverUrl(introPost.images, introPost.slug, 128, 128)}
-                      alt=""
-                      fill
-                      sizes="64px"
-                      className="object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="text-[11px] font-semibold uppercase tracking-wide text-primary">
-                      Bài viết chi tiết
-                    </span>
-                    <span className="mt-0.5 block truncate font-semibold tracking-tight">
-                      {introPost.title}
-                    </span>
-                    {introPost.excerpt && (
-                      <span className="mt-0.5 line-clamp-1 block text-sm text-muted-foreground">
-                        {introPost.excerpt}
-                      </span>
-                    )}
-                  </span>
-                  <ChevronRight
-                    className="size-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary"
-                    aria-hidden
-                  />
-                </Link>
-              )}
             </div>
 
             {/* Sidebar — card nổi, dính khi cuộn */}
             <aside className="space-y-6 lg:sticky lg:top-32 lg:self-start">
-              {/* Vé vào cửa + đặt chỗ */}
-              {(spot.ticketFree ||
-                tiers.length > 0 ||
-                spot.ticketInfo ||
-                spot.bookingUrl) && (
-                <div className="rounded-2xl border border-border/60 p-4">
-                  <CardHead title="Vé vào cửa" />
-                  {spot.ticketFree ? (
-                    <p className="mt-4 text-base font-semibold text-primary">
-                      Miễn phí
-                    </p>
-                  ) : tiers.length > 0 ? (
-                    <dl className="mt-4 space-y-2.5 text-sm">
-                      {tiers.map((t, i) => (
-                        <div
-                          key={i}
-                          className="flex items-baseline justify-between gap-3"
-                        >
-                          <dt className="text-muted-foreground">
-                            {t.label}
-                            {t.note && (
-                              <span className="ml-1 text-xs">({t.note})</span>
-                            )}
-                          </dt>
-                          <dd className="text-right font-semibold tabular-nums text-primary">
-                            {tierPriceLabel(t)}
-                          </dd>
-                        </div>
-                      ))}
-                    </dl>
-                  ) : null}
-                  {spot.ticketInfo && (
-                    <p className="mt-3 text-xs text-muted-foreground">
-                      {spot.ticketInfo}
-                    </p>
-                  )}
-                  {spot.bookingUrl && (
-                    <a
-                      href={spot.bookingUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-4 inline-flex w-full items-center justify-center rounded-full bg-warm px-4 py-2.5 text-sm font-semibold text-warm-foreground transition-colors hover:bg-warm/90"
-                    >
-                      Đặt chỗ
-                    </a>
-                  )}
-                </div>
-              )}
+              {/* Thông tin tham quan — giờ / thời điểm + cuống vé + liên hệ */}
+              <VisitCardD
+                openingHours={spot.openingHours}
+                bestTime={spot.bestTime}
+                ticketFree={spot.ticketFree}
+                tiers={tiers}
+                ticketInfo={spot.ticketInfo}
+                bookingUrl={spot.bookingUrl}
+                phone={spot.phone}
+                website={spot.website}
+              />
 
-              {/* Bản đồ + địa chỉ */}
-              {(hasMap || spot.address || adminAddress) && (
-                <div className="overflow-hidden rounded-2xl border border-border/60">
-                  <div className="px-4 pt-4">
-                    <CardHead title="Vị trí" />
-                  </div>
-                  {(spot.address || adminAddress) && (
-                    <div className="px-4 pt-3 text-sm">
-                      <p className="text-xs text-muted-foreground">Địa chỉ</p>
-                      <p className="mt-0.5">{spot.address || adminAddress}</p>
-                      {spot.address && adminAddress && (
-                        <p className="mt-0.5 text-xs text-muted-foreground">
-                          {adminAddress}
-                        </p>
-                      )}
-                    </div>
-                  )}
+              {/* Vị trí — bản đồ dẫn dắt (click vào map để mở Google Maps) */}
+              {(mapEmbedSrc || spot.address || adminAddress) && (
+                <div className="overflow-hidden rounded-2xl border border-border/60 bg-card">
                   {mapEmbedSrc && (
                     <iframe
                       title={`Bản đồ ${spot.name}`}
-                      className="mt-4 aspect-[4/3] w-full"
+                      className="aspect-[16/10] w-full"
                       loading="lazy"
                       referrerPolicy="no-referrer-when-downgrade"
                       src={mapEmbedSrc}
                     />
                   )}
-                  {mapsHref && (
-                    <a
-                      href={mapsHref}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-primary hover:underline"
-                    >
-                      <MapPin className="size-3.5" /> Mở trên Google Maps
-                    </a>
+                  {(spot.address || adminAddress) && (
+                    <div className="flex gap-2.5 p-4">
+                      <MapPin
+                        className="mt-0.5 size-4 shrink-0 text-primary"
+                        aria-hidden
+                      />
+                      <div className="min-w-0 text-sm">
+                        <p className="font-medium leading-snug">
+                          {spot.address || adminAddress}
+                        </p>
+                        {spot.address && adminAddress && (
+                          <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
+                            {adminAddress}
+                          </p>
+                        )}
+                      </div>
+                    </div>
                   )}
-                  {!hasMap && !mapsHref && (spot.address || adminAddress) && (
-                    <div className="pb-5" />
-                  )}
-                </div>
-              )}
-
-              {/* Liên hệ */}
-              {(spot.phone || spot.website) && (
-                <div className="rounded-2xl border border-border/60 p-4">
-                  <CardHead title="Liên hệ" />
-                  <div className="mt-4 space-y-2.5 text-sm">
-                    {spot.phone && (
-                      <a
-                        href={`tel:${spot.phone.replace(/\s+/g, "")}`}
-                        className="flex items-center gap-2.5 font-medium text-primary hover:underline"
-                      >
-                        <Phone className="size-4 shrink-0" aria-hidden />
-                        {spot.phone}
-                      </a>
-                    )}
-                    {spot.website && (
-                      <a
-                        href={spot.website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2.5 font-medium text-primary hover:underline"
-                      >
-                        <ExternalLink className="size-4 shrink-0" aria-hidden />
-                        Website chính thức
-                      </a>
-                    )}
-                  </div>
                 </div>
               )}
 
@@ -1032,9 +917,10 @@ export default async function SpotPublicPage({
 
           {/* Khám phá quanh đây (full-width) */}
           {hasNearby && (
-            <div className="mt-16 space-y-14 border-t border-border/60 pt-14">
-              {hasNearby && (
-                <div id="quanh-day" className="scroll-mt-32 space-y-14">
+            <div
+              id="quanh-day"
+              className="mt-16 scroll-mt-32 space-y-14 border-t border-border/60 pt-14"
+            >
               {nearbySpots.length > 0 && (
                 <section>
                   <SectionHead
@@ -1112,9 +998,6 @@ export default async function SpotPublicPage({
                   </Rail>
                 </section>
               )}
-
-                </div>
-              )}
             </div>
           )}
         </div>
@@ -1184,11 +1067,187 @@ function SectionHead({
   );
 }
 
-/* ── Tiêu đề card sidebar (icon trong ô bo góc + nhãn) ────────────── */
-function CardHead({ title }: { title: string }) {
+/* ──────────────────────────────────────────────────────────────────
+   Card "Thông tin tham quan" — kiểu cuống vé (ticket stub): nửa trên là
+   giờ mở cửa / thời điểm đẹp, đường xé nét đứt, cuống dưới là vé + đặt chỗ.
+   ────────────────────────────────────────────────────────────────── */
+type VisitProps = {
+  openingHours: string | null;
+  bestTime: string | null;
+  ticketFree: boolean;
+  tiers: TicketTier[];
+  ticketInfo: string | null;
+  bookingUrl: string | null;
+  phone: string | null;
+  website: string | null;
+};
+
+/* Hàng liên hệ (gọi / website) — dùng trong card thông tin tham quan */
+function ContactRows({
+  phone,
+  website,
+}: {
+  phone: string | null;
+  website: string | null;
+}) {
+  if (!phone && !website) return null;
+  const webLabel = website
+    ?.replace(/^https?:\/\//, "")
+    .replace(/^www\./, "")
+    .replace(/\/$/, "");
   return (
-    <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-      {title}
-    </h2>
+    <div className="border-t border-border/60 p-2 text-sm">
+      {phone && (
+        <a
+          href={`tel:${phone.replace(/\s+/g, "")}`}
+          className="flex items-center gap-2.5 rounded-lg px-2 py-2.5 font-medium transition-colors hover:bg-muted/60 hover:text-primary"
+        >
+          <Phone
+            className="size-4 shrink-0 text-muted-foreground"
+            aria-hidden
+          />
+          {phone}
+        </a>
+      )}
+      {website && (
+        <a
+          href={website}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2.5 rounded-lg px-2 py-2.5 font-medium transition-colors hover:bg-muted/60 hover:text-primary"
+        >
+          <Globe
+            className="size-4 shrink-0 text-muted-foreground"
+            aria-hidden
+          />
+          <span className="truncate">{webLabel}</span>
+        </a>
+      )}
+    </div>
   );
 }
+
+function BookButton({ href }: { href: string }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex w-full items-center justify-center rounded-full bg-warm px-4 py-2.5 text-sm font-semibold text-warm-foreground transition-colors hover:bg-warm/90"
+    >
+      Đặt chỗ
+    </a>
+  );
+}
+
+function TierList({
+  tiers,
+  accent = true,
+}: {
+  tiers: TicketTier[];
+  accent?: boolean;
+}) {
+  return (
+    <dl className="space-y-1.5 text-sm">
+      {tiers.map((t, i) => (
+        <div key={i} className="flex items-baseline justify-between gap-3">
+          <dt className="text-muted-foreground">
+            {t.label}
+            {t.note && <span className="ml-1 text-xs">({t.note})</span>}
+          </dt>
+          <dd
+            className={cn(
+              "font-semibold tabular-nums",
+              accent && "text-primary",
+            )}
+          >
+            {tierPriceLabel(t)}
+          </dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function VisitCardD({
+  openingHours,
+  bestTime,
+  ticketFree,
+  tiers,
+  ticketInfo,
+  bookingUrl,
+  phone,
+  website,
+}: VisitProps) {
+  const hasTicket = ticketFree || tiers.length > 0 || !!ticketInfo;
+  const hasStub = hasTicket || !!bookingUrl;
+  return (
+    <div className="overflow-hidden rounded-2xl border border-border/60 bg-card">
+      <div className="space-y-3 p-5">
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="shrink-0 text-sm text-muted-foreground">
+            Mở cửa
+          </span>
+          <span
+            className={cn(
+              "text-right text-sm font-semibold",
+              !openingHours && "font-medium text-muted-foreground",
+            )}
+          >
+            {openingHours || "Tự do, cả ngày"}
+          </span>
+        </div>
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="shrink-0 text-sm text-muted-foreground">
+            Thời điểm đẹp
+          </span>
+          <span
+            className={cn(
+              "text-right text-sm font-semibold",
+              !bestTime && "font-medium text-muted-foreground",
+            )}
+          >
+            {bestTime || "Quanh năm"}
+          </span>
+        </div>
+      </div>
+      {hasStub && (
+        <>
+          {/* đường xé vé */}
+          <div className="relative h-4">
+            <span
+              aria-hidden
+              className="absolute -left-2 top-1/2 size-4 -translate-y-1/2 rounded-full bg-background"
+            />
+            <span
+              aria-hidden
+              className="absolute -right-2 top-1/2 size-4 -translate-y-1/2 rounded-full bg-background"
+            />
+            <div className="absolute inset-x-4 top-1/2 border-t border-dashed border-border" />
+          </div>
+          <div className="p-5 pt-1">
+            {ticketFree ? (
+              <p className="text-lg font-bold tracking-tight text-primary">
+                Miễn phí
+              </p>
+            ) : tiers.length > 0 ? (
+              <TierList tiers={tiers} />
+            ) : null}
+            {ticketInfo && (
+              <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                {ticketInfo}
+              </p>
+            )}
+            {bookingUrl && (
+              <div className="mt-4">
+                <BookButton href={bookingUrl} />
+              </div>
+            )}
+          </div>
+        </>
+      )}
+      <ContactRows phone={phone} website={website} />
+    </div>
+  );
+}
+

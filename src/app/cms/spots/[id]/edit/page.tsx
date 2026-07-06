@@ -45,7 +45,7 @@ export default async function EditSpotPage({
         tips: true,
         highlights: {
           orderBy: { order: "asc" },
-          select: { title: true, body: true, imageUrl: true, imageAlt: true },
+          select: { title: true, body: true },
         },
         activityLinks: {
           orderBy: { order: "asc" },
@@ -107,8 +107,6 @@ export default async function EditSpotPage({
     highlights: spot.highlights.map((h) => ({
       title: h.title,
       body: h.body ?? "",
-      imageUrl: h.imageUrl ?? "",
-      imageAlt: h.imageAlt ?? "",
     })),
     activityContent: spot.activityLinks.map((l) => ({
       activityId: l.activityId,

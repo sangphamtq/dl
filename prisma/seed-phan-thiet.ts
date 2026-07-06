@@ -313,9 +313,7 @@ async function main() {
   // 3) Spots
   type HighlightSeed = {
     title: string;
-    body?: string;
-    imageUrl?: string;
-    imageAlt?: string;
+    body?: string; // văn xuôi thuần; sẽ bọc <p> thành rich text khi ghi
   };
   type SpotSeed = {
     slug: string;
@@ -349,14 +347,10 @@ async function main() {
         {
           title: "Thiên đường lướt ván diều",
           body: "Gió ổn định gần như suốt mùa khô đưa Mũi Né vào top điểm lướt ván diều hàng đầu châu Á. Chiều đến, hàng trăm cánh diều rực rỡ chao liệng trên sóng là cảnh tượng khó quên.",
-          imageUrl: "https://picsum.photos/seed/mui-ne-kite/800/600",
-          imageAlt: "Lướt ván diều trên biển Mũi Né",
         },
         {
           title: "Hàng dừa đón gió",
           body: "Dải bờ dài rợp bóng dừa nghiêng mình theo gió biển, tạo nên khung cảnh đặc trưng và vô số góc chụp đẹp dọc đường Nguyễn Đình Chiểu.",
-          imageUrl: "https://picsum.photos/seed/mui-ne-dua/800/600",
-          imageAlt: "Hàng dừa ven biển Mũi Né",
         },
       ],
       tips: [
@@ -384,20 +378,14 @@ async function main() {
         {
           title: "Cát đổi màu theo nắng",
           body: "Gió biển thổi không ngừng nên đường nét những triền cát thay đổi mỗi ngày, còn nắng thì nhuộm cát từ vàng nhạt buổi sớm sang cam đỏ lúc xế chiều — không lần ghé nào giống lần nào.",
-          imageUrl: "https://picsum.photos/seed/doi-cat-mau/800/600",
-          imageAlt: "Triền cát đổi màu dưới nắng ở Đồi cát bay",
         },
         {
           title: "Trượt cát — trò không thể bỏ lỡ",
           body: "Thuê một tấm ván nhựa ngay dưới chân đồi, leo lên đỉnh rồi buông mình trượt xuống. Trò chơi đơn giản mà gây nghiện, hợp với cả trẻ con lẫn người lớn.",
-          imageUrl: "https://picsum.photos/seed/doi-cat-truot/800/600",
-          imageAlt: "Du khách trượt cát trên đồi",
         },
         {
           title: "Săn bình minh & hoàng hôn",
           body: "Lúc mặt trời mọc hoặc lặn, cả đồi cát chìm trong ánh sáng vàng cam mê hoặc — khung giờ vàng cho những bức ảnh đẹp nhất và cũng là lúc cát mát chân nhất.",
-          imageUrl: "https://picsum.photos/seed/doi-cat-binhminh/800/600",
-          imageAlt: "Bình minh trên Đồi cát bay Mũi Né",
         },
       ],
       tips: [
@@ -425,14 +413,10 @@ async function main() {
         {
           title: "Hồ sen giữa sa mạc cát",
           body: "Bàu Ông và Bàu Bà — hai hồ nước ngọt phủ sen — nằm lọt giữa đồi cát trắng, tạo khung cảnh tương phản hiếm thấy, đẹp nhất vào mùa sen nở.",
-          imageUrl: "https://picsum.photos/seed/bau-trang-sen/800/600",
-          imageAlt: "Hồ sen Bàu Trắng giữa đồi cát",
         },
         {
           title: "Đồi cát trắng & xe địa hình",
           body: "Những đồi cát trắng cao thoai thoải là sân chơi của xe Jeep, mô tô địa hình và trò trượt cát — vừa ngắm cảnh vừa thử cảm giác mạnh.",
-          imageUrl: "https://picsum.photos/seed/bau-trang-quad/800/600",
-          imageAlt: "Xe địa hình trên đồi cát Bàu Trắng",
         },
       ],
       tips: [
@@ -460,8 +444,6 @@ async function main() {
         {
           title: "Lội bộ giữa vách cát đỏ – trắng",
           body: "Dòng suối nông, đáy cát mịn, hai bên là vách đất đỏ và nhũ cát trắng tầng tầng lớp lớp — vừa đi vừa ngắm như lạc vào một hẻm núi tí hon.",
-          imageUrl: "https://picsum.photos/seed/suoi-tien-vach/800/600",
-          imageAlt: "Vách cát đỏ trắng dọc Suối Tiên",
         },
       ],
       tips: [
@@ -489,14 +471,10 @@ async function main() {
         {
           title: "Bình minh trên hàng thúng chai",
           body: "Hàng trăm thúng chai tròn neo san sát, lắc lư theo sóng dưới nắng sớm — một trong những khung hình biểu tượng của làng chài miền biển.",
-          imageUrl: "https://picsum.photos/seed/lang-chai-thung/800/600",
-          imageAlt: "Thúng chai trên biển làng chài Mũi Né lúc bình minh",
         },
         {
           title: "Chợ cá sớm tươi rói",
           body: "Cá, mực, tôm, ghẹ vừa đánh bắt được bày bán ngay trên bãi với giá gốc — nơi tuyệt vời để cảm nhận nhịp sống ngư dân và mua hải sản tươi.",
-          imageUrl: "https://picsum.photos/seed/lang-chai-cho/800/600",
-          imageAlt: "Chợ cá sớm tại làng chài Mũi Né",
         },
       ],
       tips: [
@@ -524,14 +502,10 @@ async function main() {
         {
           title: "Kiến trúc Chăm ngàn năm",
           body: "Cụm tháp xây từ thế kỷ 8–9 theo phong cách Hòa Lai, gạch xếp khít gần như không mạch vữa — minh chứng cho kỹ thuật xây dựng tài hoa của người Chăm xưa.",
-          imageUrl: "https://picsum.photos/seed/thap-cham-kientruc/800/600",
-          imageAlt: "Tháp Chăm Po Sah Inư",
         },
         {
           title: "Hoàng hôn trên đồi Bà Nài",
           body: "Vị trí trên đồi cao nhìn ra cửa biển Phan Thiết khiến đây là chỗ đón hoàng hôn yên tĩnh, ít đông hơn các bãi biển.",
-          imageUrl: "https://picsum.photos/seed/thap-cham-hoanghon/800/600",
-          imageAlt: "Hoàng hôn nhìn từ đồi tháp Po Sah Inư",
         },
       ],
       tips: [
@@ -559,8 +533,6 @@ async function main() {
         {
           title: "Bãi tắm trong xanh, ít người",
           body: "Bờ cát sạch, nước trong và sóng nhẹ khiến Hòn Rơm bình yên hơn hẳn các bãi trung tâm — rất hợp để tắm cùng trẻ nhỏ.",
-          imageUrl: "https://picsum.photos/seed/hon-rom-bai/800/600",
-          imageAlt: "Bãi tắm trong xanh ở Hòn Rơm",
         },
       ],
       tips: [
@@ -588,14 +560,10 @@ async function main() {
         {
           title: "Tảng đá hình Ông Địa",
           body: "Khối đá tự nhiên có hình dáng giống Ông Địa đã thành biểu tượng và nơi cầu may của người dân — gắn liền với tên gọi của bãi.",
-          imageUrl: "https://picsum.photos/seed/ong-dia-da/800/600",
-          imageAlt: "Tảng đá hình Ông Địa bên bờ biển",
         },
         {
           title: "Ghềnh đá check-in hoàng hôn",
           body: "Những ghềnh đá đen nhấp nhô xen bãi cát là phông nền lý tưởng cho ảnh hoàng hôn, thu hút đông bạn trẻ mỗi chiều.",
-          imageUrl: "https://picsum.photos/seed/ong-dia-ghenh/800/600",
-          imageAlt: "Ghềnh đá Bãi đá Ông Địa lúc hoàng hôn",
         },
       ],
       tips: [
@@ -614,7 +582,11 @@ async function main() {
     const { slug, name, highlights, ...rest } = s;
     const hl =
       highlights && highlights.length > 0
-        ? highlights.map((h, i) => ({ ...h, order: i }))
+        ? highlights.map((h, i) => ({
+            title: h.title,
+            body: h.body ? `<p>${h.body}</p>` : null,
+            order: i,
+          }))
         : null;
     const row = await prisma.spot.upsert({
       where: { slug },

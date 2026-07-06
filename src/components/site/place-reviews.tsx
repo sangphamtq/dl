@@ -120,18 +120,13 @@ const CV_CHIP = "bg-warm/10 text-warm";
 const initial = (name: string | null) =>
   (name?.trim().charAt(0) || "?").toUpperCase();
 
+// Chỉ hiện ngày — giờ trong ngày không có giá trị với người đọc đánh giá.
 function fmtDate(iso: string) {
-  const d = new Date(iso);
-  const date = d.toLocaleDateString("vi-VN", {
+  return new Date(iso).toLocaleDateString("vi-VN", {
     day: "numeric",
     month: "long",
     year: "numeric",
   });
-  const time = d.toLocaleTimeString("vi-VN", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-  return `${date} · ${time}`;
 }
 
 // Đích đánh giá: điểm đến (place) hoặc địa điểm (spot).
