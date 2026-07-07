@@ -143,14 +143,14 @@ export default async function PlaceCommunityPage({
 
         <PlaceTabs items={tabs} videos={heroData.videos} placeName={place.name} />
 
-        <div className="bg-muted/40">
+        <div className="bg-muted/30">
         <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
           <div>
-            <h2 className="text-2xl font-bold tracking-tight">
-              Thảo luận cộng đồng
+            <h2 className="text-xl font-bold tracking-tight sm:text-2xl">
+              Thảo luận về {place.name}
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Hỏi đáp, chia sẻ và rủ nhau đi {place.name}.
+              Hỏi đáp, chia sẻ kinh nghiệm và rủ nhau ghép đoàn · {totalAll} bài
             </p>
           </div>
 
@@ -163,23 +163,23 @@ export default async function PlaceCommunityPage({
                 fixedPlaceId={place.id}
               />
 
-              {/* Lọc theo loại + sắp xếp */}
-              <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <CommunityFilter
-                    current={type}
-                    counts={countOf}
-                    hrefFor={(v) => hrefWith({ type: v })}
+              {/* Thanh công cụ: lọc theo loại + sắp xếp */}
+              <div className="mt-6">
+                <CommunityFilter
+                  current={type}
+                  counts={countOf}
+                  hrefFor={(v) => hrefWith({ type: v })}
+                />
+                <div className="mt-2.5 flex justify-end">
+                  <CommunitySort
+                    current={sort}
+                    hrefFor={(v) => hrefWith({ sort: v })}
                   />
                 </div>
-                <CommunitySort
-                  current={sort}
-                  hrefFor={(v) => hrefWith({ sort: v })}
-                />
               </div>
 
               {posts.length > 0 ? (
-                <div className="mt-5 space-y-4">
+                <div className="mt-4 space-y-4">
                   {posts.map((p) => (
                     <PostCard
                       key={p.id}
@@ -193,14 +193,16 @@ export default async function PlaceCommunityPage({
                   ))}
                 </div>
               ) : (
-                <div className="mt-8 flex flex-col items-center justify-center py-16 text-center">
+                <div className="mt-4 rounded-2xl border border-dashed border-border/70 bg-card/50 py-14 text-center">
                   <MessagesSquare
-                    className="size-10 text-muted-foreground"
+                    className="mx-auto size-8 text-muted-foreground/60"
                     aria-hidden
                   />
-                  <p className="mt-4 text-muted-foreground">
-                    Chưa có bài nào{type !== "all" ? " ở mục này" : ""}. Hãy là
-                    người mở đầu!
+                  <p className="mt-3 font-medium">
+                    Chưa có bài nào{type !== "all" ? " ở mục này" : ""}
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Hãy là người mở đầu câu chuyện về {place.name}!
                   </p>
                 </div>
               )}

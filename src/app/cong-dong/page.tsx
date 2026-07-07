@@ -1,9 +1,12 @@
-import { MessagesSquare } from "lucide-react";
+import Link from "next/link";
+import { MapPin, MessagesSquare } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { ThreadType } from "@/generated/prisma/enums";
 import { isThreadType, isThreadSort } from "@/lib/community";
 import { getFeed, getTrips } from "@/lib/community-feed";
+import { getHomeProvince } from "@/lib/home-province";
 import { ablyEnabled } from "@/lib/ably";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
@@ -26,7 +29,12 @@ const PER_PAGE = 10;
 export default async function CommunityPage({
   searchParams,
 }: {
-  searchParams: Promise<{ type?: string; sort?: string; page?: string }>;
+  searchParams: Promise<{
+    type?: string;
+    sort?: string;
+    page?: string;
+    near?: string;
+  }>;
 }) {
   const sp = await searchParams;
   const type = sp.type && isThreadType(sp.type) ? sp.type : "all";
@@ -40,9 +48,14 @@ export default async function CommunityPage({
   const isStaff = role === "admin" || role === "editor";
   const rt = ablyEnabled();
 
+  // "Gần bạn": lọc bài ở các điểm đến thuộc tỉnh nhà (chỉ khi đã chọn tỉnh).
+  const homeProvince = await getHomeProvince(currentUserId ?? undefined);
+  const near = sp.near === "1" && !!homeProvince;
+
   const [{ posts, total }, grouped, places, trips, mySale] = await Promise.all([
     getFeed({
       type: type === "all" ? undefined : (type as ThreadType),
+      nearProvince: near ? homeProvince! : undefined,
       sort,
       skip: (page - 1) * PER_PAGE,
       take: PER_PAGE,
@@ -75,13 +88,20 @@ export default async function CommunityPage({
     v === "all" ? totalAll : (grouped.find((g) => g.type === v)?._count._all ?? 0);
 
   const totalPages = Math.ceil(total / PER_PAGE);
-  const hrefWith = (patch: { type?: string; sort?: string; page?: number }) => {
+  const hrefWith = (patch: {
+    type?: string;
+    sort?: string;
+    page?: number;
+    near?: boolean;
+  }) => {
     const params = new URLSearchParams();
     const t = patch.type ?? type;
     const s = patch.sort ?? sort;
     const p = patch.page ?? 1;
+    const n = patch.near ?? near;
     if (t !== "all") params.set("type", t);
     if (s !== "active") params.set("sort", s);
+    if (n) params.set("near", "1");
     if (p > 1) params.set("page", String(p));
     const qs = params.toString();
     return `/cong-dong${qs ? `?${qs}` : ""}`;
@@ -93,18 +113,16 @@ export default async function CommunityPage({
       <RealtimeRefresher channelKey="cong-dong" event="feed:changed" enabled={rt} />
 
       <main className="flex-1">
-        <section className="relative overflow-hidden border-b border-border/50 bg-gradient-to-b from-sky-50 to-background dark:from-sky-950/20">
-          <div className="mx-auto max-w-6xl px-4 pb-7 pt-10 sm:px-6 sm:pb-8 sm:pt-14">
-            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Cộng đồng
-            </h1>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Chia sẻ trải nghiệm, hỏi đáp và rủ nhau đi.
-            </p>
-          </div>
-        </section>
+        <div className="mx-auto max-w-6xl px-4 pt-8 sm:px-6 sm:pt-10">
+          <h1 className="text-2xl font-bold tracking-tight sm:text-[1.75rem]">
+            Cộng đồng
+          </h1>
+          <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-muted-foreground">
+            Chia sẻ trải nghiệm, hỏi đáp trước chuyến đi và rủ nhau ghép đoàn.
+          </p>
+        </div>
 
-        <div className="mx-auto grid max-w-6xl gap-8 px-4 py-6 sm:px-6 sm:py-8 lg:grid-cols-[minmax(0,1fr)_18rem] lg:gap-10">
+        <div className="mx-auto grid max-w-6xl gap-8 px-4 pb-8 pt-5 sm:px-6 sm:pb-10 lg:grid-cols-[minmax(0,1fr)_18rem] lg:gap-10">
           <div className="min-w-0">
           {/* Soạn bài */}
           <PostComposer
@@ -114,19 +132,35 @@ export default async function CommunityPage({
             canPostSale={canPostSale}
           />
 
-          {/* Lọc theo loại + sắp xếp */}
-          <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              <CommunityFilter
-                current={type}
-                counts={countOf}
-                hrefFor={(v) => hrefWith({ type: v })}
+          {/* Thanh công cụ: lọc theo loại + (gần bạn) + sắp xếp */}
+          <div className="mt-6">
+            <CommunityFilter
+              current={type}
+              counts={countOf}
+              hrefFor={(v) => hrefWith({ type: v })}
+            />
+            <div className="mt-2.5 flex flex-wrap items-center justify-between gap-3">
+              {homeProvince ? (
+                <Link
+                  href={hrefWith({ near: !near, page: 1 })}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
+                    near
+                      ? "border-transparent bg-warm/15 text-warm"
+                      : "border-border/60 text-muted-foreground hover:bg-muted",
+                  )}
+                >
+                  <MapPin className="size-3.5" aria-hidden />
+                  Gần bạn · {homeProvince}
+                </Link>
+              ) : (
+                <span />
+              )}
+              <CommunitySort
+                current={sort}
+                hrefFor={(v) => hrefWith({ sort: v })}
               />
             </div>
-            <CommunitySort
-              current={sort}
-              hrefFor={(v) => hrefWith({ sort: v })}
-            />
           </div>
 
           {/* Feed */}
@@ -145,10 +179,14 @@ export default async function CommunityPage({
               ))}
             </div>
           ) : (
-            <div className="mt-8 flex flex-col items-center justify-center py-16 text-center">
-              <MessagesSquare className="size-10 text-muted-foreground" aria-hidden />
-              <p className="mt-4 text-muted-foreground">
-                Chưa có bài nào. Hãy là người mở đầu!
+            <div className="mt-6 rounded-2xl border border-dashed border-border/70 py-14 text-center">
+              <MessagesSquare
+                className="mx-auto size-8 text-muted-foreground/60"
+                aria-hidden
+              />
+              <p className="mt-3 font-medium">Chưa có bài nào ở đây</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Hãy là người mở đầu câu chuyện cho cộng đồng!
               </p>
             </div>
           )}

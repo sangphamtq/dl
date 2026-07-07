@@ -19,13 +19,17 @@ function replySelect(meId: string) {
   } satisfies Prisma.ThreadReplyFindManyArgs;
 }
 
+// Chọn dữ liệu thẻ bài trong feed — KHÔNG kèm cây trả lời (chỉ đếm). Cây reply
+// được lazy-load riêng qua getReplyTree() khi người dùng mở phần bình luận, để
+// feed không kéo hàng trăm reply cho mỗi bài.
 function threadSelect(meId: string) {
-  const r = replySelect(meId);
   return {
     id: true,
     slug: true,
     body: true,
     type: true,
+    departDate: true,
+    slots: true,
     isPinned: true,
     isLocked: true,
     isHidden: true,
@@ -41,15 +45,25 @@ function threadSelect(meId: string) {
     images: { orderBy: { order: "asc" }, select: { url: true, alt: true } },
     _count: { select: { likes: true, replies: true } },
     likes: { where: { userId: meId }, select: { id: true } },
-    replies: {
-      where: { parentId: null },
-      orderBy: { createdAt: "asc" },
-      select: {
-        ...r.select,
-        replies: { orderBy: { createdAt: "asc" }, ...r },
-      },
-    },
   } satisfies Prisma.ThreadSelect;
+}
+
+// Cây trả lời (lồng 1 cấp) của một chủ đề — dùng cho lazy-load ở ReplySection và
+// cho trang permalink (SSR sẵn).
+export async function getReplyTree(
+  threadId: string,
+  currentUserId: string | null,
+): Promise<ReplyNode[]> {
+  const r = replySelect(currentUserId ?? "");
+  const rows = await prisma.threadReply.findMany({
+    where: { threadId, parentId: null },
+    orderBy: { createdAt: "asc" },
+    select: {
+      ...r.select,
+      replies: { orderBy: { createdAt: "asc" }, ...r },
+    },
+  });
+  return (rows as RawReply[]).map(toReplyNode);
 }
 
 type RawReply = {
@@ -81,6 +95,8 @@ type RawThread = {
   slug: string;
   body: string;
   type: string;
+  departDate: Date | null;
+  slots: number | null;
   isPinned: boolean;
   isLocked: boolean;
   isHidden: boolean;
@@ -94,15 +110,17 @@ type RawThread = {
   images: { url: string; alt: string | null }[];
   _count: { likes: number; replies: number };
   likes: { id: string }[];
-  replies: RawReply[];
 };
 
+// replies để rỗng: feed không tải cây reply (lazy-load qua getReplyTree).
 function shape(t: RawThread): PostData & { isHidden: boolean } {
   return {
     id: t.id,
     slug: t.slug,
     body: t.body,
     type: t.type,
+    departDate: t.departDate,
+    slots: t.slots,
     isPinned: t.isPinned,
     isLocked: t.isLocked,
     isHidden: t.isHidden,
@@ -114,13 +132,14 @@ function shape(t: RawThread): PostData & { isHidden: boolean } {
     likeCount: t._count.likes,
     likedByMe: t.likes.length > 0,
     replyCount: t._count.replies,
-    replies: t.replies.map(toReplyNode),
+    replies: [],
   };
 }
 
 // Feed: danh sách bài (ghim trước, rồi mới nhất theo hoạt động).
 export async function getFeed(opts: {
   placeId?: string;
+  nearProvince?: string; // lọc bài ở các điểm đến thuộc tỉnh này ("Gần bạn")
   type?: ThreadType;
   sort?: "active" | "new";
   skip?: number;
@@ -131,6 +150,9 @@ export async function getFeed(opts: {
   const where: Prisma.ThreadWhereInput = {
     isHidden: false,
     ...(opts.placeId ? { placeId: opts.placeId } : {}),
+    ...(opts.nearProvince
+      ? { place: { is: { provinceName: opts.nearProvince } } }
+      : {}),
     ...(opts.type ? { type: opts.type } : {}),
   };
   // 'new' = theo ngày tạo; 'active' (mặc định) = theo cập nhật gần nhất.
@@ -163,6 +185,8 @@ export async function getTrips(opts: { placeId?: string; take?: number }) {
       slug: true,
       body: true,
       createdAt: true,
+      departDate: true,
+      slots: true,
       author: { select: { name: true } },
       place: { select: { name: true } },
     },
@@ -179,5 +203,9 @@ export async function getThread(
     where: { slug },
     select: threadSelect(meId),
   });
-  return row ? shape(row as RawThread) : null;
+  if (!row) return null;
+  const post = shape(row as RawThread);
+  // Permalink: tải sẵn cây trả lời để SSR (ReplySection nhận preloaded).
+  post.replies = await getReplyTree(post.id, currentUserId);
+  return post;
 }

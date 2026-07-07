@@ -80,6 +80,24 @@ enum NotificationType {
   blog_reply // trả lời bình luận blog của bạn
   sale_approved // hồ sơ CTV được duyệt
   sale_rejected // hồ sơ CTV bị từ chối
+  thread_moderated // bài/bình luận cộng đồng của bạn bị staff ẩn/khóa
+}
+
+// Lý do báo cáo một bài/bình luận cộng đồng.
+enum ContentReportReason {
+  spam // spam / quảng cáo
+  scam // lừa đảo / lừa cọc
+  offensive // xúc phạm / thù ghét
+  offtopic // lạc chủ đề
+  wrong_info // thông tin sai lệch
+  other // khác (kèm ghi chú)
+}
+
+// Trạng thái xử lý báo cáo nội dung. pending → actioned | dismissed.
+enum ContentReportStatus {
+  pending // chờ staff xử lý
+  actioned // đã xử lý (ẩn/khóa/xóa nội dung)
+  dismissed // bỏ qua (không vi phạm)
 }
 
 // Cảm nhận chung của một review điểm đến (chọn 1) — thang 4 mức thay cho số sao.
@@ -219,6 +237,9 @@ model User {
 
   saleProfile   SaleProfile?  @relation("SaleOwner") // hồ sơ CTV (nếu có) — đăng ký làm người bán
   salesReviewed SaleProfile[] @relation("SaleReviewer") // hồ sơ CTV mình đã duyệt (staff)
+
+  reportsMade     ContentReport[] @relation("ReportsMade") // báo cáo nội dung đã gửi
+  reportsReviewed ContentReport[] @relation("ReportsReviewed") // báo cáo mình đã xử lý (staff)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -897,6 +918,10 @@ model Thread {
 
   tags String[] @default([])
 
+  // Chỉ dùng cho type=trip (tìm bạn đồng hành) — giúp lọc/nhắc chuyến sắp đi.
+  departDate DateTime? // ngày khởi hành dự kiến
+  slots      Int? // số chỗ / số người cần tìm
+
   isPinned Boolean @default(false) // staff ghim lên đầu
   isLocked Boolean @default(false) // khóa không cho trả lời
   isHidden Boolean @default(false) // staff ẩn khỏi công khai
@@ -907,6 +932,7 @@ model Thread {
   replies ThreadReply[]
   likes   ThreadLike[]
   images  Image[] // ảnh đính kèm (bài kiểu Facebook)
+  reports ContentReport[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -929,6 +955,7 @@ model ThreadReply {
   parent   ThreadReply?  @relation("ThreadReplyChildren", fields: [parentId], references: [id], onDelete: Cascade)
   replies  ThreadReply[] @relation("ThreadReplyChildren")
   likes    ThreadLike[]
+  reports  ContentReport[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -936,6 +963,37 @@ model ThreadReply {
   @@index([threadId])
   @@index([parentId])
   @@index([authorId])
+}
+
+// Báo cáo một bài (Thread) HOẶC một trả lời (ThreadReply) vi phạm — do người dùng
+// gửi, staff xử lý ở CMS. Exclusive arc: đúng 1 trong threadId/replyId được set.
+// Mỗi người chỉ báo cáo một đích tối đa 1 lần (unique).
+model ContentReport {
+  id     String              @id @default(cuid())
+  reason ContentReportReason
+  note   String? // mô tả thêm (bắt buộc khi reason=other)
+  status ContentReportStatus @default(pending)
+
+  reporterId String
+  reporter   User   @relation("ReportsMade", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  threadId String?
+  thread   Thread?      @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  replyId  String?
+  reply    ThreadReply? @relation(fields: [replyId], references: [id], onDelete: Cascade)
+
+  reviewedById String? // staff đã xử lý
+  reviewedBy   User?   @relation("ReportsReviewed", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewNote   String? // ghi chú xử lý (nội bộ)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([threadId, reporterId])
+  @@unique([replyId, reporterId])
+  @@index([status])
+  @@index([threadId])
+  @@index([replyId])
 }
 
 // Thích/hữu ích cho chủ đề HOẶC trả lời (exclusive arc: đúng 1 trong 2 FK).

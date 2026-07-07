@@ -45,7 +45,7 @@ export default async function ThreadPermalinkPage({
 
       <main className="flex-1">
         <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6 sm:py-10">
-          <nav className="mb-5 flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
+          <nav className="mb-5 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
             <Link href="/" className="hover:text-foreground">
               Trang chủ
             </Link>
@@ -53,6 +53,8 @@ export default async function ThreadPermalinkPage({
             <Link href="/cong-dong" className="hover:text-foreground">
               Cộng đồng
             </Link>
+            <ChevronRight className="size-3.5" aria-hidden />
+            <span className="text-foreground/70">Bài viết</span>
           </nav>
 
           <PostCard
@@ -63,6 +65,8 @@ export default async function ThreadPermalinkPage({
             realtimeEnabled={ablyEnabled()}
             showPlace
             defaultOpen
+            repliesPreloaded
+            deleteRedirectTo="/cong-dong"
           />
         </div>
       </main>

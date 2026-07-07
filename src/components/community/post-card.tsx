@@ -4,19 +4,21 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import {
   BadgeCheck,
+  CalendarDays,
   Heart,
   Lock,
   MapPin,
   MessageCircle,
   Pin,
   Share2,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { initials, timeAgo } from "@/lib/format";
 import { renderPostBody } from "@/lib/post-format";
 import { toggleThreadLike } from "@/app/cong-dong/actions";
 import { ThreadTypeBadge } from "./thread-type-badge";
-import { ThreadDeleteButton } from "./thread-delete-button";
+import { PostMenu } from "./post-menu";
 import { PhotoGrid, type PostImage } from "./photo-grid";
 import { ReplySection, type ReplyNode } from "./reply-section";
 
@@ -25,6 +27,8 @@ export type PostData = {
   slug: string;
   body: string;
   type: string;
+  departDate?: Date | null;
+  slots?: number | null;
   isPinned: boolean;
   isLocked: boolean;
   createdAt: Date;
@@ -49,6 +53,8 @@ export function PostCard({
   realtimeEnabled,
   showPlace = true,
   defaultOpen = false,
+  repliesPreloaded = false,
+  deleteRedirectTo,
 }: {
   post: PostData;
   currentUserId: string | null;
@@ -57,14 +63,32 @@ export function PostCard({
   realtimeEnabled: boolean;
   showPlace?: boolean;
   defaultOpen?: boolean;
+  repliesPreloaded?: boolean;
+  deleteRedirectTo?: string; // điều hướng sau khi xóa (trang permalink)
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const [liked, setLiked] = useState(post.likedByMe);
   const [likeCount, setLikeCount] = useState(post.likeCount);
   const [, startLike] = useTransition();
   const [copied, setCopied] = useState(false);
-  const mayDelete =
-    isStaff || (!!currentUserId && currentUserId === post.authorId);
+  const isOwn = !!currentUserId && currentUserId === post.authorId;
+  const mayDelete = isStaff || isOwn;
+  const isCtv = post.author.saleProfile?.status === "approved";
+
+  const trip =
+    post.type === "trip" && (post.departDate || post.slots != null)
+      ? {
+          date: post.departDate
+            ? new Date(post.departDate).toLocaleDateString("vi-VN", {
+                weekday: "short",
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+              })
+            : null,
+          slots: post.slots ?? null,
+        }
+      : null;
 
   const onLike = () => {
     const next = !liked;
@@ -95,9 +119,9 @@ export function PostCard({
   };
 
   return (
-    <article className="rounded-2xl border border-border/60 bg-card p-4 transition-colors hover:border-border sm:p-5">
+    <article className="overflow-hidden rounded-2xl border border-border/60 bg-card p-4 shadow-sm shadow-black/[0.02] transition-shadow hover:shadow-lg hover:shadow-black/5 sm:p-5">
       {/* Header */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-start gap-3">
         <span
           aria-hidden
           className="grid size-10 shrink-0 place-items-center rounded-full bg-primary/10 text-sm font-semibold text-primary"
@@ -107,9 +131,9 @@ export function PostCard({
         <div className="min-w-0 flex-1">
           <p className="flex items-center gap-1.5 truncate text-sm font-semibold">
             {post.author.name ?? "Ẩn danh"}
-            {post.author.saleProfile?.status === "approved" && (
+            {isCtv && (
               <Link
-                href={`/sale/${post.author.saleProfile.slug}`}
+                href={`/sale/${post.author.saleProfile!.slug}`}
                 className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary"
                 title="Cộng tác viên đã xác minh"
               >
@@ -118,27 +142,73 @@ export function PostCard({
               </Link>
             )}
           </p>
-          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-            <Link href={`/cong-dong/${post.slug}`} className="hover:underline">
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
+            <Link
+              href={`/cong-dong/${post.slug}`}
+              className="hover:text-foreground hover:underline"
+            >
               {timeAgo(post.createdAt)}
             </Link>
-            {post.isPinned && <Pin className="size-3 text-primary" aria-hidden />}
-            {post.isLocked && <Lock className="size-3" aria-hidden />}
+            {showPlace && post.place && (
+              <>
+                <Dot />
+                <Link
+                  href={`/diem-den/${post.place.slug}`}
+                  className="inline-flex items-center gap-0.5 hover:text-foreground"
+                >
+                  <MapPin className="size-3" aria-hidden />
+                  {post.place.name}
+                </Link>
+              </>
+            )}
+            {post.isPinned && (
+              <span className="inline-flex items-center gap-0.5 text-primary">
+                <Dot />
+                <Pin className="size-3" aria-hidden />
+                Ghim
+              </span>
+            )}
+            {post.isLocked && (
+              <span className="inline-flex items-center gap-0.5">
+                <Dot />
+                <Lock className="size-3" aria-hidden />
+                Đã khóa
+              </span>
+            )}
           </div>
         </div>
-        <ThreadTypeBadge type={post.type} />
-        {mayDelete && <ThreadDeleteButton threadId={post.id} />}
+        <div className="flex shrink-0 items-center gap-1">
+          <ThreadTypeBadge type={post.type} />
+          {(mayDelete || (isAuthed && !isOwn)) && (
+            <PostMenu
+              threadId={post.id}
+              canReport={isAuthed && !isOwn}
+              canDelete={mayDelete}
+              redirectTo={deleteRedirectTo}
+            />
+          )}
+        </div>
       </div>
 
-      {/* Điểm đến */}
-      {showPlace && post.place && (
-        <Link
-          href={`/diem-den/${post.place.slug}`}
-          className="mt-2 inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-0.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <MapPin className="size-3.5" aria-hidden />
-          {post.place.name}
-        </Link>
+      {/* Chuyến ghép đoàn — dải nổi cho bài "tìm bạn đồng hành" */}
+      {trip && (
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-xl bg-primary/5 px-3.5 py-2.5 text-sm ring-1 ring-inset ring-primary/15">
+          <span className="inline-flex items-center gap-1.5 font-medium text-primary">
+            <Users className="size-4" aria-hidden />
+            Đang ghép đoàn
+          </span>
+          {trip.date && (
+            <span className="inline-flex items-center gap-1.5 text-foreground/80">
+              <CalendarDays className="size-4 text-muted-foreground" aria-hidden />
+              {trip.date}
+            </span>
+          )}
+          {trip.slots != null && (
+            <span className="text-foreground/80">
+              Còn <b className="text-primary">{trip.slots}</b> chỗ
+            </span>
+          )}
+        </div>
       )}
 
       {/* Nội dung */}
@@ -156,45 +226,45 @@ export function PostCard({
         </div>
       )}
 
-      {/* Thanh tương tác kiểu Facebook: 👍 số · 💬 số · ↗ + cụm cảm xúc */}
-      <div className="mt-3 flex items-center justify-between border-t border-border/60 pt-1">
-        <div className="flex items-center">
-          {isAuthed ? (
-            <CountButton
-              onClick={onLike}
-              liked={liked}
-              icon={Heart}
-              value={likeCount}
-              label="Thích"
-            />
-          ) : (
-            <CountButton
-              href={`/login?callbackUrl=/cong-dong/${post.slug}`}
-              icon={Heart}
-              value={likeCount}
-              label="Thích"
-            />
-          )}
-          <Sep />
-          <CountButton
-            onClick={() => setOpen((v) => !v)}
-            icon={MessageCircle}
-            value={post.replyCount}
-            label="Bình luận"
-          />
-          <Sep />
-          <CountButton
-            onClick={onShare}
-            icon={Share2}
-            value={0}
-            label={copied ? "Đã chép" : "Chia sẻ"}
-          />
-        </div>
-        {likeCount > 0 && (
-          <span className="mr-1 grid size-[18px] shrink-0 place-items-center rounded-full bg-red-500">
-            <Heart className="size-2.5 fill-white text-white" aria-hidden />
-          </span>
+      {/* Thanh tương tác — tràn sát mép trái/phải/đáy; hover phủ tới đáy card.
+          Khi mở bình luận thì không tràn đáy để chừa chỗ cho phần trả lời. */}
+      <div
+        className={cn(
+          "mt-2 flex items-center",
+          open
+            ? "-mx-4 border-t border-border/50 pt-0.5 sm:-mx-5"
+            : "-mx-4 -mb-4 sm:-mx-5 sm:-mb-5",
         )}
+      >
+        {isAuthed ? (
+          <CountButton
+            onClick={onLike}
+            liked={liked}
+            icon={Heart}
+            value={likeCount}
+            label="Thích"
+          />
+        ) : (
+          <CountButton
+            href={`/login?callbackUrl=/cong-dong/${post.slug}`}
+            icon={Heart}
+            value={likeCount}
+            label="Thích"
+          />
+        )}
+        <CountButton
+          onClick={() => setOpen((v) => !v)}
+          icon={MessageCircle}
+          value={post.replyCount}
+          label="Bình luận"
+          active={open}
+        />
+        <CountButton
+          onClick={onShare}
+          icon={Share2}
+          value={0}
+          label={copied ? "Đã chép" : "Chia sẻ"}
+        />
       </div>
 
       {/* Bình luận */}
@@ -205,7 +275,7 @@ export function PostCard({
             threadSlug={post.slug}
             locked={post.isLocked}
             replies={post.replies}
-            total={post.replyCount}
+            preloaded={repliesPreloaded}
             currentUserId={currentUserId}
             isStaff={isStaff}
             isAuthed={isAuthed}
@@ -217,7 +287,12 @@ export function PostCard({
   );
 }
 
-// Nút tương tác kiểu Facebook: icon + số (hoặc nhãn khi chưa có), hover nền xám.
+// Middot ngăn cách meta.
+function Dot() {
+  return <span aria-hidden>·</span>;
+}
+
+// Nút tương tác: icon + số (hoặc nhãn khi chưa có), hover nền xám.
 function CountButton({
   icon: Icon,
   value,
@@ -225,6 +300,7 @@ function CountButton({
   onClick,
   href,
   liked = false,
+  active = false,
 }: {
   icon: typeof Heart;
   value: number;
@@ -232,14 +308,15 @@ function CountButton({
   onClick?: () => void;
   href?: string;
   liked?: boolean;
+  active?: boolean;
 }) {
   const cls = cn(
-    "inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors hover:bg-muted",
-    liked ? "text-red-500" : "text-muted-foreground",
+    "inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-[13px] font-medium transition-colors hover:bg-muted",
+    liked ? "text-warm" : active ? "text-primary" : "text-muted-foreground",
   );
   const content = (
     <>
-      <Icon className={cn("size-[18px]", liked && "fill-current")} aria-hidden />
+      <Icon className={cn("size-4", liked && "fill-current")} aria-hidden />
       {value > 0 ? value.toLocaleString("vi-VN") : label}
     </>
   );
@@ -252,9 +329,4 @@ function CountButton({
       {content}
     </button>
   );
-}
-
-// Vạch ngăn dọc giữa các nút (kiểu Facebook).
-function Sep() {
-  return <span aria-hidden className="mx-1 h-5 w-px bg-border" />;
 }

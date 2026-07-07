@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { slugify, RESERVED_SLUGS } from "@/lib/slug";
 import { cleanHtml } from "@/lib/sanitize";
 import { isThreadType, type ThreadTypeValue } from "@/lib/community";
-import { ThreadType } from "@/generated/prisma/enums";
+import { ThreadType, ContentReportReason } from "@/generated/prisma/enums";
 import {
   publishEvent,
   threadChannel,
@@ -14,9 +14,55 @@ import {
   placeFeedChannel,
 } from "@/lib/ably";
 import { notify, notifyLike, removeLikeNotif } from "@/lib/notifications";
+import { getReplyTree } from "@/lib/community-feed";
+import type { ReplyNode } from "@/components/community/reply-section";
 
 const STAFF = ["admin", "editor"];
 const MAX_REPLY = 5000;
+
+// ── Chống spam: giới hạn tần suất theo user (staff được bỏ qua) ──────────────
+// Query-based, không cần bảng riêng: đếm theo createdAt.
+const THREAD_COOLDOWN_MS = 20_000; // tối thiểu giữa 2 bài
+const THREAD_PER_HOUR = 8;
+const REPLY_COOLDOWN_MS = 5_000; // tối thiểu giữa 2 trả lời
+const REPLY_PER_HOUR = 40;
+
+// Trả về thông báo lỗi nếu vượt giới hạn, ngược lại null.
+async function rateLimit(
+  kind: "thread" | "reply",
+  userId: string,
+  role: string,
+): Promise<string | null> {
+  if (STAFF.includes(role)) return null;
+  const now = Date.now();
+  const cooldown = kind === "thread" ? THREAD_COOLDOWN_MS : REPLY_COOLDOWN_MS;
+  const perHour = kind === "thread" ? THREAD_PER_HOUR : REPLY_PER_HOUR;
+
+  const last =
+    kind === "thread"
+      ? await prisma.thread.findFirst({
+          where: { authorId: userId },
+          orderBy: { createdAt: "desc" },
+          select: { createdAt: true },
+        })
+      : await prisma.threadReply.findFirst({
+          where: { authorId: userId },
+          orderBy: { createdAt: "desc" },
+          select: { createdAt: true },
+        });
+  if (last && now - last.createdAt.getTime() < cooldown)
+    return "Bạn thao tác hơi nhanh, đợi vài giây rồi thử lại nhé.";
+
+  const since = new Date(now - 3_600_000);
+  const count =
+    kind === "thread"
+      ? await prisma.thread.count({ where: { authorId: userId, createdAt: { gte: since } } })
+      : await prisma.threadReply.count({ where: { authorId: userId, createdAt: { gte: since } } });
+  if (count >= perHour)
+    return "Bạn đã đăng khá nhiều trong một giờ qua. Vui lòng thử lại sau.";
+
+  return null;
+}
 
 export type ActionResult<T = undefined> =
   | ({ ok: true } & (T extends undefined ? object : { data: T }))
@@ -53,6 +99,8 @@ export async function createThread(input: {
   type: string;
   placeId?: string | null;
   imageUrls?: string[];
+  departDate?: string | null; // chỉ type=trip (ISO date, vd "2026-08-15")
+  slots?: number | null; // chỉ type=trip
 }): Promise<ActionResult<{ slug: string }>> {
   let user;
   try {
@@ -60,6 +108,9 @@ export async function createThread(input: {
   } catch {
     return { ok: false, error: "Bạn cần đăng nhập để đăng bài." };
   }
+
+  const rateErr = await rateLimit("thread", user.id, user.role);
+  if (rateErr) return { ok: false, error: rateErr };
 
   const body = cleanHtml(input.body || "").trim();
   const textLen = body.replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").trim().length;
@@ -104,6 +155,35 @@ export async function createThread(input: {
   const slugText = body.replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ");
   const slug = await uniqueThreadSlug(slugText || "bai-viet");
 
+  // Trip: ngày khởi hành (không nhận ngày quá khứ) + số chỗ. Bỏ qua nếu type khác.
+  let departDate: Date | null = null;
+  let slots: number | null = null;
+  if (type === "trip") {
+    if (input.departDate) {
+      const d = new Date(input.departDate);
+      if (!Number.isNaN(d.getTime())) departDate = d;
+    }
+    if (input.slots != null) {
+      const n = Math.floor(Number(input.slots));
+      if (Number.isFinite(n) && n > 0) slots = Math.min(n, 99);
+    }
+  }
+
+  // Chống trùng (double-submit): bỏ qua nếu vừa đăng bài y hệt trong 10s.
+  const dupThread = await prisma.thread.findFirst({
+    where: {
+      authorId: user.id,
+      body,
+      type: type as ThreadType,
+      createdAt: { gte: new Date(Date.now() - 10_000) },
+    },
+    select: { slug: true },
+  });
+  if (dupThread) {
+    revalidatePath("/cong-dong");
+    return { ok: true, data: { slug: dupThread.slug } };
+  }
+
   await prisma.thread.create({
     data: {
       slug,
@@ -111,6 +191,8 @@ export async function createThread(input: {
       type: type as ThreadType,
       authorId: user.id,
       placeId,
+      departDate,
+      slots,
       lastActivityAt: new Date(),
       images: {
         create: imageUrls.map((url, i) => ({ url, order: i })),
@@ -173,6 +255,9 @@ export async function addReply(input: {
   if (content.length > MAX_REPLY)
     return { ok: false, error: `Trả lời tối đa ${MAX_REPLY} ký tự.` };
 
+  const rateErr = await rateLimit("reply", user.id, user.role);
+  if (rateErr) return { ok: false, error: rateErr };
+
   const thread = await prisma.thread.findUnique({
     where: { id: input.threadId },
     select: { isLocked: true, authorId: true, place: { select: { slug: true } } },
@@ -192,6 +277,23 @@ export async function addReply(input: {
       return { ok: false, error: "Trả lời gốc không hợp lệ." };
     parentId = parent.parentId ?? input.parentId;
     parentAuthorId = parent.authorId;
+  }
+
+  // Chống trùng (double-submit): nếu vừa gửi y hệt trong 10s thì bỏ qua, coi như
+  // đã ghi nhận — tránh tạo 2 bình luận giống nhau.
+  const dup = await prisma.threadReply.findFirst({
+    where: {
+      threadId: input.threadId,
+      authorId: user.id,
+      content,
+      parentId,
+      createdAt: { gte: new Date(Date.now() - 10_000) },
+    },
+    select: { id: true },
+  });
+  if (dup) {
+    revalidatePath(`/cong-dong/${input.threadSlug}`);
+    return { ok: true };
   }
 
   await prisma.threadReply.create({
@@ -332,4 +434,75 @@ export async function toggleReplyLike(
   const count = await prisma.threadLike.count({ where: { replyId } });
   revalidatePath(`/cong-dong/${threadSlug}`);
   return { ok: true, data: { liked: !existing, count } };
+}
+
+// Lazy-load cây trả lời của một chủ đề (feed không tải sẵn để nhẹ payload).
+export async function fetchReplies(threadId: string): Promise<ReplyNode[]> {
+  const session = await auth();
+  return getReplyTree(threadId, session?.user?.id ?? null);
+}
+
+const REPORT_REASONS = new Set<string>([
+  "spam",
+  "scam",
+  "offensive",
+  "offtopic",
+  "wrong_info",
+  "other",
+]);
+
+// Báo cáo một bài (threadId) HOẶC một trả lời (replyId) vi phạm. Mỗi người báo
+// cáo một đích tối đa 1 lần (unique) — báo lại coi như đã ghi nhận.
+export async function reportContent(input: {
+  threadId?: string | null;
+  replyId?: string | null;
+  reason: string;
+  note?: string | null;
+}): Promise<ActionResult> {
+  let user;
+  try {
+    user = await requireUser();
+  } catch {
+    return { ok: false, error: "Bạn cần đăng nhập để báo cáo." };
+  }
+
+  const isThread = !!input.threadId;
+  const isReply = !!input.replyId;
+  if (isThread === isReply)
+    return { ok: false, error: "Báo cáo không hợp lệ." };
+  if (!REPORT_REASONS.has(input.reason))
+    return { ok: false, error: "Vui lòng chọn lý do báo cáo." };
+  const note = (input.note ?? "").trim().slice(0, 1000) || null;
+  if (input.reason === "other" && !note)
+    return { ok: false, error: "Vui lòng mô tả lý do khi chọn \"Khác\"." };
+
+  // Đích tồn tại? (đồng thời lấy tác giả để chặn tự báo cáo mình)
+  const authorId = isThread
+    ? (await prisma.thread.findUnique({
+        where: { id: input.threadId! },
+        select: { authorId: true },
+      }))?.authorId
+    : (await prisma.threadReply.findUnique({
+        where: { id: input.replyId! },
+        select: { authorId: true },
+      }))?.authorId;
+  if (!authorId) return { ok: false, error: "Không tìm thấy nội dung." };
+  if (authorId === user.id)
+    return { ok: false, error: "Không thể tự báo cáo nội dung của mình." };
+
+  try {
+    await prisma.contentReport.create({
+      data: {
+        reason: input.reason as ContentReportReason,
+        note,
+        reporterId: user.id,
+        threadId: input.threadId ?? null,
+        replyId: input.replyId ?? null,
+      },
+    });
+  } catch {
+    // Trùng unique = đã báo cáo trước đó → coi như thành công (idempotent).
+    return { ok: true };
+  }
+  return { ok: true };
 }

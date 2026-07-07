@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { initials } from "@/lib/format";
 import { useUploadThing } from "@/lib/uploadthing";
 import { COMPOSER_THREAD_TYPES, type ThreadTypeValue } from "@/lib/community";
+import { threadTypeIcon } from "./thread-type-badge";
 import { createThread } from "@/app/cong-dong/actions";
 
 export type PlaceOption = { id: string; name: string };
@@ -46,10 +47,13 @@ export function PostComposer({
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
+  const submitting = useRef(false); // khoá chống đăng trùng (double-click)
   const [expanded, setExpanded] = useState(false);
   const [html, setHtml] = useState("");
   const [type, setType] = useState<ThreadTypeValue>(defaultType);
   const [placeId, setPlaceId] = useState(fixedPlaceId ?? "");
+  const [departDate, setDepartDate] = useState("");
+  const [slots, setSlots] = useState("");
   const [urls, setUrls] = useState<string[]>([]);
   const [showEmoji, setShowEmoji] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -85,6 +89,8 @@ export function PostComposer({
     setHtml("");
     setUrls([]);
     setType(defaultType);
+    setDepartDate("");
+    setSlots("");
     setShowEmoji(false);
     setExpanded(false);
     setError(null);
@@ -111,19 +117,27 @@ export function PostComposer({
   };
 
   const submit = () => {
+    if (submitting.current) return;
+    submitting.current = true;
     setError(null);
     startTransition(async () => {
-      const res = await createThread({
-        body: html,
-        type,
-        placeId: placeId || null,
-        imageUrls: urls,
-      });
-      if (res.ok) {
-        reset();
-        router.refresh();
-      } else {
-        setError(res.error);
+      try {
+        const res = await createThread({
+          body: html,
+          type,
+          placeId: placeId || null,
+          imageUrls: urls,
+          departDate: type === "trip" && departDate ? departDate : null,
+          slots: type === "trip" && slots ? Number(slots) : null,
+        });
+        if (res.ok) {
+          reset();
+          router.refresh();
+        } else {
+          setError(res.error);
+        }
+      } finally {
+        submitting.current = false;
       }
     });
   };
@@ -154,24 +168,6 @@ export function PostComposer({
             Chia sẻ trải nghiệm, hỏi đáp hay rủ nhau đi…
           </button>
         </div>
-        <div className="mt-2 flex items-center gap-1 border-t border-border/50 pt-2">
-          <button
-            type="button"
-            onClick={open}
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-primary"
-          >
-            <ImagePlus className="size-4" aria-hidden />
-            Ảnh
-          </button>
-          <button
-            type="button"
-            onClick={open}
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-primary"
-          >
-            <Smile className="size-4" aria-hidden />
-            Cảm xúc
-          </button>
-        </div>
       </div>
     );
   }
@@ -182,7 +178,7 @@ export function PostComposer({
 
   return (
     <div className="rounded-2xl border border-border/60 bg-card p-4">
-      {/* Người đăng + loại */}
+      {/* Người đăng */}
       <div className="flex items-center gap-3">
         <span
           aria-hidden
@@ -194,18 +190,32 @@ export function PostComposer({
           <p className="truncate text-sm font-semibold leading-tight">
             {currentUserName ?? "Bạn"}
           </p>
-          <select
-            value={type}
-            onChange={(e) => setType(e.target.value as ThreadTypeValue)}
-            className="mt-0.5 rounded-md bg-muted/60 px-2 py-0.5 text-xs font-medium text-foreground outline-none transition-colors hover:bg-muted focus:ring-2 focus:ring-primary/15"
-          >
-            {typeOptions.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
-              </option>
-            ))}
-          </select>
+          <p className="text-xs text-muted-foreground">Đăng công khai</p>
         </div>
+      </div>
+
+      {/* Chọn loại bài — pill có icon */}
+      <div className="mt-3 flex gap-1.5 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {typeOptions.map((t) => {
+          const Icon = threadTypeIcon(t.value);
+          const active = type === t.value;
+          return (
+            <button
+              key={t.value}
+              type="button"
+              onClick={() => setType(t.value as ThreadTypeValue)}
+              className={cn(
+                "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors",
+                active
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground",
+              )}
+            >
+              <Icon className="size-3.5" aria-hidden />
+              {t.label}
+            </button>
+          );
+        })}
       </div>
 
       {/* Ô nhập WYSIWYG */}
@@ -260,6 +270,33 @@ export function PostComposer({
             </option>
           ))}
         </select>
+      )}
+
+      {/* Bài "Tìm bạn đồng hành": ngày khởi hành + số chỗ (tùy chọn) */}
+      {type === "trip" && (
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
+            📅 Ngày khởi hành
+            <input
+              type="date"
+              value={departDate}
+              onChange={(e) => setDepartDate(e.target.value)}
+              className="rounded-lg border border-border/60 bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
+            👥 Số chỗ cần tìm
+            <input
+              type="number"
+              min={1}
+              max={99}
+              value={slots}
+              onChange={(e) => setSlots(e.target.value)}
+              placeholder="vd 2"
+              className="rounded-lg border border-border/60 bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/15"
+            />
+          </label>
+        </div>
       )}
 
       {error && <p className="mt-2 text-xs text-destructive">{error}</p>}

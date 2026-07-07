@@ -9,19 +9,27 @@ import {
 import { cn } from "@/lib/utils";
 import { THREAD_TYPE_LABELS } from "@/lib/community";
 
-const ICONS: Record<string, LucideIcon> = {
-  share: Sparkles,
-  question: HelpCircle,
-  trip: Users,
-  discussion: MessageSquare,
-  sale: Tag,
+export type ThreadTypeMeta = {
+  Icon: LucideIcon;
+  /** màu icon nhấn theo intent — pill vẫn trung tính để không cầu vồng */
+  accent: string;
 };
 
-export const threadTypeIcon = (type: string): LucideIcon =>
-  ICONS[type] ?? MessageSquare;
+export const THREAD_TYPE_META: Record<string, ThreadTypeMeta> = {
+  share: { Icon: Sparkles, accent: "text-warm" },
+  question: { Icon: HelpCircle, accent: "text-sky-600 dark:text-sky-400" },
+  trip: { Icon: Users, accent: "text-primary" },
+  discussion: { Icon: MessageSquare, accent: "text-muted-foreground" },
+  sale: { Icon: Tag, accent: "text-primary" },
+};
 
-// Nhãn loại bài — trung tính (nền muted), phân biệt bằng icon.
-// Riêng "sale" (rao dịch vụ) tô tông primary để nổi bật.
+export const threadTypeMeta = (type: string): ThreadTypeMeta =>
+  THREAD_TYPE_META[type] ?? THREAD_TYPE_META.discussion;
+
+export const threadTypeIcon = (type: string): LucideIcon =>
+  threadTypeMeta(type).Icon;
+
+// Nhãn loại bài — pill trung tính, icon mang màu intent (kín đáo).
 export function ThreadTypeBadge({
   type,
   className,
@@ -29,18 +37,15 @@ export function ThreadTypeBadge({
   type: string;
   className?: string;
 }) {
-  const Icon = ICONS[type] ?? MessageSquare;
+  const { Icon, accent } = threadTypeMeta(type);
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium",
-        type === "sale"
-          ? "bg-primary/10 text-primary"
-          : "bg-muted text-muted-foreground",
+        "inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground",
         className,
       )}
     >
-      <Icon className="size-3.5" aria-hidden />
+      <Icon className={cn("size-3.5", accent)} aria-hidden />
       {THREAD_TYPE_LABELS[type] ?? type}
     </span>
   );

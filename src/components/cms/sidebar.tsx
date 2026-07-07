@@ -15,6 +15,7 @@ import {
   Bus,
   Newspaper,
   MessageSquareText,
+  MessagesSquare,
   BadgeCheck,
   ShieldAlert,
   Image as ImageIcon,
@@ -78,6 +79,7 @@ const NAV: NavGroup[] = [
   {
     label: "Cộng đồng",
     items: [
+      { href: "/cms/community", label: "Thảo luận", icon: MessagesSquare },
       { href: "/cms/reviews", label: "Đánh giá", icon: MessageSquareText },
     ],
   },

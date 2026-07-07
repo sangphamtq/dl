@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Lock, MessageCircle, Send } from "lucide-react";
+import { Lock, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { initials, timeAgo } from "@/lib/format";
-import { addReply, deleteReply } from "@/app/cong-dong/actions";
+import { addReply, deleteReply, fetchReplies } from "@/app/cong-dong/actions";
 import { ThreadLikeButton } from "./thread-like-button";
+import { ReportButton } from "./report-button";
 
 export type ReplyNode = {
   id: string;
@@ -41,6 +42,7 @@ function ReplyForm({
   autoFocus,
   placeholder,
   onDone,
+  onSubmitted,
 }: {
   threadId: string;
   threadSlug: string;
@@ -48,24 +50,32 @@ function ReplyForm({
   autoFocus?: boolean;
   placeholder?: string;
   onDone?: () => void;
+  onSubmitted?: () => void;
 }) {
-  const router = useRouter();
   const [value, setValue] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  // Khoá đồng bộ chống gửi trùng (state `pending` không cập nhật kịp trong 1 handler).
+  const submitting = useRef(false);
 
   const submit = () => {
+    if (submitting.current) return;
     const content = value.trim();
     if (!content) return;
+    submitting.current = true;
     setError(null);
     startTransition(async () => {
-      const res = await addReply({ threadId, threadSlug, content, parentId });
-      if (res.ok) {
-        setValue("");
-        onDone?.();
-        router.refresh();
-      } else {
-        setError(res.error);
+      try {
+        const res = await addReply({ threadId, threadSlug, content, parentId });
+        if (res.ok) {
+          setValue("");
+          onDone?.();
+          onSubmitted?.();
+        } else {
+          setError(res.error);
+        }
+      } finally {
+        submitting.current = false;
       }
     });
   };
@@ -79,7 +89,8 @@ function ReplyForm({
           autoFocus={autoFocus}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
+            // Bỏ qua Enter khi đang gõ IME (tiếng Việt) để không gửi non.
+            if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
               e.preventDefault();
               submit();
             }
@@ -121,6 +132,7 @@ function ReplyItem({
   isAuthed,
   locked,
   isChild,
+  onChanged,
 }: {
   reply: ReplyNode;
   threadId: string;
@@ -130,18 +142,18 @@ function ReplyItem({
   isAuthed: boolean;
   locked: boolean;
   isChild?: boolean;
+  onChanged: () => void;
 }) {
-  const router = useRouter();
   const [replying, setReplying] = useState(false);
   const [pending, startTransition] = useTransition();
-  const mayDelete =
-    isStaff || (!!currentUserId && currentUserId === reply.authorId);
+  const isOwn = !!currentUserId && currentUserId === reply.authorId;
+  const mayDelete = isStaff || isOwn;
 
   const onDelete = () => {
     if (!confirm("Xóa trả lời này?")) return;
     startTransition(async () => {
       const res = await deleteReply(reply.id, threadSlug);
-      if (res.ok) router.refresh();
+      if (res.ok) onChanged();
       else alert(res.error);
     });
   };
@@ -182,6 +194,9 @@ function ReplyItem({
               Trả lời
             </button>
           )}
+          {isAuthed && !isOwn && (
+            <ReportButton replyId={reply.id} />
+          )}
           {mayDelete && (
             <button
               type="button"
@@ -195,7 +210,7 @@ function ReplyItem({
         </div>
 
         {replying && (
-          <div className="mt-3">
+          <div className="mt-2">
             <ReplyForm
               threadId={threadId}
               threadSlug={threadSlug}
@@ -203,12 +218,13 @@ function ReplyItem({
               autoFocus
               placeholder={`Trả lời ${reply.author.name ?? ""}…`}
               onDone={() => setReplying(false)}
+              onSubmitted={onChanged}
             />
           </div>
         )}
 
         {reply.replies && reply.replies.length > 0 && (
-          <div className="mt-4 space-y-4 border-l border-border/50 pl-4">
+          <div className="mt-2.5 space-y-3 border-l border-border/50 pl-3.5">
             {reply.replies.map((r) => (
               <ReplyItem
                 key={r.id}
@@ -219,6 +235,7 @@ function ReplyItem({
                 isStaff={isStaff}
                 isAuthed={isAuthed}
                 locked={locked}
+                onChanged={onChanged}
                 isChild
               />
             ))}
@@ -233,8 +250,8 @@ export function ReplySection({
   threadId,
   threadSlug,
   locked,
-  replies,
-  total,
+  replies: initialReplies,
+  preloaded = false,
   currentUserId,
   isStaff,
   isAuthed,
@@ -244,7 +261,7 @@ export function ReplySection({
   threadSlug: string;
   locked: boolean;
   replies: ReplyNode[];
-  total: number;
+  preloaded?: boolean; // true = replies đã SSR sẵn (permalink); false = feed, tự tải
   currentUserId: string | null;
   isStaff: boolean;
   isAuthed: boolean;
@@ -252,19 +269,41 @@ export function ReplySection({
 }) {
   const router = useRouter();
   const [live, setLive] = useState(false);
+  const [replies, setReplies] = useState<ReplyNode[]>(initialReplies);
+  const [loaded, setLoaded] = useState(preloaded);
+
+  // Tải (hoặc làm mới) cây trả lời từ server.
+  const reload = useCallback(async () => {
+    const data = await fetchReplies(threadId);
+    setReplies(data);
+    setLoaded(true);
+  }, [threadId]);
+
+  // Lần đầu mở (feed chưa preload) → tải cây trả lời. setState diễn ra sau await
+  // (bất đồng bộ), không gây cascading render.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (!preloaded) void reload();
+  }, [preloaded, reload]);
+
+  // Sau khi thêm/xóa trả lời: cập nhật cây tại chỗ + làm mới trang (đếm ở thẻ bài).
+  const onChanged = useCallback(() => {
+    void reload();
+    router.refresh();
+  }, [reload, router]);
 
   useEffect(() => {
     const onFocus = () => {
-      if (document.visibilityState === "visible") router.refresh();
+      if (document.visibilityState === "visible") void reload();
     };
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
-  }, [router]);
+  }, [reload]);
 
   useEffect(() => {
     if (!realtimeEnabled) {
       const id = window.setInterval(() => {
-        if (document.visibilityState === "visible") router.refresh();
+        if (document.visibilityState === "visible") void reload();
       }, 20000);
       return () => window.clearInterval(id);
     }
@@ -278,7 +317,7 @@ export function ReplySection({
         client.connection.on("suspended", () => setLive(false));
         client.channels
           .get(`thread:${threadSlug}`)
-          .subscribe("replies:changed", () => router.refresh());
+          .subscribe("replies:changed", () => void reload());
       } catch (e) {
         console.error("[Ably] lỗi khởi tạo realtime:", e);
       }
@@ -287,50 +326,46 @@ export function ReplySection({
       setLive(false);
       client?.close();
     };
-  }, [realtimeEnabled, threadSlug, router]);
+  }, [realtimeEnabled, threadSlug, reload]);
 
   return (
-    <section id="tra-loi" className="mt-10 scroll-mt-24">
-      <h2 className="flex items-center gap-2 text-lg font-bold tracking-tight">
-        <MessageCircle className="size-5 text-primary" aria-hidden />
-        Trả lời
-        <span className="text-base font-normal text-muted-foreground">
-          ({total})
-        </span>
-        {live && (
-          <span className="ml-1 inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-500">
-            <span className="relative flex size-2">
-              <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-500 opacity-75" />
-              <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
-            </span>
-            Trực tiếp
-          </span>
-        )}
-      </h2>
+    <section id="tra-loi" className="scroll-mt-24">
+      {/* Ô nhập */}
+      {locked ? (
+        <div className="inline-flex items-center gap-2 rounded-full bg-muted/60 px-3 py-1.5 text-xs text-muted-foreground">
+          <Lock className="size-3.5" aria-hidden />
+          Chủ đề đã khóa, không thể trả lời.
+        </div>
+      ) : isAuthed ? (
+        <ReplyForm
+          threadId={threadId}
+          threadSlug={threadSlug}
+          onSubmitted={onChanged}
+        />
+      ) : (
+        <div className="rounded-full bg-muted/60 px-3.5 py-1.5 text-xs text-muted-foreground">
+          <Link
+            href={`/login?callbackUrl=/cong-dong/${threadSlug}`}
+            className="font-medium text-primary hover:underline"
+          >
+            Đăng nhập
+          </Link>{" "}
+          để tham gia trả lời.
+        </div>
+      )}
 
-      <div className="mt-5">
-        {locked ? (
-          <div className="inline-flex items-center gap-2 rounded-xl border border-border/60 bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
-            <Lock className="size-4" aria-hidden />
-            Chủ đề đã bị khóa, không thể trả lời.
-          </div>
-        ) : isAuthed ? (
-          <ReplyForm threadId={threadId} threadSlug={threadSlug} />
-        ) : (
-          <div className="rounded-xl border border-border/60 bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
-            <Link
-              href={`/login?callbackUrl=/cong-dong/${threadSlug}`}
-              className="font-medium text-primary hover:underline"
-            >
-              Đăng nhập
-            </Link>{" "}
-            để tham gia trả lời.
-          </div>
-        )}
-      </div>
+      {live && (
+        <p className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-500">
+          <span className="relative flex size-1.5">
+            <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-500 opacity-75" />
+            <span className="relative inline-flex size-1.5 rounded-full bg-emerald-500" />
+          </span>
+          Trực tiếp
+        </p>
+      )}
 
       {replies.length > 0 ? (
-        <div className="mt-8 space-y-7">
+        <div className="mt-3 space-y-3">
           {replies.map((r) => (
             <ReplyItem
               key={r.id}
@@ -341,13 +376,16 @@ export function ReplySection({
               isStaff={isStaff}
               isAuthed={isAuthed}
               locked={locked}
+              onChanged={onChanged}
             />
           ))}
         </div>
-      ) : (
-        <p className="mt-8 text-sm text-muted-foreground">
-          Chưa có trả lời nào. Hãy là người đầu tiên!
+      ) : loaded ? (
+        <p className="mt-3 text-xs text-muted-foreground">
+          Chưa có bình luận. Hãy là người đầu tiên!
         </p>
+      ) : (
+        <p className="mt-3 text-xs text-muted-foreground">Đang tải…</p>
       )}
     </section>
   );
