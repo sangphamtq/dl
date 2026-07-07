@@ -278,6 +278,8 @@ model Place {
   description String?
   foodIntro   String? // bản sắc ẩm thực — đoạn mở đầu tab Ẩm thực
   foodTips    String[] @default([]) // mẹo "biết trước khi ăn" (mỗi phần tử 1 mẹo)
+  getToIntro     String? // định hướng "đến nơi" (vị trí, cách phổ biến, chặng cuối)
+  getAroundIntro String? // đặc tính "đi lại tại chỗ" (gọn/trải dài/đảo…)
 
   // Vị trí hành chính (provinces.open-api.vn v1 — địa chính cũ, 3 cấp:
   // tỉnh → quận/huyện → phường/xã). Lưu cả code (để truy vấn/relink lại) và
@@ -694,6 +696,10 @@ model Transport {
 
   operatorName String?
   bookingUrl   String?
+  phone        String? // hotline đặt/hỏi (nhà xe, hãng taxi…) — hỗ trợ chống chặt chém
+  notice       String? // cảnh báo/mẹo: "đặt trước dịp lễ", "chốt giá trước"
+
+  isRecommended Boolean @default(false) // cách phổ biến/khuyên dùng (decision-support)
 
   placeId String
   place   Place  @relation(fields: [placeId], references: [id], onDelete: Cascade)

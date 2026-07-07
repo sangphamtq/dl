@@ -382,6 +382,9 @@ async function fetchTransports(placeId: string): Promise<TransportItem[]> {
       currency: true,
       operatorName: true,
       bookingUrl: true,
+      phone: true,
+      notice: true,
+      isRecommended: true,
       description: true,
     },
   });
@@ -475,6 +478,12 @@ export default async function PlaceListingPage({
 
   // Di chuyển: màn hình riêng, render inline theo direction (đến nơi / tại chỗ).
   const transports = isTransport ? await fetchTransports(place.id) : null;
+  const transportMeta = isTransport
+    ? await prisma.place.findUnique({
+        where: { id: place.id },
+        select: { getToIntro: true, getAroundIntro: true },
+      })
+    : null;
 
   // Các loại khác (hoạt động, địa điểm): lưới card link tới trang chi tiết riêng.
   const groups =
@@ -541,16 +550,15 @@ export default async function PlaceListingPage({
               <p className="text-muted-foreground">Chưa có thông tin di chuyển.</p>
             ) : (
               <section>
-                <h2 className="text-2xl font-bold tracking-tight">
+                <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
                   Đi lại thế nào?
                 </h2>
-                <p className="mt-2 max-w-prose leading-relaxed text-muted-foreground">
-                  Cách đến {place.name} từ bên ngoài và phương tiện đi lại tại chỗ.
-                </p>
-                <div className="mt-10">
+                <div className="mt-8">
                   <TransportSection
                     transports={transports}
                     placeName={place.name}
+                    getToIntro={transportMeta?.getToIntro}
+                    getAroundIntro={transportMeta?.getAroundIntro}
                   />
                 </div>
               </section>

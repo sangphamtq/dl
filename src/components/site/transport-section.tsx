@@ -1,13 +1,14 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import {
   Bus,
   PlaneLanding,
   Navigation,
-  Clock,
-  Route,
-  Building2,
+  Phone,
+  TriangleAlert,
   ArrowRight,
-  ExternalLink,
   Car,
   TrainFront,
   Plane,
@@ -30,10 +31,12 @@ export type TransportItem = {
   currency: string | null;
   operatorName: string | null;
   bookingUrl: string | null;
+  phone: string | null;
+  notice: string | null;
+  isRecommended: boolean;
   description: string | null;
 };
 
-// Icon + nhãn theo phương tiện (TransportMode).
 const MODE_ICON: Record<string, typeof Bus> = {
   car: Car,
   bus: Bus,
@@ -76,153 +79,80 @@ function formatPrice(t: TransportItem): string | null {
   return null;
 }
 
-function Fact({ icon: Icon, children }: { icon: typeof Clock; children: React.ReactNode }) {
-  return (
-    <span className="inline-flex items-center gap-1 text-muted-foreground">
-      <Icon className="size-3.5" aria-hidden />
-      {children}
-    </span>
-  );
+function metaLine(t: TransportItem): string {
+  return [
+    MODE_LABEL[t.mode] ?? t.mode,
+    t.duration,
+    t.distanceKm != null ? `${t.distanceKm} km` : null,
+  ]
+    .filter(Boolean)
+    .join("  ·  ");
 }
 
-function BookingLink({ href }: { href: string }) {
+function PhoneLink({ phone }: { phone: string }) {
   return (
     <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+      href={`tel:${phone.replace(/\s+/g, "")}`}
+      className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
     >
-      Đặt vé <ExternalLink className="size-3.5" aria-hidden />
+      <Phone className="size-3.5" aria-hidden /> {phone}
     </a>
   );
 }
 
-// "Cách đến nơi" — hàng tuyến: điểm đi ⟶ điểm đến, nhấn mạnh hành trình + giá.
-// (Icon phương tiện nằm ở tiêu đề nhóm bên trên nên không lặp lại trong card.)
-function RouteRow({ t, placeName }: { t: TransportItem; placeName: string }) {
+// Một lựa chọn — mọi phương tiện đồng cấp: huy hiệu icon + tên + meta thanh lịch,
+// mô tả, cảnh báo, đơn vị · hotline · đặt. Ngăn nhau bằng hairline của danh sách.
+function Option({ t }: { t: TransportItem }) {
+  const Icon = MODE_ICON[t.mode] ?? Navigation;
   const price = formatPrice(t);
   return (
-    <div className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm shadow-black/5 transition-shadow hover:shadow-md">
-      <div className="flex items-start justify-between gap-3">
-        <h5 className="font-semibold leading-snug">{t.name}</h5>
-        {price && (
-          <span className="shrink-0 text-sm font-bold text-primary">{price}</span>
-        )}
-      </div>
-
-      {/* Tuyến: điểm đi ──→ điểm đến */}
-      {t.fromName && (
-        <div className="mt-2.5 flex items-center gap-2 text-sm">
-          <span className="font-medium">{t.fromName}</span>
-          <span className="h-px flex-1 border-t border-dashed border-border" />
-          <ArrowRight className="size-4 shrink-0 text-primary" aria-hidden />
-          <span className="font-semibold text-primary">{placeName}</span>
-        </div>
-      )}
-
-      {(t.duration || t.distanceKm != null || t.operatorName) && (
-        <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs">
-          {t.duration && <Fact icon={Clock}>{t.duration}</Fact>}
-          {t.distanceKm != null && <Fact icon={Route}>{t.distanceKm} km</Fact>}
-          {t.operatorName && <Fact icon={Building2}>{t.operatorName}</Fact>}
-        </div>
-      )}
-
-      {t.description && (
-        <p className="mt-2.5 text-sm leading-relaxed text-muted-foreground">
-          {t.description}
-        </p>
-      )}
-
-      {t.bookingUrl && (
-        <div className="mt-3.5">
-          <BookingLink href={t.bookingUrl} />
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Thứ tự ưu tiên phương tiện khi nhóm "Cách đến nơi".
-const MODE_ORDER = [
-  "plane",
-  "train",
-  "bus",
-  "car",
-  "shuttle",
-  "boat",
-  "motorbike",
-  "taxi",
-  "grab",
-  "bike",
-  "cyclo",
-  "walk",
-  "other",
-];
-
-function groupByMode(items: TransportItem[]): [string, TransportItem[]][] {
-  const map = new Map<string, TransportItem[]>();
-  for (const t of items) {
-    const list = map.get(t.mode) ?? [];
-    list.push(t);
-    map.set(t.mode, list);
-  }
-  return [...map.entries()].sort(
-    (a, b) => MODE_ORDER.indexOf(a[0]) - MODE_ORDER.indexOf(b[0]),
-  );
-}
-
-function ModeSubhead({ mode, count }: { mode: string; count: number }) {
-  const Icon = MODE_ICON[mode] ?? Navigation;
-  return (
-    <h4 className="flex items-center gap-2 text-sm font-semibold">
-      <Icon className="size-4 text-primary" aria-hidden />
-      {MODE_LABEL[mode] ?? mode}
-      {count > 1 && (
-        <span className="font-normal text-muted-foreground">({count})</span>
-      )}
-    </h4>
-  );
-}
-
-// "Đi lại tại chỗ" — ô gọn: phương tiện + mẹo ngắn.
-function LocalCard({ t }: { t: TransportItem }) {
-  const ModeIcon = MODE_ICON[t.mode] ?? Navigation;
-  const price = formatPrice(t);
-  return (
-    <div className="flex gap-3.5 rounded-2xl border border-border/60 bg-card p-4 shadow-sm shadow-black/5 transition-shadow hover:shadow-md">
-      <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
-        <ModeIcon className="size-5" aria-hidden />
+    <div className="flex gap-4 py-5 first:pt-0">
+      <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
+        <Icon className="size-5" aria-hidden />
       </span>
       <div className="min-w-0 flex-1">
-        <div className="flex items-baseline justify-between gap-2">
-          <h4 className="truncate font-semibold leading-snug">{t.name}</h4>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h4 className="text-base font-bold tracking-tight">{t.name}</h4>
+            <p className="mt-1 text-sm text-muted-foreground">{metaLine(t)}</p>
+          </div>
           {price && (
-            <span className="shrink-0 text-sm font-semibold text-primary">
+            <span className="shrink-0 text-right text-base font-bold text-primary">
               {price}
             </span>
           )}
         </div>
-        <p className="text-xs text-muted-foreground">
-          {MODE_LABEL[t.mode] ?? t.mode}
-        </p>
+
         {t.description && (
-          <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+          <p className="mt-2.5 max-w-2xl text-sm leading-relaxed text-foreground/80">
             {t.description}
           </p>
         )}
-        {(t.operatorName || t.bookingUrl) && (
-          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-            {t.operatorName && <Fact icon={Building2}>{t.operatorName}</Fact>}
+
+        {t.notice && (
+          <p className="mt-2.5 flex max-w-2xl items-start gap-1.5 text-sm text-muted-foreground">
+            <TriangleAlert
+              className="mt-0.5 size-4 shrink-0 text-warm"
+              aria-hidden
+            />
+            <span>{t.notice}</span>
+          </p>
+        )}
+
+        {(t.operatorName || t.phone || t.bookingUrl) && (
+          <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+            {t.operatorName && (
+              <span className="text-muted-foreground">{t.operatorName}</span>
+            )}
+            {t.phone && <PhoneLink phone={t.phone} />}
             {t.bookingUrl && (
               <a
                 href={t.bookingUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
+                className="inline-flex items-center gap-1 font-semibold text-primary hover:underline"
               >
-                Đặt / liên hệ <ExternalLink className="size-3" aria-hidden />
+                Đặt vé <ArrowRight className="size-4" aria-hidden />
               </a>
             )}
           </div>
@@ -232,80 +162,192 @@ function LocalCard({ t }: { t: TransportItem }) {
   );
 }
 
+// Nhóm "đến nơi" theo điểm xuất phát (giữ nguyên thứ tự — mọi cách đồng cấp).
+function groupByOrigin(items: TransportItem[]): [string, TransportItem[]][] {
+  const map = new Map<string, TransportItem[]>();
+  for (const t of items) {
+    const k = t.fromName?.trim() || "Nơi khác";
+    const list = map.get(k);
+    if (list) list.push(t);
+    else map.set(k, [t]);
+  }
+  return [...map.entries()];
+}
+
 function GroupHead({
   icon: Icon,
   title,
-  subtitle,
+  intro,
 }: {
   icon: typeof Bus;
   title: string;
-  subtitle: string;
+  intro: string | null;
 }) {
   return (
-    <div className="flex items-center gap-3">
-      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
-        <Icon className="size-5" aria-hidden />
-      </span>
-      <div>
-        <h3 className="text-lg font-bold tracking-tight sm:text-xl">{title}</h3>
-        <p className="text-sm text-muted-foreground">{subtitle}</p>
+    <div>
+      <div className="flex items-center gap-3">
+        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+          <Icon className="size-5" aria-hidden />
+        </span>
+        <h3 className="text-2xl font-bold tracking-tight sm:text-3xl">{title}</h3>
       </div>
+      {intro && (
+        <p className="mt-3 max-w-3xl text-lg leading-relaxed text-muted-foreground">
+          {intro}
+        </p>
+      )}
     </div>
   );
 }
 
-// Khối "Đi lại thế nào" — tách getTo (đến nơi, dạng tuyến) / getAround (tại chỗ, ô gọn).
+// "Đi lại thế nào": "Đến nơi" nhóm theo điểm xuất phát (các cách đồng cấp); "Tại
+// chỗ" theo đặc tính. Thanh nhảy dính để không "chôn" phần tại chỗ khi list dài.
 export function TransportSection({
   transports,
   placeName,
+  getToIntro,
+  getAroundIntro,
 }: {
   transports: TransportItem[];
   placeName: string;
+  getToIntro?: string | null;
+  getAroundIntro?: string | null;
 }) {
   const getTo = transports.filter((t) => t.direction === "getTo");
   const getAround = transports.filter((t) => t.direction === "getAround");
+
+  const navItems = [
+    getTo.length > 0 && { id: "den-noi", label: "Đến nơi", icon: PlaneLanding },
+    getAround.length > 0 && {
+      id: "tai-cho",
+      label: "Đi lại tại chỗ",
+      icon: Navigation,
+    },
+  ].filter(Boolean) as { id: string; label: string; icon: typeof Bus }[];
+
+  const [active, setActive] = useState(navItems[0]?.id ?? "");
+  const jumpingRef = useRef<string | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Scroll-spy: sáng chip theo mục đang xem. Khi nhảy có chủ đích thì khóa để
+  // chip không "nháy" qua mục giữa đường (mở khóa khi mục đích tới / sau timeout).
+  useEffect(() => {
+    if (navItems.length < 2) return;
+    const els = navItems
+      .map((i) => document.getElementById(i.id))
+      .filter((el): el is HTMLElement => el !== null);
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (jumpingRef.current) {
+          if (
+            entries.some(
+              (e) => e.isIntersecting && e.target.id === jumpingRef.current,
+            )
+          )
+            jumpingRef.current = null;
+          return;
+        }
+        for (const e of entries) if (e.isIntersecting) setActive(e.target.id);
+      },
+      { rootMargin: "-160px 0px -60% 0px", threshold: 0 },
+    );
+    els.forEach((el) => obs.observe(el));
+    return () => obs.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navItems.length]);
+
+  useEffect(
+    () => () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    },
+    [],
+  );
+
   if (transports.length === 0) return null;
 
-  // Hai cột: "Cách đến nơi" | "Đi lại tại chỗ". Chỉ có một nhóm → trải full.
-  const bothCols = getTo.length > 0 && getAround.length > 0;
+  const jumpTo = (id: string) => {
+    setActive(id);
+    jumpingRef.current = id;
+    if (timerRef.current) clearTimeout(timerRef.current);
+    // Dự phòng: mở khóa sau khi cuộn xong (phòng mục đích không chạm vùng quan sát).
+    timerRef.current = setTimeout(() => {
+      jumpingRef.current = null;
+    }, 700);
+    document
+      .getElementById(id)
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   return (
-    <div className={cn("grid gap-x-10 gap-y-12", bothCols && "lg:grid-cols-2")}>
-      {getTo.length > 0 && (
-        <div>
-          <GroupHead
-            icon={PlaneLanding}
-            title="Cách đến nơi"
-            subtitle={`Từ các nơi khác tới ${placeName}`}
-          />
-          <div className="mt-6 space-y-7">
-            {groupByMode(getTo).map(([mode, items]) => (
-              <div key={mode}>
-                <ModeSubhead mode={mode} count={items.length} />
-                <div className="mt-3 space-y-3">
-                  {items.map((t) => (
-                    <RouteRow key={t.id} t={t} placeName={placeName} />
-                  ))}
+    <div>
+      {navItems.length > 1 && (
+        <nav className="hide-scrollbar sticky top-28 z-30 -mx-4 flex gap-2 overflow-x-auto border-b border-border/60 bg-background/85 px-4 py-2.5 backdrop-blur-lg sm:-mx-6 sm:px-6">
+          {navItems.map((it) => {
+            const Icon = it.icon;
+            return (
+              <button
+                key={it.id}
+                type="button"
+                onClick={() => jumpTo(it.id)}
+                aria-current={active === it.id}
+                className={cn(
+                  "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors",
+                  active === it.id
+                    ? "bg-foreground text-background"
+                    : "bg-muted text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <Icon className="size-4" aria-hidden />
+                {it.label}
+              </button>
+            );
+          })}
+        </nav>
+      )}
+
+      <div className="space-y-16 pt-8">
+        {getTo.length > 0 && (
+          <section id="den-noi" className="scroll-mt-40">
+            <GroupHead
+              icon={PlaneLanding}
+              title={`Đến ${placeName}`}
+              intro={getToIntro ?? null}
+            />
+            <div className="mt-8 space-y-10">
+              {groupByOrigin(getTo).map(([origin, items]) => (
+                <div key={origin}>
+                  <h4 className="mb-2 border-b border-border/60 pb-2.5 text-lg font-bold tracking-tight sm:text-xl">
+                    <span className="font-medium text-muted-foreground">
+                      Từ{" "}
+                    </span>
+                    {origin}
+                  </h4>
+                  <div className="divide-y divide-border/60">
+                    {items.map((t) => (
+                      <Option key={t.id} t={t} />
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-      {getAround.length > 0 && (
-        <div>
-          <GroupHead
-            icon={Navigation}
-            title="Đi lại tại chỗ"
-            subtitle={`Phương tiện di chuyển trong ${placeName}`}
-          />
-          <div className="mt-6 space-y-4">
-            {getAround.map((t) => (
-              <LocalCard key={t.id} t={t} />
-            ))}
-          </div>
-        </div>
-      )}
+              ))}
+            </div>
+          </section>
+        )}
+
+        {getAround.length > 0 && (
+          <section id="tai-cho" className="scroll-mt-40">
+            <GroupHead
+              icon={Navigation}
+              title={`Đi lại tại ${placeName}`}
+              intro={getAroundIntro ?? null}
+            />
+            <div className="mt-6 divide-y divide-border/60">
+              {getAround.map((t) => (
+                <Option key={t.id} t={t} />
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
     </div>
   );
 }
