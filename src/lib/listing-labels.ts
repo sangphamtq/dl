@@ -46,6 +46,7 @@ export const MEAL_LABELS: Record<string, string> = {
   breakfast: "Sáng",
   lunch: "Trưa",
   dinner: "Tối",
+  latenight: "Ăn đêm",
   cafe: "Cà phê",
   snack: "Ăn vặt",
 };

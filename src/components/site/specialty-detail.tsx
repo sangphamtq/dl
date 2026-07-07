@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { UtensilsCrossed } from "lucide-react";
+import { UtensilsCrossed, Store } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { coverUrl } from "@/lib/place-image";
 import { FoodCrossLink } from "@/components/site/food-cross-link";
@@ -37,10 +37,10 @@ export function SpecialtyDetail({
   const single = strip.length === 1;
 
   return (
-    <div className="flex flex-col pb-6">
+    <div className="flex flex-col pb-8">
       {/* Header dính: thumbnail + tên */}
-      <div className="sticky top-0 z-10 flex items-center gap-3 border-b bg-background py-3 pr-14 pl-5">
-        <div className="relative size-11 shrink-0 overflow-hidden rounded-lg bg-muted">
+      <div className="sticky top-0 z-10 flex items-center gap-3 border-b bg-background/90 py-3 pr-14 pl-5 backdrop-blur-md">
+        <div className="relative size-11 shrink-0 overflow-hidden rounded-xl bg-muted">
           <Image
             src={coverUrl(data.images, data.slug, 120, 120)}
             alt={data.name}
@@ -50,7 +50,7 @@ export function SpecialtyDetail({
           />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="flex items-center gap-1 text-xs font-medium text-primary">
+          <p className="flex items-center gap-1 text-xs font-semibold text-warm">
             <UtensilsCrossed className="size-3" aria-hidden /> Đặc sản
           </p>
           <h2 className="truncate text-base font-bold tracking-tight">
@@ -81,6 +81,12 @@ export function SpecialtyDetail({
       </div>
 
       <div className="space-y-5 px-5 pt-5">
+        {data.description && (
+          <p className="whitespace-pre-line leading-7 text-foreground/90">
+            {data.description}
+          </p>
+        )}
+
         {data.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {data.tags.map((t) => (
@@ -93,18 +99,15 @@ export function SpecialtyDetail({
             ))}
           </div>
         )}
-
-        {data.description && (
-          <p className="whitespace-pre-line leading-7 text-foreground/90">
-            {data.description}
-          </p>
-        )}
       </div>
 
       {data.eateries.length > 0 && (
-        <div className="pt-6">
-          <h3 className="px-5 text-sm font-semibold">Ăn ở đâu</h3>
-          <div className="hide-scrollbar mt-3 flex snap-x gap-3 overflow-x-auto px-5">
+        <div className="mt-7 border-t pt-6">
+          <div className="flex items-center gap-2 px-5">
+            <Store className="size-4 text-warm" aria-hidden />
+            <h3 className="text-sm font-semibold">Ăn ở đâu</h3>
+          </div>
+          <div className="hide-scrollbar mt-3.5 flex snap-x gap-3 overflow-x-auto px-5">
             {data.eateries.map((e) => (
               <FoodCrossLink
                 key={e.slug}

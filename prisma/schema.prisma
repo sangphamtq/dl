@@ -127,6 +127,7 @@ enum Meal {
   breakfast // sáng
   lunch // trưa
   dinner // tối
+  latenight // ăn đêm
   cafe // cà phê / giải khát
   snack // ăn vặt
 }
@@ -275,6 +276,8 @@ model Place {
   kind        PlaceKind
   tagline     String? // câu slogan ngắn hiển thị dưới tên (khác description)
   description String?
+  foodIntro   String? // bản sắc ẩm thực — đoạn mở đầu tab Ẩm thực
+  foodTips    String[] @default([]) // mẹo "biết trước khi ăn" (mỗi phần tử 1 mẹo)
 
   // Vị trí hành chính (provinces.open-api.vn v1 — địa chính cũ, 3 cấp:
   // tỉnh → quận/huyện → phường/xã). Lưu cả code (để truy vấn/relink lại) và

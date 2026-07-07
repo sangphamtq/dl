@@ -310,6 +310,25 @@ async function fetchEateryDetails(placeId: string): Promise<EateryDetailData[]> 
   });
 }
 
+// Trải nghiệm ẩm thực (Activity category=food) — cross-link sang trang chi tiết.
+async function fetchFoodExperiences(placeId: string) {
+  return prisma.activity.findMany({
+    where: { placeId, status: "published", category: "food" },
+    orderBy: FOOD_ORDER,
+    select: {
+      slug: true,
+      name: true,
+      description: true,
+      durationText: true,
+      images: {
+        where: { isCover: true },
+        take: 1,
+        select: { url: true, isCover: true },
+      },
+    },
+  });
+}
+
 // Chi tiết đầy đủ Nơi lưu trú của một place — render lưới + drawer.
 async function fetchAccommodationDetails(
   placeId: string,
@@ -427,11 +446,20 @@ export default async function PlaceListingPage({
       ? await getReviewSummary("place", place.id)
       : null;
 
-  // Ẩm thực: chi tiết đầy đủ Đặc sản rồi Quán ăn, xếp dọc trên cùng trang.
+  // Ẩm thực: bản sắc + món phải thử + ăn ở đâu + trải nghiệm + mẹo.
+  const foodMeta = isFood
+    ? await prisma.place.findUnique({
+        where: { id: place.id },
+        select: { foodIntro: true, foodTips: true },
+      })
+    : null;
   const food = isFood
     ? {
+        intro: foodMeta?.foodIntro ?? null,
+        tips: foodMeta?.foodTips ?? [],
         specialties: await fetchSpecialtyDetails(place.id),
         eateries: await fetchEateryDetails(place.id),
+        experiences: await fetchFoodExperiences(place.id),
       }
     : null;
 
@@ -489,8 +517,11 @@ export default async function PlaceListingPage({
             ) : (
               <FoodSection
                 placeName={place.name}
+                intro={food.intro}
+                tips={food.tips}
                 specialties={food.specialties}
                 eateries={food.eateries}
+                experiences={food.experiences}
               />
             )
           ) : stays ? (
