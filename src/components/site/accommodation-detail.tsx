@@ -9,7 +9,6 @@ import {
   Globe,
   BedDouble,
   ExternalLink,
-  Navigation,
   ChevronDown,
   BadgeCheck,
   MessageCircle,
@@ -20,6 +19,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { coverUrl } from "@/lib/place-image";
+import { googleEmbedSrc } from "@/lib/map-url";
 import {
   ACCOMMODATION_CATEGORY_LABELS,
   label,
@@ -78,7 +78,6 @@ export function AccommodationDetail({
     { icon: Phone, value: data.phone },
   ].filter((f) => f.value);
   const hasMap = data.lat != null && data.lng != null;
-  const gmaps = `https://www.google.com/maps/search/?api=1&query=${data.lat}%2C${data.lng}`;
 
   return (
     <div className="flex flex-col pb-6">
@@ -198,11 +197,6 @@ export function AccommodationDetail({
               </ActionLink>
             )}
             {hasMap && (
-              <ActionLink href={gmaps} icon={Navigation}>
-                Chỉ đường
-              </ActionLink>
-            )}
-            {hasMap && (
               <button
                 type="button"
                 onClick={() => setMapOpen((v) => !v)}
@@ -228,7 +222,7 @@ export function AccommodationDetail({
               title={`Bản đồ ${data.name}`}
               className="aspect-[16/9] w-full"
               loading="lazy"
-              src={`https://www.openstreetmap.org/export/embed.html?bbox=${data.lng! - 0.01}%2C${data.lat! - 0.01}%2C${data.lng! + 0.01}%2C${data.lat! + 0.01}&layer=mapnik&marker=${data.lat}%2C${data.lng}`}
+              src={googleEmbedSrc(data.lat!, data.lng!)}
             />
           </div>
         )}

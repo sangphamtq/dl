@@ -335,7 +335,13 @@ async function fetchAccommodationDetails(
 ): Promise<AccommodationDetailData[]> {
   return prisma.accommodation.findMany({
     where: { placeId, status: "published" },
-    orderBy: FOOD_ORDER,
+    // Đã xác minh chính chủ lên trước — đúng định vị "danh bạ tin cậy".
+    orderBy: [
+      { isVerified: "desc" },
+      { isFeatured: "desc" },
+      { order: "asc" },
+      { name: "asc" },
+    ],
     select: {
       slug: true,
       name: true,
