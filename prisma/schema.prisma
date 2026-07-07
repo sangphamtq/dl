@@ -150,12 +150,6 @@ enum ActivityCategory {
   other
 }
 
-enum ActivityDifficulty {
-  easy // dễ
-  moderate // vừa
-  hard // khó
-}
-
 // Mức độ hoạt động (xem CLAUDE.md "Spot vs Activity"):
 // experience = trải nghiệm/dịch vụ lớn (tour, lớp học) — nội dung dày, đặt chỗ;
 // common     = hoạt động lặp ở nhiều spot, nội dung riêng theo từng spot (qua SpotActivity);
@@ -424,7 +418,6 @@ model Activity {
   ticketTiers  Json? // [{ label, price, note }] — giá VND, null/0 = miễn phí (xem lib/tickets)
 
   // Thực tế trải nghiệm (xem CLAUDE.md "Spot vs Activity")
-  difficulty   ActivityDifficulty?
   durationText String? // "nửa ngày", "2N1Đ", "~2 giờ"
   seasonText   String? // "tháng 9–11", "săn mây mùa thu"
 

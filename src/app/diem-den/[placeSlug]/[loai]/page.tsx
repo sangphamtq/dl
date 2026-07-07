@@ -31,7 +31,6 @@ import {
   SPOT_CATEGORY_LABELS,
   ACTIVITY_CATEGORY_LABELS,
   ACCOMMODATION_CATEGORY_LABELS,
-  DIFFICULTY_LABELS,
   label,
 } from "@/lib/listing-labels";
 import { parseTicketTiers, formatVnd } from "@/lib/tickets";
@@ -92,7 +91,6 @@ type RawListing = {
   ticketInfo?: string | null;
   address?: string | null;
   durationText?: string | null;
-  difficulty?: string | null;
   seasonText?: string | null;
   ticketFree?: boolean;
   ticketTiers?: unknown;
@@ -105,7 +103,6 @@ const EXTRA_SELECT: Record<ListingModel, Record<string, unknown>> = {
   activity: {
     category: true,
     durationText: true,
-    difficulty: true,
     seasonText: true,
     ticketFree: true,
     ticketTiers: true,
@@ -166,11 +163,7 @@ function buildTag(model: ListingModel, r: RawListing): string | null {
 function buildMeta(model: ListingModel, r: RawListing): string[] {
   switch (model) {
     case "activity":
-      return [
-        r.durationText,
-        label(DIFFICULTY_LABELS, r.difficulty ?? null),
-        r.seasonText,
-      ].filter(Boolean) as string[];
+      return [r.durationText, r.seasonText].filter(Boolean) as string[];
     default:
       return [];
   }

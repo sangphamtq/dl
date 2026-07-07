@@ -44,18 +44,21 @@ import {
 const pub = { status: "published" as const };
 
 // Card trải nghiệm — ảnh làm chủ, tên + dòng fact (thời lượng · mùa) (Layout A).
+// Hover: mô tả ngắn hiện lên trên ảnh (gradient đáy + chữ trắng fade/trượt).
 function ExperienceCard({
   href,
   name,
   slug,
   images,
   facts,
+  description,
 }: {
   href: string;
   name: string;
   slug: string;
   images: { url: string; isCover: boolean }[];
   facts: { icon: LucideIcon; text: string }[];
+  description?: string;
 }) {
   return (
     <Link href={href} className="group block">
@@ -65,8 +68,18 @@ function ExperienceCard({
           alt={name}
           fill
           sizes="(min-width: 1024px) 25vw, (min-width: 640px) 40vw, 80vw"
-          className="object-cover"
+          className="object-cover transition-transform duration-300 group-hover:scale-[1.03] motion-reduce:transform-none motion-reduce:transition-none"
         />
+        {description && (
+          <div
+            className="pointer-events-none absolute inset-0 flex items-end bg-gradient-to-t from-black/75 via-black/25 to-transparent p-4 opacity-0 transition-opacity duration-200 group-hover:opacity-100 motion-reduce:transition-none"
+            aria-hidden
+          >
+            <p className="translate-y-1 text-sm leading-relaxed text-white line-clamp-3 transition-transform duration-200 group-hover:translate-y-0 motion-reduce:transform-none">
+              {description}
+            </p>
+          </div>
+        )}
       </div>
       <h3 className="mt-3 text-lg font-semibold tracking-tight transition-colors group-hover:text-primary">
         {name}
@@ -235,6 +248,7 @@ export default async function PlaceDetailPage({
         select: {
           slug: true,
           name: true,
+          description: true,
           durationText: true,
           seasonText: true,
           images: listingImages,
@@ -534,6 +548,7 @@ export default async function PlaceDetailPage({
                     name={a.name}
                     slug={a.slug}
                     images={a.images}
+                    description={a.description ?? undefined}
                     facts={[
                       a.durationText && { icon: Clock, text: a.durationText },
                       a.seasonText && {

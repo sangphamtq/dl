@@ -6,7 +6,6 @@ import {
   PublishStatus,
   SpotCategory,
   ActivityCategory,
-  ActivityDifficulty,
   ActivityKind,
   EateryCategory,
   Meal,
@@ -617,7 +616,6 @@ async function main() {
     name: string;
     kind: ActivityKind;
     category?: ActivityCategory;
-    difficulty?: ActivityDifficulty;
     durationText?: string;
     seasonText?: string;
     operatorName?: string;
@@ -633,7 +631,6 @@ async function main() {
       name: "Trượt cát",
       kind: ActivityKind.common,
       category: ActivityCategory.adventure,
-      difficulty: ActivityDifficulty.easy,
       durationText: "1–2 giờ",
       ticketTiers: [{ label: "Thuê ván trượt", price: 20000 }],
       description:
@@ -656,7 +653,6 @@ async function main() {
       name: "Lướt ván diều",
       kind: ActivityKind.common,
       category: ActivityCategory.water,
-      difficulty: ActivityDifficulty.moderate,
       durationText: "Nửa ngày",
       seasonText: "Tháng 11 – 3 (mùa gió)",
       operatorName: "Các trung tâm lướt ván ven biển",
@@ -679,7 +675,6 @@ async function main() {
       name: "Tour xe Jeep săn bình minh đồi cát",
       kind: ActivityKind.experience,
       category: ActivityCategory.adventure,
-      difficulty: ActivityDifficulty.easy,
       durationText: "Nửa buổi (sáng sớm)",
       seasonText: "Quanh năm, đẹp nhất mùa khô",
       operatorName: "Các đơn vị tour địa phương",
@@ -701,7 +696,6 @@ async function main() {
       name: "Tắm biển",
       kind: ActivityKind.common,
       category: ActivityCategory.water,
-      difficulty: ActivityDifficulty.easy,
       ticketFree: true,
       description:
         "Biển Phan Thiết ấm áp gần như quanh năm, sóng vừa phải và bờ cát thoai thoải rất hợp để ngâm mình thư giãn.",
@@ -728,7 +722,6 @@ async function main() {
       name: "Chèo SUP & kayak",
       kind: ActivityKind.common,
       category: ActivityCategory.water,
-      difficulty: ActivityDifficulty.easy,
       durationText: "1–2 giờ",
       seasonText: "Đẹp nhất sáng sớm, biển lặng",
       ticketTiers: [{ label: "Thuê SUP / giờ", price: 120000 }],
@@ -752,7 +745,6 @@ async function main() {
       name: "Mô tô nước & thể thao biển",
       kind: ActivityKind.experience,
       category: ActivityCategory.water,
-      difficulty: ActivityDifficulty.moderate,
       durationText: "30–60 phút",
       operatorName: "Dịch vụ thể thao biển tại bãi",
       ticketTiers: [
@@ -772,7 +764,6 @@ async function main() {
       name: "Tham quan tháp Chăm",
       kind: ActivityKind.spot,
       category: ActivityCategory.culture,
-      difficulty: ActivityDifficulty.easy,
       durationText: "Khoảng 1 giờ",
       ticketTiers: [{ label: "Vé vào cửa", price: 15000 }],
       description:
@@ -784,7 +775,6 @@ async function main() {
       name: "Săn hoàng hôn",
       kind: ActivityKind.common,
       category: ActivityCategory.relax,
-      difficulty: ActivityDifficulty.easy,
       durationText: "Cuối ngày",
       seasonText: "Quanh năm",
       ticketFree: true,

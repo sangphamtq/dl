@@ -50,12 +50,6 @@ export const MEAL_LABELS: Record<string, string> = {
   snack: "Ăn vặt",
 };
 
-export const DIFFICULTY_LABELS: Record<string, string> = {
-  easy: "Dễ",
-  moderate: "Vừa",
-  hard: "Khó",
-};
-
 export const POST_CATEGORY_LABELS: Record<string, string> = {
   "cam-nang": "Cẩm nang",
   "am-thuc": "Ẩm thực",

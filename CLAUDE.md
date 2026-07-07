@@ -118,8 +118,8 @@ Nếu chỉ là "việc tự nhiên ở đúng một chỗ, không đơn vị, k
   dữ liệu, không ép luôn hai lưới cân nhau.
 
 **Trường "thực tế" (đã có trong schema):**
-- `Activity`: `difficulty` (`easy`/`moderate`/`hard`), `durationText` ("nửa ngày", "2N1Đ"),
-  `seasonText` ("tháng 9–11", "săn mây mùa thu") — trả lời "khó không / bao lâu / mùa nào".
+- `Activity`: `durationText` ("nửa ngày", "2N1Đ"),
+  `seasonText` ("tháng 9–11", "săn mây mùa thu") — trả lời "bao lâu / mùa nào".
   (đơn vị/đặt chỗ: `operatorName`, `bookingUrl`, `phone`, `website`, `priceRange` đã có)
 - `Spot`: `bestTime` (mùa/giờ đẹp), `ticketInfo` (vé cụ thể, vd "120k/người"),
   `notice` (cảnh báo truy cập: "Tạm đóng"/"Cần xin phép" — **khác** `status` draft/published).

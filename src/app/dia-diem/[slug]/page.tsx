@@ -116,14 +116,6 @@ function withDistance<T extends { lat: number | null; lng: number | null }>(
     .map((x) => x.it);
 }
 
-// Độ khó nói theo lối tự nhiên (thay nhãn "Dễ/Vừa/Khó").
-function difficultyPhrase(d: string | null): string | null {
-  if (d === "easy") return "dễ đi";
-  if (d === "moderate") return "vừa sức";
-  if (d === "hard") return "cần thể lực";
-  return null;
-}
-
 // Nhãn giá vé từ ticketFree / ticketTiers (dùng cho cả spot lẫn activity).
 function ticketPriceLabel(ticketFree: boolean, ticketTiers: unknown): string | null {
   if (ticketFree) return "Miễn phí";
@@ -336,7 +328,6 @@ export default async function SpotPublicPage({
               category: true,
               kind: true,
               durationText: true,
-              difficulty: true,
               seasonText: true,
               ticketFree: true,
               ticketTiers: true,
@@ -737,7 +728,6 @@ export default async function SpotPublicPage({
                       const a = link.activity;
                       const meta = [
                         a.durationText,
-                        difficultyPhrase(a.difficulty),
                         a.seasonText,
                         ticketPriceLabel(a.ticketFree, a.ticketTiers),
                       ]
