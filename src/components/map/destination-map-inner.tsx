@@ -23,12 +23,21 @@ import {
   label,
 } from "@/lib/listing-labels";
 
-// Màu pin theo loại. spot dùng token primary (theme); eatery/accommodation dùng
-// màu accent của riêng bản đồ (không có token warm trong theme).
+// Màu pin theo loại — dùng token theme (spot=primary, eatery=warm); lưu trú dùng
+// một tông trung tính lạnh để tách khỏi 2 màu brand.
 const TYPE_COLOR: Record<GeoType, string> = {
   spot: "var(--primary)",
-  eatery: "#ea580c",
-  accommodation: "#475569",
+  eatery: "var(--warm)",
+  accommodation: "#64748b",
+};
+
+// SVG icon (lucide) đặt trong pin — stroke trắng, viewBox 24.
+const TYPE_SVG: Record<GeoType, string> = {
+  spot: '<path d="m8 3 4 8 5-5 5 15H2L8 3z"/>',
+  eatery:
+    '<path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>',
+  accommodation:
+    '<path d="M2 20v-8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v8"/><path d="M4 10V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4"/><path d="M12 4v6"/><path d="M2 18h20"/>',
 };
 
 const CATEGORY_LABELS: Record<GeoType, Record<string, string>> = {
@@ -37,19 +46,20 @@ const CATEGORY_LABELS: Record<GeoType, Record<string, string>> = {
   accommodation: ACCOMMODATION_CATEGORY_LABELS,
 };
 
-// divIcon pin trơn (chấm trắng giữa). Một icon cố định / loại — KHÔNG đổi theo
-// active (đổi icon = setIcon thay DOM = nháy). Active xử lý bằng class CSS.
+// divIcon pin tròn có icon loại. Một icon cố định / loại — KHÔNG đổi theo active
+// (đổi icon = thay DOM = nháy). Trạng thái active xử lý bằng class CSS.
 const iconCache = new Map<GeoType, L.DivIcon>();
 function pinIcon(type: GeoType): L.DivIcon {
   const cached = iconCache.get(type);
   if (cached) return cached;
   const color = TYPE_COLOR[type];
+  const svg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">${TYPE_SVG[type]}</svg>`;
   const icon = L.divIcon({
-    html: `<div class="dl-pin" style="--pin:${color}"><span class="dl-pin__dot"></span></div>`,
+    html: `<div class="dl-pin" style="--pin:${color}">${svg}</div>`,
     className: "dl-marker",
-    iconSize: [26, 26],
-    iconAnchor: [13, 25],
-    popupAnchor: [0, -24],
+    iconSize: [30, 30],
+    iconAnchor: [15, 15],
+    popupAnchor: [0, -17],
   });
   iconCache.set(type, icon);
   return icon;
@@ -75,8 +85,29 @@ function FitBounds({ points }: { points: GeoPoint[] }) {
   return null;
 }
 
-// Lớp tile theo nền đang chọn (đường phố / vệ tinh).
-function BaseTiles({ basemap }: { basemap: "streets" | "satellite" }) {
+// Theo dõi dark mode (class .dark trên <html>) để đổi basemap cho khớp.
+function useIsDark(): boolean {
+  const [dark, setDark] = useState(false);
+  useEffect(() => {
+    const el = document.documentElement;
+    const update = () => setDark(el.classList.contains("dark"));
+    update();
+    const obs = new MutationObserver(update);
+    obs.observe(el, { attributes: true, attributeFilter: ["class"] });
+    return () => obs.disconnect();
+  }, []);
+  return dark;
+}
+
+// Lớp tile theo nền đang chọn. Đường phố: CARTO (sạch, tối giản, tự đổi
+// sáng/tối theo theme) thay vì OSM thô; vệ tinh: Esri World Imagery.
+function BaseTiles({
+  basemap,
+  dark,
+}: {
+  basemap: "streets" | "satellite";
+  dark: boolean;
+}) {
   if (basemap === "satellite") {
     return (
       <TileLayer
@@ -86,11 +117,15 @@ function BaseTiles({ basemap }: { basemap: "streets" | "satellite" }) {
       />
     );
   }
+  const style = dark ? "dark_all" : "voyager";
   return (
     <TileLayer
-      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-      url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-      maxZoom={19}
+      // key ép remount khi đổi theme để đổi hẳn bộ tile.
+      key={style}
+      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+      url={`https://{s}.basemaps.cartocdn.com/rastertiles/${style}/{z}/{x}/{y}.png`}
+      subdomains="abcd"
+      maxZoom={20}
     />
   );
 }
@@ -256,6 +291,10 @@ function MarkerStates({
       if (!m) continue;
       const active = p.id === selectedId || p.id === hoveredId;
       m.setZIndexOffset(active ? 1000 : 0);
+      // Phóng to + quầng sáng pin đang chọn/hover (class trên .dl-pin trong divIcon).
+      m.getElement()
+        ?.querySelector(".dl-pin")
+        ?.classList.toggle("dl-pin--active", active);
       const wantPermanent = active;
       const tt = m.getTooltip();
       if (!tt || tt.options.permanent !== wantPermanent) {
@@ -296,6 +335,7 @@ export default function DestinationMapInner({
   scrollZoom?: boolean;
 }) {
   const markerRefs = useRef<Map<string, L.Marker>>(new Map());
+  const dark = useIsDark();
   const [basemap, setBasemap] = useState<"streets" | "satellite">("streets");
   // Mặc định KHÔNG bám pin; khôi phục lựa chọn đã lưu.
   const [focusOnSelect, setFocusOnSelect] = useState(
@@ -328,7 +368,7 @@ export default function DestinationMapInner({
       className="h-full w-full"
     >
       <ZoomControl position="bottomleft" />
-      <BaseTiles basemap={basemap} />
+      <BaseTiles basemap={basemap} dark={dark} />
       <MapControls
         points={points}
         basemap={basemap}
@@ -389,19 +429,32 @@ export default function DestinationMapInner({
             {/* Popup chỉ ở chế độ section (không có list): explorer click pin → cuộn list, không popup */}
             {!onSelect && (
               <Popup>
-                <Link href={p.href} className="block p-3 no-underline">
-                  <span className="block text-sm font-semibold leading-snug tracking-tight text-foreground">
-                    {p.name}
-                  </span>
-                  {(cat || price) && (
-                    <span className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                      {cat && <span>{cat}</span>}
-                      {price && <span className="font-medium text-primary">{price}</span>}
-                    </span>
+                <Link href={p.href} className="block no-underline">
+                  {p.coverUrl && (
+                    // Ảnh trong popup Leaflet (DOM riêng) — next/image không hợp.
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={p.coverUrl}
+                      alt={p.coverAlt ?? p.name}
+                      className="h-24 w-full object-cover"
+                    />
                   )}
-                  <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary">
-                    Xem chi tiết
-                    <ArrowRight className="size-3" aria-hidden />
+                  <span className="block p-3">
+                    <span className="block text-sm font-semibold leading-snug tracking-tight text-foreground">
+                      {p.name}
+                    </span>
+                    {(cat || price) && (
+                      <span className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                        {cat && <span>{cat}</span>}
+                        {price && (
+                          <span className="font-medium text-primary">{price}</span>
+                        )}
+                      </span>
+                    )}
+                    <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary">
+                      Xem chi tiết
+                      <ArrowRight className="size-3" aria-hidden />
+                    </span>
                   </span>
                 </Link>
               </Popup>

@@ -308,23 +308,33 @@ export function ReplySection({
       return () => window.clearInterval(id);
     }
     let client: import("ably").Realtime | null = null;
+    let cancelled = false;
     (async () => {
       try {
         const Ably = await import("ably");
+        if (cancelled) return; // đã unmount trong lúc import
         client = new Ably.Realtime({ authUrl: "/api/ably/token" });
         client.connection.on("connected", () => setLive(true));
         client.connection.on("disconnected", () => setLive(false));
         client.connection.on("suspended", () => setLive(false));
-        client.channels
+        // subscribe() trả về Promise (attach) — nuốt lỗi khi đóng lúc đang kết nối.
+        void client.channels
           .get(`thread:${threadSlug}`)
-          .subscribe("replies:changed", () => void reload());
+          .subscribe("replies:changed", () => void reload())
+          .catch(() => {});
       } catch (e) {
         console.error("[Ably] lỗi khởi tạo realtime:", e);
       }
     })();
     return () => {
+      cancelled = true;
       setLive(false);
-      client?.close();
+      try {
+        client?.close();
+      } catch {
+        /* bỏ qua */
+      }
+      client = null;
     };
   }, [realtimeEnabled, threadSlug, reload]);
 

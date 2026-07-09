@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { safeQuery } from "@/lib/db-safe";
 
 export const SETTINGS_ID = "singleton";
 
@@ -26,9 +27,11 @@ const DEFAULTS: SiteSettings = {
 
 // Đọc cấu hình site (gộp với mặc định). Dùng ở layout, header, footer, metadata.
 export async function getSettings(): Promise<SiteSettings> {
-  const row = await prisma.siteSetting.findUnique({
-    where: { id: SETTINGS_ID },
-  });
+  // DB chưa kết nối → dùng mặc định để root layout/header/footer không văng lỗi.
+  const row = await safeQuery(
+    () => prisma.siteSetting.findUnique({ where: { id: SETTINGS_ID } }),
+    null,
+  );
   if (!row) return DEFAULTS;
   return {
     siteName: row.siteName || DEFAULTS.siteName,

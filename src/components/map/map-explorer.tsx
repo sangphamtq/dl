@@ -47,8 +47,8 @@ const TYPE_META: Record<
   { label: string; icon: typeof Mountain; color: string; dot: string }
 > = {
   spot: { label: "Địa điểm", icon: Mountain, color: "text-primary", dot: "var(--primary)" },
-  eatery: { label: "Quán ăn", icon: Utensils, color: "text-orange-600", dot: "#ea580c" },
-  accommodation: { label: "Lưu trú", icon: BedDouble, color: "text-slate-600", dot: "#475569" },
+  eatery: { label: "Quán ăn", icon: Utensils, color: "text-warm", dot: "var(--warm)" },
+  accommodation: { label: "Lưu trú", icon: BedDouble, color: "text-slate-600 dark:text-slate-400", dot: "#64748b" },
 };
 const FILTER_ORDER: GeoType[] = ["spot", "eatery", "accommodation"];
 
@@ -251,7 +251,7 @@ export function MapExplorer({
   }));
 
   return (
-    <div className="grid h-full grid-rows-[auto_1fr] lg:grid-cols-[clamp(26rem,40vw,38rem)_1fr] lg:grid-rows-1">
+    <div className="grid h-full grid-rows-[auto_1fr] lg:grid-cols-[clamp(23rem,32vw,29rem)_1fr] lg:grid-rows-1">
       {/* ── Cột trái: danh sách ───────────────────────────────── */}
       <div
         className={cn(
@@ -309,7 +309,7 @@ export function MapExplorer({
                 setAdding(true);
                 setMobileView("map");
               }}
-              className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-border/60 px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted"
+              className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/5 px-3.5 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-primary/10"
             >
               <Navigation className="size-4" aria-hidden />
               Chỉ đường
@@ -317,16 +317,14 @@ export function MapExplorer({
           )}
         </div>
 
-        {/* Danh sách — editorial, phân tách bằng đường mảnh */}
-        <ul className="min-h-0 flex-1 divide-y divide-border/50 overflow-y-auto px-2">
+        {/* Danh sách — card gọn, ảnh nổi, quét nhanh */}
+        <ul className="min-h-0 flex-1 space-y-1 overflow-y-auto p-2">
           {listPoints.map((p) => {
             const meta = TYPE_META[p.type];
             const cat = label(CATEGORY_LABELS[p.type], p.category);
             const price = label(PRICE_LABELS, p.priceRange);
             const on = p.id === selectedId;
-            // Dòng meta gộp bằng dấu chấm giữa — gọn, tự nhiên.
             const sub = [meta.label, cat].filter(Boolean).join(" · ");
-            const facts = [p.openingHours, p.phone].filter(Boolean).join("  ·  ");
             // chỉ đường: số thứ tự trong lộ trình / khoảng cách từ điểm gốc
             const stopIdx =
               dirOpen && dirMode === "itinerary"
@@ -362,109 +360,77 @@ export function MapExplorer({
                     setMobileView("map");
                   }}
                   className={cn(
-                    "group flex w-full gap-4 rounded-xl px-3 py-4 text-left transition-colors",
-                    on || isOrigin ? "bg-primary/[0.06]" : "hover:bg-muted/50",
+                    "group flex w-full gap-3 rounded-2xl p-2 text-left transition-colors",
+                    on || isOrigin
+                      ? "bg-primary/[0.07] ring-1 ring-inset ring-primary/20"
+                      : "hover:bg-muted/60",
                   )}
                 >
-                  {/* huy hiệu thứ tự lộ trình */}
-                  {stopIdx >= 0 && (
-                    <span className="grid size-6 shrink-0 -mr-1 place-items-center self-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
-                      {stopIdx + 1}
-                    </span>
-                  )}
-                  {/* Ảnh thumbnail vuông bo góc */}
-                  <span className="relative size-28 shrink-0 overflow-hidden rounded-xl bg-muted">
+                  {/* Ảnh — nổi, tỉ lệ 4:3 */}
+                  <span className="relative aspect-[4/3] w-[7.5rem] shrink-0 overflow-hidden rounded-xl bg-muted">
                     {p.coverUrl && (
                       <Image
                         src={p.coverUrl}
                         alt={p.coverAlt ?? p.name}
                         fill
-                        sizes="112px"
-                        className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                        sizes="120px"
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
                       />
+                    )}
+                    {stopIdx >= 0 && (
+                      <span className="absolute left-1.5 top-1.5 grid size-6 place-items-center rounded-full bg-primary text-xs font-semibold text-primary-foreground shadow-md">
+                        {stopIdx + 1}
+                      </span>
                     )}
                   </span>
 
-                  {/* Nội dung */}
-                  <span className="min-w-0 flex-1">
-                    {/* loại + giá */}
-                    <span className="flex items-center justify-between gap-2">
-                      <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <span
-                          className="size-1.5 rounded-full"
-                          style={{ backgroundColor: meta.dot }}
-                          aria-hidden
-                        />
-                        {sub}
-                      </span>
+                  {/* Nội dung — tối giản */}
+                  <span className="flex min-w-0 flex-1 flex-col py-0.5">
+                    <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <span
+                        className="size-1.5 shrink-0 rounded-full"
+                        style={{ backgroundColor: meta.dot }}
+                        aria-hidden
+                      />
+                      <span className="truncate">{sub}</span>
                       {price && (
-                        <span className="shrink-0 text-xs font-medium text-foreground/70">
+                        <span className="ml-auto shrink-0 font-medium text-foreground/70">
                           {price}
                         </span>
                       )}
                     </span>
 
-                    {/* tên */}
-                    <span className="mt-1 block text-[15px] font-semibold leading-snug tracking-tight transition-colors group-hover:text-primary">
+                    <span className="mt-0.5 line-clamp-2 text-[15px] font-semibold leading-snug tracking-tight transition-colors group-hover:text-primary">
                       {p.name}
                     </span>
 
-                    {/* khoảng cách từ điểm gốc (chế độ Khoảng cách) */}
                     {isOrigin ? (
                       <span className="mt-1 inline-flex w-fit items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[11px] font-semibold text-primary-foreground">
                         Điểm gốc
                       </span>
                     ) : dist ? (
-                      <span className="mt-1 block text-sm">
+                      <span className="mt-0.5 text-sm">
                         <span className="font-semibold text-primary">
                           {(dist.distance / 1000).toFixed(1)} km
                         </span>{" "}
                         <span className="text-muted-foreground">
-                          · {Math.round(dist.duration / 60)} phút lái xe
+                          · {Math.round(dist.duration / 60)} phút
                         </span>
+                      </span>
+                    ) : p.description ? (
+                      <span className="mt-0.5 line-clamp-2 text-[13px] leading-relaxed text-muted-foreground">
+                        {p.description}
                       </span>
                     ) : null}
 
-                    {/* mô tả — đọc thoải mái */}
-                    {p.description && (
-                      <span className="mt-1.5 line-clamp-5 text-sm leading-relaxed text-muted-foreground">
-                        {p.description}
-                      </span>
-                    )}
-
-                    {/* địa chỉ + giờ/đt — chữ nhạt, không icon */}
-                    {p.address && (
-                      <span className="mt-2 line-clamp-2 text-xs text-muted-foreground/80">
-                        {p.address}
-                      </span>
-                    )}
-                    {facts && (
-                      <span className="mt-0.5 block text-xs text-muted-foreground/80">
-                        {facts}
-                      </span>
-                    )}
-
-                    {/* tags — chip viền nhạt */}
-                    {p.tags.length > 0 && (
-                      <span className="mt-2 flex flex-wrap gap-1.5">
-                        {p.tags.slice(0, 6).map((t) => (
-                          <span
-                            key={t}
-                            className="rounded-md border border-border/60 px-2 py-0.5 text-[11px] text-muted-foreground"
-                          >
-                            {t}
-                          </span>
-                        ))}
-                      </span>
-                    )}
-
-                    {/* CTA chỉ hiện khi hover/chọn */}
                     <Link
                       href={p.href}
                       onClick={(e) => e.stopPropagation()}
                       className={cn(
-                        "mt-2 inline-flex w-fit items-center gap-1 text-xs font-medium text-primary transition-opacity hover:underline",
-                        on ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+                        "mt-auto inline-flex w-fit items-center gap-1 pt-1 text-xs font-medium text-primary transition-opacity hover:underline",
+                        on
+                          ? "opacity-100"
+                          : "opacity-0 group-hover:opacity-100",
                       )}
                     >
                       Xem chi tiết

@@ -25,11 +25,17 @@ export function RealtimeRefresher({
     }
 
     let client: import("ably").Realtime | null = null;
+    let cancelled = false;
     (async () => {
       try {
         const Ably = await import("ably");
+        if (cancelled) return; // đã unmount trong lúc import
         client = new Ably.Realtime({ authUrl: "/api/ably/token" });
-        client.channels.get(channelKey).subscribe(event, () => router.refresh());
+        // subscribe() trả về Promise (attach) — nuốt lỗi khi đóng lúc đang kết nối.
+        void client.channels
+          .get(channelKey)
+          .subscribe(event, () => router.refresh())
+          .catch(() => {});
       } catch {
         /* bỏ qua — vẫn làm mới khi focus */
       }
@@ -40,8 +46,14 @@ export function RealtimeRefresher({
     };
     window.addEventListener("focus", onFocus);
     return () => {
+      cancelled = true;
       window.removeEventListener("focus", onFocus);
-      client?.close();
+      try {
+        client?.close();
+      } catch {
+        /* bỏ qua */
+      }
+      client = null;
     };
   }, [enabled, channelKey, event, router]);
 

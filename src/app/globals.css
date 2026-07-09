@@ -146,26 +146,36 @@
 
 /* ── Bản đồ du lịch (Leaflet) ──────────────────────────────────────
    Pin HTML tự dựng (divIcon) + tinh chỉnh popup cho khớp hệ thiết kế. */
+/* Pin tròn có icon loại (spot/eatery/lưu trú) — sạch, khớp brand. */
 .dl-pin {
-  width: 26px;
-  height: 26px;
+  position: relative;
+  width: 30px;
+  height: 30px;
   display: grid;
   place-items: center;
-  border-radius: 50% 50% 50% 0;
-  transform: rotate(-45deg);
+  border-radius: 9999px;
   background: var(--pin, var(--primary));
-  border: 2px solid #fff;
+  border: 2.5px solid #fff;
   box-shadow: 0 2px 6px rgb(0 0 0 / 0.3);
-  transition: transform 0.15s ease;
+  color: #fff;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.2s ease;
 }
-.dl-pin__dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #fff;
+.dl-pin > svg {
+  width: 15px;
+  height: 15px;
+  display: block;
 }
 .dl-pin:hover {
-  transform: rotate(-45deg) scale(1.12);
+  transform: scale(1.12);
+}
+/* Pin đang chọn/hover từ danh sách: to hơn + quầng sáng theo màu loại. */
+.dl-pin--active {
+  transform: scale(1.24);
+  box-shadow:
+    0 0 0 4px color-mix(in oklch, var(--pin, var(--primary)) 26%, transparent),
+    0 4px 10px rgb(0 0 0 / 0.35);
 }
 /* tuyến đường định tuyến — màu theo theme (CSS stroke nhận var, khác attribute) */
 .dl-route {
