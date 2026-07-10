@@ -1,14 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import {
-  ChevronRight,
-  Compass,
-  Clock,
-  CalendarDays,
-  BadgeCheck,
-  type LucideIcon,
-} from "lucide-react";
+import { Ic } from "@/components/icon";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { coverUrl } from "@/lib/place-image";
@@ -57,18 +50,21 @@ function ExperienceCard({
   name: string;
   slug: string;
   images: { url: string; isCover: boolean }[];
-  facts: { icon: LucideIcon; text: string }[];
+  facts: { icon: string; text: string }[];
   description?: string;
 }) {
   return (
-    <Link href={href} className="group block">
-      <div className="relative aspect-[5/4] overflow-hidden rounded-2xl bg-muted">
+    <Link
+      href={href}
+      className="group flex flex-col rounded-2xl bg-card p-3 shadow-md shadow-black/5 ring-1 ring-border/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/10"
+    >
+      <div className="relative aspect-[5/4] overflow-hidden rounded-xl bg-muted">
         <Image
           src={coverUrl(images, slug)}
           alt={name}
           fill
           sizes="(min-width: 1024px) 25vw, (min-width: 640px) 40vw, 80vw"
-          className="object-cover transition-transform duration-300 group-hover:scale-[1.03] motion-reduce:transform-none motion-reduce:transition-none"
+          className="object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none"
         />
         {description && (
           <div
@@ -81,14 +77,14 @@ function ExperienceCard({
           </div>
         )}
       </div>
-      <h3 className="mt-3 text-lg font-semibold tracking-tight transition-colors group-hover:text-primary">
+      <h3 className="mt-3 px-1 text-lg font-semibold tracking-tight transition-colors group-hover:text-primary">
         {name}
       </h3>
       {facts.length > 0 && (
-        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 px-1 pb-1 text-sm text-muted-foreground">
           {facts.map((f, i) => (
             <span key={i} className="inline-flex items-center gap-1.5">
-              <f.icon className="size-3.5 shrink-0" aria-hidden />
+              <Ic icon={f.icon} className="size-4 shrink-0 text-primary" aria-hidden />
               {f.text}
             </span>
           ))}
@@ -113,14 +109,14 @@ function SpecialtyCard({
   return (
     <Link
       href={href}
-      className="group relative block aspect-square overflow-hidden rounded-2xl bg-muted"
+      className="group relative block aspect-square overflow-hidden rounded-2xl bg-muted shadow-md shadow-black/5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/10"
     >
       <Image
         src={coverUrl(images, slug)}
         alt={name}
         fill
         sizes="(min-width: 1024px) 20vw, (min-width: 640px) 25vw, 40vw"
-        className="object-cover"
+        className="object-cover transition-transform duration-500 group-hover:scale-105"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/5 to-transparent" />
       <h3 className="absolute inset-x-0 bottom-0 text-balance p-3.5 text-base font-bold leading-snug tracking-tight text-white drop-shadow-md">
@@ -149,7 +145,7 @@ function StayCard({
   return (
     <Link
       href={href}
-      className="group block overflow-hidden rounded-2xl border border-border/60 bg-card transition-all hover:border-border hover:shadow-md hover:shadow-black/5"
+      className="group flex flex-col overflow-hidden rounded-2xl bg-card shadow-md shadow-black/5 ring-1 ring-border/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/10"
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-muted">
         <Image
@@ -157,22 +153,22 @@ function StayCard({
           alt={name}
           fill
           sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 90vw"
-          className="object-cover"
+          className="object-cover transition-transform duration-500 group-hover:scale-105"
         />
+        {isVerified && (
+          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-background/90 px-2.5 py-1 text-xs font-semibold text-primary backdrop-blur">
+            <Ic icon="badge-check" className="size-3.5" aria-hidden />
+            Đã xác minh
+          </span>
+        )}
       </div>
       <div className="p-4">
         <h3 className="line-clamp-1 text-lg font-semibold tracking-tight transition-colors group-hover:text-primary">
           {name}
         </h3>
-        <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-sm">
-          {category && <span className="text-muted-foreground">{category}</span>}
-          {isVerified && (
-            <span className="inline-flex items-center gap-1 font-medium text-primary">
-              <BadgeCheck className="size-4 shrink-0" aria-hidden />
-              Đã xác minh
-            </span>
-          )}
-        </div>
+        {category && (
+          <p className="mt-1 text-sm text-muted-foreground">{category}</p>
+        )}
       </div>
     </Link>
   );
@@ -467,9 +463,9 @@ export default async function PlaceDetailPage({
                   {introPost && (
                     <Link
                       href={`/blog/${introPost.slug}`}
-                      className="group mt-6 inline-flex items-center gap-3 rounded-xl border border-border/60 bg-card p-2 pr-4 text-sm transition-colors hover:border-primary/40 hover:bg-muted/40"
+                      className="group mt-6 inline-flex items-center gap-3 rounded-2xl bg-card p-2 pr-4 text-sm shadow-sm shadow-black/5 ring-1 ring-border/60 transition-all hover:shadow-md hover:shadow-black/10 hover:ring-primary/30"
                     >
-                      <span className="relative size-11 shrink-0 overflow-hidden rounded-lg bg-muted">
+                      <span className="relative size-11 shrink-0 overflow-hidden rounded-xl bg-muted">
                         <Image
                           src={coverUrl(introPost.images, introPost.slug, 96, 96)}
                           alt=""
@@ -486,8 +482,9 @@ export default async function PlaceDetailPage({
                           {introPost.title}
                         </span>
                       </span>
-                      <ChevronRight
-                        className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary"
+                      <Ic
+                        icon="chevron-right"
+                        className="size-4 shrink-0 text-muted-foreground transition-all group-hover:translate-x-0.5 group-hover:text-primary"
                         aria-hidden
                       />
                     </Link>
@@ -550,13 +547,13 @@ export default async function PlaceDetailPage({
                     images={a.images}
                     description={a.description ?? undefined}
                     facts={[
-                      a.durationText && { icon: Clock, text: a.durationText },
+                      a.durationText && { icon: "clock", text: a.durationText },
                       a.seasonText && {
-                        icon: CalendarDays,
+                        icon: "calendar",
                         text: a.seasonText,
                       },
                     ].filter(
-                      (x): x is { icon: LucideIcon; text: string } => Boolean(x),
+                      (x): x is { icon: string; text: string } => Boolean(x),
                     )}
                   />
                 ))}
@@ -618,7 +615,11 @@ export default async function PlaceDetailPage({
 
           {!hasAnyContent && (
             <div className="rounded-2xl border border-dashed border-border/70 px-6 py-16 text-center">
-              <Compass className="mx-auto size-8 text-muted-foreground/60" aria-hidden />
+              <Ic
+                icon="compass"
+                className="mx-auto size-10 text-muted-foreground/60"
+                aria-hidden
+              />
               <p className="mt-3 font-medium">Nội dung đang được cập nhật</p>
               <p className="mt-1 text-sm text-muted-foreground">
                 Điểm đến này chưa có địa điểm, trải nghiệm hay nơi lưu trú nào — quay
@@ -664,9 +665,12 @@ export default async function PlaceDetailPage({
 /* ── Thẻ "Trước khi đi" cạnh đoạn Giới thiệu (nội dung từ CMS) ─────── */
 function QuickInfo({ facts }: { facts: { label: string; value: string }[] }) {
   return (
-    <div className="rounded-2xl border border-border/60 bg-muted/30 p-5">
-      <p className="text-sm font-semibold">Trước khi đi</p>
-      <dl className="mt-2 divide-y divide-border/60">
+    <div className="rounded-2xl bg-card p-5 shadow-md shadow-black/5 ring-1 ring-border/60">
+      <p className="flex items-center gap-2 text-sm font-semibold">
+        <Ic icon="compass" className="size-4 text-primary" aria-hidden />
+        Trước khi đi
+      </p>
+      <dl className="mt-3 divide-y divide-border/60">
         {facts.map((f, i) => (
           <div
             key={i}

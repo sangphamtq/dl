@@ -4,7 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { MapLinkField } from "@/components/cms/map-link-field";
-import { AlertCircle, Loader2, Plus, Trash2 } from "lucide-react";
+import { AlertCircle, Loader2, Plus, Trash2 } from "@/components/icons";
 import { slugify } from "@/lib/slug";
 import { cn } from "@/lib/utils";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { MapPin, Search, X, Star } from "lucide-react";
+import { Ic } from "@/components/icon";
 import { cn } from "@/lib/utils";
 import { coverUrl } from "@/lib/place-image";
 import { Rail } from "@/components/site/rail";
@@ -170,7 +170,8 @@ export function DestinationFilter({
         <div className="flex items-center gap-3 overflow-x-auto px-4 py-3 sm:px-6 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {/* Tìm kiếm */}
           <div className="relative w-44 shrink-0 sm:w-60">
-            <Search
+            <Ic
+              icon="search"
               className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
               aria-hidden
             />
@@ -180,16 +181,16 @@ export function DestinationFilter({
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Tìm điểm đến…"
               aria-label="Tìm điểm đến"
-              className="h-10 w-full rounded-md border border-transparent bg-muted pl-10 pr-9 text-sm outline-none transition-colors focus:border-primary/40 focus:bg-background [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none"
+              className="h-10 w-full rounded-full border border-transparent bg-muted pl-10 pr-9 text-sm outline-none transition-colors focus:border-primary/40 focus:bg-background focus:ring-2 focus:ring-primary/20 [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none"
             />
             {query && (
               <button
                 type="button"
                 onClick={() => setQuery("")}
                 aria-label="Xóa tìm kiếm"
-                className="absolute right-3 top-1/2 grid size-5 -translate-y-1/2 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+                className="absolute right-2.5 top-1/2 grid size-6 -translate-y-1/2 place-items-center rounded-full text-muted-foreground hover:text-foreground"
               >
-                <X className="size-3.5" aria-hidden />
+                <Ic icon="x" className="size-4" aria-hidden />
               </button>
             )}
           </div>
@@ -238,8 +239,8 @@ export function DestinationFilter({
         <div className="mt-8 space-y-14">
           {sections.map((g, i) => (
             <section key={g.label} id={`mien-${i}`} className="scroll-mt-36">
-              <div className="flex items-baseline gap-3">
-                <h2 className="text-xl font-bold tracking-tight sm:text-2xl">
+              <div className="mb-6 flex items-baseline gap-3 border-b border-border/60 pb-3">
+                <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
                   {g.label}
                 </h2>
                 {g.dests.length > 0 && (
@@ -295,7 +296,7 @@ function Segmented({
       role="group"
       aria-label={label}
       className={cn(
-        "flex h-10 w-fit shrink-0 items-center rounded-lg bg-muted p-1",
+        "flex h-10 w-fit shrink-0 items-center rounded-full bg-muted p-1",
         className,
       )}
     >
@@ -319,9 +320,9 @@ function SegButton({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "inline-flex h-full items-center whitespace-nowrap rounded-md px-3.5 text-sm font-medium transition-colors",
+        "inline-flex h-full items-center whitespace-nowrap rounded-full px-3.5 text-sm font-medium transition-colors",
         active
-          ? "bg-background text-foreground shadow-sm"
+          ? "bg-primary text-primary-foreground shadow-sm"
           : "text-muted-foreground hover:text-foreground",
       )}
     >
@@ -336,7 +337,7 @@ function ProvinceChip({ p }: { p: ProvinceItem }) {
       <span
         aria-disabled="true"
         title="Đang cập nhật"
-        className="inline-flex cursor-not-allowed items-center rounded-md border border-dashed border-border/50 px-3 py-1.5 text-sm text-muted-foreground/50"
+        className="inline-flex cursor-not-allowed items-center rounded-full border border-dashed border-border/50 px-3.5 py-1.5 text-sm text-muted-foreground/50"
       >
         {p.name}
       </span>
@@ -346,19 +347,19 @@ function ProvinceChip({ p }: { p: ProvinceItem }) {
     <Link
       href={`/diem-den/${p.slug}`}
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-md bg-muted px-3 py-1.5 text-sm transition-colors hover:bg-primary/10 hover:text-primary",
+        "inline-flex items-center gap-1.5 rounded-full bg-muted px-3.5 py-1.5 text-sm transition-colors hover:bg-primary/10 hover:text-primary",
         p.isFeatured && "font-medium",
       )}
     >
       {p.isFeatured && (
-        <Star className="size-3.5 text-warm/80" aria-hidden />
+        <Ic icon="star" className="size-3.5 text-warm" aria-hidden />
       )}
       {p.name}
       {p.childCount >= 2 && (
         <span
           title={`${p.childCount} điểm đến`}
           aria-label={`${p.childCount} điểm đến`}
-          className="grid h-4 min-w-4 place-items-center rounded-sm bg-primary/10 px-1 text-[10px] font-semibold tabular-nums text-primary"
+          className="grid h-4 min-w-4 place-items-center rounded-full bg-primary/15 px-1 text-[10px] font-semibold tabular-nums text-primary"
         >
           {p.childCount}
         </span>
@@ -369,41 +370,43 @@ function ProvinceChip({ p }: { p: ProvinceItem }) {
 
 function DestCard({ d }: { d: DestItem }) {
   return (
-    <Link href={`/diem-den/${d.slug}`} className="block">
-      <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-muted">
-        <Image
-          src={coverUrl(d.images, d.slug, 600, 800)}
-          alt={d.name}
-          fill
-          sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-          className="object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent" />
+    <Link
+      href={`/diem-den/${d.slug}`}
+      className="group relative block aspect-[4/5] overflow-hidden rounded-2xl bg-muted ring-1 ring-inset ring-white/10"
+    >
+      <Image
+        src={coverUrl(d.images, d.slug, 640, 800)}
+        alt={d.name}
+        fill
+        sizes="(min-width: 1024px) 25vw, (min-width: 640px) 42vw, 68vw"
+        className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+      />
+      {/* Scrim: đậm ở đáy để chữ đọc rõ, thoáng ở trên (giữ ảnh sáng) */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+      <div className="absolute inset-0 bg-black/0 transition-colors duration-300 group-hover:bg-black/10" />
 
-        <div className="absolute inset-x-0 bottom-0 p-5">
-          <div className="flex items-center gap-1.5 text-xs font-medium text-white/70">
-            {d.isFeatured && (
-              <Star
-                className="size-3 shrink-0 fill-current text-warm"
-                aria-label="Nổi bật"
-              />
-            )}
-            {d.parentName && (
-              <span className="inline-flex items-center gap-1">
-                <MapPin className="size-3" aria-hidden />
-                {d.parentName}
-              </span>
-            )}
-          </div>
-          <h3 className="mt-2 text-balance text-lg font-bold leading-snug tracking-tight text-white sm:text-xl">
-            {d.name}
-          </h3>
-          {d.tagline && (
-            <p className="mt-1.5 line-clamp-2 text-[13px] leading-relaxed text-white/70">
-              {d.tagline}
-            </p>
-          )}
-        </div>
+      {d.isFeatured && (
+        <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-[0.7rem] font-semibold text-white backdrop-blur">
+          <Ic icon="star" className="size-3" aria-hidden />
+          Nổi bật
+        </span>
+      )}
+
+      <div className="absolute inset-x-0 bottom-0 p-4">
+        {d.parentName && (
+          <p className="flex items-center gap-1 truncate text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-white/75">
+            <Ic icon="map-pin" className="size-3 shrink-0" aria-hidden />
+            {d.parentName}
+          </p>
+        )}
+        <h3 className="mt-1 text-balance text-lg font-bold leading-snug tracking-tight text-white drop-shadow-sm">
+          {d.name}
+        </h3>
+        {d.tagline && (
+          <p className="mt-1 line-clamp-1 text-[13px] leading-relaxed text-white/65">
+            {d.tagline}
+          </p>
+        )}
       </div>
     </Link>
   );

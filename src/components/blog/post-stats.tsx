@@ -1,4 +1,4 @@
-import { Heart, MessageCircle } from "lucide-react";
+import { Heart, MessageCircle } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 // Số lượt tim + bình luận của một bài, hiển thị trên card/list. Ẩn chỉ số bằng 0;

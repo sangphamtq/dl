@@ -1,4 +1,4 @@
-import { Shield, PenLine, Users as UsersIcon } from "lucide-react";
+import { Shield, PenLine, Users as UsersIcon } from "@/components/icons";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";

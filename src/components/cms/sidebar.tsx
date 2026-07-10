@@ -25,7 +25,7 @@ import {
   LogOut,
   ExternalLink,
   type LucideIcon,
-} from "lucide-react";
+} from "@/components/icons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,

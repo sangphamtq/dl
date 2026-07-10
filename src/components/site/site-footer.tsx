@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Mail } from "lucide-react";
+import { Mail } from "@/components/icons";
 import { getSettings } from "@/lib/settings";
 
 export async function SiteFooter() {

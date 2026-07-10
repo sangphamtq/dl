@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Flag, Lock, Pin } from "lucide-react";
+import { Flag, Lock, Pin } from "@/components/icons";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
 import { THREAD_TYPE_LABELS } from "@/lib/community";

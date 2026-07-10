@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Link2 } from "lucide-react";
+import { Check, Link2 } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 // Thanh chia sẻ bài viết — copy link + mạng xã hội. Dùng window.location nên

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight } from "@/components/icons";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getThread } from "@/lib/community-feed";

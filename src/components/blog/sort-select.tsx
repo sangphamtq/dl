@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown } from "@/components/icons";
 
 const OPTIONS = [
   { value: "moi-nhat", label: "Mới nhất" },

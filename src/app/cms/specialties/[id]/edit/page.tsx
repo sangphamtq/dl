@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "@/components/icons";
 import { prisma } from "@/lib/prisma";
 import { FormSection } from "@/components/cms/form-section";
 import { ListingImages } from "@/components/cms/listing-images";

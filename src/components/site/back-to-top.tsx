@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowUp } from "lucide-react";
+import { ArrowUp } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 // Nút "lên đầu trang" toàn site: hiện khi cuộn quá ~600px, cuộn mượt về đầu.

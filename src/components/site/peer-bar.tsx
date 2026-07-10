@@ -3,7 +3,7 @@
 import { Fragment, useEffect, useRef, useSyncExternalStore } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ChevronUp, X } from "lucide-react";
+import { ChevronUp, X } from "@/components/icons";
 import { coverUrl } from "@/lib/place-image";
 import { cn } from "@/lib/utils";
 import type { PeerItem } from "@/lib/peers";

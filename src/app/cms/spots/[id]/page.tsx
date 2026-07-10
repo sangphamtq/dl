@@ -10,7 +10,7 @@ import {
   Compass,
   ImageOff,
   TriangleAlert,
-} from "lucide-react";
+} from "@/components/icons";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
 import { parseTicketTiers, tierPriceLabel } from "@/lib/tickets";

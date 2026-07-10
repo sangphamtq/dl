@@ -3,7 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { UploadCloud, Loader2, Star, Trash2, AlertCircle } from "lucide-react";
+import { UploadCloud, Loader2, Star, Trash2, AlertCircle } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { useUploadThing } from "@/lib/uploadthing";
 import type { OwnerType } from "@/lib/owner";

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight, MapPin } from "lucide-react";
+import { ChevronRight, MapPin } from "@/components/icons";
 import { PlaceHeroStack, type HeroImage } from "@/components/site/place-hero-stack";
 
 // Trang xem thử hero card-stack cho trang chi tiết điểm đến (dữ liệu mẫu).

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Flag, Loader2, MoreHorizontal, Trash2 } from "lucide-react";
+import { Flag, Loader2, MoreHorizontal, Trash2 } from "@/components/icons";
 import {
   DropdownMenu,
   DropdownMenuContent,

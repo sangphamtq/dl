@@ -9,7 +9,7 @@ import {
   MapPin,
   ImageOff,
   ChevronRight,
-} from "lucide-react";
+} from "@/components/icons";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
 import { coverUrl } from "@/lib/place-image";

@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { UtensilsCrossed, Store } from "lucide-react";
+import { UtensilsCrossed, Store } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { coverUrl } from "@/lib/place-image";
 import { FoodCrossLink } from "@/components/site/food-cross-link";

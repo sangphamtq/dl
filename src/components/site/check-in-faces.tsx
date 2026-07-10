@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Footprints } from "lucide-react";
+import { Footprints } from "@/components/icons";
 import {
   Avatar,
   AvatarFallback,

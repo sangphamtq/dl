@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "@/components/icons";
 import { prisma } from "@/lib/prisma";
 import { getProvinces } from "@/lib/locations";
 import { PlaceForm } from "../place-form";

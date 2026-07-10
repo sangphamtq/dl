@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "@/components/icons";
 import { getProvinces } from "@/lib/locations";
 import { EateryForm } from "../eatery-form";
 import { getPlaceOptions } from "../options";

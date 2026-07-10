@@ -1,5 +1,5 @@
 import type { ComponentProps } from "react";
-import { Shield, PenLine, User } from "lucide-react";
+import { Shield, PenLine, User } from "@/components/icons";
 import type { Badge } from "@/components/ui/badge";
 
 export type Role = "admin" | "editor" | "user";

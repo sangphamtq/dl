@@ -22,7 +22,7 @@ import {
   Check,
   Info,
   type LucideIcon,
-} from "lucide-react";
+} from "@/components/icons";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";

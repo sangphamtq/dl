@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { RefreshCw, Check } from "lucide-react";
+import { RefreshCw, Check } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { revalidateSite } from "./actions";
 

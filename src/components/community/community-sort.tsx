@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowDownWideNarrow } from "lucide-react";
+import { ArrowDownWideNarrow } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { THREAD_SORTS } from "@/lib/community";
 

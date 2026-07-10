@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { BadgeCheck, ExternalLink, MapPin, Phone } from "lucide-react";
+import { BadgeCheck, ExternalLink, MapPin, Phone } from "@/components/icons";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";

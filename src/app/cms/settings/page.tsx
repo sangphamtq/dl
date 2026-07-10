@@ -1,4 +1,4 @@
-import { CheckCircle2, XCircle, Database, Cloud, KeyRound } from "lucide-react";
+import { CheckCircle2, XCircle, Database, Cloud, KeyRound } from "@/components/icons";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getSettings } from "@/lib/settings";

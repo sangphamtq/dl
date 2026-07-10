@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { Loader2, MapPinCheckInside, MapPinPlus } from "lucide-react";
+import { Loader2, MapPinCheckInside, MapPinPlus } from "@/components/icons";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {

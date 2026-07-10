@@ -2,11 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MapPinCheck } from "lucide-react";
+import { MapPinCheck } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
-// Nút "Nơi đã đến" trên header — icon gọn (pill có nhãn ở xl); tô tông brand khi
-// đang ở trang bản đồ.
+// Nút "Nơi đã đến" trên header — icon tròn, đồng bộ với nút lịch trình & chuông.
 export function DaDenNavLink() {
   const pathname = usePathname();
   const active = pathname.startsWith("/tai-khoan/da-den");
@@ -18,14 +17,13 @@ export function DaDenNavLink() {
       aria-label="Nơi đã đến"
       aria-current={active ? "page" : undefined}
       className={cn(
-        "inline-flex h-9 w-9 items-center justify-center gap-1.5 rounded-full text-sm font-normal transition-colors xl:w-auto xl:px-3",
+        "grid size-9 place-items-center rounded-full transition-colors",
         active
-          ? "text-primary drop-shadow-sm"
-          : "text-foreground hover:text-primary",
+          ? "bg-primary/10 text-primary"
+          : "text-foreground hover:bg-muted",
       )}
     >
-      <MapPinCheck className="size-4" />
-      <span className="hidden xl:inline">Nơi đã đến</span>
+      <MapPinCheck className="size-4" aria-hidden />
     </Link>
   );
 }

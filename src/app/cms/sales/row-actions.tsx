@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { BadgeCheck, Loader2, ShieldX, Undo2 } from "lucide-react";
+import { BadgeCheck, Loader2, ShieldX, Undo2 } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { approveSale, rejectSale, revokeSale } from "./actions";

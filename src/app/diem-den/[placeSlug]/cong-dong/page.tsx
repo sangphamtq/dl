@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { MessagesSquare } from "lucide-react";
+import { MessagesSquare } from "@/components/icons";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { ThreadType } from "@/generated/prisma/enums";

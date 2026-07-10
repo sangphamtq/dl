@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { MessageCircle, Reply, Trash2 } from "lucide-react";
+import { MessageCircle, Reply, Trash2 } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { addComment, deleteComment } from "@/app/blog/actions";
 

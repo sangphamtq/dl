@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Lock, Send } from "lucide-react";
+import { Lock, Send } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { initials, timeAgo } from "@/lib/format";
 import { addReply, deleteReply, fetchReplies } from "@/app/cong-dong/actions";

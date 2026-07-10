@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { ChevronRight, Clock } from "lucide-react";
+import { ChevronRight, Clock } from "@/components/icons";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import { POST_CATEGORY_LABELS, label } from "@/lib/listing-labels";

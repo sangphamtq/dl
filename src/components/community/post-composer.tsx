@@ -4,7 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Bold, ImagePlus, Italic, Loader2, Smile, X } from "lucide-react";
+import { Bold, ImagePlus, Italic, Loader2, Smile, X } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { initials } from "@/lib/format";
 import { useUploadThing } from "@/lib/uploadthing";

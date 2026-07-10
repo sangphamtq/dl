@@ -9,7 +9,7 @@ import {
   MessageCircle,
   Phone,
   ShieldAlert,
-} from "lucide-react";
+} from "@/components/icons";
 import { prisma } from "@/lib/prisma";
 import { isStaffViewer } from "@/lib/preview";
 import { saleServiceLabel, SALE_LEVEL_LABELS } from "@/lib/sale";

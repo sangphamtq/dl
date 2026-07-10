@@ -2,7 +2,7 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Loader2, Lock, LockOpen, Pin, PinOff, Trash2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, Lock, LockOpen, Pin, PinOff, Trash2 } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import {
   setThreadPinned,

@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { AlertCircle, Loader2, Plus, X } from "lucide-react";
+import { AlertCircle, Loader2, Plus, X } from "@/components/icons";
 import { slugify } from "@/lib/slug";
 import { cn } from "@/lib/utils";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";

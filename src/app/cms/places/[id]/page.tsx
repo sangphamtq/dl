@@ -15,7 +15,7 @@ import {
   Bus,
   ImageOff,
   Play,
-} from "lucide-react";
+} from "@/components/icons";
 import { prisma } from "@/lib/prisma";
 import { getTikTokInfo } from "@/lib/tiktok";
 import { cn } from "@/lib/utils";

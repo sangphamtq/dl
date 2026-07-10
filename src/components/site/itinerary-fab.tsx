@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Route } from "lucide-react";
+import { Route } from "@/components/icons";
 
 // Nút nổi bám mép phải màn hình, dẫn tới lịch trình đang soạn dở.
 // Ẩn khi đã ở trang lịch trình. (Placeholder: sau này chỉ hiện khi có bản nháp.)

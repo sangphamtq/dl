@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
-import { Plus, Search, Star, MapPin } from "lucide-react";
+import { Plus, Search, Star, MapPin } from "@/components/icons";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import { searchIds } from "@/lib/cms-search";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Search } from "lucide-react";
+import { Search } from "@/components/icons";
 import { CommandPalette } from "./command-palette";
 
 // Ô tìm kiếm header: ở lg+ là "ô" bấm mở Command palette (⌘K); dưới lg là icon.
@@ -26,11 +26,11 @@ export function HeaderSearch() {
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Tìm kiếm"
-        className="hidden h-9 w-48 items-center gap-2 rounded-md border border-transparent bg-muted/60 px-3 text-sm text-muted-foreground transition-colors hover:bg-muted lg:flex xl:w-56"
+        className="hidden h-9 w-48 items-center gap-2 rounded-full border border-transparent bg-muted/60 pl-3.5 pr-2 text-sm text-muted-foreground transition-colors hover:bg-muted lg:flex xl:w-56"
       >
         <Search className="size-4 shrink-0" aria-hidden />
         <span className="flex-1 text-left">Tìm kiếm…</span>
-        <kbd className="pointer-events-none hidden items-center rounded border bg-background px-1.5 font-mono text-[0.7rem] text-muted-foreground xl:inline-flex">
+        <kbd className="pointer-events-none hidden items-center rounded-full border bg-background px-2 font-mono text-[0.7rem] text-muted-foreground xl:inline-flex">
           ⌘K
         </kbd>
       </button>

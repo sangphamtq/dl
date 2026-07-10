@@ -3,7 +3,7 @@
 import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { MapPinned, MessagesSquare } from "lucide-react";
+import { MapPinned, MessagesSquare } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import type { PlaceTab } from "@/lib/place-meta";
 import {

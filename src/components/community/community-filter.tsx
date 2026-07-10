@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LayoutGrid } from "lucide-react";
+import { LayoutGrid } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { THREAD_TYPES } from "@/lib/community";
 import { threadTypeIcon } from "./thread-type-badge";

@@ -31,30 +31,30 @@ export function SiteNav({
   const pathname = usePathname();
 
   return (
-    <nav className={cn("items-center gap-1 h-full", className)}>
-      {entries.map((e) =>
-        "items" in e || "columns" in e ? (
-          <NavGroupMenu
-            key={e.label}
-            label={e.label}
-            href={e.href}
-            items={e.items}
-            columns={e.columns}
-          />
-        ) : (
+    <nav className={cn("h-full items-center gap-1", className)}>
+      {entries.map((e) => {
+        if ("items" in e || "columns" in e)
+          return (
+            <NavGroupMenu
+              key={e.label}
+              label={e.label}
+              href={e.href}
+              items={e.items}
+              columns={e.columns}
+            />
+          );
+        const active =
+          pathname === e.href || pathname.startsWith(`${e.href}/`);
+        return (
           <Link
             key={e.href}
             href={e.href}
-            aria-current={
-              pathname === e.href || pathname.startsWith(`${e.href}/`)
-                ? "page"
-                : undefined
-            }
+            aria-current={active ? "page" : undefined}
             className={cn(
-              "relative flex h-full items-center px-3 text-sm uppercase transition-colors",
-              pathname === e.href || pathname.startsWith(`${e.href}/`)
-                ? "text-primary drop-shadow-sm"
-                : "text-foreground hover:text-primary",
+              "relative flex h-full items-center px-3 text-sm font-medium transition-colors",
+              active
+                ? "text-foreground after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:rounded-full after:bg-primary"
+                : "text-muted-foreground hover:text-foreground",
             )}
           >
             {e.label}
@@ -64,8 +64,8 @@ export function SiteNav({
               </Badge>
             )}
           </Link>
-        ),
-      )}
+        );
+      })}
     </nav>
   );
 }

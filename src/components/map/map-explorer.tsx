@@ -18,7 +18,7 @@ import {
   Plus,
   ChevronUp,
   ChevronDown,
-} from "lucide-react";
+} from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { getRoute, getDistances, type RouteResult } from "@/lib/map-actions";
 import type { GeoPoint, GeoType } from "@/lib/geo";

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronLeft, ChevronDown, MapPin, Star, Sparkles } from "lucide-react";
+import { ChevronLeft, ChevronDown, MapPin, Star, Sparkles } from "@/components/icons";
 import { HeroFrame } from "@/components/site/hero-frame";
 import { PlaceHeroStack, type HeroImage } from "@/components/site/place-hero-stack";
 import { PlaceVideos, type PlaceVideo } from "@/components/site/tiktok-videos";

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, Flag } from "lucide-react";
+import { ArrowLeft, Flag } from "@/components/icons";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
 import { ReportActions } from "./report-actions";

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { BadgeCheck, MapPin, UserPlus } from "lucide-react";
+import { BadgeCheck, MapPin, UserPlus } from "@/components/icons";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";

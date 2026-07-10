@@ -1,5 +1,11 @@
 import type { Metadata } from "next";
-import { Cabin, Geist_Mono, Mali, Be_Vietnam_Pro } from "next/font/google";
+import {
+  Cabin,
+  Geist_Mono,
+  Mali,
+  Be_Vietnam_Pro,
+  Dancing_Script,
+} from "next/font/google";
 import { Toaster } from "sonner";
 import { getSettings } from "@/lib/settings";
 import { BackToTop } from "@/components/site/back-to-top";
@@ -19,6 +25,15 @@ const beVietnamPro = Be_Vietnam_Pro({
     weight: ["300", "400", "500", "600", "700", "800"],
     display: "swap",
   });
+
+// Font script (viết tay, calligraphy) cho eyebrow các section — dấu ấn thị
+// giác kiểu poster/landing du lịch ("Muôn nơi chờ bạn", "Về chúng tôi"…).
+const dancingScript = Dancing_Script({
+  variable: "--font-script",
+  subsets: ["latin", "latin-ext", "vietnamese"],
+  weight: ["600", "700"],
+  display: "swap",
+});
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -49,7 +64,7 @@ export default function RootLayout({
   return (
     <html
       lang="vi"
-      className={`${cabin.variable} ${beVietnamPro.variable} ${geistMono.variable} ${mali.variable} h-full antialiased`}
+      className={`${cabin.variable} ${beVietnamPro.variable} ${geistMono.variable} ${mali.variable} ${dancingScript.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         {children}

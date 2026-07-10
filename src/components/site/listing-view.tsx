@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { LayoutGrid, List } from "lucide-react";
+import { LayoutGrid, List } from "@/components/icons";
 import { coverUrl } from "@/lib/place-image";
 import { cn } from "@/lib/utils";
 import { StarRating } from "@/components/site/star-rating";

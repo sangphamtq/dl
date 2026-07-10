@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "@/components/icons";
 import { getProvinces } from "@/lib/locations";
 import { SpotForm } from "../spot-form";
 import { getPlaceOptions } from "../place-options";

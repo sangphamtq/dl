@@ -12,7 +12,7 @@ import {
   Phone,
   Globe,
   ExternalLink,
-} from "lucide-react";
+} from "@/components/icons";
 import { prisma } from "@/lib/prisma";
 import { coverUrl } from "@/lib/place-image";
 import { proseClass } from "@/components/cms/rich-text-editor";

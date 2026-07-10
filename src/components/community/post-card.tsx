@@ -12,7 +12,7 @@ import {
   Pin,
   Share2,
   Users,
-} from "lucide-react";
+} from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { initials, timeAgo } from "@/lib/format";
 import { renderPostBody } from "@/lib/post-format";

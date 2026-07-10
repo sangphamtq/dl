@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Share2, Link2, Check } from "lucide-react";
+import { Share2, Link2, Check } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { PILL_BASE, PILL_SURFACE } from "@/components/site/check-in-button";
 import {

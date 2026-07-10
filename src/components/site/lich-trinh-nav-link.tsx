@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Route } from "lucide-react";
+import { Route } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 // Nút "Lịch trình của tôi" trên header — cùng kiểu nút chuông; tô nền brand

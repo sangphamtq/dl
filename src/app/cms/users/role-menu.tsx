@@ -1,7 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
-import { Check, ChevronDown, Loader2 } from "lucide-react";
+import { Check, ChevronDown, Loader2 } from "@/components/icons";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,

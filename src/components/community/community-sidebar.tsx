@@ -8,7 +8,7 @@ import {
   ShieldCheck,
   Sparkles,
   Users,
-} from "lucide-react";
+} from "@/components/icons";
 import { initials, timeAgo } from "@/lib/format";
 
 export type SidebarTrip = {

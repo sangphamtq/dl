@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MapPin, MessagesSquare } from "lucide-react";
+import { MapPin, MessagesSquare } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";

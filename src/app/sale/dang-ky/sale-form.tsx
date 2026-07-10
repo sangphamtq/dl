@@ -12,7 +12,7 @@ import {
   Loader2,
   ShieldCheck,
   X,
-} from "lucide-react";
+} from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { useUploadThing } from "@/lib/uploadthing";
 import { SALE_SERVICES } from "@/lib/sale";

@@ -1,4 +1,4 @@
-import { Star } from "lucide-react";
+import { Star } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 // Hiển thị sao (0–5) với sao lẻ (fill theo %). Thuần — dùng được ở server & client.

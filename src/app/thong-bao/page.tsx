@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Bell, CheckCheck } from "lucide-react";
+import { Bell, CheckCheck } from "@/components/icons";
 import { auth } from "@/auth";
 import { getRecentNotifications } from "@/lib/notifications";
 import { initials, timeAgo } from "@/lib/format";

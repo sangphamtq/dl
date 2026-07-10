@@ -13,7 +13,7 @@ import {
   Sparkles,
   Star,
   Check,
-} from "lucide-react";
+} from "@/components/icons";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "@/components/icons";
 import { ActivityForm } from "../activity-form";
 import { getPlaceOptions, getSpotOptions } from "../options";
 

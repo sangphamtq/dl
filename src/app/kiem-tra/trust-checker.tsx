@@ -13,7 +13,7 @@ import {
   ShieldAlert,
   ShieldQuestion,
   X,
-} from "lucide-react";
+} from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { useUploadThing } from "@/lib/uploadthing";
 import { TRUST_CHANNELS } from "@/lib/trust";

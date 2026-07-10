@@ -1,4 +1,4 @@
-import { Eye, type LucideIcon } from "lucide-react";
+import { Eye, type LucideIcon } from "@/components/icons";
 import { prisma } from "@/lib/prisma";
 import { summarizeReviews } from "@/lib/review-meta";
 import { coverUrl } from "@/lib/place-image";

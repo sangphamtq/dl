@@ -9,7 +9,7 @@ import {
   Star,
   Trash2,
   AlertCircle,
-} from "lucide-react";
+} from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { useUploadThing } from "@/lib/uploadthing";
 import { Button } from "@/components/ui/button";

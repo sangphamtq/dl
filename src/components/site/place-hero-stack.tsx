@@ -11,7 +11,7 @@ import {
   Pause,
   Play,
   X,
-} from "lucide-react";
+} from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { useHeroAmbient } from "@/components/site/hero-frame";
 import {

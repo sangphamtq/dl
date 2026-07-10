@@ -5,7 +5,7 @@ import {
   Tag,
   Users,
   type LucideIcon,
-} from "lucide-react";
+} from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { THREAD_TYPE_LABELS } from "@/lib/community";
 

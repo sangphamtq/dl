@@ -1,5 +1,5 @@
-import { MapPinned } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { Ic } from "@/components/icon";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import {
@@ -65,14 +65,15 @@ export default async function DiemDenPage() {
   const isEmpty = provinces.length === 0 && destinations.length === 0;
 
   const stats = [
-    { value: destinations.length, label: "điểm đến" },
-    { value: provinces.length, label: "tỉnh thành" },
-    spotCount > 0 && { value: spotCount, label: "địa điểm" },
+    { icon: "compass", value: destinations.length, label: "điểm đến" },
+    { icon: "map-pin", value: provinces.length, label: "tỉnh thành" },
+    spotCount > 0 && { icon: "signpost", value: spotCount, label: "địa điểm" },
     eateryCount + activityCount > 0 && {
+      icon: "sparkles",
       value: eateryCount + activityCount,
       label: "trải nghiệm",
     },
-  ].filter(Boolean) as { value: number; label: string }[];
+  ].filter(Boolean) as { icon: string; value: number; label: string }[];
 
   const destItems: DestItem[] = destinations.map((d) => ({
     slug: d.slug,
@@ -114,28 +115,40 @@ export default async function DiemDenPage() {
       <SiteHeader />
 
       <main className="flex-1">
-        {/* Masthead gọn — tiêu đề + một dòng mô tả, thống kê thành dòng phụ mộc.
-            Không border-b: thanh lọc sticky bên dưới đã là đường phân tách. */}
-        <section>
-          <div className="mx-auto flex max-w-7xl flex-col gap-x-10 gap-y-4 px-4 py-8 sm:flex-row sm:items-end sm:justify-between sm:px-6 sm:py-10">
+        {/* Hero gọn — tiêu đề + thống kê inline (tiết kiệm diện tích) */}
+        <section className="border-b border-border/60 bg-gradient-to-b from-accent/40 to-background">
+          <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 sm:flex-row sm:items-end sm:justify-between sm:px-6 sm:py-10">
             <div className="max-w-xl">
-              <h1 className="text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
+              <p className="flex items-center gap-2 font-script text-xl font-bold text-primary">
+                <Ic icon="backpack" className="size-4" aria-hidden />
+                Muôn nơi chờ bạn
+              </p>
+              <h1 className="mt-1 text-balance text-3xl font-extrabold tracking-tight sm:text-4xl">
                 Điểm đến khắp dải đất hình chữ S
               </h1>
-              <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
+              <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground sm:text-base">
                 Chọn một nơi để bắt đầu — gợi ý nên ăn gì, chơi gì, ở đâu và đi
                 lại thế nào cho từng vùng.
               </p>
             </div>
 
             {!isEmpty && (
-              <dl className="flex flex-wrap items-baseline gap-x-6 gap-y-2 sm:shrink-0 sm:justify-end">
+              <dl className="flex flex-wrap gap-x-6 gap-y-3 sm:shrink-0 sm:justify-end sm:gap-x-8">
                 {stats.map((s) => (
-                  <div key={s.label} className="flex items-baseline gap-1.5">
-                    <dd className="font-mono text-2xl font-medium tabular-nums tracking-tight text-foreground">
-                      {s.value.toLocaleString("vi-VN")}
-                    </dd>
-                    <dt className="text-sm text-muted-foreground">{s.label}</dt>
+                  <div key={s.label} className="flex items-center gap-2">
+                    <Ic
+                      icon={s.icon}
+                      className="size-5 shrink-0 text-primary"
+                      aria-hidden
+                    />
+                    <div>
+                      <dd className="text-xl font-bold leading-none tracking-tight tabular-nums">
+                        {s.value.toLocaleString("vi-VN")}
+                      </dd>
+                      <dt className="mt-0.5 text-xs text-muted-foreground">
+                        {s.label}
+                      </dt>
+                    </div>
                   </div>
                 ))}
               </dl>
@@ -145,8 +158,9 @@ export default async function DiemDenPage() {
 
         {isEmpty ? (
           <div className="mx-auto max-w-7xl px-4 py-24 text-center sm:px-6">
-            <MapPinned
-              className="mx-auto size-10 text-muted-foreground"
+            <Ic
+              icon="map-pin"
+              className="mx-auto size-12 text-muted-foreground"
               aria-hidden
             />
             <p className="mt-4 text-muted-foreground">
@@ -154,7 +168,7 @@ export default async function DiemDenPage() {
             </p>
           </div>
         ) : (
-          <div className="mx-auto max-w-7xl px-4 pb-12 pt-2 sm:px-6 sm:pb-16 sm:pt-3">
+          <div className="mx-auto max-w-7xl px-4 pb-16 pt-8 sm:px-6 sm:pb-24 sm:pt-10">
             <DestinationFilter
               items={destItems}
               provinces={provinceItems}

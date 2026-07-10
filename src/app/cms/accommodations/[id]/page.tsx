@@ -13,7 +13,7 @@ import {
   Phone,
   MessageCircle,
   Link2,
-} from "lucide-react";
+} from "@/components/icons";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";

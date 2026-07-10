@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { Compass } from "lucide-react";
+import { Compass } from "@/components/icons";
 import Link from "next/link";
 import { getPlaceHeader } from "@/lib/place-meta";
 import { getPlaceGeoPoints } from "@/lib/geo";

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ChevronRight } from "lucide-react";
+import { Ic } from "@/components/icon";
 import { SectionHeading } from "@/components/site/section-heading";
 
 export type SpotShowcaseItem = {
@@ -46,14 +46,14 @@ export function SpotShowcase({
         {/* Hero — 1 card ảnh dọc, tự giãn cao bằng danh sách */}
         <Link
           href={`/dia-diem/${featured.slug}`}
-          className="group relative block aspect-[4/3] overflow-hidden rounded-2xl bg-muted lg:col-span-4 lg:aspect-auto"
+          className="group relative block aspect-[4/3] overflow-hidden rounded-2xl bg-muted shadow-md shadow-black/5 transition-shadow hover:shadow-xl hover:shadow-black/10 lg:col-span-4 lg:aspect-auto"
         >
           <Image
             src={featured.image}
             alt={featured.name}
             fill
             sizes="(min-width: 1024px) 33vw, 100vw"
-            className="object-cover"
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
           <div className="absolute inset-x-0 bottom-0 p-6">
@@ -81,13 +81,13 @@ export function SpotShowcase({
               href={`/dia-diem/${s.slug}`}
               className="group flex items-center gap-4"
             >
-              <div className="relative size-24 shrink-0 overflow-hidden rounded-xl bg-muted">
+              <div className="relative size-24 shrink-0 overflow-hidden rounded-2xl bg-muted shadow-sm shadow-black/5">
                 <Image
                   src={s.image}
                   alt={s.name}
                   fill
                   sizes="96px"
-                  className="object-cover"
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
                 />
               </div>
               <div className="min-w-0 flex-1">
@@ -100,8 +100,9 @@ export function SpotShowcase({
                   </p>
                 )}
               </div>
-              <ChevronRight
-                className="size-5 shrink-0 text-muted-foreground/50 transition-transform group-hover:translate-x-0.5"
+              <Ic
+                icon="chevron-right"
+                className="size-5 shrink-0 text-muted-foreground/40 transition-all group-hover:translate-x-0.5 group-hover:text-primary"
                 aria-hidden
               />
             </Link>

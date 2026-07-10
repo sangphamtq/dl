@@ -1,4 +1,4 @@
-import { Construction } from "lucide-react";
+import { Construction } from "@/components/icons";
 
 // Trang CMS chưa xây dựng: tiêu đề + vùng nội dung trống.
 export function CmsPlaceholder({

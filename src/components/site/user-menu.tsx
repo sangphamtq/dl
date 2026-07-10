@@ -1,17 +1,30 @@
 "use client";
 
+import { useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
   LayoutDashboard,
   LogOut,
   Home,
   MapPinCheck,
+  MapPin,
+  Check,
   Route,
-} from "lucide-react";
+} from "@/components/icons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { removeDiacritics } from "@/lib/slug";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,8 +32,12 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { setHomeProvince } from "./home-province-actions";
 
 const STAFF = ["admin", "editor"];
 
@@ -31,14 +48,17 @@ type Props = {
     image?: string | null;
     role?: string;
   };
+  provinces: string[]; // danh sách tỉnh/thành để chọn "tỉnh của bạn"
+  homeProvince: string | null; // tỉnh đang chọn
 };
 
-export function UserMenu({ user }: Props) {
+export function UserMenu({ user, provinces, homeProvince }: Props) {
   const initial = (user.name ?? user.email ?? "?").charAt(0).toUpperCase();
   const isStaff = !!user.role && STAFF.includes(user.role);
+  const [open, setOpen] = useState(false);
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <button
           aria-label="Tài khoản"
@@ -52,7 +72,7 @@ export function UserMenu({ user }: Props) {
           </Avatar>
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
+      <DropdownMenuContent align="end" className="w-60">
         <DropdownMenuGroup>
           <DropdownMenuLabel>
             <div className="flex flex-col">
@@ -83,6 +103,11 @@ export function UserMenu({ user }: Props) {
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
+          <HomeProvinceSubmenu
+            provinces={provinces}
+            value={homeProvince}
+            onDone={() => setOpen(false)}
+          />
           <DropdownMenuItem asChild>
             <Link href="/">
               <Home className="size-4" aria-hidden />
@@ -123,5 +148,91 @@ export function UserMenu({ user }: Props) {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+// "Tỉnh của bạn" — submenu có ô tìm kiếm không dấu. Cập nhật lạc quan rồi lưu
+// (cookie + đồng bộ User) qua server action, refresh để gợi ý cập nhật theo tỉnh.
+function HomeProvinceSubmenu({
+  provinces,
+  value,
+  onDone,
+}: {
+  provinces: string[];
+  value: string | null;
+  onDone?: () => void;
+}) {
+  const router = useRouter();
+  const [selected, setSelected] = useState<string | null>(value);
+  const [pending, startTransition] = useTransition();
+
+  function choose(name: string | null) {
+    setSelected(name);
+    onDone?.();
+    startTransition(async () => {
+      await setHomeProvince(name);
+      router.refresh();
+    });
+  }
+
+  return (
+    <DropdownMenuSub>
+      <DropdownMenuSubTrigger className={cn(pending && "opacity-70")}>
+        <MapPin className="size-4" aria-hidden />
+        <span className="flex-1">Tỉnh của bạn</span>
+        <span
+          className={cn(
+            "max-w-[6.5rem] truncate text-xs",
+            selected ? "text-muted-foreground" : "text-muted-foreground/60",
+          )}
+        >
+          {selected ?? "Chọn"}
+        </span>
+      </DropdownMenuSubTrigger>
+      {/* stopPropagation: để cmdk xử lý gõ/di chuyển, không bị typeahead của menu chặn */}
+      <DropdownMenuSubContent
+        className="w-64 p-0"
+        onKeyDown={(e) => e.stopPropagation()}
+      >
+        <Command
+          filter={(v, s) =>
+            removeDiacritics(v).includes(removeDiacritics(s)) ? 1 : 0
+          }
+        >
+          <CommandInput placeholder="Tìm tỉnh/thành…" />
+          <CommandList>
+            <CommandEmpty>Không tìm thấy.</CommandEmpty>
+            <CommandGroup>
+              {selected && (
+                <CommandItem
+                  value="bo-chon"
+                  onSelect={() => choose(null)}
+                  className="text-muted-foreground"
+                >
+                  <span className="size-4 shrink-0" aria-hidden />
+                  Bỏ chọn
+                </CommandItem>
+              )}
+              {provinces.map((name) => (
+                <CommandItem
+                  key={name}
+                  value={name}
+                  onSelect={() => choose(name)}
+                >
+                  <Check
+                    className={cn(
+                      "size-4 shrink-0",
+                      selected === name ? "opacity-100" : "opacity-0",
+                    )}
+                    aria-hidden
+                  />
+                  {name}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </DropdownMenuSubContent>
+    </DropdownMenuSub>
   );
 }

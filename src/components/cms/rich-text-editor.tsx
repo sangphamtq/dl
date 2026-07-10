@@ -33,7 +33,7 @@ import {
   Trash2,
   Underline,
   Undo2,
-} from "lucide-react";
+} from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 // Style chung cho nội dung rich text khi HIỂN THỊ (chi tiết CMS & công khai) —

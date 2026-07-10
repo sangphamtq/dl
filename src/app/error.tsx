@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import { DatabaseZap, RotateCw, TriangleAlert } from "lucide-react";
+import { DatabaseZap, RotateCw, TriangleAlert } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 

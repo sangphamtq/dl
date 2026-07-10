@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Check, ChevronDown, MapPin } from "lucide-react";
+import { Check, ChevronDown, MapPin } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { removeDiacritics } from "@/lib/slug";
 import {

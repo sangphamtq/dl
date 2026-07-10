@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 
@@ -50,14 +50,22 @@ export function NavGroupMenu({
         aria-expanded={open}
         onClick={() => setOpen(false)}
         className={cn(
-          "flex h-full items-center gap-1 px-3 text-sm uppercase transition-colors",
+          "relative flex h-full items-center gap-1 pl-3 pr-2.5 text-sm font-medium transition-colors",
           active
-            ? "text-primary drop-shadow-sm"
-            : "text-foreground hover:text-primary",
+            ? "text-foreground after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:rounded-full after:bg-primary"
+            : open
+              ? "text-foreground"
+              : "text-muted-foreground hover:text-foreground",
         )}
       >
         {label}
-        <ChevronDown className="size-3.5 text-muted-foreground" aria-hidden />
+        <ChevronDown
+          className={cn(
+            "size-3.5 transition-transform duration-200",
+            open ? "rotate-180 text-foreground" : "text-muted-foreground",
+          )}
+          aria-hidden
+        />
       </Link>
 
       {/* pt-2 = "cầu" hover liền mạch giữa nhãn và panel */}
@@ -69,15 +77,15 @@ export function NavGroupMenu({
       >
         {columns ? (
           // Mega-menu: mỗi cột là một thẻ danh mục
-          <div className="flex gap-1 rounded-lg border bg-popover p-2 shadow-sm">
+          <div className="flex gap-1 rounded-2xl border border-border/60 bg-popover p-2 shadow-lg shadow-black/5">
             {columns.map((c) => (
               <Link
                 key={c.href}
                 href={c.href}
                 onClick={() => setOpen(false)}
                 className={cn(
-                  "flex w-48 flex-col gap-0.5 rounded-md px-3 py-2.5 transition-colors",
-                  isActive(c.href) ? "bg-muted" : "hover:bg-muted",
+                  "flex w-48 flex-col gap-0.5 rounded-xl px-3 py-2.5 transition-colors",
+                  isActive(c.href) ? "bg-primary/10" : "hover:bg-muted",
                 )}
               >
                 <span className="flex items-center gap-1.5 text-sm font-medium text-foreground">
@@ -94,16 +102,16 @@ export function NavGroupMenu({
           </div>
         ) : (
           // Danh sách đơn cột
-          <div className="min-w-[11rem] rounded-lg border bg-popover p-1 shadow-sm">
+          <div className="min-w-[11rem] rounded-2xl border border-border/60 bg-popover p-1.5 shadow-lg shadow-black/5">
             {items?.map((i) => (
               <Link
                 key={i.href}
                 href={i.href}
                 onClick={() => setOpen(false)}
                 className={cn(
-                  "flex items-center justify-between gap-4 rounded-md px-3 py-2 text-sm transition-colors",
+                  "flex items-center justify-between gap-4 rounded-xl px-3 py-2 text-sm transition-colors",
                   isActive(i.href)
-                    ? "text-primary"
+                    ? "bg-primary/10 font-medium text-primary"
                     : "text-foreground hover:bg-muted",
                 )}
               >

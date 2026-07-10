@@ -14,7 +14,7 @@ import {
   Lightbulb,
   Clock,
   ChevronRight,
-} from "lucide-react";
+} from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { coverUrl } from "@/lib/place-image";
 import { EATERY_CATEGORY_LABELS, MEAL_LABELS, label } from "@/lib/listing-labels";

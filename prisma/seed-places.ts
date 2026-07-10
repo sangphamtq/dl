@@ -51,7 +51,7 @@ const DESTINATIONS = [
 // ẢNH ĐIỂM ĐẾN — ĐIỀN LINK Ở ĐÂY (key = slug). Ảnh đầu mảng là ảnh bìa.
 // Để trống [] → dùng ảnh fallback (picsum). Chỉ ghi đè ảnh khi có ≥1 link.
 const DEST_IMAGES: Record<string, string[]> = {
-  "sa-pa": [],
+  "sa-pa": ['https://bcp.cdnchinhphu.vn/344443456812359680/2026/1/8/sapa-1767859965743455932137.jpg'],
   "ha-long": [],
   "hoi-an": [],
   "da-lat": [],

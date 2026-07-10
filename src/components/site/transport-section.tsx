@@ -16,7 +16,7 @@ import {
   Bike,
   Footprints,
   CarTaxiFront,
-} from "lucide-react";
+} from "@/components/icons";
 
 export type TransportItem = {
   id: string;

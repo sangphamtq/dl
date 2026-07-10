@@ -13,7 +13,7 @@ import {
   ZoomControl,
   useMap,
 } from "react-leaflet";
-import { Layers, Map as MapIcon, Maximize, Crosshair, ArrowRight } from "lucide-react";
+import { Layers, Map as MapIcon, Maximize, Crosshair, ArrowRight } from "@/components/icons";
 import type { GeoPoint, GeoType } from "@/lib/geo";
 import {
   SPOT_CATEGORY_LABELS,

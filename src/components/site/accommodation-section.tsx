@@ -11,7 +11,7 @@ import {
   MessageCircle,
   Phone,
   ArrowRight,
-} from "lucide-react";
+} from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { coverUrl } from "@/lib/place-image";
 import { ACCOMMODATION_CATEGORY_LABELS, label } from "@/lib/listing-labels";

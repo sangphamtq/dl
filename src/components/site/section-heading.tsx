@@ -1,7 +1,8 @@
 import Link from "next/link";
+import { Ic } from "@/components/icon";
 
-// Tiêu đề section trang Place: tên + số lượng (cạnh tên) + link "Xem tất cả"
-// gạch chân mảnh. Dùng chung mọi section để nhất quán.
+// Tiêu đề section trang Place: tên đậm + link "Xem tất cả →" turquoise (khớp
+// phong cách trang chủ). Dùng chung mọi section để nhất quán.
 export function SectionHeading({
   title,
   href,
@@ -19,7 +20,7 @@ export function SectionHeading({
       {href && (
         <Link
           href={href}
-          className="shrink-0 text-sm text-muted-foreground underline decoration-border decoration-1 underline-offset-4 transition-colors hover:text-foreground hover:decoration-foreground"
+          className="group inline-flex shrink-0 items-center gap-1 text-sm font-medium text-primary"
         >
           Xem tất cả
           {count != null && (
@@ -29,6 +30,11 @@ export function SectionHeading({
               {unit ? ` ${unit}` : ""}
             </span>
           )}
+          <Ic
+            icon="arrow-right"
+            className="size-4 transition-transform group-hover:translate-x-0.5"
+            aria-hidden
+          />
         </Link>
       )}
     </div>

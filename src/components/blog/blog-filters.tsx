@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Check, ChevronDown, RotateCcw, Search } from "lucide-react";
+import { Check, ChevronDown, RotateCcw, Search } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 export type FilterOption = { value: string; label: string; count: number };

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Search, MapPin } from "lucide-react";
+import { Search, MapPin } from "@/components/icons";
 import { searchAll, featuredDestinations } from "@/lib/search";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";

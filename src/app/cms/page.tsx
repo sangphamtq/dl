@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MapPin, Compass, Newspaper, Users, ArrowRight } from "lucide-react";
+import { MapPin, Compass, Newspaper, Users, ArrowRight } from "@/components/icons";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 

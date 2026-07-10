@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ImageIcon } from "lucide-react";
+import { ImageIcon } from "@/components/icons";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import { cn } from "@/lib/utils";

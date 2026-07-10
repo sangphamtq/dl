@@ -10,7 +10,7 @@ import {
   Trash2,
   Loader2,
   FileText,
-} from "lucide-react";
+} from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,

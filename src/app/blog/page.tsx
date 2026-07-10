@@ -13,7 +13,7 @@ import {
   Sparkles,
   UtensilsCrossed,
   type LucideIcon,
-} from "lucide-react";
+} from "@/components/icons";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import { cn } from "@/lib/utils";
