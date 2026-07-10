@@ -14,6 +14,7 @@ import { LichTrinhNavLink } from "./lich-trinh-nav-link";
 import { HeaderSearch } from "./header-search";
 import { SiteNav, type NavEntry, type NavLink } from "./site-nav";
 import { Badge } from "@/components/ui/badge";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 // Badge vai trò cạnh avatar — chỉ hiện cho staff (admin/editor).
 const STAFF_ROLE_BADGE: Record<string, { label: string; className: string }> = {
@@ -132,6 +133,7 @@ export async function SiteHeader() {
         <SiteNav entries={NAV} className="hidden lg:flex" />
 
         {/* Cụm phải — tiện ích: tìm kiếm · tài khoản (flex-1, dồn phải) */}
+        <TooltipProvider delayDuration={300}>
         <div className="flex flex-1 items-center justify-end gap-1">
           {/* Tìm kiếm — ô bấm + Command palette (⌘K); dưới lg là icon */}
           <HeaderSearch />
@@ -186,6 +188,7 @@ export async function SiteHeader() {
             </div>
           )}
         </div>
+        </TooltipProvider>
       </div>
     </header>
   );

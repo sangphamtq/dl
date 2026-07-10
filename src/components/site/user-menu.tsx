@@ -26,6 +26,11 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
@@ -59,19 +64,24 @@ export function UserMenu({ user, provinces, homeProvince }: Props) {
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger asChild>
-        <button
-          aria-label="Tài khoản"
-          className="rounded-full outline-none ring-offset-2 ring-offset-background transition focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <Avatar className="size-9">
-            {user.image && (
-              <AvatarImage src={user.image} alt={user.name ?? "Avatar"} />
-            )}
-            <AvatarFallback>{initial}</AvatarFallback>
-          </Avatar>
-        </button>
-      </DropdownMenuTrigger>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <DropdownMenuTrigger asChild>
+            <button
+              aria-label="Tài khoản"
+              className="rounded-full outline-none ring-offset-2 ring-offset-background transition focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <Avatar className="size-9">
+                {user.image && (
+                  <AvatarImage src={user.image} alt={user.name ?? "Avatar"} />
+                )}
+                <AvatarFallback>{initial}</AvatarFallback>
+              </Avatar>
+            </button>
+          </DropdownMenuTrigger>
+        </TooltipTrigger>
+        {!open && <TooltipContent>Tài khoản</TooltipContent>}
+      </Tooltip>
       <DropdownMenuContent align="end" className="w-60">
         <DropdownMenuGroup>
           <DropdownMenuLabel>

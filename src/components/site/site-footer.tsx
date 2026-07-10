@@ -33,6 +33,20 @@ export async function SiteFooter() {
             />
           </Link>
           <p className="mt-3 max-w-sm">{s.tagline}</p>
+          <nav className="mt-4 flex flex-wrap gap-x-4 gap-y-1.5">
+            <Link href="/gioi-thieu" className="hover:text-foreground">
+              Giới thiệu
+            </Link>
+            <Link href="/diem-den" className="hover:text-foreground">
+              Điểm đến
+            </Link>
+            <Link href="/blog" className="hover:text-foreground">
+              Cẩm nang
+            </Link>
+            <Link href="/cong-dong" className="hover:text-foreground">
+              Cộng đồng
+            </Link>
+          </nav>
         </div>
 
         <div className="flex flex-col gap-3 sm:items-end">

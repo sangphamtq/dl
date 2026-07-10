@@ -13,6 +13,11 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   markAllNotificationsRead,
   markNotificationRead,
 } from "@/app/thong-bao/actions";
@@ -140,25 +145,30 @@ export function NotificationBell({
 
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          aria-label="Thông báo"
-          className={cn(
-            "relative grid size-9 place-items-center rounded-full transition-colors",
-            open
-              ? "bg-primary/10 text-primary"
-              : "text-foreground hover:bg-muted",
-          )}
-        >
-          <Bell className="size-4" aria-hidden />
-          {unread > 0 && (
-            <span className="absolute -right-0.5 -top-0.5 grid min-w-4 place-items-center rounded-full bg-warm px-1 text-[0.625rem] font-semibold leading-4 text-warm-foreground ring-2 ring-background">
-              {unread > 9 ? "9+" : unread}
-            </span>
-          )}
-        </button>
-      </PopoverTrigger>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              aria-label="Thông báo"
+              className={cn(
+                "relative grid size-9 place-items-center rounded-full transition-colors",
+                open
+                  ? "bg-primary/10 text-primary"
+                  : "text-foreground hover:bg-muted",
+              )}
+            >
+              <Bell className="size-4" aria-hidden />
+              {unread > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 grid min-w-4 place-items-center rounded-full bg-warm px-1 text-[0.625rem] font-semibold leading-4 text-warm-foreground ring-2 ring-background">
+                  {unread > 9 ? "9+" : unread}
+                </span>
+              )}
+            </button>
+          </PopoverTrigger>
+        </TooltipTrigger>
+        {!open && <TooltipContent>Thông báo</TooltipContent>}
+      </Tooltip>
 
       <PopoverContent align="end" className="w-80 p-0">
         <div className="flex items-center justify-between border-b border-border/60 px-4 py-2.5">

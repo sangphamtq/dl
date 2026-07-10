@@ -2,6 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { Search } from "@/components/icons";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { CommandPalette } from "./command-palette";
 
 // Ô tìm kiếm header: ở lg+ là "ô" bấm mở Command palette (⌘K); dưới lg là icon.
@@ -36,14 +41,19 @@ export function HeaderSearch() {
       </button>
 
       {/* Mobile/tablet (< lg): icon mở palette */}
-      <button
-        type="button"
-        aria-label="Tìm kiếm"
-        onClick={() => setOpen(true)}
-        className="grid size-9 place-items-center rounded-full text-foreground transition-colors hover:bg-muted lg:hidden"
-      >
-        <Search className="size-4" aria-hidden />
-      </button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            aria-label="Tìm kiếm"
+            onClick={() => setOpen(true)}
+            className="grid size-9 place-items-center rounded-full text-foreground transition-colors hover:bg-muted lg:hidden"
+          >
+            <Search className="size-4" aria-hidden />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>Tìm kiếm</TooltipContent>
+      </Tooltip>
 
       <CommandPalette open={open} onOpenChange={setOpen} />
     </>
