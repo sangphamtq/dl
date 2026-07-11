@@ -5,8 +5,6 @@ import { Ic } from "@/components/icon";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { coverUrl } from "@/lib/place-image";
-import { getPlaceCoord } from "@/lib/geo";
-import { PlaceMiniMap } from "@/components/map/place-mini-map";
 import {
   SPOT_CATEGORY_LABELS,
   ACCOMMODATION_CATEGORY_LABELS,
@@ -362,7 +360,6 @@ export default async function PlaceDetailPage({
   }));
 
   const counts = await getPlaceCounts(place.id);
-  const coord = await getPlaceCoord(place.id, place.slug);
   const stats = buildPlaceStats(place.viewCount);
   const tabs = buildPlaceTabs(place.slug, counts);
 
@@ -439,12 +436,12 @@ export default async function PlaceDetailPage({
               <SectionHeading title={`Đôi nét về ${place.name}`} />
               <div
                 className={
-                  quickFacts.length > 0 || coord
+                  quickFacts.length > 0
                     ? "mt-5 grid gap-8 lg:grid-cols-[1fr_20rem] lg:items-start lg:gap-16"
                     : "mt-5"
                 }
               >
-                <div className={quickFacts.length > 0 || coord ? "" : "max-w-prose"}>
+                <div className={quickFacts.length > 0 ? "" : "max-w-prose"}>
                   {place.description && (
                     <p className="whitespace-pre-line leading-8 text-foreground/90">
                       {place.description}
@@ -492,30 +489,7 @@ export default async function PlaceDetailPage({
                     </Link>
                   )}
                 </div>
-                {(quickFacts.length > 0 || coord) && (
-                  <div className="space-y-5">
-                    {quickFacts.length > 0 && <QuickInfo facts={quickFacts} />}
-                    {coord && (
-                      <div>
-                        <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold">
-                          <Ic
-                            icon="map-pin"
-                            className="size-4 text-primary"
-                            aria-hidden
-                          />
-                          Vị trí
-                        </p>
-                        <PlaceMiniMap
-                          lat={coord.lat}
-                          lng={coord.lng}
-                          name={place.name}
-                          coverUrl={place.images[0]?.url ?? null}
-                          slug={place.slug}
-                        />
-                      </div>
-                    )}
-                  </div>
-                )}
+                {quickFacts.length > 0 && <QuickInfo facts={quickFacts} />}
               </div>
             </section>
           )}

@@ -123,21 +123,6 @@ export async function getDestinationMapPoints(): Promise<MapPlacePoint[]> {
   return points;
 }
 
-// Toạ độ 1 điểm đến (cho mini-map trang chi tiết): ưu tiên bảng tra cứu, fallback
-// trọng tâm listing. Null nếu chưa xác định được.
-export async function getPlaceCoord(
-  placeId: string,
-  slug: string,
-): Promise<{ lat: number; lng: number } | null> {
-  const fixed = PLACE_COORDS[slug];
-  if (fixed) return { lat: fixed[0], lng: fixed[1] };
-  const pts = await getPlaceGeoPoints(placeId);
-  if (pts.length === 0) return null;
-  const lat = pts.reduce((s, p) => s + p.lat, 0) / pts.length;
-  const lng = pts.reduce((s, p) => s + p.lng, 0) / pts.length;
-  return { lat, lng };
-}
-
 // Địa điểm (Spot) có toạ độ trên toàn quốc — lớp "địa điểm chi tiết" của bản đồ.
 // Chỉ Spot: KHÔNG hiện quán ăn / lưu trú ở lớp này.
 export async function getAllGeoListingPoints(): Promise<ListingGeoPoint[]> {

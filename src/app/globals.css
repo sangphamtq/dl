@@ -178,6 +178,20 @@
     0 0 0 4px color-mix(in oklch, var(--pin, var(--primary)) 26%, transparent),
     0 4px 10px rgb(0 0 0 / 0.35);
 }
+/* Chấm spot trên mini-map cục bộ (trang chi tiết điểm đến) */
+.dl-mini-spot {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: var(--primary);
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.35);
+  transition: transform 0.15s ease;
+}
+.dl-mini-spot:hover {
+  transform: scale(1.25);
+}
 /* tuyến đường định tuyến — màu theo theme (CSS stroke nhận var, khác attribute) */
 .dl-route {
   stroke: var(--primary);

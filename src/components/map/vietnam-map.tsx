@@ -75,7 +75,10 @@ export function VietnamMap({
     () => (points.some((p) => p.slug === initialAt) ? initialAt! : null),
   );
   const [query, setQuery] = useState("");
-  const [showListings, setShowListings] = useState(false);
+  // Đến từ trang chi tiết (?at=slug) → bật sẵn lớp địa điểm để thấy spot bên trong.
+  const [showListings, setShowListings] = useState(
+    () => !!initialAt && points.some((p) => p.slug === initialAt),
+  );
   const [featuredOnly, setFeaturedOnly] = useState(false);
   const [userLoc, setUserLoc] = useState<LatLng | null>(null);
   const [routeState, setRouteState] = useState<{
