@@ -5,6 +5,8 @@ import { Ic } from "@/components/icon";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { coverUrl } from "@/lib/place-image";
+import { getPlaceCoord } from "@/lib/geo";
+import { PlaceMiniMap } from "@/components/map/place-mini-map";
 import {
   SPOT_CATEGORY_LABELS,
   ACCOMMODATION_CATEGORY_LABELS,
@@ -53,42 +55,41 @@ function ExperienceCard({
   facts: { icon: string; text: string }[];
   description?: string;
 }) {
+  const duration = facts.find((f) => f.icon === "clock");
+  const season = facts.find((f) => f.icon === "calendar");
   return (
-    <Link
-      href={href}
-      className="group flex flex-col rounded-2xl bg-card p-3 shadow-md shadow-black/5 ring-1 ring-border/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/10"
-    >
-      <div className="relative aspect-[5/4] overflow-hidden rounded-xl bg-muted">
+    <Link href={href} className="group block">
+      <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-muted">
         <Image
           src={coverUrl(images, slug)}
           alt={name}
           fill
           sizes="(min-width: 1024px) 25vw, (min-width: 640px) 40vw, 80vw"
-          className="object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none"
+          className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03] motion-reduce:transform-none motion-reduce:transition-none"
         />
+        {duration && (
+          <span className="absolute bottom-2.5 left-2.5 inline-flex items-center gap-1 rounded-full bg-background/85 px-2 py-1 text-xs font-medium text-foreground shadow-sm backdrop-blur transition-opacity duration-300 group-hover:opacity-0">
+            <Ic icon="clock" className="size-3 text-primary" aria-hidden />
+            {duration.text}
+          </span>
+        )}
+        {/* Mô tả hiện khi hover — chỉ mờ dần, không trượt (êm) */}
         {description && (
-          <div
-            className="pointer-events-none absolute inset-0 flex items-end bg-gradient-to-t from-black/75 via-black/25 to-transparent p-4 opacity-0 transition-opacity duration-200 group-hover:opacity-100 motion-reduce:transition-none"
-            aria-hidden
-          >
-            <p className="translate-y-1 text-sm leading-relaxed text-white line-clamp-3 transition-transform duration-200 group-hover:translate-y-0 motion-reduce:transform-none">
+          <div className="pointer-events-none absolute inset-0 flex items-end bg-gradient-to-t from-black/80 via-black/25 to-transparent p-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100 motion-reduce:transition-none">
+            <p className="line-clamp-4 text-sm leading-relaxed text-white">
               {description}
             </p>
           </div>
         )}
       </div>
-      <h3 className="mt-3 px-1 text-lg font-semibold tracking-tight transition-colors group-hover:text-primary">
+      <h3 className="mt-3 font-semibold tracking-tight transition-colors group-hover:text-primary">
         {name}
       </h3>
-      {facts.length > 0 && (
-        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 px-1 pb-1 text-sm text-muted-foreground">
-          {facts.map((f, i) => (
-            <span key={i} className="inline-flex items-center gap-1.5">
-              <Ic icon={f.icon} className="size-4 shrink-0 text-primary" aria-hidden />
-              {f.text}
-            </span>
-          ))}
-        </div>
+      {season && (
+        <p className="mt-1 inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+          <Ic icon="calendar" className="size-3.5 shrink-0" aria-hidden />
+          {season.text}
+        </p>
       )}
     </Link>
   );
@@ -361,6 +362,7 @@ export default async function PlaceDetailPage({
   }));
 
   const counts = await getPlaceCounts(place.id);
+  const coord = await getPlaceCoord(place.id, place.slug);
   const stats = buildPlaceStats(place.viewCount);
   const tabs = buildPlaceTabs(place.slug, counts);
 
@@ -437,12 +439,12 @@ export default async function PlaceDetailPage({
               <SectionHeading title={`Đôi nét về ${place.name}`} />
               <div
                 className={
-                  quickFacts.length > 0
+                  quickFacts.length > 0 || coord
                     ? "mt-5 grid gap-8 lg:grid-cols-[1fr_20rem] lg:items-start lg:gap-16"
                     : "mt-5"
                 }
               >
-                <div className={quickFacts.length > 0 ? "" : "max-w-prose"}>
+                <div className={quickFacts.length > 0 || coord ? "" : "max-w-prose"}>
                   {place.description && (
                     <p className="whitespace-pre-line leading-8 text-foreground/90">
                       {place.description}
@@ -490,7 +492,30 @@ export default async function PlaceDetailPage({
                     </Link>
                   )}
                 </div>
-                {quickFacts.length > 0 && <QuickInfo facts={quickFacts} />}
+                {(quickFacts.length > 0 || coord) && (
+                  <div className="space-y-5">
+                    {quickFacts.length > 0 && <QuickInfo facts={quickFacts} />}
+                    {coord && (
+                      <div>
+                        <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold">
+                          <Ic
+                            icon="map-pin"
+                            className="size-4 text-primary"
+                            aria-hidden
+                          />
+                          Vị trí
+                        </p>
+                        <PlaceMiniMap
+                          lat={coord.lat}
+                          lng={coord.lng}
+                          name={place.name}
+                          coverUrl={place.images[0]?.url ?? null}
+                          slug={place.slug}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </section>
           )}

@@ -1,21 +1,54 @@
 import { Map as MapIcon } from "@/components/icons";
+import { getDestinationMapPoints, getAllGeoListingPoints } from "@/lib/geo";
 import { SiteHeader } from "@/components/site/site-header";
-import { SiteFooter } from "@/components/site/site-footer";
-import { ComingSoon } from "@/components/site/coming-soon";
+import { VietnamMap } from "@/components/map/vietnam-map";
 
-export const metadata = { title: "Bản đồ du lịch · Halivivu" };
+export const metadata = {
+  title: "Bản đồ du lịch Việt Nam · Halivivu",
+  description:
+    "Khám phá các điểm đến trên khắp Việt Nam qua bản đồ tương tác — chọn vùng, xem điểm đến nổi bật và lên ý tưởng cho chuyến đi.",
+};
 
-// Placeholder — bản đồ khám phá điểm đến toàn Việt Nam đang phát triển.
-export default function BanDoPage() {
+export default async function BanDoPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ mien?: string; at?: string }>;
+}) {
+  const [sp, points, listings] = await Promise.all([
+    searchParams,
+    getDestinationMapPoints(),
+    getAllGeoListingPoints(),
+  ]);
+
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="flex h-[100dvh] flex-col">
       <SiteHeader />
-      <ComingSoon
-        icon={MapIcon}
-        title="Bản đồ du lịch Việt Nam"
-        description="Sắp ra mắt — khám phá mọi điểm đến trên khắp Việt Nam qua một bản đồ tương tác. Chọn vùng, xem các điểm đến nổi bật và lên ý tưởng cho chuyến đi tiếp theo."
-      />
-      <SiteFooter />
+      <main className="min-h-0 flex-1">
+        {points.length === 0 ? (
+          <div className="grid h-full place-items-center px-6 text-center">
+            <div className="max-w-md">
+              <MapIcon
+                className="mx-auto size-10 text-muted-foreground/60"
+                aria-hidden
+              />
+              <h1 className="mt-4 text-xl font-bold tracking-tight">
+                Bản đồ du lịch Việt Nam
+              </h1>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                Các điểm đến sẽ hiện trên bản đồ khi có địa điểm được gắn toạ độ.
+                Hãy quay lại sau nhé.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <VietnamMap
+            points={points}
+            listings={listings}
+            initialRegion={sp.mien}
+            initialAt={sp.at}
+          />
+        )}
+      </main>
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { Ic } from "@/components/icon";
 import { SiteHeader } from "@/components/site/site-header";
@@ -130,6 +131,13 @@ export default async function DiemDenPage() {
                 Chọn một nơi để bắt đầu — gợi ý nên ăn gì, chơi gì, ở đâu và đi
                 lại thế nào cho từng vùng.
               </p>
+              <Link
+                href="/ban-do"
+                className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background px-4 py-2 text-sm font-semibold transition-colors hover:bg-muted"
+              >
+                <Ic icon="map-pin" className="size-4 text-primary" aria-hidden />
+                Xem trên bản đồ
+              </Link>
             </div>
 
             {!isEmpty && (
