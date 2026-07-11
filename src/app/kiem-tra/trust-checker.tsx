@@ -60,7 +60,7 @@ export function TrustChecker({ isAuthed }: { isAuthed: boolean }) {
   return (
     <div className="space-y-6">
       {/* Ô tra cứu */}
-      <div className="rounded-2xl border border-border/60 bg-card p-4 sm:p-5">
+      <div className="rounded-2xl border border-border/60 bg-card p-4 shadow-xl shadow-black/10 sm:p-5">
         <div className="flex flex-col gap-3 sm:flex-row">
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -73,7 +73,7 @@ export function TrustChecker({ isAuthed }: { isAuthed: boolean }) {
             />
           </div>
           <Select value={channel} onValueChange={setChannel}>
-            <SelectTrigger className="h-11 sm:w-40">
+            <SelectTrigger className="h-11! w-full sm:w-40">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

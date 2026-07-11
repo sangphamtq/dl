@@ -9,6 +9,8 @@ import {
   MessageCircle,
   Phone,
   ShieldAlert,
+  ArrowLeft,
+  MessagesSquare,
 } from "@/components/icons";
 import { prisma } from "@/lib/prisma";
 import { isStaffViewer } from "@/lib/preview";
@@ -116,128 +118,198 @@ export default async function SaleProfilePage({
     text: string;
   }[];
 
+  const notice =
+    p.notice ??
+    "Chỉ liên hệ & chuyển khoản qua đúng kênh hiển thị tại đây. Luôn đối chiếu thông tin trước khi đặt cọc.";
+
   return (
     <div className="flex flex-1 flex-col">
       <SiteHeader />
-      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:px-6 sm:py-10">
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
+        <Link
+          href="/sale"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="size-4" aria-hidden />
+          Cộng tác viên
+        </Link>
+
         {!verified && (
-          <p className="mb-4 rounded-xl border border-warm/30 bg-warm/5 px-4 py-2 text-sm text-warm">
+          <p className="mt-4 rounded-xl border border-warm/30 bg-warm/5 px-4 py-2 text-sm text-warm">
             Bản xem trước (chưa duyệt) — chỉ staff thấy.
           </p>
         )}
 
-        {/* Hồ sơ */}
-        <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-          <div className="relative size-20 shrink-0 overflow-hidden rounded-full bg-muted">
-            {avatar && (
-              <Image
-                src={avatar}
-                alt={p.displayName}
-                fill
-                sizes="80px"
-                className="object-cover"
-              />
+        {/* ─── Hero hồ sơ ─────────────────────────────────── */}
+        <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-center">
+          <div className="relative shrink-0 self-start sm:self-auto">
+            <div className="relative size-24 overflow-hidden rounded-3xl bg-muted">
+              {avatar ? (
+                <Image
+                  src={avatar}
+                  alt={p.displayName}
+                  fill
+                  sizes="96px"
+                  className="object-cover"
+                />
+              ) : (
+                <span className="grid size-full place-items-center text-3xl font-bold text-muted-foreground">
+                  {p.displayName.charAt(0).toUpperCase()}
+                </span>
+              )}
+            </div>
+            {verified && (
+              <span className="absolute -bottom-1 -right-1 grid size-8 place-items-center rounded-full bg-primary text-primary-foreground ring-4 ring-background">
+                <BadgeCheck className="size-5" aria-hidden />
+              </span>
             )}
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold tracking-tight">
-                {p.displayName}
-              </h1>
+
+          <div className="min-w-0 flex-1">
+            <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
+              {p.displayName}
+            </h1>
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
               {verified && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
-                  <BadgeCheck className="size-3.5" />
+                <span className="inline-flex items-center gap-1 font-semibold text-primary">
+                  <BadgeCheck className="size-4" aria-hidden />
                   Đã xác minh
                   {p.verificationLevel && SALE_LEVEL_LABELS[p.verificationLevel]
                     ? ` · ${SALE_LEVEL_LABELS[p.verificationLevel]}`
                     : ""}
                 </span>
               )}
+              {p.areas.length > 0 && (
+                <span className="inline-flex items-center gap-1.5">
+                  <MapPin className="size-3.5 shrink-0" aria-hidden />
+                  {p.areas.map((a) => a.name).join(", ")}
+                </span>
+              )}
             </div>
-            {p.areas.length > 0 && (
-              <p className="mt-1 inline-flex items-center gap-1.5 text-sm text-muted-foreground">
-                <MapPin className="size-3.5" />
-                {p.areas.map((a) => a.name).join(", ")}
-              </p>
+            {p.services.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {p.services.map((s) => (
+                  <span
+                    key={s}
+                    className="rounded-full bg-accent px-2.5 py-0.5 text-xs font-medium text-accent-foreground"
+                  >
+                    {saleServiceLabel(s)}
+                  </span>
+                ))}
+              </div>
             )}
           </div>
+
           {verified && (
-            <StayShare title={p.displayName} className="sm:ml-auto" />
+            <StayShare title={p.displayName} className="self-start sm:self-auto" />
           )}
         </div>
 
-        {p.bio && (
-          <p className="mt-4 text-[15px] leading-relaxed text-muted-foreground">
-            {p.bio}
-          </p>
-        )}
-
-        {p.services.length > 0 && (
-          <div className="mt-4 flex flex-wrap gap-2">
-            {p.services.map((s) => (
-              <span
-                key={s}
-                className="rounded-full bg-muted px-3 py-1 text-sm text-foreground"
-              >
-                {saleServiceLabel(s)}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* Liên hệ */}
-        {contacts.length > 0 && (
-          <div className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {contacts.map((c) => (
-              <a
-                key={c.label}
-                href={c.href}
-                target={c.href.startsWith("http") ? "_blank" : undefined}
-                rel="noopener noreferrer"
-                className="flex items-center gap-3 rounded-xl border border-border/60 bg-card px-4 py-3 transition-colors hover:bg-muted"
-              >
-                <c.icon className="size-5 shrink-0 text-primary" />
-                <div className="min-w-0">
-                  <p className="text-xs text-muted-foreground">{c.label}</p>
-                  <p className="truncate text-sm font-medium">{c.text}</p>
+        {/* ─── 2 cột: nội dung | liên hệ ──────────────────── */}
+        <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_20rem]">
+          {/* Sidebar liên hệ (mobile hiện trước) */}
+          <aside className="space-y-4 lg:order-2 lg:sticky lg:top-20 lg:self-start">
+            <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm shadow-black/5">
+              <h2 className="font-bold tracking-tight">Liên hệ trực tiếp</h2>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Kênh chính chủ đã xác minh
+              </p>
+              {contacts.length > 0 ? (
+                <div className="mt-4 space-y-2">
+                  {contacts.map((c) => (
+                    <a
+                      key={c.label}
+                      href={c.href}
+                      target={c.href.startsWith("http") ? "_blank" : undefined}
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 rounded-xl border border-border/60 px-3.5 py-2.5 transition-colors hover:border-primary/40 hover:bg-muted/50"
+                    >
+                      <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
+                        <c.icon className="size-5" aria-hidden />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-xs text-muted-foreground">
+                          {c.label}
+                        </span>
+                        <span className="block truncate text-sm font-medium">
+                          {c.text}
+                        </span>
+                      </span>
+                    </a>
+                  ))}
                 </div>
-              </a>
-            ))}
-          </div>
-        )}
-
-        {/* Cảnh báo an toàn */}
-        <div className="mt-6 flex items-start gap-2.5 rounded-2xl bg-muted/60 px-4 py-3 text-sm leading-relaxed text-muted-foreground">
-          <ShieldAlert className="mt-0.5 size-4 shrink-0" />
-          <span>
-            {p.notice ??
-              "Chỉ liên hệ & chuyển khoản qua đúng kênh hiển thị tại đây. Luôn đối chiếu thông tin trước khi đặt cọc."}
-          </span>
-        </div>
-
-        {/* Tin rao dịch vụ */}
-        {threads.length > 0 && (
-          <section className="mt-10">
-            <h2 className="text-lg font-bold tracking-tight">Tin rao dịch vụ</h2>
-            <div className="mt-4 space-y-3">
-              {threads.map((t) => (
-                <Link
-                  key={t.slug}
-                  href={`/cong-dong/${t.slug}`}
-                  className="block rounded-2xl border border-border/60 bg-card p-4 transition-colors hover:bg-muted/40"
-                >
-                  <p className="text-sm leading-relaxed">
-                    {textPreview(t.body)}
-                  </p>
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    {t.place ? `${t.place.name} · ` : ""}
-                    {t.replyCount} phản hồi
-                  </p>
-                </Link>
-              ))}
+              ) : (
+                <p className="mt-4 text-sm text-muted-foreground">
+                  Chưa công khai kênh liên hệ.
+                </p>
+              )}
             </div>
-          </section>
-        )}
+
+            {/* Cảnh báo an toàn */}
+            <div className="rounded-2xl border border-warm/30 bg-warm/5 p-4">
+              <p className="flex items-center gap-2 text-sm font-semibold text-warm">
+                <ShieldAlert className="size-4 shrink-0" aria-hidden />
+                An toàn giao dịch
+              </p>
+              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                {notice}
+              </p>
+            </div>
+          </aside>
+
+          {/* Nội dung chính */}
+          <div className="min-w-0 space-y-10 lg:order-1">
+            {p.bio && (
+              <section>
+                <h2 className="text-lg font-bold tracking-tight">Giới thiệu</h2>
+                <p className="mt-3 whitespace-pre-line text-[15px] leading-relaxed text-foreground/90">
+                  {p.bio}
+                </p>
+              </section>
+            )}
+
+            {threads.length > 0 && (
+              <section>
+                <h2 className="flex items-center gap-2 text-lg font-bold tracking-tight">
+                  Tin rao dịch vụ
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold tabular-nums text-muted-foreground">
+                    {threads.length}
+                  </span>
+                </h2>
+                <div className="mt-4 space-y-3">
+                  {threads.map((t) => (
+                    <Link
+                      key={t.slug}
+                      href={`/cong-dong/${t.slug}`}
+                      className="group block rounded-2xl border border-border/60 bg-card p-4 transition-all hover:-translate-y-0.5 hover:shadow-md hover:shadow-black/5"
+                    >
+                      <p className="text-sm leading-relaxed text-foreground/90">
+                        {textPreview(t.body)}
+                      </p>
+                      <p className="mt-2.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+                        {t.place && (
+                          <>
+                            <MapPin className="size-3 shrink-0" aria-hidden />
+                            {t.place.name}
+                            <span aria-hidden>·</span>
+                          </>
+                        )}
+                        <MessagesSquare className="size-3 shrink-0" aria-hidden />
+                        {t.replyCount} phản hồi
+                      </p>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {!p.bio && threads.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                Cộng tác viên chưa cập nhật giới thiệu hay tin rao nào.
+              </p>
+            )}
+          </div>
+        </div>
       </main>
       <SiteFooter />
     </div>
