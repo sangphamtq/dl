@@ -121,6 +121,8 @@ export default async function Home() {
 
   const popular = places.slice(0, 3);
   const themePlaces = places.slice(0, THEMES.length);
+  // Chip điều hướng nhanh trên hero — điểm đến thật (khác nơi trong ảnh nền).
+  const quickPlaces = places.slice(1, 5);
 
   const stats = [
     { icon: "map-pin", value: provinceCount, label: "Tỉnh / Thành phố" },
@@ -134,60 +136,78 @@ export default async function Home() {
       <SiteHeader />
 
       <main className="flex-1">
-        {/* ─── HERO ─────────────────────────────────────────────── */}
-        <section className="relative isolate flex min-h-[640px] items-center overflow-hidden sm:min-h-[700px]">
+        {/* ─── HERO — thẻ kính nổi trên ảnh ─────────────────────── */}
+        <section className="relative isolate flex min-h-[40rem] items-center justify-center overflow-hidden px-4 sm:px-6 sm:min-h-[calc(100svh-4rem)]">
           <Image
             src={heroBg}
-            alt=""
+            alt={
+              places[0]
+                ? `${places[0].name} — điểm đến Việt Nam`
+                : "Phong cảnh Việt Nam"
+            }
             fill
             priority
             sizes="100vw"
-            className="-z-10 object-cover"
+            className="hero-kb -z-10 object-cover object-center"
           />
-          <div className="absolute inset-0 -z-10 bg-gradient-to-r from-black/75 via-black/45 to-black/20" />
+          <div className="absolute inset-0 -z-10 bg-black/45" />
+          <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black/70 via-black/25 to-black/40" />
 
-          <div className="mx-auto w-full max-w-6xl px-4 py-24 sm:px-6">
-            <div className="max-w-2xl text-white">
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 py-1 pl-1.5 pr-3 text-xs font-medium backdrop-blur">
-                <span className="rounded-full bg-warm px-2 py-0.5 text-warm-foreground">
-                  Xin chào
+          {/* Tên nơi thật trong ảnh nền */}
+          {places[0] && (
+            <div className="absolute inset-x-0 top-20 sm:top-24">
+              <div className="mx-auto max-w-6xl px-4 sm:px-6">
+                <span className="hero-rise inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-xs font-medium text-white/85 ring-1 ring-white/15 backdrop-blur">
+                  <Ic icon="map-pin" className="size-3.5" aria-hidden />
+                  {places[0].name}
                 </span>
-                {user?.name ?? "người lữ hành"} 👋
-              </span>
-              <h1 className="mt-6 text-balance text-4xl font-extrabold leading-[1.03] tracking-tight drop-shadow-sm sm:text-5xl lg:text-[3.75rem]">
-                Khám phá Việt Nam,
-                <br />
-                mỗi chuyến một hành trình
-              </h1>
-              <p className="mt-5 max-w-lg text-base leading-relaxed text-white/85 sm:text-lg">
-                Một nơi để biết nên ăn gì, chơi gì, ở đâu và đi lại thế nào —
-                gọn gàng cho từng điểm đến, để bạn chỉ việc xách balo lên và đi.
-              </p>
-
-              <div className="mt-8 flex flex-wrap items-center gap-4">
-                <Link
-                  href="/diem-den"
-                  className={cn(buttonVariants({ size: "lg" }), "rounded-full")}
-                >
-                  Bắt đầu khám phá
-                  <Ic icon="arrow-right" className="size-4" aria-hidden />
-                </Link>
-                <Link
-                  href="/blog"
-                  className="inline-flex items-center gap-2 text-sm font-semibold text-white"
-                >
-                  <span className="flex size-10 items-center justify-center rounded-full border border-white/40 bg-white/10 backdrop-blur transition-colors hover:bg-white/20">
-                    <Ic icon="book-open" className="size-4" aria-hidden />
-                  </span>
-                  Xem cẩm nang
-                </Link>
               </div>
             </div>
+          )}
 
-            {/* Thanh tìm kiếm nổi */}
-            <div className="mt-12 max-w-3xl">
+          {/* Thẻ kính (glass) */}
+          <div className="hero-rise relative w-full max-w-2xl overflow-hidden rounded-[2rem] border border-white/15 bg-white/10 p-7 shadow-[0_25px_70px_-20px_rgba(0,0,0,0.65)] ring-1 ring-white/10 backdrop-blur-2xl sm:p-10">
+            {/* Vệt sáng mảnh trên mép — cảm giác thủy tinh */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/45 to-transparent"
+            />
+
+            <p className="flex items-center gap-2 font-rounded text-xl font-medium text-white/85">
+              <Ic icon="map-pin" className="size-5" aria-hidden />
+              {user?.name ? `Chào ${user.name}` : "Việt Nam đang chờ bạn"}
+            </p>
+
+            <h1 className="mt-3 text-balance text-4xl font-extrabold leading-[1.06] tracking-tight text-white sm:text-5xl">
+              Khám phá Việt Nam,{" "}
+              <span className="font-light text-white/80">
+                mỗi chuyến một hành trình
+              </span>
+            </h1>
+
+            <p className="mt-4 max-w-md text-sm leading-relaxed text-white/75 sm:text-base">
+              Ăn gì, chơi gì, ở đâu, đi lại thế nào — gom gọn cho từng điểm đến,
+              để bạn chỉ việc xách balo lên và đi.
+            </p>
+
+            <div className="mt-6">
               <HeroSearch places={provinceOpts} />
             </div>
+
+            {quickPlaces.length > 0 && (
+              <div className="mt-4 flex flex-wrap items-center gap-2 text-sm">
+                <span className="text-white/55">Gợi ý</span>
+                {quickPlaces.map((p) => (
+                  <Link
+                    key={p.slug}
+                    href={`/diem-den/${p.slug}`}
+                    className="rounded-full bg-white/10 px-3 py-1 font-medium text-white/90 ring-1 ring-white/15 backdrop-blur transition-colors hover:bg-white/20"
+                  >
+                    {p.name}
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
         </section>
 
@@ -542,7 +562,7 @@ function ScriptEyebrow({
   return (
     <p
       className={cn(
-        "flex items-center gap-2 font-script text-2xl font-bold text-primary",
+        "flex items-center gap-2 font-rounded text-2xl font-medium text-primary",
         align === "center" && "justify-center",
       )}
     >
@@ -629,7 +649,7 @@ function PopularCard({
           )}
         </div>
         <div className="mt-4 flex items-center justify-between border-t border-border/60 pt-4">
-          <span className="font-script text-2xl font-bold text-primary">
+          <span className="font-rounded text-2xl font-medium text-primary">
             Khám phá
           </span>
           <span

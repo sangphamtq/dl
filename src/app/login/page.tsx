@@ -1,8 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
+import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { GoogleIcon, FacebookIcon } from "@/components/site/provider-icons";
-import { signInGoogle, signInFacebook } from "./auth-actions";
+import { signInGoogle, signInFacebook, signInDev } from "./auth-actions";
+
+const IS_DEV = process.env.NODE_ENV !== "production";
 
 export default async function LoginPage({
   searchParams,
@@ -11,6 +14,15 @@ export default async function LoginPage({
 }) {
   const { callbackUrl } = await searchParams;
   const redirectTo = callbackUrl || "/";
+
+  // Chỉ ở dev: gợi ý các tài khoản CTV đã seed để đăng nhập nhanh 1 chạm.
+  const devUsers = IS_DEV
+    ? await prisma.user.findMany({
+        where: { saleProfile: { isNot: null } },
+        select: { name: true, email: true },
+        orderBy: { name: "asc" },
+      })
+    : [];
 
   return (
     <main className="grid flex-1 lg:grid-cols-2">
@@ -101,6 +113,53 @@ export default async function LoginPage({
             Khi tiếp tục, bạn đồng ý với Điều khoản sử dụng và Chính sách bảo
             mật của chúng tôi.
           </p>
+
+          {IS_DEV && (
+            <div className="space-y-3 rounded-xl border border-dashed border-amber-500/50 bg-amber-500/5 p-4">
+              <p className="flex items-center gap-1.5 text-xs font-semibold text-amber-600 dark:text-amber-500">
+                <span className="rounded bg-amber-500/15 px-1.5 py-0.5">DEV</span>
+                Đăng nhập nhanh (chỉ môi trường phát triển)
+              </p>
+
+              {devUsers.length > 0 && (
+                <div className="space-y-1.5">
+                  {devUsers.map((u) => (
+                    <form
+                      key={u.email}
+                      action={signInDev.bind(null, redirectTo)}
+                    >
+                      <input type="hidden" name="email" value={u.email ?? ""} />
+                      <button
+                        type="submit"
+                        className="flex w-full items-center justify-between gap-2 rounded-lg border border-border/60 bg-background px-3 py-2 text-left text-sm transition-colors hover:border-amber-500/50 hover:bg-amber-500/5"
+                      >
+                        <span className="font-medium">{u.name ?? "—"}</span>
+                        <span className="truncate text-xs text-muted-foreground">
+                          {u.email}
+                        </span>
+                      </button>
+                    </form>
+                  ))}
+                </div>
+              )}
+
+              <form
+                action={signInDev.bind(null, redirectTo)}
+                className="flex gap-2"
+              >
+                <input
+                  name="email"
+                  type="email"
+                  required
+                  placeholder="email bất kỳ trong DB…"
+                  className="h-9 w-full rounded-lg border border-border/60 bg-background px-3 text-sm outline-none focus:border-amber-500/60 focus:ring-2 focus:ring-amber-500/20"
+                />
+                <Button type="submit" size="sm" variant="outline">
+                  Vào
+                </Button>
+              </form>
+            </div>
+          )}
         </div>
       </div>
     </main>

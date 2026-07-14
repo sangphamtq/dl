@@ -130,7 +130,7 @@ export default async function GioiThieuPage() {
         {/* ─── HERO ─────────────────────────────────────────── */}
         <section className="border-b border-border/60 bg-gradient-to-b from-accent/40 to-background">
           <div className="mx-auto max-w-3xl px-4 py-16 text-center sm:px-6 sm:py-24">
-            <p className="flex items-center justify-center gap-2 font-script text-2xl font-bold text-primary">
+            <p className="flex items-center justify-center gap-2 font-rounded text-2xl font-medium text-primary">
               <MapPin className="size-5" aria-hidden />
               Về {settings.siteName}
             </p>
@@ -234,7 +234,7 @@ export default async function GioiThieuPage() {
         <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
           <div className="grid items-center gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
             <div>
-              <p className="flex items-center gap-2 font-script text-2xl font-bold text-primary">
+              <p className="flex items-center gap-2 font-rounded text-2xl font-medium text-primary">
                 <ShieldCheck className="size-5" aria-hidden />
                 Đáng tin
               </p>
@@ -332,7 +332,7 @@ function SectionTitle({
 }) {
   return (
     <div className="mx-auto max-w-2xl text-center">
-      <p className="flex items-center justify-center gap-2 font-script text-2xl font-bold text-primary">
+      <p className="flex items-center justify-center gap-2 font-rounded text-2xl font-medium text-primary">
         <Sparkles className="size-4" aria-hidden />
         {eyebrow}
       </p>

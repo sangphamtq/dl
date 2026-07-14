@@ -74,7 +74,7 @@ export default async function DiaDiemPage() {
         <section className="border-b border-border/60 bg-gradient-to-b from-accent/40 to-background">
           <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 sm:flex-row sm:items-end sm:justify-between sm:px-6 sm:py-10">
             <div className="max-w-xl">
-              <p className="flex items-center gap-2 font-script text-xl font-bold text-primary">
+              <p className="flex items-center gap-2 font-rounded text-xl font-medium text-primary">
                 <Ic icon="mountain" className="size-4" aria-hidden />
                 Đi khắp muôn nơi
               </p>

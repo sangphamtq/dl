@@ -34,30 +34,6 @@ const NAV: NavEntry[] = [
       { href: "/lich-trinh", label: "Lịch trình", badge: "Sắp có" },
     ],
   },
-  {
-    label: "Dịch vụ",
-    href: "/dich-vu",
-    columns: [
-      {
-        href: "/luu-tru",
-        title: "Lưu trú",
-        desc: "Homestay, khách sạn, resort đã xác minh",
-        badge: "Sắp có",
-      },
-      {
-        href: "/thue-xe",
-        title: "Thuê xe",
-        desc: "Xe máy, ô tô, đưa đón sân bay",
-        badge: "Sắp có",
-      },
-      {
-        href: "/trai-nghiem",
-        title: "Tour & trải nghiệm",
-        desc: "Tour, vé tham quan, hoạt động",
-        badge: "Sắp có",
-      },
-    ],
-  },
   { href: "/blog", label: "Cẩm nang" },
   { href: "/cong-dong", label: "Cộng đồng" },
   {
