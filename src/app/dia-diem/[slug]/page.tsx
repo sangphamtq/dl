@@ -626,7 +626,7 @@ export default async function SpotPublicPage({
                               src={img}
                               alt={link.imageAlt ?? a.name}
                               loading="lazy"
-                              className="absolute inset-0 size-full object-cover transition-transform duration-300 group-hover:scale-105"
+                              className="absolute inset-0 size-full object-cover"
                             />
                           </Link>
                           <div className="min-w-0 flex-1">

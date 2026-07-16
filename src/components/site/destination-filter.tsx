@@ -239,7 +239,7 @@ export function DestinationFilter({
         <div className="mt-8 space-y-14">
           {sections.map((g, i) => (
             <section key={g.label} id={`mien-${i}`} className="scroll-mt-36">
-              <div className="mb-6 flex items-baseline gap-3 border-b border-border/60 pb-3">
+              <div className="mb-5 flex items-baseline gap-3">
                 <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
                   {g.label}
                 </h2>
@@ -379,7 +379,7 @@ function DestCard({ d }: { d: DestItem }) {
         alt={d.name}
         fill
         sizes="(min-width: 1024px) 25vw, (min-width: 640px) 42vw, 68vw"
-        className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+        className="object-cover"
       />
       {/* Scrim: đậm ở đáy để chữ đọc rõ, thoáng ở trên (giữ ảnh sáng) */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />

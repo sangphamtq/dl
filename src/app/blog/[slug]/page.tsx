@@ -344,7 +344,7 @@ export default async function BlogPostPage({
                                 alt={p.title}
                                 fill
                                 sizes="64px"
-                                className="object-cover transition-transform duration-300 group-hover:scale-105"
+                                className="object-cover"
                               />
                             </div>
                             <div className="min-w-0">

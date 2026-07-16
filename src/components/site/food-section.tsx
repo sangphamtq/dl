@@ -449,7 +449,7 @@ function SpecialtyCard({
         alt={name}
         fill
         sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-        className="object-cover transition-transform duration-500 group-hover:scale-105"
+        className="object-cover"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
       {tag && (
@@ -507,7 +507,7 @@ function EateryCard({
           alt={e.name}
           fill
           sizes="160px"
-          className="object-cover transition-transform duration-300 group-hover:scale-105"
+          className="object-cover"
         />
       </div>
       <div className="min-w-0 flex-1 py-0.5">
@@ -558,7 +558,7 @@ function ExperienceLinkCard({ exp }: { exp: FoodExperience }) {
           alt={exp.name}
           fill
           sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-          className="object-cover transition-transform duration-300 group-hover:scale-105"
+          className="object-cover"
         />
         <span className="absolute left-2.5 top-2.5 rounded-full bg-warm/95 px-2.5 py-1 text-xs font-semibold text-warm-foreground shadow-sm">
           Trải nghiệm

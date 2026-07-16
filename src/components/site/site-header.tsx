@@ -44,6 +44,17 @@ const NAV: NavEntry[] = [
       { href: "/kiem-tra", label: "Kiểm tra uy tín" },
     ],
   },
+  {
+    label: "Thông tin",
+    href: "/gioi-thieu",
+    items: [
+      { href: "/gioi-thieu", label: "Giới thiệu" },
+      { href: "/cau-hoi-thuong-gap", label: "Câu hỏi thường gặp", badge: "Sắp có" },
+      { href: "/lien-he", label: "Liên hệ", badge: "Sắp có" },
+      { href: "/dieu-khoan", label: "Điều khoản", badge: "Sắp có" },
+      { href: "/bao-mat", label: "Bảo mật", badge: "Sắp có" },
+    ],
+  },
 ];
 
 // Mobile: sheet liệt kê phẳng toàn bộ (nhóm dropdown trải thành các mục con).

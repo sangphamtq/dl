@@ -63,7 +63,7 @@ function ExperienceCard({
           alt={name}
           fill
           sizes="(min-width: 1024px) 25vw, (min-width: 640px) 40vw, 80vw"
-          className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03] motion-reduce:transform-none motion-reduce:transition-none"
+          className="object-cover"
         />
         {duration && (
           <span className="absolute bottom-2.5 left-2.5 inline-flex items-center gap-1 rounded-full bg-background/85 px-2 py-1 text-xs font-medium text-foreground shadow-sm backdrop-blur transition-opacity duration-300 group-hover:opacity-0">
@@ -108,14 +108,14 @@ function SpecialtyCard({
   return (
     <Link
       href={href}
-      className="group relative block aspect-square overflow-hidden rounded-2xl bg-muted shadow-md shadow-black/5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/10"
+      className="group relative block aspect-square overflow-hidden rounded-2xl bg-muted shadow-md shadow-black/5"
     >
       <Image
         src={coverUrl(images, slug)}
         alt={name}
         fill
         sizes="(min-width: 1024px) 20vw, (min-width: 640px) 25vw, 40vw"
-        className="object-cover transition-transform duration-500 group-hover:scale-105"
+        className="object-cover"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/5 to-transparent" />
       <h3 className="absolute inset-x-0 bottom-0 text-balance p-3.5 text-base font-bold leading-snug tracking-tight text-white drop-shadow-md">
@@ -144,7 +144,7 @@ function StayCard({
   return (
     <Link
       href={href}
-      className="group flex flex-col overflow-hidden rounded-2xl bg-card shadow-md shadow-black/5 ring-1 ring-border/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/10"
+      className="group flex flex-col overflow-hidden rounded-2xl bg-card shadow-md shadow-black/5 ring-1 ring-border/60 transition-colors duration-300 hover:ring-primary/30"
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-muted">
         <Image
@@ -152,7 +152,7 @@ function StayCard({
           alt={name}
           fill
           sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 90vw"
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
+          className="object-cover"
         />
         {isVerified && (
           <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-background/90 px-2.5 py-1 text-xs font-semibold text-primary backdrop-blur">

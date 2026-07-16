@@ -151,7 +151,7 @@ export function PlaceVideos({
         }}
         aria-label={`Xem ${label}${videos.length > 1 ? ` (+${videos.length - 1} video)` : ""}`}
         className={cn(
-          "group relative aspect-[9/16] overflow-hidden rounded-xl border-2 border-background bg-muted shadow-sm shadow-black/25 transition-transform hover:scale-[1.03]",
+          "group relative aspect-[9/16] overflow-hidden rounded-xl border-2 border-background bg-muted shadow-sm shadow-black/25",
           className,
         )}
       >
@@ -162,7 +162,7 @@ export function PlaceVideos({
             fill
             sizes="120px"
             unoptimized
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            className="object-cover"
           />
         )}
         <span className="absolute inset-0 grid place-items-center bg-black/15 transition-colors group-hover:bg-black/30">

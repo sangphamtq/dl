@@ -26,7 +26,7 @@ export function FoodCrossLink({
           alt={name}
           fill
           sizes="112px"
-          className="object-cover transition-transform duration-300 group-hover:scale-105"
+          className="object-cover"
         />
       </div>
       <p className="mt-1.5 line-clamp-2 text-xs font-medium leading-snug">{name}</p>

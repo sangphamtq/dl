@@ -185,7 +185,7 @@ function FeaturedStay({ a, onQuick }: { a: Stay; onQuick: (s: string) => void })
             alt={a.name}
             fill
             sizes="(min-width: 1024px) 55vw, 100vw"
-            className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+            className="object-cover"
           />
           {a.isVerified && <VerifiedBadge />}
         </Link>
@@ -256,7 +256,7 @@ function StayRow({ a, onQuick }: { a: Stay; onQuick: (s: string) => void }) {
           alt={a.name}
           fill
           sizes="176px"
-          className="object-cover transition-transform duration-300 group-hover:scale-105"
+          className="object-cover"
         />
         {a.isVerified && <VerifiedBadge compact />}
       </div>

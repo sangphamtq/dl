@@ -237,7 +237,7 @@ export default async function Home() {
                         alt={theme.name}
                         fill
                         sizes="(min-width: 640px) 16vw, 33vw"
-                        className="object-cover transition-transform duration-500 group-hover:scale-110"
+                        className="object-cover"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/5 to-transparent" />
                       <span className="absolute left-1/2 top-3 flex size-9 -translate-x-1/2 items-center justify-center rounded-full bg-background/90 text-primary shadow backdrop-blur">
@@ -525,7 +525,7 @@ export default async function Home() {
                       alt={img.alt ?? ""}
                       fill
                       sizes="(min-width: 640px) 25vw, 50vw"
-                      className="object-cover transition-transform duration-500 group-hover:scale-110"
+                      className="object-cover"
                     />
                     <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/25" />
                     <Ic icon="camera"
@@ -621,7 +621,7 @@ function PopularCard({
           alt={place.name}
           fill
           sizes="(min-width: 640px) 33vw, 100vw"
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
+          className="object-cover"
         />
         <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-background/90 px-2.5 py-1 text-xs font-semibold text-foreground backdrop-blur">
           {place.kind === "province" ? "Tỉnh / Thành" : "Điểm đến"}
@@ -714,7 +714,7 @@ function OfferCard({ place }: { place: PlaceRow }) {
             alt={place.name}
             fill
             sizes="64px"
-            className="object-cover transition-transform duration-500 group-hover:scale-110"
+            className="object-cover"
           />
         </div>
       </div>
@@ -811,7 +811,7 @@ function PostCard({ post }: { post: PostData }) {
           alt={post.title}
           fill
           sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
+          className="object-cover"
         />
         <div className="absolute left-4 top-4 flex flex-col items-center rounded-2xl bg-primary px-3 py-2 text-center text-primary-foreground shadow-lg shadow-primary/25">
           <span className="text-lg font-extrabold leading-none">{day}</span>

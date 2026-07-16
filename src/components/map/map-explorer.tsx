@@ -374,7 +374,7 @@ export function MapExplorer({
                         alt={p.coverAlt ?? p.name}
                         fill
                         sizes="120px"
-                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        className="object-cover"
                       />
                     )}
                     {stopIdx >= 0 && (

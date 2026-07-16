@@ -74,7 +74,7 @@ export default async function SearchPage({
                           alt=""
                           fill
                           sizes="(min-width: 1024px) 220px, (min-width: 640px) 30vw, 45vw"
-                          className="object-cover transition-transform duration-300 group-hover:scale-105"
+                          className="object-cover"
                         />
                       ) : (
                         <span className="grid size-full place-items-center text-muted-foreground">
