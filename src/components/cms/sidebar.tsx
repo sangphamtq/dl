@@ -20,6 +20,7 @@ import {
   ShieldAlert,
   Image as ImageIcon,
   Users,
+  Download,
   Settings,
   ChevronsUpDown,
   LogOut,
@@ -95,6 +96,7 @@ const NAV: NavGroup[] = [
     items: [
       { href: "/cms/media", label: "Ảnh / Media", icon: ImageIcon },
       { href: "/cms/users", label: "Người dùng", icon: Users },
+      { href: "/cms/export", label: "Xuất Excel", icon: Download },
       { href: "/cms/settings", label: "Cài đặt", icon: Settings },
     ],
   },

@@ -18,6 +18,8 @@ import { PlaceCard } from "@/components/site/place-card";
 import { SectionHeading } from "@/components/site/section-heading";
 import { SpotShowcase } from "@/components/site/spot-showcase";
 import { Rail } from "@/components/site/rail";
+import { CommunityPreview } from "@/components/site/community-preview";
+import { getFeed } from "@/lib/community-feed";
 import { PlaceViewTracker } from "@/components/site/place-view-tracker";
 import { PlaceHero } from "@/components/site/place-hero";
 import { PlaceTabs } from "@/components/site/place-tabs";
@@ -252,11 +254,12 @@ export default async function PlaceDetailPage({
       spots: {
         where: pub,
         orderBy: [{ isFeatured: "desc" }, { order: "asc" }, { name: "asc" }],
-        take: 7,
+        take: 6,
         select: {
           slug: true,
           name: true,
           tagline: true,
+          description: true,
           category: true,
           wardName: true,
           districtName: true,
@@ -362,6 +365,16 @@ export default async function PlaceDetailPage({
   const counts = await getPlaceCounts(place.id);
   const stats = buildPlaceStats(place.viewCount);
   const tabs = buildPlaceTabs(place.slug, counts);
+
+  // Vài thảo luận cộng đồng mới nhất về điểm đến này (xem trước).
+  const communityPosts = (
+    await getFeed({
+      placeId: place.id,
+      take: 3,
+      sort: "active",
+      currentUserId: userId ?? null,
+    })
+  ).posts;
 
   // Thanh chuyển nhanh: mọi điểm đến lớn gom theo miền (làm nổi cái đang xem).
   const peerGroups = await getDestinationPeerGroups();
@@ -521,7 +534,7 @@ export default async function PlaceDetailPage({
                     : null,
                   location: s.wardName ?? s.districtName ?? null,
                   image: coverUrl(s.images, s.slug),
-                  tagline: s.tagline,
+                  description: s.description ?? s.tagline,
                 }))}
               />
             </section>
@@ -625,6 +638,19 @@ export default async function PlaceDetailPage({
                 lại sau nhé.
               </p>
             </div>
+          )}
+
+          {/* Hỏi đáp cộng đồng — xem trước vài thảo luận */}
+          {communityPosts.length > 0 && (
+            <section id="hoi-dap" className="scroll-mt-32">
+              <SectionHeading
+                title="Hỏi đáp cộng đồng"
+                href={`/diem-den/${place.slug}/cong-dong`}
+                count={communityPosts.length}
+                unit="thảo luận"
+              />
+              <CommunityPreview posts={communityPosts} />
+            </section>
           )}
 
           {/* Đánh giá của Vivu-er (chỉ điểm đến lớn) */}
