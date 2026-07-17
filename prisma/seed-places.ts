@@ -107,45 +107,45 @@ async function main() {
     idBySlug.set(slug, place.id);
   }
 
-  for (let i = 0; i < DESTINATIONS.length; i++) {
-    const d = DESTINATIONS[i];
-    const parentId = idBySlug.get(d.parent);
-    if (!parentId) {
-      console.warn(`Bỏ qua ${d.slug}: không thấy tỉnh cha ${d.parent}`);
-      continue;
-    }
-    const data = {
-      name: d.name,
-      kind: PlaceKind.destination,
-      parentId,
-      tagline: d.tagline,
-      provinceName: PROVINCE_NAMES.find((n) => slugify(n) === d.parent) ?? null,
-      isFeatured: d.featured ?? false,
-      order: i,
-      ...PUB,
-    };
-    const dest = await prisma.place.upsert({
-      where: { slug: d.slug },
-      create: { slug: d.slug, ...data },
-      update: data,
-      select: { id: true },
-    });
+  // for (let i = 0; i < DESTINATIONS.length; i++) {
+  //   const d = DESTINATIONS[i];
+  //   const parentId = idBySlug.get(d.parent);
+  //   if (!parentId) {
+  //     console.warn(`Bỏ qua ${d.slug}: không thấy tỉnh cha ${d.parent}`);
+  //     continue;
+  //   }
+  //   const data = {
+  //     name: d.name,
+  //     kind: PlaceKind.destination,
+  //     parentId,
+  //     tagline: d.tagline,
+  //     provinceName: PROVINCE_NAMES.find((n) => slugify(n) === d.parent) ?? null,
+  //     isFeatured: d.featured ?? false,
+  //     order: i,
+  //     ...PUB,
+  //   };
+  //   const dest = await prisma.place.upsert({
+  //     where: { slug: d.slug },
+  //     create: { slug: d.slug, ...data },
+  //     update: data,
+  //     select: { id: true },
+  //   });
 
-    // Ảnh: chỉ ghi đè khi có link trong DEST_IMAGES (để trống → giữ ảnh cũ/fallback).
-    const urls = DEST_IMAGES[d.slug] ?? [];
-    if (urls.length > 0) {
-      await prisma.image.deleteMany({ where: { placeId: dest.id } });
-      await prisma.image.createMany({
-        data: urls.map((url, idx) => ({
-          placeId: dest.id,
-          url,
-          isCover: idx === 0,
-          order: idx,
-        })),
-      });
-      imageCount += urls.length;
-    }
-  }
+  //   // Ảnh: chỉ ghi đè khi có link trong DEST_IMAGES (để trống → giữ ảnh cũ/fallback).
+  //   const urls = DEST_IMAGES[d.slug] ?? [];
+  //   if (urls.length > 0) {
+  //     await prisma.image.deleteMany({ where: { placeId: dest.id } });
+  //     await prisma.image.createMany({
+  //       data: urls.map((url, idx) => ({
+  //         placeId: dest.id,
+  //         url,
+  //         isCover: idx === 0,
+  //         order: idx,
+  //       })),
+  //     });
+  //     imageCount += urls.length;
+  //   }
+  // }
 
   console.log(
     `Seeded ${PROVINCE_NAMES.length} tỉnh/thành + ${DESTINATIONS.length} điểm đến + ${imageCount} ảnh.`,

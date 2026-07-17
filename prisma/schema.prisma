@@ -329,7 +329,7 @@ model Place {
   postRefs     PostRef[]
   threads      Thread[] // chủ đề cộng đồng gắn điểm đến này
   saleProfiles SaleProfile[]   @relation("SaleAreas") // CTV phục vụ nơi này (M:N)
-  viewStats    PlaceViewStat[] // lượt xem theo ngày (để lọc trending)
+  // lượt xem theo ngày: xem model ViewStat (polymorphic, entityType='place')
   checkIns     CheckIn[] // người dùng đã đánh dấu "đã đến" nơi này
   reviews      Review[] // đánh giá của Vivu-er (chỉ điểm đến lớn)
 
@@ -353,17 +353,20 @@ model Place {
   @@index([status])
 }
 
-// Lượt xem Place gộp theo ngày: 1 dòng / place / ngày.
-// "trending N ngày" = sum(count) where date >= today - N. Gọn & lọc theo thời gian được.
-model PlaceViewStat {
-  id      String   @id @default(cuid())
-  placeId String
-  place   Place    @relation(fields: [placeId], references: [id], onDelete: Cascade)
-  date    DateTime @db.Date
-  count   Int      @default(0)
+// Lượt xem gộp theo ngày cho MỌI thực thể (place + listing): 1 dòng / thực thể / ngày.
+// Polymorphic (entityType + entityId) — không FK để một bảng phủ được cả 6 loại;
+// đổi lại khi xóa thực thể, dòng thống kê thành mồ côi (dọn ở delete action nếu cần).
+// "trending N ngày" = sum(count) where entityType=… and date >= today - N.
+model ViewStat {
+  id         String   @id @default(cuid())
+  entityType String // 'place' | 'activity' | 'spot' | 'specialty' | 'eatery' | 'accommodation'
+  entityId   String
+  date       DateTime @db.Date
+  count      Int      @default(0)
 
-  @@unique([placeId, date])
+  @@unique([entityType, entityId, date])
   @@index([date])
+  @@index([entityType, entityId])
 }
 
 // CheckIn — người dùng đánh dấu "đã đến" một Place (tỉnh hoặc điểm đến lớn).

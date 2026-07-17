@@ -136,7 +136,12 @@ export default async function ActivityPublicPage({
   return (
     <div className="flex flex-1 flex-col">
       <SiteHeader />
-      <ListingViewTracker type="activity" id={activity.id} />
+      <ListingViewTracker
+        type="activity"
+        id={activity.id}
+        name={activity.name}
+        placeId={activity.placeId}
+      />
 
       <main className="flex-1">
         {/* Hero — chung mô-típ nền ambient sáng với trang Địa điểm / Điểm đến */}

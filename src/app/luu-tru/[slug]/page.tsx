@@ -191,7 +191,12 @@ export default async function AccommodationPublicPage({
   return (
     <div className="flex flex-1 flex-col">
       <SiteHeader />
-      <ListingViewTracker type="accommodation" id={acc.id} />
+      <ListingViewTracker
+        type="accommodation"
+        id={acc.id}
+        name={acc.name}
+        placeId={acc.placeId}
+      />
 
       <main className="flex-1">
         {/* Hero — chung mô-típ nền ambient với các trang chi tiết khác */}

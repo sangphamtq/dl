@@ -10,10 +10,17 @@ import {
   Compass,
   ImageOff,
   TriangleAlert,
+  Route,
+  Lightbulb,
+  Phone,
+  Globe,
+  MessageSquare,
+  CheckCircle2,
 } from "@/components/icons";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
 import { parseTicketTiers, tierPriceLabel } from "@/lib/tickets";
+import { PRICE_LABELS } from "@/lib/listing-labels";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SpotAdminControls } from "../admin-controls";
@@ -38,11 +45,13 @@ export default async function SpotDetailPage({
       id: true,
       name: true,
       slug: true,
+      tagline: true,
       description: true,
       category: true,
       status: true,
       isFeatured: true,
       order: true,
+      popularity: true,
       address: true,
       lat: true,
       lng: true,
@@ -51,11 +60,15 @@ export default async function SpotDetailPage({
       website: true,
       bookingUrl: true,
       mapUrl: true,
+      priceRange: true,
       bestTime: true,
+      bestTimeNote: true,
       ticketFree: true,
       ticketTiers: true,
       ticketInfo: true,
       notice: true,
+      gettingThere: true,
+      tips: true,
       tags: true,
       provinceName: true,
       districtName: true,
@@ -63,6 +76,10 @@ export default async function SpotDetailPage({
       createdAt: true,
       updatedAt: true,
       place: { select: { id: true, name: true } },
+      highlights: {
+        orderBy: { order: "asc" },
+        select: { id: true, title: true, body: true },
+      },
       activityLinks: {
         orderBy: { order: "asc" },
         select: {
@@ -74,6 +91,7 @@ export default async function SpotDetailPage({
         orderBy: [{ isCover: "desc" }, { order: "asc" }],
         select: { id: true, url: true, alt: true, isCover: true },
       },
+      _count: { select: { reviews: true, checkIns: true } },
     },
   });
 
@@ -86,6 +104,10 @@ export default async function SpotDetailPage({
   const hasMap = spot.lat != null && spot.lng != null;
   const facts = [
     { label: "Loại", value: labelOf(SPOT_CATEGORIES, spot.category) },
+    {
+      label: "Mức giá",
+      value: spot.priceRange ? PRICE_LABELS[spot.priceRange] : null,
+    },
     { label: "Giờ mở cửa", value: spot.openingHours },
     { label: "Thời điểm đẹp", value: spot.bestTime },
     { label: "Địa chỉ", value: spot.address },
@@ -129,6 +151,9 @@ export default async function SpotDetailPage({
               />
             )}
           </div>
+          {spot.tagline && (
+            <p className="mt-1 text-sm text-muted-foreground">{spot.tagline}</p>
+          )}
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <Badge variant="secondary">Địa điểm nhỏ</Badge>
             {spot.category && (
@@ -242,6 +267,74 @@ export default async function SpotDetailPage({
               </p>
             )}
           </section>
+
+          {/* Điểm nhấn */}
+          {spot.highlights.length > 0 && (
+            <section>
+              <h2 className="text-lg font-semibold tracking-tight">
+                Điểm nhấn ({spot.highlights.length})
+              </h2>
+              <div className="mt-3 space-y-3">
+                {spot.highlights.map((h) => (
+                  <div key={h.id} className="rounded-xl border p-4">
+                    <h3 className="font-medium">{h.title}</h3>
+                    {h.body && (
+                      <div
+                        className="mt-1.5 text-sm leading-6 text-foreground/90 [&_p]:mt-1"
+                        dangerouslySetInnerHTML={{ __html: h.body }}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Thời điểm đẹp — diễn giải */}
+          {spot.bestTimeNote && (
+            <section>
+              <h2 className="text-lg font-semibold tracking-tight">
+                Khi nào đẹp nhất
+              </h2>
+              <p className="mt-2 whitespace-pre-line leading-7 text-foreground/90">
+                {spot.bestTimeNote}
+              </p>
+            </section>
+          )}
+
+          {/* Cách đến */}
+          {spot.gettingThere && (
+            <section>
+              <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight">
+                <Route className="size-4 text-muted-foreground" aria-hidden />
+                Cách đến
+              </h2>
+              <p className="mt-2 whitespace-pre-line leading-7 text-foreground/90">
+                {spot.gettingThere}
+              </p>
+            </section>
+          )}
+
+          {/* Mẹo / kinh nghiệm */}
+          {spot.tips.length > 0 && (
+            <section>
+              <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight">
+                <Lightbulb
+                  className="size-4 text-muted-foreground"
+                  aria-hidden
+                />
+                Mẹo ({spot.tips.length})
+              </h2>
+              <ul className="mt-3 space-y-2">
+                {spot.tips.map((t, i) => (
+                  <li key={i} className="flex gap-2 text-sm leading-6">
+                    <span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" />
+                    <span className="text-foreground/90">{t}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
           {/* Hoạt động liên kết (read-only) */}
           <section>
@@ -364,6 +457,70 @@ export default async function SpotDetailPage({
               />
             </div>
           )}
+
+          {(spot.phone || spot.website || spot.bookingUrl) && (
+            <div className="rounded-xl border p-4">
+              <h3 className="text-sm font-semibold">Liên hệ</h3>
+              <div className="mt-3 space-y-2 text-sm">
+                {spot.phone && (
+                  <a
+                    href={`tel:${spot.phone}`}
+                    className="flex items-center gap-2 hover:text-primary"
+                  >
+                    <Phone className="size-4 text-muted-foreground" aria-hidden />
+                    {spot.phone}
+                  </a>
+                )}
+                {spot.website && (
+                  <a
+                    href={spot.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 hover:text-primary"
+                  >
+                    <Globe className="size-4 text-muted-foreground" aria-hidden />
+                    <span className="truncate">Website</span>
+                    <ExternalLink className="size-3.5 shrink-0" aria-hidden />
+                  </a>
+                )}
+                {spot.bookingUrl && (
+                  <a
+                    href={spot.bookingUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 hover:text-primary"
+                  >
+                    <ExternalLink
+                      className="size-4 text-muted-foreground"
+                      aria-hidden
+                    />
+                    <span className="truncate">Đặt vé / booking</span>
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="rounded-xl border p-4">
+            <h3 className="text-sm font-semibold">Tương tác</h3>
+            <dl className="mt-3 space-y-3 text-sm">
+              <Meta label="Lượt phổ biến">
+                {spot.popularity.toLocaleString("vi-VN")}
+              </Meta>
+              <Meta label="Đánh giá">
+                <span className="inline-flex items-center gap-1">
+                  <MessageSquare className="size-3.5" aria-hidden />
+                  {spot._count.reviews}
+                </span>
+              </Meta>
+              <Meta label="Đã đến">
+                <span className="inline-flex items-center gap-1">
+                  <CheckCircle2 className="size-3.5" aria-hidden />
+                  {spot._count.checkIns}
+                </span>
+              </Meta>
+            </dl>
+          </div>
 
           {spot.tags.length > 0 && (
             <div className="rounded-xl border p-4">

@@ -376,7 +376,13 @@ export default async function SpotPublicPage({
   return (
     <div className="flex flex-1 flex-col">
       <SiteHeader />
-      <ListingViewTracker type="spot" id={spot.id} />
+      <ListingViewTracker
+        type="spot"
+        id={spot.id}
+        name={spot.name}
+        placeId={spot.placeId}
+        provinceName={spot.provinceName}
+      />
 
       <main className="flex-1">
         {/* Hero — dùng chung mô-típ nền ambient của trang chi tiết điểm đến */}

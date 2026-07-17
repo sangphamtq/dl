@@ -10,6 +10,7 @@ import { Toaster } from "sonner";
 import { getSettings } from "@/lib/settings";
 import { BackToTop } from "@/components/site/back-to-top";
 import { ItineraryFab } from "@/components/site/itinerary-fab";
+import { AnalyticsProvider } from "@/components/site/analytics-provider";
 import "./globals.css";
 
 const cabin = Cabin({
@@ -71,6 +72,7 @@ export default function RootLayout({
         <ItineraryFab />
         <BackToTop />
         <Toaster richColors position="top-center" />
+        <AnalyticsProvider />
       </body>
     </html>
   );

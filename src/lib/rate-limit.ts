@@ -23,3 +23,16 @@ export function ipKey(req: NextRequest, scope: string): string {
     "anon";
   return `${scope}:${ip}`;
 }
+
+// Nhận diện bot/crawler qua User-Agent để KHÔNG tính vào lượt xem. Danh sách
+// phủ các mẫu phổ biến (search engine, social preview, monitor, headless…).
+// Không cần hoàn hảo — chỉ lọc phần lớn traffic không phải người thật.
+const BOT_UA =
+  /bot|crawl|spider|slurp|bingpreview|facebookexternalhit|whatsapp|telegram|discord|embedly|quora|pinterest|redditbot|linkedinbot|twitterbot|googlebot|applebot|yandex|baiduspider|duckduckbot|semrush|ahrefs|mj12bot|dotbot|petalbot|headless|lighthouse|preview|monitor|phantomjs|python-requests|curl|wget|axios|node-fetch|go-http|okhttp/i;
+
+export function isBotRequest(req: NextRequest): boolean {
+  const ua = req.headers.get("user-agent") ?? "";
+  // UA rỗng gần như luôn là script/bot → loại.
+  if (!ua) return true;
+  return BOT_UA.test(ua);
+}

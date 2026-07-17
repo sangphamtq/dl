@@ -15,9 +15,16 @@ import {
   Bus,
   ImageOff,
   Play,
+  Info,
+  Lightbulb,
+  Navigation,
+  MessageSquare,
+  CheckCircle2,
+  Users,
 } from "@/components/icons";
 import { prisma } from "@/lib/prisma";
 import { getTikTokInfo } from "@/lib/tiktok";
+import { type QuickFact } from "../actions";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -56,6 +63,11 @@ export default async function PlaceDetailPage({
       kind: true,
       tagline: true,
       description: true,
+      foodIntro: true,
+      foodTips: true,
+      getToIntro: true,
+      getAroundIntro: true,
+      quickInfo: true,
       provinceName: true,
       districtName: true,
       wardName: true,
@@ -63,6 +75,7 @@ export default async function PlaceDetailPage({
       status: true,
       isFeatured: true,
       order: true,
+      popularity: true,
       viewCount: true,
       createdAt: true,
       updatedAt: true,
@@ -85,6 +98,9 @@ export default async function PlaceDetailPage({
           accommodations: true,
           transports: true,
           videos: true,
+          reviews: true,
+          checkIns: true,
+          threads: true,
         },
       },
     },
@@ -109,6 +125,9 @@ export default async function PlaceDetailPage({
   const published = place.status === "published";
   const cover = place.images.find((i) => i.isCover) ?? place.images[0] ?? null;
   const gallery = place.images.filter((i) => i.id !== cover?.id);
+  const quickInfo = (place.quickInfo as QuickFact[] | null)?.filter(
+    (f) => f.label || f.value,
+  ) ?? [];
 
   return (
     <div className="p-6 sm:p-8">
@@ -240,6 +259,94 @@ export default async function PlaceDetailPage({
               </p>
             )}
           </section>
+
+          {/* Trước khi đi (quickInfo) */}
+          {quickInfo.length > 0 && (
+            <section>
+              <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight">
+                <Info className="size-4 text-muted-foreground" aria-hidden />
+                Trước khi đi
+              </h2>
+              <dl className="mt-3 divide-y overflow-hidden rounded-xl border">
+                {quickInfo.map((f, i) => (
+                  <div key={i} className="flex gap-3 px-4 py-2.5 text-sm">
+                    <dt className="w-32 shrink-0 text-muted-foreground">
+                      {f.label || "—"}
+                    </dt>
+                    <dd className="flex-1 text-foreground/90">{f.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
+          )}
+
+          {/* Ẩm thực (foodIntro + foodTips) */}
+          {(place.foodIntro || place.foodTips.length > 0) && (
+            <section>
+              <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight">
+                <UtensilsCrossed
+                  className="size-4 text-muted-foreground"
+                  aria-hidden
+                />
+                Ẩm thực
+              </h2>
+              {place.foodIntro && (
+                <p className="mt-2 whitespace-pre-line leading-7 text-foreground/90">
+                  {place.foodIntro}
+                </p>
+              )}
+              {place.foodTips.length > 0 && (
+                <div className="mt-3">
+                  <div className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+                    <Lightbulb className="size-4" aria-hidden />
+                    Mẹo trước khi ăn
+                  </div>
+                  <ul className="mt-2 space-y-2">
+                    {place.foodTips.map((t, i) => (
+                      <li key={i} className="flex gap-2 text-sm leading-6">
+                        <span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" />
+                        <span className="text-foreground/90">{t}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* Di chuyển (getToIntro + getAroundIntro) */}
+          {(place.getToIntro || place.getAroundIntro) && (
+            <section>
+              <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight">
+                <Bus className="size-4 text-muted-foreground" aria-hidden />
+                Di chuyển
+              </h2>
+              <div className="mt-3 space-y-4">
+                {place.getToIntro && (
+                  <div>
+                    <div className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+                      <Navigation className="size-4" aria-hidden />
+                      Đến nơi
+                    </div>
+                    <p className="mt-1.5 whitespace-pre-line leading-7 text-foreground/90">
+                      {place.getToIntro}
+                    </p>
+                  </div>
+                )}
+                {place.getAroundIntro && (
+                  <div>
+                    <div className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+                      <Compass className="size-4" aria-hidden />
+                      Đi lại tại chỗ
+                    </div>
+                    <p className="mt-1.5 whitespace-pre-line leading-7 text-foreground/90">
+                      {place.getAroundIntro}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
 
           {/* Video TikTok */}
           <section>
@@ -375,6 +482,33 @@ export default async function PlaceDetailPage({
               </Meta>
               <Meta label="Tạo lúc">{dateFmt.format(place.createdAt)}</Meta>
               <Meta label="Cập nhật">{dateFmt.format(place.updatedAt)}</Meta>
+            </dl>
+          </div>
+
+          <div className="rounded-xl border p-4">
+            <h3 className="text-sm font-semibold">Tương tác</h3>
+            <dl className="mt-3 space-y-3 text-sm">
+              <Meta label="Lượt phổ biến">
+                {place.popularity.toLocaleString("vi-VN")}
+              </Meta>
+              <Meta label="Đánh giá">
+                <span className="inline-flex items-center gap-1">
+                  <MessageSquare className="size-3.5" aria-hidden />
+                  {place._count.reviews}
+                </span>
+              </Meta>
+              <Meta label="Đã đến">
+                <span className="inline-flex items-center gap-1">
+                  <CheckCircle2 className="size-3.5" aria-hidden />
+                  {place._count.checkIns}
+                </span>
+              </Meta>
+              <Meta label="Chủ đề cộng đồng">
+                <span className="inline-flex items-center gap-1">
+                  <Users className="size-3.5" aria-hidden />
+                  {place._count.threads}
+                </span>
+              </Meta>
             </dl>
           </div>
 

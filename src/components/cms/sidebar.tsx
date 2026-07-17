@@ -14,6 +14,7 @@ import {
   BedDouble,
   Bus,
   Newspaper,
+  Eye,
   MessageSquareText,
   MessagesSquare,
   BadgeCheck,
@@ -56,7 +57,10 @@ type NavGroup = { label: string; items: NavItem[] };
 const NAV: NavGroup[] = [
   {
     label: "Tổng quan",
-    items: [{ href: "/cms", label: "Dashboard", icon: LayoutDashboard }],
+    items: [
+      { href: "/cms", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/cms/analytics", label: "Traffic", icon: Eye },
+    ],
   },
   {
     label: "Địa điểm",

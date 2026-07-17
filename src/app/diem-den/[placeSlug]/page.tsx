@@ -420,7 +420,11 @@ export default async function PlaceDetailPage({
 
   return (
     <div className="flex flex-1 flex-col">
-      <PlaceViewTracker placeId={place.id} />
+      <PlaceViewTracker
+        placeId={place.id}
+        name={place.name}
+        provinceName={place.provinceName}
+      />
       <SiteHeader />
 
       <main className="flex-1">
