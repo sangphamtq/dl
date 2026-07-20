@@ -15,7 +15,7 @@ import {
 } from "@/components/icons";
 import { prisma } from "@/lib/prisma";
 import { coverUrl } from "@/lib/place-image";
-import { proseClass } from "@/components/cms/rich-text-editor";
+import { proseClass } from "@/lib/prose";
 import { parseTicketTiers, tierPriceLabel } from "@/lib/tickets";
 import {
   ACTIVITY_CATEGORY_LABELS,

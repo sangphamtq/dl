@@ -38,6 +38,7 @@ export type PostData = {
   };
   authorId: string;
   place: { slug: string; name: string } | null;
+  spot: { slug: string; name: string } | null;
   images: PostImage[];
   likeCount: number;
   likedByMe: boolean;
@@ -158,6 +159,18 @@ export function PostCard({
                 >
                   <MapPin className="size-3" aria-hidden />
                   {post.place.name}
+                </Link>
+              </>
+            )}
+            {showPlace && post.spot && (
+              <>
+                <Dot />
+                <Link
+                  href={`/dia-diem/${post.spot.slug}`}
+                  className="inline-flex items-center gap-0.5 hover:text-foreground"
+                >
+                  <MapPin className="size-3" aria-hidden />
+                  {post.spot.name}
                 </Link>
               </>
             )}

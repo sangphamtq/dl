@@ -30,6 +30,7 @@ export function PostComposer({
   currentUserName = null,
   places,
   fixedPlaceId,
+  fixedSpotId,
   defaultType = "discussion",
   canPostSale = false,
 }: {
@@ -37,6 +38,7 @@ export function PostComposer({
   currentUserName?: string | null;
   places?: PlaceOption[];
   fixedPlaceId?: string;
+  fixedSpotId?: string;
   defaultType?: ThreadTypeValue;
   canPostSale?: boolean;
 }) {
@@ -126,6 +128,7 @@ export function PostComposer({
           body: html,
           type,
           placeId: placeId || null,
+          spotId: fixedSpotId ?? null,
           imageUrls: urls,
           departDate: type === "trip" && departDate ? departDate : null,
           slots: type === "trip" && slots ? Number(slots) : null,

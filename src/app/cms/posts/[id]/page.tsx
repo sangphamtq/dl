@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PostAdminControls } from "../admin-controls";
-import { proseClass } from "@/components/cms/rich-text-editor";
+import { proseClass } from "@/lib/prose";
 import { POST_CATEGORIES, labelOf } from "../constants";
 
 const dateFmt = new Intl.DateTimeFormat("vi-VN", {

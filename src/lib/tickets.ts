@@ -37,3 +37,16 @@ export function parseTicketTiers(value: unknown): TicketTier[] {
   }
   return out;
 }
+
+// Nhãn giá vé từ ticketFree / ticketTiers (dùng cho cả spot lẫn activity).
+export function ticketPriceLabel(
+  ticketFree: boolean,
+  ticketTiers: unknown,
+): string | null {
+  if (ticketFree) return "Miễn phí";
+  const prices = parseTicketTiers(ticketTiers)
+    .map((t) => t.price)
+    .filter((p): p is number => p != null && p > 0);
+  if (prices.length === 0) return null;
+  return `Từ ${formatVnd(Math.min(...prices))}`;
+}

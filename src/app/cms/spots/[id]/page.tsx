@@ -25,6 +25,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SpotAdminControls } from "../admin-controls";
 import { SPOT_CATEGORIES, labelOf } from "../constants";
+import { proseClass } from "@/lib/prose";
 
 const dateFmt = new Intl.DateTimeFormat("vi-VN", {
   day: "2-digit",
@@ -309,9 +310,10 @@ export default async function SpotDetailPage({
                 <Route className="size-4 text-muted-foreground" aria-hidden />
                 Cách đến
               </h2>
-              <p className="mt-2 whitespace-pre-line leading-7 text-foreground/90">
-                {spot.gettingThere}
-              </p>
+              <div
+                className={cn(proseClass, "mt-2")}
+                dangerouslySetInnerHTML={{ __html: spot.gettingThere }}
+              />
             </section>
           )}
 

@@ -520,9 +520,11 @@ model Spot {
 
   checkIns CheckIn[] // người dùng đã đánh dấu "đã đến" địa điểm này
   reviews  Review[] // đánh giá của Vivu-er cho địa điểm này
+  threads  Thread[] // chủ đề cộng đồng gắn địa điểm này
 
   images   Image[]
   postRefs PostRef[]
+  videos   SpotVideo[] // video TikTok giới thiệu (hiển thị ở hero + modal)
 
   tags        String[]      @default([])
   status      PublishStatus @default(draft)
@@ -802,6 +804,21 @@ model PlaceVideo {
   @@index([placeId])
 }
 
+// Video TikTok gắn vào Spot (địa điểm nhỏ). Giống PlaceVideo: chỉ lưu videoId
+// + caption; thumbnail lấy runtime qua oEmbed.
+model SpotVideo {
+  id        String   @id @default(cuid())
+  spotId    String
+  spot      Spot     @relation(fields: [spotId], references: [id], onDelete: Cascade)
+  videoId   String // ID video TikTok
+  caption   String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([spotId])
+}
+
 // ============================================================
 // BLOG
 // ============================================================
@@ -919,6 +936,9 @@ model Thread {
   placeId String? // (tùy chọn) gắn điểm đến để lọc & cross-link
   place   Place?  @relation(fields: [placeId], references: [id], onDelete: SetNull)
 
+  spotId String? // (tùy chọn) gắn địa điểm nhỏ để lọc & cross-link
+  spot   Spot?   @relation(fields: [spotId], references: [id], onDelete: SetNull)
+
   tags String[] @default([])
 
   // Chỉ dùng cho type=trip (tìm bạn đồng hành) — giúp lọc/nhắc chuyến sắp đi.
@@ -942,6 +962,7 @@ model Thread {
 
   @@index([type])
   @@index([placeId])
+  @@index([spotId])
   @@index([authorId])
   @@index([isPinned, lastActivityAt])
 }

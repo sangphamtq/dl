@@ -4,9 +4,11 @@ import { ArrowLeft } from "@/components/icons";
 import { prisma } from "@/lib/prisma";
 import { getProvinces } from "@/lib/locations";
 import { parseTicketTiers } from "@/lib/tickets";
+import { getTikTokInfo } from "@/lib/tiktok";
 import { FormSection } from "@/components/cms/form-section";
 import { ListingImages } from "@/components/cms/listing-images";
 import { SpotForm, type SpotFormValues } from "../../spot-form";
+import { SpotVideosManager } from "../../spot-videos";
 import { getPlaceOptions } from "../../place-options";
 
 export default async function EditSpotPage({
@@ -76,6 +78,19 @@ export default async function EditSpotPage({
   ]);
 
   if (!spot) notFound();
+
+  // Video TikTok: chỉ lưu videoId + caption; thumbnail lấy runtime qua oEmbed.
+  const videoRows = await prisma.spotVideo.findMany({
+    where: { spotId: id },
+    orderBy: [{ order: "asc" }, { createdAt: "asc" }],
+    select: { id: true, videoId: true, caption: true },
+  });
+  const videos = await Promise.all(
+    videoRows.map(async (v) => ({
+      ...v,
+      thumbnail: (await getTikTokInfo(v.videoId)).thumbnail,
+    })),
+  );
 
   const initial: Partial<SpotFormValues> = {
     name: spot.name,
@@ -153,6 +168,15 @@ export default async function EditSpotPage({
           description="Tải ảnh cho địa điểm. Ảnh bìa hiển thị ở danh sách & trang."
         >
           <ListingImages ownerType="spot" ownerId={spot.id} images={images} />
+        </FormSection>
+      </div>
+
+      <div className="border-t">
+        <FormSection
+          title="Video TikTok"
+          description="Dán link/ID video TikTok. Hiển thị ở hero trang địa điểm (mở modal xem)."
+        >
+          <SpotVideosManager spotId={spot.id} videos={videos} />
         </FormSection>
       </div>
     </div>

@@ -21,6 +21,7 @@ export const postChannel = (slug: string) => `post:${slug}`;
 export const threadChannel = (slug: string) => `thread:${slug}`;
 export const communityChannel = () => `cong-dong`;
 export const placeFeedChannel = (slug: string) => `place-feed:${slug}`;
+export const spotFeedChannel = (slug: string) => `spot-feed:${slug}`;
 export const userChannel = (userId: string) => `user:${userId}`;
 
 // Phát một sự kiện lên kênh (không chặn luồng chính nếu lỗi).

@@ -5,7 +5,7 @@ import { ChevronRight, Clock } from "@/components/icons";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import { POST_CATEGORY_LABELS, label } from "@/lib/listing-labels";
-import { proseClass } from "@/components/cms/rich-text-editor";
+import { proseClass } from "@/lib/prose";
 import { coverUrl } from "@/lib/place-image";
 import { cn } from "@/lib/utils";
 import { SiteHeader } from "@/components/site/site-header";

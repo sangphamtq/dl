@@ -12,6 +12,13 @@ import type { TicketTier } from "@/lib/tickets";
 
 const STAFF = ["admin", "editor"];
 
+// TipTap trả về "<p></p>" khi trống → coi như rỗng để lưu null (tránh
+// hiển thị section HTML rỗng ở trang công khai).
+function emptyableHtml(html: string): string | null {
+  const stripped = html.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim();
+  return stripped ? html.trim() : null;
+}
+
 // Một dòng loại vé ở form (giá nhập text); chuẩn hóa thành number ở normalize.
 export type TicketTierInput = { label: string; price: string; note: string };
 
@@ -194,7 +201,7 @@ async function normalize(
         tiers.length > 0 ? (tiers as Prisma.InputJsonValue) : Prisma.DbNull,
       ticketInfo: input.ticketInfo.trim() || null,
       notice: input.notice.trim() || null,
-      gettingThere: input.gettingThere.trim() || null,
+      gettingThere: emptyableHtml(input.gettingThere),
       tips,
       tags,
       provinceCode: code(input.provinceCode),

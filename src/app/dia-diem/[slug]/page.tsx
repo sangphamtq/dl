@@ -2,23 +2,20 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import {
-  ChevronLeft,
   ChevronRight,
-  ChevronDown,
   MapPin,
   Phone,
   Globe,
   Ticket,
   TriangleAlert,
   Sparkles,
-  Star,
   Check,
 } from "@/components/icons";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
 import { coverUrl } from "@/lib/place-image";
-import { getVisitors } from "@/lib/place-meta";
+import { getVisitors, resolveVideos } from "@/lib/place-meta";
 import { summarizeReviews } from "@/lib/review-meta";
 import { googleEmbedSrc, parseZoom, parseLatLng } from "@/lib/map-url";
 import { getDrivingDistances, type Ride } from "@/lib/routing";
@@ -31,7 +28,7 @@ import {
 import {
   parseTicketTiers,
   tierPriceLabel,
-  formatVnd,
+  ticketPriceLabel,
   type TicketTier,
 } from "@/lib/tickets";
 import {
@@ -43,20 +40,18 @@ import {
 } from "@/lib/listing-labels";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
-import { PlaceHeroStack, type HeroImage } from "@/components/site/place-hero-stack";
-import { HeroFrame } from "@/components/site/hero-frame";
-import { proseClass } from "@/components/cms/rich-text-editor";
-import { ShareButton } from "@/components/site/share-button";
+import { type HeroImage } from "@/components/site/place-hero-stack";
+import { proseClass } from "@/lib/prose";
 import { RelatedPosts } from "@/components/site/related-posts";
 import { ListingViewTracker } from "@/components/site/listing-view-tracker";
 import { isStaffViewer } from "@/lib/preview";
 import { ListingCard } from "@/components/site/listing-card";
 import { Rail } from "@/components/site/rail";
-import { SpotSectionNav, type SectionItem } from "@/components/site/spot-section-nav";
+import { SpotSectionNav } from "@/components/site/spot-section-nav";
+import { SpotHero, type SpotQuickFact } from "@/components/site/spot-hero";
+import { buildSpotNavItems } from "@/lib/spot-nav";
 import { PeerBar } from "@/components/site/peer-bar";
 import { getListingPeers } from "@/lib/peers";
-import { CheckInButton } from "@/components/site/check-in-button";
-import { CheckInFaces } from "@/components/site/check-in-faces";
 import {
   ReviewsSection,
   type ReviewListItem,
@@ -69,16 +64,6 @@ const listingImages = {
   take: 1,
   select: { url: true, isCover: true },
 } as const;
-
-// Nhãn giá vé từ ticketFree / ticketTiers (dùng cho cả spot lẫn activity).
-function ticketPriceLabel(ticketFree: boolean, ticketTiers: unknown): string | null {
-  if (ticketFree) return "Miễn phí";
-  const prices = parseTicketTiers(ticketTiers)
-    .map((t) => t.price)
-    .filter((p): p is number => p != null && p > 0);
-  if (prices.length === 0) return null;
-  return `Từ ${formatVnd(Math.min(...prices))}`;
-}
 
 export async function generateMetadata({
   params,
@@ -215,6 +200,10 @@ export default async function SpotPublicPage({
         orderBy: [{ isCover: "desc" }, { order: "asc" }],
         select: { id: true, url: true, alt: true, isCover: true },
       },
+      videos: {
+        orderBy: [{ order: "asc" }, { createdAt: "asc" }],
+        select: { videoId: true, caption: true },
+      },
     },
   });
 
@@ -296,11 +285,12 @@ export default async function SpotPublicPage({
   if (heroImages.length === 0) {
     heroImages.push({ url: coverUrl([], spot.slug, 1200, 800), alt: spot.name });
   }
+  const videos = await resolveVideos(spot.videos);
   const tiers = parseTicketTiers(spot.ticketTiers);
 
   // Fact nhanh hiển thị trên thanh nổi dưới hero (không gồm địa chỉ — để cạnh bản đồ).
   // Giá ưu tiên vé thật (ticketFree/ticketTiers), fallback thang priceRange cũ.
-  const quickFacts = [
+  const quickFacts: SpotQuickFact[] = [
     {
       icon: Ticket,
       label: "Mức giá",
@@ -309,7 +299,7 @@ export default async function SpotPublicPage({
         label(PRICE_LABELS, spot.priceRange),
       muted: false,
     },
-  ].filter((f) => f.value);
+  ].filter((f): f is SpotQuickFact => Boolean(f.value));
 
   const hasMap = spot.lat != null && spot.lng != null;
   const categoryLabel = label(SPOT_CATEGORY_LABELS, spot.category);
@@ -358,20 +348,17 @@ export default async function SpotPublicPage({
     nearbyEateries.length > 0 ||
     accommodations.length > 0;
 
-  // Mục cho thanh điều hướng dính (chỉ liệt kê mục có dữ liệu, theo đúng thứ tự trang).
-  const navItems: SectionItem[] = [
-    (spot.description || introPost) && { id: "gioi-thieu", label: "Giới thiệu" },
-    spot.highlights.length > 0 && { id: "diem-nhan", label: "Điểm nhấn" },
-    spot.activityLinks.length > 0 && { id: "hoat-dong", label: "Làm gì ở đây" },
-    (spot.tips.length > 0 || spot.notice) && {
-      id: "kinh-nghiem",
-      label: "Kinh nghiệm",
-    },
-    spot.bestTimeNote && { id: "khi-nao", label: "Khi nào đẹp" },
-    spot.gettingThere && { id: "cach-den", label: "Cách đến" },
-    hasNearby && { id: "quanh-day", label: "Quanh đây" },
-    { id: "danh-gia", label: "Đánh giá" },
-  ].filter((x): x is SectionItem => Boolean(x));
+  // Mục cho thanh điều hướng dính (chỉ liệt kê mục có dữ liệu, theo đúng thứ tự
+  // trang). "Cộng đồng" là route link sang trang con — xem buildSpotNavItems.
+  const navItems = buildSpotNavItems(spot.slug, spot.place.slug, {
+    hasIntro: !!(spot.description || introPost),
+    hasHighlights: spot.highlights.length > 0,
+    hasActivities: spot.activityLinks.length > 0,
+    hasExperience: spot.tips.length > 0 || !!spot.notice,
+    hasBestTime: !!spot.bestTimeNote,
+    hasGettingThere: !!spot.gettingThere,
+    hasNearby,
+  });
 
   return (
     <div className="flex flex-1 flex-col">
@@ -385,129 +372,23 @@ export default async function SpotPublicPage({
       />
 
       <main className="flex-1">
-        {/* Hero — dùng chung mô-típ nền ambient của trang chi tiết điểm đến */}
-        <HeroFrame images={heroImages.map((i) => i.url)}>
-          <div className="mx-auto max-w-7xl px-4 pb-10 pt-6 sm:px-6 sm:pb-6 sm:pt-5">
-            <div className="grid items-center gap-10 lg:grid-cols-[1fr_1.4fr] lg:gap-12">
-              {/* Trái: chữ */}
-              <div>
-                {/* Quay lại + đánh dấu đã đến */}
-                <div className="mb-5 flex items-center justify-between gap-3">
-                  <Link
-                    href={`/diem-den/${spot.place.slug}/dia-diem`}
-                    className="group inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    <ChevronLeft
-                      className="size-4 transition-transform group-hover:-translate-x-0.5"
-                      aria-hidden
-                    />
-                    Địa điểm tại {spot.place.name}
-                  </Link>
-                  <div className="flex items-center gap-2">
-                    <CheckInButton
-                      targetKind="spot"
-                      targetId={spot.id}
-                      targetName={spot.name}
-                      targetImage={coverUrl(spot.images, spot.slug, 96, 96)}
-                      redirectTo={`/dia-diem/${spot.slug}`}
-                      initialChecked={checkIn.checked}
-                      isAuthed={checkIn.isAuthed}
-                    />
-                    <ShareButton title={spot.name} iconOnly />
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-4 text-sm font-medium">
-                  {categoryLabel && (
-                    <span className="rounded-full bg-primary/10 px-3 py-1 text-xs text-primary">
-                      {categoryLabel}
-                    </span>
-                  )}
-                  <Link
-                    href={`/diem-den/${spot.place.slug}`}
-                    className="inline-flex items-center gap-1.5 text-primary transition-colors hover:text-primary/80"
-                  >
-                    <MapPin className="size-4" aria-hidden />
-                    {spot.place.name}
-                  </Link>
-                </div>
-
-                <h1 className="mt-4 text-balance text-4xl font-bold leading-[1.08] tracking-tight sm:text-5xl">
-                  {spot.name}
-                </h1>
-                {spot.tagline && (
-                  <p className="mt-4 max-w-lg text-lg leading-relaxed text-muted-foreground">
-                    {spot.tagline}
-                  </p>
-                )}
-                {/* Fact nhanh */}
-                {quickFacts.length > 0 && (
-                  <dl className="mt-6 flex flex-wrap gap-x-7 gap-y-4 text-sm">
-                    {quickFacts.map((f) => (
-                      <div key={f.label} className="flex items-center gap-2.5">
-                        <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
-                          <f.icon className="size-4" aria-hidden />
-                        </span>
-                        <div className="min-w-0">
-                          <dd
-                            className={
-                              f.muted
-                                ? "font-medium text-muted-foreground"
-                                : "font-semibold"
-                            }
-                          >
-                            {f.value}
-                          </dd>
-                          <dt className="text-xs text-muted-foreground">
-                            {f.label}
-                          </dt>
-                        </div>
-                      </div>
-                    ))}
-                  </dl>
-                )}
-
-                {/* Vivu-er đã đến + tổng quan đánh giá */}
-                {(visitors.total > 0 || reviewSummary.total > 0) && (
-                  <div className="mt-6 flex flex-wrap items-center gap-x-7 gap-y-3 text-sm">
-                    {visitors.total > 0 && (
-                      <CheckInFaces
-                        people={visitors.people}
-                        total={visitors.total}
-                      />
-                    )}
-                    {reviewSummary.total > 0 && (
-                      <a
-                        href="#danh-gia"
-                        className="group inline-flex items-center gap-1.5"
-                      >
-                        <Star
-                          className="size-4 shrink-0 fill-warm text-warm"
-                          aria-hidden
-                        />
-                        <span className="font-semibold tabular-nums">
-                          {reviewSummary.stars.toFixed(1).replace(".", ",")}
-                        </span>
-                        <span className="text-muted-foreground transition-colors group-hover:text-foreground">
-                          · {reviewSummary.total} đánh giá
-                        </span>
-                        <ChevronDown
-                          className="size-4 text-muted-foreground transition-transform group-hover:translate-y-0.5"
-                          aria-hidden
-                        />
-                      </a>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Phải: chồng ảnh */}
-              <div className="relative z-[45]">
-                <PlaceHeroStack images={heroImages} />
-              </div>
-            </div>
-          </div>
-        </HeroFrame>
+        {/* Hero — dùng chung với các trang con (vd cộng đồng), như trang điểm đến */}
+        <SpotHero
+          id={spot.id}
+          name={spot.name}
+          tagline={spot.tagline}
+          place={spot.place}
+          checkInImage={coverUrl(spot.images, spot.slug, 96, 96)}
+          categoryLabel={categoryLabel || null}
+          heroImages={heroImages}
+          videos={videos}
+          quickFacts={quickFacts}
+          checkIn={checkIn}
+          visitors={visitors}
+          reviewSummary={reviewSummary}
+          reviewsHref="#danh-gia"
+          checkInRedirect={`/dia-diem/${spot.slug}`}
+        />
 
         <SpotSectionNav items={navItems} />
 
@@ -716,9 +597,10 @@ export default async function SpotPublicPage({
                   <h2 className="mb-4 text-xl font-bold tracking-tight sm:text-2xl">
                     Cách đến
                   </h2>
-                  <p className="max-w-3xl whitespace-pre-line leading-relaxed text-foreground/85">
-                    {spot.gettingThere}
-                  </p>
+                  <div
+                    className={cn(proseClass, "max-w-3xl")}
+                    dangerouslySetInnerHTML={{ __html: spot.gettingThere }}
+                  />
                 </section>
               )}
 
@@ -738,7 +620,7 @@ export default async function SpotPublicPage({
                 website={spot.website}
               />
 
-              {/* Vị trí — bản đồ dẫn dắt (click vào map để mở Google Maps) */}
+              {/* Vị trí — bản đồ dẫn dắt (Cộng đồng & Bản đồ nay ở thanh nav) */}
               {(mapEmbedSrc || spot.address || adminAddress) && (
                 <div className="overflow-hidden rounded-2xl border border-border/60 bg-card">
                   {mapEmbedSrc && (

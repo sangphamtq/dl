@@ -42,6 +42,7 @@ function threadSelect(meId: string) {
       },
     },
     place: { select: { slug: true, name: true } },
+    spot: { select: { slug: true, name: true } },
     images: { orderBy: { order: "asc" }, select: { url: true, alt: true } },
     _count: { select: { likes: true, replies: true } },
     likes: { where: { userId: meId }, select: { id: true } },
@@ -107,6 +108,7 @@ type RawThread = {
     saleProfile: { status: string; slug: string } | null;
   };
   place: { slug: string; name: string } | null;
+  spot: { slug: string; name: string } | null;
   images: { url: string; alt: string | null }[];
   _count: { likes: number; replies: number };
   likes: { id: string }[];
@@ -128,6 +130,7 @@ function shape(t: RawThread): PostData & { isHidden: boolean } {
     author: t.author,
     authorId: t.authorId,
     place: t.place,
+    spot: t.spot,
     images: t.images,
     likeCount: t._count.likes,
     likedByMe: t.likes.length > 0,
@@ -139,6 +142,9 @@ function shape(t: RawThread): PostData & { isHidden: boolean } {
 // Feed: danh sách bài (ghim trước, rồi mới nhất theo hoạt động).
 export async function getFeed(opts: {
   placeId?: string;
+  spotId?: string;
+  // Khi lọc theo spotId, GỘP thêm bài của điểm đến cha (OR spot ∪ place).
+  includeParentPlaceId?: string;
   nearProvince?: string; // lọc bài ở các điểm đến thuộc tỉnh này ("Gần bạn")
   type?: ThreadType;
   sort?: "active" | "new";
@@ -149,7 +155,13 @@ export async function getFeed(opts: {
   const meId = opts.currentUserId ?? "";
   const where: Prisma.ThreadWhereInput = {
     isHidden: false,
-    ...(opts.placeId ? { placeId: opts.placeId } : {}),
+    ...(opts.spotId && opts.includeParentPlaceId
+      ? { OR: [{ spotId: opts.spotId }, { placeId: opts.includeParentPlaceId }] }
+      : opts.spotId
+        ? { spotId: opts.spotId }
+        : opts.placeId
+          ? { placeId: opts.placeId }
+          : {}),
     ...(opts.nearProvince
       ? { place: { is: { provinceName: opts.nearProvince } } }
       : {}),
@@ -176,9 +188,24 @@ export async function getFeed(opts: {
 }
 
 // Bài "tìm bạn đồng hành" mới nhất (cho sidebar).
-export async function getTrips(opts: { placeId?: string; take?: number }) {
+export async function getTrips(opts: {
+  placeId?: string;
+  spotId?: string;
+  includeParentPlaceId?: string;
+  take?: number;
+}) {
   return prisma.thread.findMany({
-    where: { isHidden: false, type: "trip", ...(opts.placeId ? { placeId: opts.placeId } : {}) },
+    where: {
+      isHidden: false,
+      type: "trip",
+      ...(opts.spotId && opts.includeParentPlaceId
+        ? { OR: [{ spotId: opts.spotId }, { placeId: opts.includeParentPlaceId }] }
+        : opts.spotId
+          ? { spotId: opts.spotId }
+          : opts.placeId
+            ? { placeId: opts.placeId }
+            : {}),
+    },
     orderBy: { lastActivityAt: "desc" },
     take: opts.take ?? 4,
     select: {

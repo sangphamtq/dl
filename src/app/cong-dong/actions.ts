@@ -12,6 +12,7 @@ import {
   threadChannel,
   communityChannel,
   placeFeedChannel,
+  spotFeedChannel,
 } from "@/lib/ably";
 import { notify, notifyLike, removeLikeNotif } from "@/lib/notifications";
 import { getReplyTree } from "@/lib/community-feed";
@@ -98,6 +99,7 @@ export async function createThread(input: {
   body: string;
   type: string;
   placeId?: string | null;
+  spotId?: string | null;
   imageUrls?: string[];
   departDate?: string | null; // chỉ type=trip (ISO date, vd "2026-08-15")
   slots?: number | null; // chỉ type=trip
@@ -152,6 +154,18 @@ export async function createThread(input: {
     placeSlug = place?.slug ?? null;
   }
 
+  // Địa điểm nhỏ (tùy chọn) — song song với điểm đến; slug để phát realtime feed.
+  let spotId: string | null = null;
+  let spotSlug: string | null = null;
+  if (input.spotId) {
+    const spot = await prisma.spot.findUnique({
+      where: { id: input.spotId },
+      select: { id: true, slug: true },
+    });
+    spotId = spot?.id ?? null;
+    spotSlug = spot?.slug ?? null;
+  }
+
   const slugText = body.replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ");
   const slug = await uniqueThreadSlug(slugText || "bai-viet");
 
@@ -191,6 +205,7 @@ export async function createThread(input: {
       type: type as ThreadType,
       authorId: user.id,
       placeId,
+      spotId,
       departDate,
       slots,
       lastActivityAt: new Date(),
@@ -202,8 +217,10 @@ export async function createThread(input: {
 
   revalidatePath("/cong-dong");
   if (placeSlug) revalidatePath(`/diem-den/${placeSlug}/cong-dong`);
+  if (spotSlug) revalidatePath(`/dia-diem/${spotSlug}/cong-dong`);
   await publishEvent(communityChannel(), "feed:changed");
   if (placeSlug) await publishEvent(placeFeedChannel(placeSlug), "feed:changed");
+  if (spotSlug) await publishEvent(spotFeedChannel(spotSlug), "feed:changed");
   return { ok: true, data: { slug } };
 }
 
@@ -220,7 +237,11 @@ export async function deleteThread(
 
   const thread = await prisma.thread.findUnique({
     where: { id: threadId },
-    select: { authorId: true, place: { select: { slug: true } } },
+    select: {
+      authorId: true,
+      place: { select: { slug: true } },
+      spot: { select: { slug: true } },
+    },
   });
   if (!thread) return { ok: false, error: "Không tìm thấy chủ đề." };
   if (thread.authorId !== user.id && !STAFF.includes(user.role))
@@ -232,6 +253,10 @@ export async function deleteThread(
   if (thread.place?.slug) {
     revalidatePath(`/diem-den/${thread.place.slug}/cong-dong`);
     await publishEvent(placeFeedChannel(thread.place.slug), "feed:changed");
+  }
+  if (thread.spot?.slug) {
+    revalidatePath(`/dia-diem/${thread.spot.slug}/cong-dong`);
+    await publishEvent(spotFeedChannel(thread.spot.slug), "feed:changed");
   }
   return { ok: true };
 }
@@ -260,7 +285,12 @@ export async function addReply(input: {
 
   const thread = await prisma.thread.findUnique({
     where: { id: input.threadId },
-    select: { isLocked: true, authorId: true, place: { select: { slug: true } } },
+    select: {
+      isLocked: true,
+      authorId: true,
+      place: { select: { slug: true } },
+      spot: { select: { slug: true } },
+    },
   });
   if (!thread) return { ok: false, error: "Không tìm thấy chủ đề." };
   if (thread.isLocked) return { ok: false, error: "Chủ đề đã bị khóa." };
@@ -328,6 +358,10 @@ export async function addReply(input: {
   if (thread.place?.slug) {
     revalidatePath(`/diem-den/${thread.place.slug}/cong-dong`);
     await publishEvent(placeFeedChannel(thread.place.slug), "feed:changed");
+  }
+  if (thread.spot?.slug) {
+    revalidatePath(`/dia-diem/${thread.spot.slug}/cong-dong`);
+    await publishEvent(spotFeedChannel(thread.spot.slug), "feed:changed");
   }
   return { ok: true };
 }

@@ -564,13 +564,15 @@ export function SpotForm({
           </div>
           <div className="space-y-2">
             <Label htmlFor="gettingThere">Cách đến</Label>
-            <Textarea
-              id="gettingThere"
+            <RichTextEditor
               value={values.gettingThere}
-              onChange={(e) => set("gettingThere", e.target.value)}
+              onChange={(html) => set("gettingThere", html)}
               placeholder="Hướng dẫn đường đi, phương tiện, gửi xe…"
-              rows={3}
+              simple
             />
+            <p className="text-xs text-muted-foreground">
+              Có thể định dạng: in đậm, danh sách, liên kết…
+            </p>
           </div>
         </FormSection>
 
