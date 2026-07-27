@@ -5,7 +5,7 @@ import {
   BookOpen,
   Bus,
   CalendarClock,
-  ChevronRight,
+  CalendarDays,
   Compass,
   LayoutGrid,
   MapPin,
@@ -49,37 +49,17 @@ const CATEGORIES: { value: string; label: string; Icon: LucideIcon }[] = [
 
 const PER_PAGE = 9;
 
-function initials(name: string | null): string {
-  if (!name) return "?";
-  const parts = name.trim().split(/\s+/);
-  const first = parts[0]?.[0] ?? "";
-  const last = parts.length > 1 ? parts[parts.length - 1][0] : "";
-  return (first + last).toUpperCase();
-}
-
-function AuthorMeta({
-  name,
-  date,
-  className,
-}: {
-  name: string | null;
-  date: Date;
-  className?: string;
-}) {
+function DateMeta({ date, className }: { date: Date; className?: string }) {
   return (
-    <div className={cn("flex items-center gap-2", className)}>
-      <span
-        aria-hidden
-        className="grid size-6 shrink-0 place-items-center rounded-full bg-primary/10 text-[0.6rem] font-semibold text-primary"
-      >
-        {initials(name)}
-      </span>
-      <span className="truncate text-xs text-muted-foreground">
-        <span className="font-medium text-foreground/80">{name ?? "Ẩn danh"}</span>
-        {" · "}
-        {dateFmt.format(date)}
-      </span>
-    </div>
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 text-xs text-[#2e2e2e]/50 dark:text-white/40",
+        className,
+      )}
+    >
+      <CalendarDays className="size-3.5" aria-hidden />
+      {dateFmt.format(date)}
+    </span>
   );
 }
 
@@ -258,43 +238,46 @@ export default async function BlogPage({
     : null;
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="flex flex-1 flex-col bg-[#f6f5f2] text-[#2e2e2e] dark:bg-neutral-950 dark:text-white/85">
       <SiteHeader />
 
       <main className="flex-1">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+        <div className="mx-auto max-w-[81.25rem] px-4 sm:px-6 lg:px-8">
           {/* Breadcrumb + masthead */}
-          <nav className="flex items-center gap-1.5 pt-6 text-sm text-muted-foreground">
-            <Link href="/" className="hover:text-foreground">
+          <nav className="flex items-center pt-8 text-[0.75rem] font-medium uppercase tracking-[0.04em] text-[#2e2e2e]/60 dark:text-white/50">
+            <Link href="/" className="transition-colors hover:text-[#348320]">
               Trang chủ
             </Link>
-            <ChevronRight className="size-3.5" aria-hidden />
-            <span className="text-foreground/70">Blog du lịch</span>
+            <span className="mx-2" aria-hidden>/</span>
+            <span className="text-[#348320]">Cẩm nang</span>
           </nav>
 
-          <section className="mt-4 grid items-center gap-8 lg:grid-cols-[1fr_28rem]">
+          <section className="mt-6 grid items-center gap-10 lg:grid-cols-[1fr_30rem]">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                Blog du lịch
-              </h1>
-              <p className="mt-3 max-w-md text-[15px] leading-relaxed text-muted-foreground">
-                Kinh nghiệm du lịch, lịch trình gợi ý, review điểm đến và những
-                mẹo hữu ích cho hành trình của bạn.
+              <p className="text-[0.8rem] font-semibold uppercase tracking-[0.12em] text-[#348320]">
+                Cẩm nang du lịch
               </p>
-              <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
+              <h1 className="mt-3 text-[2rem] font-bold leading-tight text-[#1f2226] sm:text-[2.75rem] dark:text-white">
+                Kinh nghiệm cho mọi hành trình
+              </h1>
+              <p className="mt-4 max-w-md text-base leading-relaxed text-[#2e2e2e]/70 dark:text-white/60">
+                Lịch trình gợi ý, review điểm đến, đặc sản và những mẹo hữu ích
+                cho chuyến đi khắp Việt Nam.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-[#2e2e2e]/70 dark:text-white/60">
                 <Chip Icon={Newspaper} text={`${totalPublished} bài viết`} />
                 <Chip Icon={CalendarClock} text="Cập nhật hàng tuần" />
-                <Chip Icon={Sparkles} text="Nội dung được chọn lọc" />
+                <Chip Icon={Sparkles} text="Nội dung chọn lọc" />
               </div>
             </div>
             {heroImg && (
-              <div className="relative hidden aspect-[16/10] overflow-hidden rounded-3xl bg-muted ring-1 ring-black/5 lg:block">
+              <div className="relative hidden aspect-[16/10] overflow-hidden rounded-2xl bg-[#e5e7de] lg:block">
                 <Image
                   src={heroImg}
                   alt="Du lịch Việt Nam"
                   fill
                   priority
-                  sizes="28rem"
+                  sizes="30rem"
                   className="object-cover"
                 />
               </div>
@@ -302,16 +285,16 @@ export default async function BlogPage({
           </section>
         </div>
 
-        <div className="mx-auto mt-8 grid max-w-7xl gap-8 px-4 pb-8 sm:px-6 lg:grid-cols-[16rem_1fr] lg:gap-10">
-          {/* ── Sidebar ─────────────────────────────── */}
-          <aside className="lg:sticky lg:top-24 lg:self-start">
-            <div className="flex flex-col gap-4">
+        <div className="mx-auto mt-12 grid max-w-[81.25rem] gap-10 px-4 pb-16 sm:px-6 lg:grid-cols-[16rem_1fr] lg:gap-14 lg:px-8">
+          {/* Sidebar */}
+          <aside className="lg:sticky lg:top-6 lg:self-start">
+            <div className="flex flex-col gap-6">
               {/* Danh mục */}
-              <div className="rounded-2xl border border-border/60 bg-card p-3">
-                <h2 className="px-2 pb-2 pt-1 text-sm font-semibold tracking-tight">
+              <div>
+                <h2 className="mb-3 text-[0.8rem] font-semibold uppercase tracking-[0.12em] text-[#1f2226] dark:text-white">
                   Danh mục
                 </h2>
-                <ul className="flex flex-col gap-0.5">
+                <ul className="flex flex-col">
                   {CATEGORIES.map((c) => {
                     const active = category === c.value;
                     const Icon = c.Icon;
@@ -320,10 +303,10 @@ export default async function BlogPage({
                         <Link
                           href={buildHref({ category: c.value })}
                           className={cn(
-                            "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-colors",
+                            "flex items-center gap-2.5 border-l-2 py-2 pl-3 text-sm transition-colors",
                             active
-                              ? "bg-primary/10 font-medium text-primary"
-                              : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                              ? "border-[#348320] font-semibold text-[#348320]"
+                              : "border-[#e8e6e1] text-[#2e2e2e]/70 hover:border-[#348320]/40 hover:text-[#1f2226] dark:border-white/15 dark:text-white/60",
                           )}
                         >
                           <Icon className="size-4 shrink-0" aria-hidden />
@@ -333,7 +316,7 @@ export default async function BlogPage({
                           <span
                             className={cn(
                               "shrink-0 text-xs tabular-nums",
-                              active ? "text-primary/70" : "text-muted-foreground/50",
+                              active ? "text-[#348320]/70" : "text-[#2e2e2e]/35 dark:text-white/30",
                             )}
                           >
                             {countOf(c.value)}
@@ -356,14 +339,14 @@ export default async function BlogPage({
             </div>
           </aside>
 
-          {/* ── Nội dung ─────────────────────────────── */}
+          {/* Nội dung */}
           <div className="min-w-0">
             {/* Chủ đề nổi bật */}
             <section>
-              <h2 className="text-lg font-bold tracking-tight">
+              <h2 className="text-[0.8rem] font-semibold uppercase tracking-[0.12em] text-[#1f2226] dark:text-white">
                 Chủ đề nổi bật
               </h2>
-              <div className="mt-3 flex gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="mt-4 flex gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {CATEGORIES.filter((c) => c.value !== "all" && countOf(c.value) > 0).map(
                   (c) => {
                     const cover = catCover.get(c.value);
@@ -371,7 +354,7 @@ export default async function BlogPage({
                       <Link
                         key={c.value}
                         href={buildHref({ category: c.value })}
-                        className="group relative aspect-[16/10] w-44 shrink-0 overflow-hidden rounded-2xl bg-muted"
+                        className="group relative aspect-[16/10] w-44 shrink-0 overflow-hidden rounded-xl bg-[#e5e7de]"
                       >
                         {cover && (
                           <Image
@@ -379,10 +362,13 @@ export default async function BlogPage({
                             alt={c.label}
                             fill
                             sizes="176px"
-                            className="object-cover"
+                            className="object-cover transition-transform duration-500 group-hover:scale-105"
                           />
                         )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                        <div
+                          aria-hidden
+                          className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,36,6,0)_40%,rgba(7,36,6,0.55)_75%,#043602_100%)]"
+                        />
                         <div className="absolute inset-x-3 bottom-2.5">
                           <p className="text-sm font-semibold text-white">
                             {c.label}
@@ -400,15 +386,15 @@ export default async function BlogPage({
 
             {/* Bài viết nổi bật */}
             {lead && (
-              <section className="mt-9">
-                <h2 className="text-lg font-bold tracking-tight">
+              <section className="mt-12">
+                <h2 className="text-[0.8rem] font-semibold uppercase tracking-[0.12em] text-[#1f2226] dark:text-white">
                   Bài viết nổi bật
                 </h2>
-                <div className="mt-3 grid gap-5 lg:grid-cols-[1.4fr_1fr]">
+                <div className="mt-4 grid gap-5 lg:grid-cols-[1.4fr_1fr]">
                   {/* Lead */}
                   <Link
                     href={`/blog/${lead.slug}`}
-                    className="group relative overflow-hidden rounded-3xl bg-muted"
+                    className="group relative block overflow-hidden rounded-2xl bg-[#e5e7de]"
                   >
                     <div className="relative aspect-[16/11]">
                       <Image
@@ -416,52 +402,47 @@ export default async function BlogPage({
                         alt={lead.title}
                         fill
                         sizes="(min-width: 1024px) 40rem, 100vw"
-                        className="object-cover"
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
+                      <div
+                        aria-hidden
+                        className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,36,6,0)_30%,rgba(7,36,6,0.55)_68%,#043602_100%)]"
+                      />
                     </div>
-                    <div className="absolute left-4 top-4">
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground shadow-sm">
-                        <Sparkles className="size-3.5" aria-hidden />
-                        Nổi bật
-                      </span>
-                    </div>
+                    <span className="absolute left-4 top-4 inline-flex items-center gap-1.5 bg-[#ff8800] px-3 py-1.5 text-[0.7rem] font-semibold uppercase tracking-wide text-white">
+                      <Sparkles className="size-3.5" aria-hidden />
+                      Nổi bật
+                    </span>
                     <div className="absolute inset-x-5 bottom-5">
                       {lead.category && (
-                        <span className="text-[11px] font-semibold uppercase tracking-wide text-white/85">
+                        <span className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-white/85">
                           {label(POST_CATEGORY_LABELS, lead.category)}
                         </span>
                       )}
-                      <h3 className="mt-1 text-xl font-bold leading-snug tracking-tight text-white sm:text-2xl">
+                      <h3 className="mt-1.5 text-xl font-bold leading-snug text-white sm:text-2xl">
                         {lead.title}
                       </h3>
                       {lead.excerpt && (
-                        <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-white/80">
+                        <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-white/80">
                           {lead.excerpt}
                         </p>
                       )}
-                      <div className="mt-3 flex items-center gap-2 text-xs text-white/85">
-                        <span
-                          aria-hidden
-                          className="grid size-6 place-items-center rounded-full bg-white/20 text-[0.6rem] font-semibold"
-                        >
-                          {initials(lead.author.name)}
-                        </span>
-                        {lead.author.name ?? "Ẩn danh"} ·{" "}
+                      <p className="mt-3 inline-flex items-center gap-1.5 text-xs text-white/80">
+                        <CalendarDays className="size-3.5" aria-hidden />
                         {dateFmt.format(lead.publishedAt ?? lead.createdAt)}
-                      </div>
+                      </p>
                     </div>
                   </Link>
 
                   {/* 2 bài phụ */}
-                  <div className="flex flex-col gap-5">
+                  <div className="flex flex-col gap-4">
                     {featRest.map((p) => (
                       <Link
                         key={p.slug}
                         href={`/blog/${p.slug}`}
-                        className="group grid grid-cols-[8rem_1fr] gap-3.5 rounded-2xl border border-border/60 bg-card p-2.5 transition-shadow hover:shadow-lg hover:shadow-black/5"
+                        className="group grid grid-cols-[8rem_1fr] gap-4 overflow-hidden rounded-xl bg-white dark:bg-white/5"
                       >
-                        <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-muted">
+                        <div className="relative aspect-[4/3] overflow-hidden bg-[#e5e7de]">
                           <Image
                             src={coverUrl(p.images, p.slug, 320, 240)}
                             alt={p.title}
@@ -470,13 +451,19 @@ export default async function BlogPage({
                             className="object-cover"
                           />
                         </div>
-                        <div className="flex min-w-0 flex-col justify-center">
-                          <h3 className="line-clamp-2 text-sm font-bold leading-snug tracking-tight transition-colors group-hover:text-primary">
+                        <div className="flex min-w-0 flex-col justify-center pr-3">
+                          {p.category && (
+                            <span className="mb-1 text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-[#348320]">
+                              {label(POST_CATEGORY_LABELS, p.category)}
+                            </span>
+                          )}
+                          <h3 className="line-clamp-2 text-sm font-bold leading-snug text-[#1f2226] transition-colors group-hover:text-[#348320] dark:text-white">
                             {p.title}
                           </h3>
-                          <div className="mt-2 text-xs text-muted-foreground">
-                            {dateFmt.format(p.publishedAt ?? p.createdAt)}
-                          </div>
+                          <DateMeta
+                            date={p.publishedAt ?? p.createdAt}
+                            className="mt-2"
+                          />
                         </div>
                       </Link>
                     ))}
@@ -486,50 +473,47 @@ export default async function BlogPage({
             )}
 
             {/* Tất cả bài viết */}
-            <section className="mt-9">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <h2 className="text-lg font-bold tracking-tight">
+            <section className="mt-12">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#e8e6e1] pb-4 dark:border-white/10">
+                <h2 className="text-[0.8rem] font-semibold uppercase tracking-[0.12em] text-[#1f2226] dark:text-white">
                   Tất cả bài viết
                 </h2>
                 <SortSelect value={sort} />
               </div>
 
               {posts.length > 0 ? (
-                <div className="mt-4 grid gap-x-5 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="mt-8 grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
                   {posts.map((p) => (
                     <Link
                       key={p.slug}
                       href={`/blog/${p.slug}`}
                       className="group flex flex-col"
                     >
-                      <div className="relative aspect-[16/10] overflow-hidden rounded-2xl bg-muted">
+                      <div className="relative aspect-[16/10] overflow-hidden rounded-xl bg-[#e5e7de]">
                         <Image
                           src={coverUrl(p.images, p.slug, 560, 350)}
                           alt={p.title}
                           fill
                           sizes="(min-width: 1024px) 22rem, (min-width: 640px) 45vw, 100vw"
-                          className="object-cover"
+                          className="object-cover transition-transform duration-500 group-hover:scale-105"
                         />
+                      </div>
+                      <div className="mt-4 flex min-w-0 flex-col">
                         {p.category && (
-                          <span className="absolute left-3 top-3 rounded-full bg-background/90 px-2.5 py-1 text-[11px] font-semibold text-primary shadow-sm backdrop-blur">
+                          <span className="mb-2 text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-[#348320]">
                             {label(POST_CATEGORY_LABELS, p.category)}
                           </span>
                         )}
-                      </div>
-                      <div className="mt-3 flex min-w-0 flex-col">
-                        <h3 className="line-clamp-2 text-[15px] font-bold leading-snug tracking-tight transition-colors group-hover:text-primary">
+                        <h3 className="line-clamp-2 text-[1.0625rem] font-bold leading-snug text-[#1f2226] transition-colors group-hover:text-[#348320] dark:text-white">
                           {p.title}
                         </h3>
                         {p.excerpt && (
-                          <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+                          <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-[#2e2e2e]/65 dark:text-white/55">
                             {p.excerpt}
                           </p>
                         )}
                         <div className="mt-3 flex items-center justify-between gap-2">
-                          <AuthorMeta
-                            name={p.author.name}
-                            date={p.publishedAt ?? p.createdAt}
-                          />
+                          <DateMeta date={p.publishedAt ?? p.createdAt} />
                           <PostStats
                             likes={p._count.likes}
                             comments={p._count.comments}
@@ -540,13 +524,15 @@ export default async function BlogPage({
                   ))}
                 </div>
               ) : (
-                <div className="mt-6 rounded-2xl border border-dashed border-border/70 py-16 text-center">
+                <div className="mt-8 border border-dashed border-[#dcd9d2] py-16 text-center dark:border-white/15">
                   <MapPin
-                    className="mx-auto size-8 text-muted-foreground/60"
+                    className="mx-auto size-8 text-[#2e2e2e]/40"
                     aria-hidden
                   />
-                  <p className="mt-3 font-medium">Không có bài viết phù hợp</p>
-                  <p className="mt-1 text-sm text-muted-foreground">
+                  <p className="mt-3 font-semibold text-[#1f2226] dark:text-white">
+                    Không có bài viết phù hợp
+                  </p>
+                  <p className="mt-1 text-sm text-[#2e2e2e]/60 dark:text-white/50">
                     Thử bỏ bớt bộ lọc để xem thêm bài viết.
                   </p>
                 </div>
@@ -570,7 +556,7 @@ export default async function BlogPage({
 function Chip({ Icon, text }: { Icon: LucideIcon; text: string }) {
   return (
     <span className="inline-flex items-center gap-1.5">
-      <Icon className="size-4 text-primary" aria-hidden />
+      <Icon className="size-4 text-[#348320]" aria-hidden />
       {text}
     </span>
   );

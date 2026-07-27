@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { MessageCircle, Reply, Trash2 } from "@/components/icons";
+import { Reply, Trash2 } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { addComment, deleteComment } from "@/app/blog/actions";
 
@@ -40,13 +40,14 @@ function timeAgo(date: Date): string {
   return dateFmt.format(new Date(date));
 }
 
-function Avatar({ name, size = 9 }: { name: string | null; size?: number }) {
+// Ô monogram vuông (phẳng, không bo tròn) — dấu ấn editorial thay avatar tròn.
+function Monogram({ name, small }: { name: string | null; small?: boolean }) {
   return (
     <span
       aria-hidden
       className={cn(
-        "grid shrink-0 place-items-center rounded-full bg-primary/10 font-semibold text-primary",
-        size === 9 ? "size-9 text-xs" : "size-8 text-[0.65rem]",
+        "grid shrink-0 place-items-center rounded-[2px] bg-[#1f2226] font-semibold uppercase text-white dark:bg-white dark:text-[#1f2226]",
+        small ? "size-7 text-[0.6rem]" : "size-9 text-xs",
       )}
     >
       {initials(name)}
@@ -91,22 +92,22 @@ function CommentForm({
   };
 
   return (
-    <div className="flex flex-col gap-2">
+    <div>
       <textarea
         value={value}
         autoFocus={autoFocus}
         onChange={(e) => setValue(e.target.value)}
         placeholder={placeholder ?? "Viết bình luận…"}
         rows={parentId ? 2 : 3}
-        className="w-full resize-y rounded-xl border border-border/60 bg-background px-3.5 py-2.5 text-sm leading-relaxed outline-none transition-colors focus:border-primary/50 focus:ring-2 focus:ring-primary/15"
+        className="w-full resize-y border-b-2 border-[#dcd9d2] bg-transparent py-2 text-sm leading-relaxed text-[#1f2226] outline-none transition-colors placeholder:text-[#2e2e2e]/40 focus:border-[#348320] dark:border-white/15 dark:text-white dark:placeholder:text-white/40"
       />
-      {error && <p className="text-xs text-destructive">{error}</p>}
-      <div className="flex items-center gap-2">
+      {error && <p className="mt-2 text-xs text-destructive">{error}</p>}
+      <div className="mt-3 flex items-center gap-4">
         <button
           type="button"
           onClick={submit}
           disabled={pending || !value.trim()}
-          className="inline-flex items-center rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+          className="bg-[#2e871c] px-5 py-2 text-[0.8125rem] font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#256f16] disabled:opacity-40"
         >
           {pending ? "Đang gửi…" : parentId ? "Trả lời" : "Gửi bình luận"}
         </button>
@@ -114,7 +115,7 @@ function CommentForm({
           <button
             type="button"
             onClick={onDone}
-            className="text-sm text-muted-foreground hover:text-foreground"
+            className="text-[0.8125rem] font-medium uppercase tracking-wide text-[#2e2e2e]/50 hover:text-[#1f2226] dark:text-white/50 dark:hover:text-white"
           >
             Hủy
           </button>
@@ -155,28 +156,31 @@ function CommentItem({
     });
   };
 
+  const action =
+    "text-[0.75rem] font-medium uppercase tracking-wide transition-colors";
+
   return (
-    <div className="group/c flex gap-3">
-      <Avatar name={comment.author.name} size={isReply ? 8 : 9} />
+    <div className="group/c flex gap-3.5">
+      <Monogram name={comment.author.name} small={isReply} />
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">
+        <div className="flex items-baseline gap-2.5">
+          <span className="text-sm font-semibold text-[#1f2226] dark:text-white">
             {comment.author.name ?? "Ẩn danh"}
           </span>
-          <span className="text-xs text-muted-foreground">
+          <span className="text-xs text-[#2e2e2e]/45 dark:text-white/40">
             {timeAgo(comment.createdAt)}
           </span>
         </div>
-        <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground/90">
+        <p className="mt-1.5 whitespace-pre-wrap break-words text-sm leading-relaxed text-[#1f2226]/90 dark:text-white/85">
           {comment.content}
         </p>
 
-        <div className="mt-1.5 flex items-center gap-4">
+        <div className="mt-2 flex items-center gap-4">
           {!isReply && isAuthed && (
             <button
               type="button"
               onClick={() => setReplying((v) => !v)}
-              className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-primary"
+              className={cn(action, "inline-flex items-center gap-1 text-[#2e2e2e]/55 hover:text-[#348320] dark:text-white/55")}
             >
               <Reply className="size-3.5" aria-hidden />
               Trả lời
@@ -187,7 +191,7 @@ function CommentItem({
               type="button"
               onClick={onDelete}
               disabled={pending}
-              className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground opacity-0 transition-all hover:text-destructive focus-visible:opacity-100 disabled:opacity-50 group-hover/c:opacity-100 max-sm:opacity-100"
+              className={cn(action, "inline-flex items-center gap-1 text-[#2e2e2e]/55 opacity-0 hover:text-destructive focus-visible:opacity-100 disabled:opacity-50 group-hover/c:opacity-100 max-sm:opacity-100 dark:text-white/55")}
             >
               <Trash2 className="size-3.5" aria-hidden />
               Xóa
@@ -196,7 +200,7 @@ function CommentItem({
         </div>
 
         {replying && (
-          <div className="mt-3">
+          <div className="mt-4">
             <CommentForm
               postId={postId}
               postSlug={postSlug}
@@ -209,7 +213,7 @@ function CommentItem({
         )}
 
         {comment.replies && comment.replies.length > 0 && (
-          <div className="mt-4 space-y-4 border-l border-border/50 pl-4">
+          <div className="mt-5 space-y-5 border-l-2 border-[#dcd9d2] pl-5 dark:border-white/10">
             {comment.replies.map((r) => (
               <CommentItem
                 key={r.id}
@@ -295,56 +299,61 @@ export function CommentSection({
   }, [realtimeEnabled, postSlug, router]);
 
   return (
-    <section id="thao-luan" className="mt-12 scroll-mt-24">
-      <h2 className="flex items-center gap-2 text-lg font-bold tracking-tight">
-        <MessageCircle className="size-5 text-primary" aria-hidden />
-        Thảo luận
-        <span className="text-base font-normal text-muted-foreground">
-          ({total})
+    <section
+      id="thao-luan"
+      className="mt-12 scroll-mt-24 border-t border-[#e8e6e1] pt-8 dark:border-white/10"
+    >
+      <div className="flex items-center gap-3">
+        <h2 className="text-[0.8rem] font-semibold uppercase tracking-[0.12em] text-[#1f2226] dark:text-white">
+          Thảo luận
+        </h2>
+        <span className="text-[0.8rem] font-semibold tabular-nums text-[#2e2e2e]/40 dark:text-white/40">
+          {total}
         </span>
         {live && (
-          <span className="ml-1 inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-500">
-            <span className="relative flex size-2">
-              <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-500 opacity-75" />
-              <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
+          <span className="inline-flex items-center gap-1.5 text-[0.7rem] font-medium uppercase tracking-wide text-[#348320]">
+            <span className="relative flex size-1.5">
+              <span className="absolute inline-flex size-full animate-ping rounded-full bg-[#348320] opacity-75" />
+              <span className="relative inline-flex size-1.5 rounded-full bg-[#348320]" />
             </span>
             Trực tiếp
           </span>
         )}
-      </h2>
+      </div>
 
-      <div className="mt-5">
+      <div className="mt-6">
         {isAuthed ? (
           <CommentForm postId={postId} postSlug={postSlug} />
         ) : (
-          <div className="rounded-xl border border-border/60 bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+          <p className="text-sm text-[#2e2e2e]/70 dark:text-white/60">
             <Link
               href={`/login?callbackUrl=/blog/${postSlug}`}
-              className="font-medium text-primary hover:underline"
+              className="font-semibold text-[#348320] underline underline-offset-2 hover:text-[#256f16]"
             >
               Đăng nhập
             </Link>{" "}
             để tham gia thảo luận.
-          </div>
+          </p>
         )}
       </div>
 
       {comments.length > 0 ? (
-        <div className="mt-8 space-y-7">
+        <div className="mt-8 divide-y divide-[#e8e6e1] dark:divide-white/10">
           {comments.map((c) => (
-            <CommentItem
-              key={c.id}
-              comment={c}
-              postId={postId}
-              postSlug={postSlug}
-              currentUserId={currentUserId}
-              isStaff={isStaff}
-              isAuthed={isAuthed}
-            />
+            <div key={c.id} className="py-6 first:pt-0">
+              <CommentItem
+                comment={c}
+                postId={postId}
+                postSlug={postSlug}
+                currentUserId={currentUserId}
+                isStaff={isStaff}
+                isAuthed={isAuthed}
+              />
+            </div>
           ))}
         </div>
       ) : (
-        <p className="mt-8 text-sm text-muted-foreground">
+        <p className="mt-8 text-sm text-[#2e2e2e]/50 dark:text-white/40">
           Chưa có bình luận nào. Hãy là người đầu tiên!
         </p>
       )}

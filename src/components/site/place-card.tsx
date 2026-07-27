@@ -17,9 +17,9 @@ export function PlaceCard({ place }: { place: PlaceCardData }) {
   return (
     <Link
       href={`/diem-den/${place.slug}`}
-      className="group flex flex-col rounded-2xl bg-card p-3 shadow-md shadow-black/5 ring-1 ring-border/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/10"
+      className="group flex flex-col rounded-xl border border-border bg-card p-3 transition-colors hover:border-primary/40"
     >
-      <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-muted">
+      <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-muted">
         <Image
           src={coverUrl(place.images, place.slug)}
           alt={place.name}

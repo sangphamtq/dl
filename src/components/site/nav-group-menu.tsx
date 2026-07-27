@@ -52,7 +52,7 @@ export function NavGroupMenu({
         className={cn(
           "relative flex h-full items-center gap-1 pl-3 pr-2.5 text-sm font-medium transition-colors",
           active
-            ? "text-foreground after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:rounded-full after:bg-primary"
+            ? "font-semibold text-primary"
             : open
               ? "text-foreground"
               : "text-muted-foreground hover:text-foreground",

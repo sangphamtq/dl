@@ -141,7 +141,7 @@ export function PlaceHeroStack({
                 key={i}
                 aria-hidden={!isActive}
                 className={cn(
-                  "absolute inset-0 overflow-hidden rounded-xl select-none",
+                  "absolute inset-0 overflow-hidden rounded-2xl select-none",
                   isActive && "ring-1 ring-black/5",
                 )}
                 style={{

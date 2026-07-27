@@ -11,19 +11,22 @@ export const useHeroAmbient = () => useContext(HeroAmbientCtx);
 
 // Khung hero: giữ index ảnh đang xem (chung với PlaceHeroStack qua context) và
 // render nền ambient — các lớp ảnh blur mạnh, crossfade theo ảnh hero bên phải.
+// ambient=false → nền phẳng bg-background (dùng cho trang chi tiết điểm đến).
 export function HeroFrame({
   images,
   children,
+  ambient = true,
 }: {
   images: string[];
   children: React.ReactNode;
+  ambient?: boolean;
 }) {
   const [active, setActive] = useState(0);
 
   return (
     <HeroAmbientCtx.Provider value={setActive}>
       <section className="relative isolate overflow-hidden bg-background">
-        {images.length > 0 && (
+        {ambient && images.length > 0 && (
           <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
             {images.map((url, i) => (
               <Image

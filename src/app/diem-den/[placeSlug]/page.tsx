@@ -38,28 +38,26 @@ import {
 
 const pub = { status: "published" as const };
 
-// Card trải nghiệm — ảnh làm chủ, tên + dòng fact (thời lượng · mùa) (Layout A).
-// Hover: mô tả ngắn hiện lên trên ảnh (gradient đáy + chữ trắng fade/trượt).
+// Card trải nghiệm — ảnh trên (khung 4:3), tên + fact (thời lượng · mùa) bên
+// dưới. Sạch, không phủ gradient — chữ đọc trên nền, không "ảnh tối".
 function ExperienceCard({
   href,
   name,
   slug,
   images,
   facts,
-  description,
 }: {
   href: string;
   name: string;
   slug: string;
   images: { url: string; isCover: boolean }[];
   facts: { icon: string; text: string }[];
-  description?: string;
 }) {
   const duration = facts.find((f) => f.icon === "clock");
   const season = facts.find((f) => f.icon === "calendar");
   return (
     <Link href={href} className="group block">
-      <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-muted">
+      <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-muted">
         <Image
           src={coverUrl(images, slug)}
           alt={name}
@@ -68,18 +66,10 @@ function ExperienceCard({
           className="object-cover"
         />
         {duration && (
-          <span className="absolute bottom-2.5 left-2.5 inline-flex items-center gap-1 rounded-full bg-background/85 px-2 py-1 text-xs font-medium text-foreground shadow-sm backdrop-blur transition-opacity duration-300 group-hover:opacity-0">
+          <span className="absolute bottom-2.5 left-2.5 inline-flex items-center gap-1 rounded-md bg-background/90 px-2 py-1 text-xs font-medium">
             <Ic icon="clock" className="size-3 text-primary" aria-hidden />
             {duration.text}
           </span>
-        )}
-        {/* Mô tả hiện khi hover — chỉ mờ dần, không trượt (êm) */}
-        {description && (
-          <div className="pointer-events-none absolute inset-0 flex items-end bg-gradient-to-t from-black/80 via-black/25 to-transparent p-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100 motion-reduce:transition-none">
-            <p className="line-clamp-4 text-sm leading-relaxed text-white">
-              {description}
-            </p>
-          </div>
         )}
       </div>
       <h3 className="mt-3 font-semibold tracking-tight transition-colors group-hover:text-primary">
@@ -108,19 +98,17 @@ function SpecialtyCard({
   images: { url: string; isCover: boolean }[];
 }) {
   return (
-    <Link
-      href={href}
-      className="group relative block aspect-square overflow-hidden rounded-2xl bg-muted shadow-md shadow-black/5"
-    >
-      <Image
-        src={coverUrl(images, slug)}
-        alt={name}
-        fill
-        sizes="(min-width: 1024px) 20vw, (min-width: 640px) 25vw, 40vw"
-        className="object-cover"
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/5 to-transparent" />
-      <h3 className="absolute inset-x-0 bottom-0 text-balance p-3.5 text-base font-bold leading-snug tracking-tight text-white drop-shadow-md">
+    <Link href={href} className="group block">
+      <div className="relative aspect-square overflow-hidden rounded-xl bg-muted">
+        <Image
+          src={coverUrl(images, slug)}
+          alt={name}
+          fill
+          sizes="(min-width: 1024px) 20vw, (min-width: 640px) 25vw, 40vw"
+          className="object-cover"
+        />
+      </div>
+      <h3 className="mt-2.5 text-sm font-semibold leading-snug tracking-tight transition-colors group-hover:text-primary">
         {name}
       </h3>
     </Link>
@@ -146,7 +134,7 @@ function StayCard({
   return (
     <Link
       href={href}
-      className="group flex flex-col overflow-hidden rounded-2xl bg-card shadow-md shadow-black/5 ring-1 ring-border/60 transition-colors duration-300 hover:ring-primary/30"
+      className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-colors hover:border-primary/40"
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-muted">
         <Image
@@ -157,7 +145,7 @@ function StayCard({
           className="object-cover"
         />
         {isVerified && (
-          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-background/90 px-2.5 py-1 text-xs font-semibold text-primary backdrop-blur">
+          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-md bg-background/90 px-2.5 py-1 text-xs font-semibold text-primary backdrop-blur">
             <Ic icon="badge-check" className="size-3.5" aria-hidden />
             Đã xác minh
           </span>
@@ -447,29 +435,29 @@ export default async function PlaceDetailPage({
         <PlaceTabs items={tabs} videos={videos} placeName={place.name} />
 
         <div className="mx-auto max-w-7xl space-y-16 px-4 py-14 sm:space-y-20 sm:px-6 sm:py-20">
-          {/* Đôi nét */}
+          {/* Đôi nét — heading Quiri + thân bài 2 cột (mô tả · thông tin) */}
           {(place.description || quickFacts.length > 0) && (
             <section id="doi-net" className="scroll-mt-32">
-              <SectionHeading title={`Đôi nét về ${place.name}`} />
+              <SectionHeading eyebrow="Đôi nét" title={`Về ${place.name}`} />
               <div
                 className={
                   quickFacts.length > 0
-                    ? "mt-5 grid gap-8 lg:grid-cols-[1fr_20rem] lg:items-start lg:gap-16"
-                    : "mt-5"
+                    ? "mt-6 grid gap-8 lg:grid-cols-[1fr_20rem] lg:items-start lg:gap-16"
+                    : "mt-6 max-w-prose"
                 }
               >
-                <div className={quickFacts.length > 0 ? "" : "max-w-prose"}>
+                <div>
                   {place.description && (
                     <p className="whitespace-pre-line leading-8 text-foreground/90">
                       {place.description}
                     </p>
                   )}
                   {place.tags.length > 0 && (
-                    <div className="mt-5 flex flex-wrap gap-1.5">
+                    <div className="mt-5 flex flex-wrap gap-2">
                       {place.tags.map((t) => (
                         <span
                           key={t}
-                          className="rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground"
+                          className="rounded-full border border-border bg-card px-3.5 py-1.5 text-sm font-medium"
                         >
                           {t}
                         </span>
@@ -479,28 +467,28 @@ export default async function PlaceDetailPage({
                   {introPost && (
                     <Link
                       href={`/blog/${introPost.slug}`}
-                      className="group mt-6 inline-flex items-center gap-3 rounded-2xl bg-card p-2 pr-4 text-sm shadow-sm shadow-black/5 ring-1 ring-border/60 transition-all hover:shadow-md hover:shadow-black/10 hover:ring-primary/30"
+                      className="group mt-6 inline-flex max-w-full items-center gap-3 rounded-full bg-muted/60 py-1.5 pl-1.5 pr-5 transition-colors hover:bg-primary/10"
                     >
-                      <span className="relative size-11 shrink-0 overflow-hidden rounded-xl bg-muted">
+                      <span className="relative size-11 shrink-0 overflow-hidden rounded-full ring-2 ring-background">
                         <Image
                           src={coverUrl(introPost.images, introPost.slug, 96, 96)}
                           alt=""
                           fill
                           sizes="44px"
-                          className="object-cover"
+                          className="object-cover transition-transform duration-500 group-hover:scale-110"
                         />
                       </span>
                       <span className="min-w-0">
-                        <span className="block text-xs text-muted-foreground">
+                        <span className="block text-[0.65rem] font-semibold uppercase tracking-wide text-primary">
                           Bài giới thiệu
                         </span>
-                        <span className="block truncate font-medium">
+                        <span className="block max-w-[15rem] truncate text-sm font-semibold text-foreground transition-colors group-hover:text-primary">
                           {introPost.title}
                         </span>
                       </span>
                       <Ic
-                        icon="chevron-right"
-                        className="size-4 shrink-0 text-muted-foreground transition-all group-hover:translate-x-0.5 group-hover:text-primary"
+                        icon="arrow-right"
+                        className="ml-1 size-4 shrink-0 text-muted-foreground transition-all group-hover:translate-x-0.5 group-hover:text-primary"
                         aria-hidden
                       />
                     </Link>
@@ -514,7 +502,7 @@ export default async function PlaceDetailPage({
           {/* Điểm đến con (chỉ tỉnh) — lưới (là Place, cấp khác) */}
           {showChildren && (
             <section id="diem-den-con" className="scroll-mt-32">
-              <SectionHeading title={`Điểm đến tại ${place.name}`} />
+              <SectionHeading eyebrow="Khám phá" title={`Điểm đến tại ${place.name}`} />
               <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
                 {place.children.map((c) => (
                   <PlaceCard key={c.slug} place={c} />
@@ -523,57 +511,63 @@ export default async function PlaceDetailPage({
             </section>
           )}
 
-          {/* Tham quan (Spot) — rail */}
-          {place.spots.length > 0 && (
-            <section id="tham-quan" className="scroll-mt-32">
-              <SpotShowcase
-                title="Địa điểm đáng ghé"
-                count={counts.spot}
-                allHref={`/diem-den/${place.slug}/dia-diem`}
-                spots={place.spots.map((s) => ({
-                  slug: s.slug,
-                  name: s.name,
-                  category: s.category
-                    ? label(SPOT_CATEGORY_LABELS, s.category)
-                    : null,
-                  location: s.wardName ?? s.districtName ?? null,
-                  image: coverUrl(s.images, s.slug),
-                  description: s.description ?? s.tagline,
-                }))}
-              />
-            </section>
-          )}
+        </div>
 
-          {/* Trải nghiệm — rail cuộn ngang */}
+        {/* Tham quan (Spot) — band full-width (ngoài container) */}
+        {place.spots.length > 0 && (
+          <section id="tham-quan" className="scroll-mt-32">
+            <SpotShowcase
+              title="Địa điểm đáng ghé"
+              eyebrow="Tham quan"
+              count={counts.spot}
+              allHref={`/diem-den/${place.slug}/dia-diem`}
+              spots={place.spots.map((s) => ({
+                slug: s.slug,
+                name: s.name,
+                category: s.category
+                  ? label(SPOT_CATEGORY_LABELS, s.category)
+                  : null,
+                location: s.wardName ?? s.districtName ?? null,
+                image: coverUrl(s.images, s.slug),
+                description: s.description ?? s.tagline,
+              }))}
+            />
+          </section>
+        )}
+
+        <div className="mx-auto max-w-7xl space-y-16 px-4 py-14 sm:space-y-20 sm:px-6 sm:py-20">
+          {/* Trải nghiệm — rail card sạch */}
           {place.activities.length > 0 && (
             <section id="trai-nghiem" className="scroll-mt-32">
               <SectionHeading
+                eyebrow="Trải nghiệm"
                 title="Trải nghiệm nổi bật"
                 href={`/diem-den/${place.slug}/hoat-dong`}
                 count={counts.activity}
                 unit="trải nghiệm"
               />
-              <Rail itemClassName="basis-4/5 sm:basis-2/5 lg:basis-1/4">
-                {place.activities.map((a) => (
-                  <ExperienceCard
-                    key={a.slug}
-                    href={`/hoat-dong/${a.slug}`}
-                    name={a.name}
-                    slug={a.slug}
-                    images={a.images}
-                    description={a.description ?? undefined}
-                    facts={[
-                      a.durationText && { icon: "clock", text: a.durationText },
-                      a.seasonText && {
-                        icon: "calendar",
-                        text: a.seasonText,
-                      },
-                    ].filter(
-                      (x): x is { icon: string; text: string } => Boolean(x),
-                    )}
-                  />
-                ))}
-              </Rail>
+              <div className="mt-6">
+                <Rail itemClassName="basis-4/5 sm:basis-2/5 lg:basis-1/4">
+                  {place.activities.map((a) => (
+                    <ExperienceCard
+                      key={a.slug}
+                      href={`/hoat-dong/${a.slug}`}
+                      name={a.name}
+                      slug={a.slug}
+                      images={a.images}
+                      facts={[
+                        a.durationText && { icon: "clock", text: a.durationText },
+                        a.seasonText && {
+                          icon: "calendar",
+                          text: a.seasonText,
+                        },
+                      ].filter(
+                        (x): x is { icon: string; text: string } => Boolean(x),
+                      )}
+                    />
+                  ))}
+                </Rail>
+              </div>
             </section>
           )}
 
@@ -581,6 +575,7 @@ export default async function PlaceDetailPage({
           {place.specialties.length > 0 && (
             <section id="am-thuc" className="scroll-mt-32">
               <SectionHeading
+                eyebrow="Ẩm thực"
                 title="Đặc sản địa phương"
                 href={`/diem-den/${place.slug}/am-thuc`}
                 count={counts.specialty + counts.eatery}
@@ -604,6 +599,7 @@ export default async function PlaceDetailPage({
           {place.accommodations.length > 0 && (
             <section id="luu-tru" className="scroll-mt-32">
               <SectionHeading
+                eyebrow="Nghỉ ngơi"
                 title="Nơi lưu trú"
                 href={`/diem-den/${place.slug}/luu-tru`}
                 count={counts.accommodation}
@@ -630,7 +626,7 @@ export default async function PlaceDetailPage({
           )}
 
           {!hasAnyContent && (
-            <div className="rounded-2xl border border-dashed border-border/70 px-6 py-16 text-center">
+            <div className="rounded-lg border border-dashed border-border px-6 py-16 text-center">
               <Ic
                 icon="compass"
                 className="mx-auto size-10 text-muted-foreground/60"
@@ -648,6 +644,7 @@ export default async function PlaceDetailPage({
           {communityPosts.length > 0 && (
             <section id="hoi-dap" className="scroll-mt-32">
               <SectionHeading
+                eyebrow="Cộng đồng"
                 title="Hỏi đáp cộng đồng"
                 href={`/diem-den/${place.slug}/cong-dong`}
                 count={communityPosts.length}
@@ -694,7 +691,7 @@ export default async function PlaceDetailPage({
 /* ── Thẻ "Trước khi đi" cạnh đoạn Giới thiệu (nội dung từ CMS) ─────── */
 function QuickInfo({ facts }: { facts: { label: string; value: string }[] }) {
   return (
-    <div className="rounded-2xl bg-card p-5 shadow-md shadow-black/5 ring-1 ring-border/60">
+    <div className="rounded-xl border border-border bg-card p-5">
       <p className="flex items-center gap-2 text-sm font-semibold">
         <Ic icon="compass" className="size-4 text-primary" aria-hidden />
         Trước khi đi

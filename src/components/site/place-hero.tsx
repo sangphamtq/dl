@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronLeft, ChevronDown, MapPin, Star, Sparkles } from "@/components/icons";
+import { ChevronLeft, ChevronDown, Star } from "@/components/icons";
 import { HeroFrame } from "@/components/site/hero-frame";
 import { PlaceHeroStack, type HeroImage } from "@/components/site/place-hero-stack";
 import { PlaceVideos, type PlaceVideo } from "@/components/site/tiktok-videos";
@@ -78,28 +78,23 @@ export function PlaceHero({
               </div>
             </div>
 
-            {/* Tỉnh (ngữ cảnh "thuộc tỉnh nào") + nổi bật */}
-            {(place.parent || place.isFeatured) && (
-              <div className="flex flex-wrap items-center gap-4 text-sm font-medium">
-                {place.parent && (
-                  <Link
-                    href={`/diem-den/${place.parent.slug}`}
-                    className="inline-flex items-center gap-1.5 text-primary transition-colors hover:text-primary/80"
-                  >
-                    <MapPin className="size-4" aria-hidden />
-                    {place.parent.name}
-                  </Link>
-                )}
-                {place.isFeatured && (
-                  <span className="inline-flex items-center gap-1.5 text-warm">
-                    <Sparkles className="size-3.5" aria-hidden />
-                    Nổi bật
-                  </span>
-                )}
-              </div>
-            )}
+            {/* Eyebrow chữ viết tay (cam): tỉnh cha / ngữ cảnh */}
+            <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+              {place.parent ? (
+                <Link
+                  href={`/diem-den/${place.parent.slug}`}
+                  className="font-[family-name:var(--font-script)] text-3xl leading-none text-warm transition-opacity hover:opacity-90 sm:text-4xl"
+                >
+                  {place.parent.name}
+                </Link>
+              ) : (
+                <span className="font-[family-name:var(--font-script)] text-3xl leading-none text-warm sm:text-4xl">
+                  {place.kind === "province" ? "Tỉnh · Thành phố" : "Điểm đến"}
+                </span>
+              )}
+            </div>
 
-            <h1 className="mt-4 text-balance text-4xl font-bold leading-[1.08] tracking-tight sm:text-5xl">
+            <h1 className="mt-2 text-balance text-4xl font-extrabold leading-[1.05] tracking-tight text-primary sm:text-5xl">
               {place.name}
             </h1>
             {place.tagline && (

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { Ic } from "@/components/icon";
 import { SiteHeader } from "@/components/site/site-header";
@@ -8,6 +7,11 @@ import {
   type DestItem,
   type ProvinceItem,
 } from "@/components/site/destination-filter";
+import {
+  PlaceIndexHero,
+  type HeroDest,
+} from "@/components/site/place-index-hero";
+import { coverUrl } from "@/lib/place-image";
 import { REGION_LABELS, regionOf } from "@/lib/regions";
 
 export const metadata = {
@@ -76,6 +80,15 @@ export default async function DiemDenPage() {
     },
   ].filter(Boolean) as { icon: string; value: number; label: string }[];
 
+  // Điểm đến nổi bật (đã sắp featured → popular): [0] làm ảnh nền hero điện ảnh,
+  // các mục sau làm chip gợi ý.
+  const heroDests: HeroDest[] = destinations.slice(0, 5).map((d, i) => ({
+    slug: d.slug,
+    name: d.name,
+    parentName: d.parent?.name ?? null,
+    url: coverUrl(d.images, d.slug, i === 0 ? 1920 : 640, i === 0 ? 1080 : 640),
+  }));
+
   const destItems: DestItem[] = destinations.map((d) => ({
     slug: d.slug,
     name: d.name,
@@ -116,53 +129,7 @@ export default async function DiemDenPage() {
       <SiteHeader />
 
       <main className="flex-1">
-        {/* Hero gọn — tiêu đề + thống kê inline (tiết kiệm diện tích) */}
-        <section className="border-b border-border/60 bg-gradient-to-b from-accent/40 to-background">
-          <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 sm:flex-row sm:items-end sm:justify-between sm:px-6 sm:py-10">
-            <div className="max-w-xl">
-              <p className="flex items-center gap-2 font-rounded text-xl font-medium text-primary">
-                <Ic icon="backpack" className="size-4" aria-hidden />
-                Muôn nơi chờ bạn
-              </p>
-              <h1 className="mt-1 text-balance text-3xl font-extrabold tracking-tight sm:text-4xl">
-                Điểm đến khắp dải đất hình chữ S
-              </h1>
-              <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground sm:text-base">
-                Chọn một nơi để bắt đầu — gợi ý nên ăn gì, chơi gì, ở đâu và đi
-                lại thế nào cho từng vùng.
-              </p>
-              <Link
-                href="/ban-do"
-                className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background px-4 py-2 text-sm font-semibold transition-colors hover:bg-muted"
-              >
-                <Ic icon="map-pin" className="size-4 text-primary" aria-hidden />
-                Xem trên bản đồ
-              </Link>
-            </div>
-
-            {!isEmpty && (
-              <dl className="flex flex-wrap gap-x-6 gap-y-3 sm:shrink-0 sm:justify-end sm:gap-x-8">
-                {stats.map((s) => (
-                  <div key={s.label} className="flex items-center gap-2">
-                    <Ic
-                      icon={s.icon}
-                      className="size-5 shrink-0 text-primary"
-                      aria-hidden
-                    />
-                    <div>
-                      <dd className="text-xl font-bold leading-none tracking-tight tabular-nums">
-                        {s.value.toLocaleString("vi-VN")}
-                      </dd>
-                      <dt className="mt-0.5 text-xs text-muted-foreground">
-                        {s.label}
-                      </dt>
-                    </div>
-                  </div>
-                ))}
-              </dl>
-            )}
-          </div>
-        </section>
+        <PlaceIndexHero dests={heroDests} stats={isEmpty ? [] : stats} />
 
         {isEmpty ? (
           <div className="mx-auto max-w-7xl px-4 py-24 text-center sm:px-6">

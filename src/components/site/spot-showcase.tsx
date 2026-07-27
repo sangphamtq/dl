@@ -12,66 +12,82 @@ export type SpotShowcaseItem = {
   description: string | null;
 };
 
-// Section "Địa điểm đáng ghé": lưới 2 cột, mỗi mục là hàng ngang (thumbnail lớn
-// + loại/vị trí + tên + mô tả ngắn). Không hero featured.
+// Section "Địa điểm đáng ghé" — band sáng mờ nhạt (theo token theme): tiêu đề
+// dùng SectionHeading như các mục khác, rồi lưới 2 cột × 3 item (mục hàng ngang:
+// ảnh + loại/tên/vị trí/mô tả). Tối đa 6 mục; phần còn lại xem ở "Xem tất cả".
 export function SpotShowcase({
   title,
   count,
   allHref,
   spots,
+  eyebrow,
 }: {
   title: string;
   count?: number;
   allHref: string;
   spots: SpotShowcaseItem[];
+  eyebrow?: string;
 }) {
   if (spots.length === 0) return null;
+  const items = spots.slice(0, 6);
 
   return (
-    <div>
-      <SectionHeading title={title} href={allHref} count={count} unit="địa điểm" />
+    <div className="py-12 sm:py-16">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <SectionHeading
+          eyebrow={eyebrow}
+          title={title}
+          href={allHref}
+          count={count}
+          unit="địa điểm"
+        />
 
-      <div className="mt-6 grid gap-x-8 gap-y-6 sm:grid-cols-2">
-        {spots.map((s) => {
-          const meta = [s.category, s.location].filter(Boolean).join(" · ");
-          return (
+        {/* Lưới 2 cột × 3 item */}
+        <div className="mt-10 grid gap-x-10 gap-y-10 sm:grid-cols-2">
+          {items.map((s) => (
             <Link
               key={s.slug}
               href={`/dia-diem/${s.slug}`}
               className="group flex items-center gap-4"
             >
-              <div className="relative size-32 shrink-0 overflow-hidden rounded-2xl bg-muted shadow-sm shadow-black/5">
+              <div className="relative h-32 w-48 shrink-0 overflow-hidden rounded-xl bg-muted sm:h-40 sm:w-64">
                 <Image
                   src={s.image}
                   alt={s.name}
                   fill
-                  sizes="128px"
+                  sizes="256px"
                   className="object-cover"
                 />
               </div>
               <div className="min-w-0 flex-1">
-                {meta && (
-                  <p className="text-xs font-medium text-muted-foreground">
-                    {meta}
+                {s.category && (
+                  <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+                    {s.category}
                   </p>
                 )}
-                <h4 className="mt-0.5 text-lg font-semibold tracking-tight transition-colors group-hover:text-primary">
+                <h3 className="mt-1 line-clamp-1 text-lg font-bold leading-snug tracking-tight text-foreground transition-colors group-hover:text-primary">
                   {s.name}
-                </h4>
+                </h3>
+                {s.location && (
+                  <p className="mt-1 inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <Ic icon="map-pin" className="size-3.5 shrink-0" aria-hidden />
+                    {s.location}
+                  </p>
+                )}
                 {s.description && (
-                  <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+                  <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
                     {s.description}
                   </p>
                 )}
               </div>
               <Ic
                 icon="chevron-right"
-                className="size-5 shrink-0 text-muted-foreground/40 transition-all group-hover:translate-x-0.5 group-hover:text-primary"
+                className="size-5 shrink-0 self-center text-muted-foreground/40 transition-all group-hover:translate-x-0.5 group-hover:text-primary"
                 aria-hidden
               />
             </Link>
-          );
-        })}
+          ))}
+        </div>
       </div>
     </div>
   );

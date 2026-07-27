@@ -3,6 +3,12 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Nới container lớn nhất (max-w-7xl) rộng hơn trên màn hình lớn.
+   max-w là mức trần nên chỉ có hiệu lực khi viewport > 1280px. */
+@theme {
+  --container-7xl: 90rem;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -52,26 +58,26 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.66 0.105 209);
-  --primary-foreground: oklch(0.99 0.01 209);
-  --warm: oklch(0.7 0.18 47);
-  --warm-foreground: oklch(0.99 0.01 60);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.96 0.03 209);
-  --accent-foreground: oklch(0.3 0.06 224);
+  --background: #ffffff;
+  --foreground: #1f2226;
+  --card: #ffffff;
+  --card-foreground: #1f2226;
+  --popover: #ffffff;
+  --popover-foreground: #1f2226;
+  --primary: #2e871c;
+  --primary-foreground: #ffffff;
+  --warm: #ff8800;
+  --warm-foreground: #ffffff;
+  --secondary: #edeae4;
+  --secondary-foreground: #1f2226;
+  --muted: #edeae4;
+  --muted-foreground: #6f6e69;
+  --accent: #ecf7ea;
+  --accent-foreground: #1f4f13;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.66 0.105 209);
+  --border: #e8e6e1;
+  --input: #e8e6e1;
+  --ring: #2e871c;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -95,20 +101,20 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.75 0.105 209);
-  --primary-foreground: oklch(0.2 0.04 209);
+  --primary: oklch(0.72 0.16 145);
+  --primary-foreground: oklch(0.16 0.05 145);
   --warm: oklch(0.72 0.17 50);
   --warm-foreground: oklch(0.18 0.04 60);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
   --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.31 0.04 209);
+  --accent: oklch(0.32 0.06 145);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.75 0.105 209);
+  --ring: oklch(0.72 0.16 145);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
