@@ -3,7 +3,7 @@ import {
   Cabin,
   Geist_Mono,
   Mali,
-  Be_Vietnam_Pro,
+  Plus_Jakarta_Sans,
   Dancing_Script,
 } from "next/font/google";
 import { Toaster } from "sonner";
@@ -19,13 +19,13 @@ const cabin = Cabin({
   display: "swap",
 });
 
-// Font tiêu đề (heading h1–h6) — trung tính, chắc khỏe, dấu tiếng Việt gọn.
-const beVietnamPro = Be_Vietnam_Pro({
-    variable: "--font-heading",
-    subsets: ["latin", "latin-ext", "vietnamese"],
-    weight: ["300", "400", "500", "600", "700", "800"],
-    display: "swap",
-  });
+// Font tiêu đề (heading h1–h6) — Plus Jakarta Sans (hình học, hiện đại). Có
+// subset "vietnamese" (đủ dấu) và trọng lượng 200–800 (đủ cho font-extrabold).
+const plusJakarta = Plus_Jakarta_Sans({
+  variable: "--font-heading",
+  subsets: ["latin", "latin-ext", "vietnamese"],
+  display: "swap",
+});
 
 // Font script (viết tay, calligraphy) cho eyebrow các section — dấu ấn thị
 // giác kiểu poster/landing du lịch ("Muôn nơi chờ bạn", "Về chúng tôi"…).
@@ -65,7 +65,7 @@ export default function RootLayout({
   return (
     <html
       lang="vi"
-      className={`${cabin.variable} ${beVietnamPro.variable} ${geistMono.variable} ${mali.variable} ${dancingScript.variable} h-full antialiased`}
+      className={`${cabin.variable} ${plusJakarta.variable} ${geistMono.variable} ${mali.variable} ${dancingScript.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         {children}

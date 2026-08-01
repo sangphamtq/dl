@@ -9,7 +9,7 @@ import { slugify, RESERVED_SLUGS } from "@/lib/slug";
 
 const STAFF = ["admin", "editor"];
 
-// Một dòng "Trước khi đi": tên (label) + nội dung (value).
+// Một dòng "Thông tin chung": tên (label) + nội dung (value).
 export type QuickFact = { label: string; value: string };
 
 export type PlaceFormInput = {
@@ -26,7 +26,7 @@ export type PlaceFormInput = {
   wardCode: string;
   wardName: string;
   tags: string; // chuỗi phân tách bằng dấu phẩy
-  quickInfo: QuickFact[]; // "Trước khi đi": danh sách tên + nội dung
+  quickInfo: QuickFact[]; // "Thông tin chung": danh sách tên + nội dung
 };
 
 export type ActionResult = { ok: true; id: string } | { ok: false; error: string };
@@ -95,7 +95,7 @@ async function normalize(
     .map((t) => t.trim())
     .filter(Boolean);
 
-  // "Trước khi đi": bỏ dòng trống (cả tên lẫn nội dung rỗng), trim.
+  // "Thông tin chung": bỏ dòng trống (cả tên lẫn nội dung rỗng), trim.
   const quickInfo = (input.quickInfo ?? [])
     .map((f) => ({ label: f.label.trim(), value: f.value.trim() }))
     .filter((f) => f.label || f.value);

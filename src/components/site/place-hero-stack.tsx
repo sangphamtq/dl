@@ -28,8 +28,27 @@ export type HeroImage = {
   href?: string | null;
 };
 
-// Hero "chồng ảnh polaroid" cho trang chi tiết: stack 3 thẻ theo chiều sâu,
-// autoplay cyclic 5s, đổi bài mượt, glass controls, vuốt ngang / tap mở gallery.
+// Hero "chồng ảnh polaroid" cho trang chi tiết: 3 thẻ ảnh viền trắng xếp lệch
+// theo chiều sâu (2 thẻ sau nghiêng, ló góc ra), autoplay cyclic 5s, glass
+// controls, vuốt ngang / tap mở gallery.
+
+// Chiều sâu của deck: 2 thẻ sau nhỏ dần, đẩy lên và nghiêng ngược chiều nhau →
+// góc ló ra ở hai bên mép trên (không thò xuống che nội dung bên dưới).
+// Thẻ rơi khỏi 3 lớp đầu giữ transform của lớp cuối và mờ đi tại chỗ.
+const DEPTH = [
+  {
+    transform: "translate(0,0) rotate(0deg) scale(1)",
+    shadow: "0 26px 60px -30px rgba(15,23,42,.5)",
+  },
+  {
+    transform: "translate(-1.5%,-2.5%) rotate(-3.4deg) scale(0.96)",
+    shadow: "0 20px 46px -30px rgba(15,23,42,.4)",
+  },
+  {
+    transform: "translate(1.5%,-4.5%) rotate(4.2deg) scale(0.925)",
+    shadow: "0 16px 36px -28px rgba(15,23,42,.32)",
+  },
+];
 export function PlaceHeroStack({
   images,
   intervalMs = 5000,
@@ -115,135 +134,133 @@ export function PlaceHeroStack({
 
   const active = images[index];
 
-  // Một khung ảnh phẳng, ảnh sau crossfade vào (không xếp nghiêng/đổ bóng dày).
-  const depthStyles = [
-    { transform: "scale(1)", opacity: 1 },
-    { transform: "scale(1)", opacity: 0 },
-    { transform: "scale(1)", opacity: 0 },
-  ];
-  const depthShadow = [
-    "0 14px 40px -28px rgba(15,23,42,.35)",
-    "none",
-    "none",
-  ];
-
   return (
     <>
-      <div className="group/heroframe relative aspect-[16/10] w-full sm:aspect-[16/9] lg:aspect-[16/9]">
+      {/* Padding = chỗ chừa cho 2 thẻ sau ló ra (không cắt bằng overflow-hidden);
+          thẻ trước sau khi trừ padding vẫn xấp xỉ 16/9. */}
+      <div className="group/heroframe relative aspect-[16/10] w-full px-1 pt-7 sm:pt-9">
         <div className="relative h-full w-full">
           {images.map((img, i) => {
             const depth = (i - index + n) % n;
             const isActive = depth === 0;
             const visible = depth <= 2;
-            const ds = depthStyles[Math.min(depth, 2)];
+            const ds = DEPTH[Math.min(depth, 2)];
             return (
               <div
                 key={i}
                 aria-hidden={!isActive}
-                className={cn(
-                  "absolute inset-0 overflow-hidden rounded-2xl select-none",
-                  isActive && "ring-1 ring-black/5",
-                )}
+                className="absolute inset-0 select-none rounded-[1.35rem] bg-card p-1.5 ring-1 ring-black/5 sm:p-2 dark:ring-white/10"
                 style={{
+                  transformOrigin: "0% 100%",
                   transform: ds.transform,
-                  opacity: visible ? ds.opacity : 0,
+                  opacity: visible ? 1 : 0,
                   zIndex: n - depth,
-                  boxShadow: visible ? depthShadow[Math.min(depth, 2)] : "none",
+                  boxShadow: visible ? ds.shadow : "none",
                   pointerEvents: isActive ? "auto" : "none",
                   transition:
                     "transform 700ms cubic-bezier(0.22,1,0.36,1), opacity 700ms ease-out, box-shadow 700ms ease-out",
                 }}
               >
-                <Image
-                  src={img.url}
-                  alt={img.alt ?? ""}
-                  fill
-                  priority={isActive}
-                  sizes="(min-width: 1152px) 1100px, 100vw"
-                  className="object-cover"
-                  draggable={false}
-                />
+                <div className="relative h-full w-full overflow-hidden rounded-[1rem] bg-muted sm:rounded-[1.1rem]">
+                  <Image
+                    src={img.url}
+                    alt={img.alt ?? ""}
+                    fill
+                    priority={isActive}
+                    sizes="(min-width: 1152px) 1100px, 100vw"
+                    className="object-cover"
+                    draggable={false}
+                  />
 
-                {isActive && (
-                  <>
-                    {/* Gradient đáy cho tên + góc trên-phải cho nút */}
-                    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-2/5 bg-gradient-to-t from-black/70 via-black/15 to-transparent" />
-
-                    {/* Lớp nhận gesture (dưới controls) */}
-                    <button
-                      type="button"
-                      aria-label="Mở thư viện ảnh"
-                      onPointerDown={onPointerDown}
-                      onPointerUp={onPointerUp}
-                      className="absolute inset-0 z-20 cursor-pointer"
+                  {/* Thẻ sau lùi lại bằng một lớp phủ nhạt */}
+                  {!isActive && (
+                    <div
+                      aria-hidden
+                      className="pointer-events-none absolute inset-0 z-10 bg-background/25"
                     />
+                  )}
 
-                    {/* Tạm dừng / tiếp tục — góc trên phải */}
-                    {n > 1 && (
+                  {isActive && (
+                    <>
+                      {/* Gradient đáy cho tên + góc trên-phải cho nút */}
+                      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-2/5 bg-gradient-to-t from-black/70 via-black/15 to-transparent" />
+
+                      {/* Lớp nhận gesture (dưới controls) */}
                       <button
                         type="button"
-                        onClick={() => setPaused((p) => !p)}
-                        aria-label={paused ? "Tiếp tục" : "Tạm dừng"}
-                        className="absolute right-3 top-3 z-30 grid size-8 place-items-center rounded-full bg-black/35 text-white opacity-100 backdrop-blur-md transition-all hover:bg-black/55 sm:right-4 sm:top-4 sm:opacity-0 sm:group-hover/heroframe:opacity-100"
-                      >
-                        {paused ? (
-                          <Play className="size-3.5" aria-hidden />
+                        aria-label="Mở thư viện ảnh"
+                        onPointerDown={onPointerDown}
+                        onPointerUp={onPointerUp}
+                        className="absolute inset-0 z-20 cursor-pointer"
+                      />
+
+                      {/* Tạm dừng / tiếp tục — góc trên phải */}
+                      {n > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => setPaused((p) => !p)}
+                          aria-label={paused ? "Tiếp tục" : "Tạm dừng"}
+                          className="absolute right-3 top-3 z-30 grid size-8 place-items-center rounded-full bg-black/35 text-white opacity-100 backdrop-blur-md transition-all hover:bg-black/55 sm:right-4 sm:top-4 sm:opacity-0 sm:group-hover/heroframe:opacity-100"
+                        >
+                          {paused ? (
+                            <Play className="size-3.5" aria-hidden />
+                          ) : (
+                            <Pause className="size-3.5" aria-hidden />
+                          )}
+                        </button>
+                      )}
+
+                      {/* Prev / Next — ẩn, hover mới hiện (desktop); mobile vuốt */}
+                      {n > 1 && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={prev}
+                            aria-label="Ảnh trước"
+                            className="absolute left-3 top-1/2 z-30 hidden size-10 -translate-y-1/2 place-items-center rounded-full bg-black/35 text-white opacity-0 backdrop-blur-md transition-all hover:bg-black/55 active:scale-95 sm:grid sm:group-hover/heroframe:opacity-100"
+                          >
+                            <ChevronLeft className="size-5" aria-hidden />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={next}
+                            aria-label="Ảnh tiếp theo"
+                            className="absolute right-3 top-1/2 z-30 hidden size-10 -translate-y-1/2 place-items-center rounded-full bg-black/35 text-white opacity-0 backdrop-blur-md transition-all hover:bg-black/55 active:scale-95 sm:grid sm:group-hover/heroframe:opacity-100"
+                          >
+                            <ChevronRight className="size-5" aria-hidden />
+                          </button>
+                        </>
+                      )}
+
+                      {/* Đếm i/n — góc dưới-phải, ẩn/hover (mobile vẫn hiện) */}
+                      {n > 1 && (
+                        <span className="absolute bottom-5 right-4 z-30 text-sm font-medium tabular-nums text-white/90 opacity-100 drop-shadow transition-opacity sm:opacity-0 sm:group-hover/heroframe:opacity-100">
+                          {index + 1} / {n}
+                        </span>
+                      )}
+
+                      {/* Tên ảnh — cụm trái, luôn hiện; click sang địa điểm */}
+                      {img.caption &&
+                        (img.href ? (
+                          <Link
+                            href={img.href}
+                            className="group/badge absolute bottom-4 left-3 z-30 flex max-w-[75%] items-center gap-3 sm:bottom-5 sm:left-5"
+                          >
+                            <span className="min-w-0 truncate text-base font-semibold text-white drop-shadow sm:text-lg">
+                              {img.caption}
+                            </span>
+                            <span className="grid size-9 shrink-0 place-items-center rounded-full border border-white/30 bg-white/15 text-white opacity-100 backdrop-blur-md transition-all group-hover/badge:translate-x-0.5 group-hover/badge:bg-white/25 sm:opacity-0 sm:group-hover/heroframe:opacity-100">
+                              <ArrowUpRight className="size-4" aria-hidden />
+                            </span>
+                          </Link>
                         ) : (
-                          <Pause className="size-3.5" aria-hidden />
-                        )}
-                      </button>
-                    )}
-
-                    {/* Prev / Next — ẩn, hover mới hiện (desktop); mobile vuốt */}
-                    {n > 1 && (
-                      <>
-                        <button
-                          type="button"
-                          onClick={prev}
-                          aria-label="Ảnh trước"
-                          className="absolute left-3 top-1/2 z-30 hidden size-10 -translate-y-1/2 place-items-center rounded-full bg-black/35 text-white opacity-0 backdrop-blur-md transition-all hover:bg-black/55 active:scale-95 sm:grid sm:group-hover/heroframe:opacity-100"
-                        >
-                          <ChevronLeft className="size-5" aria-hidden />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={next}
-                          aria-label="Ảnh tiếp theo"
-                          className="absolute right-3 top-1/2 z-30 hidden size-10 -translate-y-1/2 place-items-center rounded-full bg-black/35 text-white opacity-0 backdrop-blur-md transition-all hover:bg-black/55 active:scale-95 sm:grid sm:group-hover/heroframe:opacity-100"
-                        >
-                          <ChevronRight className="size-5" aria-hidden />
-                        </button>
-                      </>
-                    )}
-
-                    {/* Đếm i/n — góc dưới-phải, ẩn/hover (mobile vẫn hiện) */}
-                    {n > 1 && (
-                      <span className="absolute bottom-5 right-4 z-30 text-sm font-medium tabular-nums text-white/90 opacity-100 drop-shadow transition-opacity sm:opacity-0 sm:group-hover/heroframe:opacity-100">
-                        {index + 1} / {n}
-                      </span>
-                    )}
-
-                    {/* Tên ảnh — cụm trái, luôn hiện; click sang địa điểm */}
-                    {img.caption &&
-                      (img.href ? (
-                        <Link
-                          href={img.href}
-                          className="group/badge absolute bottom-4 left-3 z-30 flex max-w-[75%] items-center gap-3 sm:bottom-5 sm:left-5"
-                        >
-                          <span className="min-w-0 truncate text-base font-semibold text-white drop-shadow sm:text-lg">
+                          <p className="absolute bottom-4 left-3 z-30 max-w-[75%] truncate text-base font-semibold text-white drop-shadow sm:bottom-5 sm:left-5 sm:text-lg">
                             {img.caption}
-                          </span>
-                          <span className="grid size-9 shrink-0 place-items-center rounded-full border border-white/30 bg-white/15 text-white opacity-100 backdrop-blur-md transition-all group-hover/badge:translate-x-0.5 group-hover/badge:bg-white/25 sm:opacity-0 sm:group-hover/heroframe:opacity-100">
-                            <ArrowUpRight className="size-4" aria-hidden />
-                          </span>
-                        </Link>
-                      ) : (
-                        <p className="absolute bottom-4 left-3 z-30 max-w-[75%] truncate text-base font-semibold text-white drop-shadow sm:bottom-5 sm:left-5 sm:text-lg">
-                          {img.caption}
-                        </p>
-                      ))}
-                  </>
-                )}
+                          </p>
+                        ))}
+                    </>
+                  )}
+                </div>
               </div>
             );
           })}

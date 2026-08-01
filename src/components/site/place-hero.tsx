@@ -2,7 +2,6 @@ import Link from "next/link";
 import { ChevronLeft, ChevronDown, Star } from "@/components/icons";
 import { HeroFrame } from "@/components/site/hero-frame";
 import { PlaceHeroStack, type HeroImage } from "@/components/site/place-hero-stack";
-import { PlaceVideos, type PlaceVideo } from "@/components/site/tiktok-videos";
 import { ShareButton } from "@/components/site/share-button";
 import { CheckInButton } from "@/components/site/check-in-button";
 import { CheckInFaces, type CheckInPerson } from "@/components/site/check-in-faces";
@@ -25,7 +24,6 @@ export function PlaceHero({
   place,
   heroImages,
   stats,
-  videos = [],
   back,
   checkIn,
   visitors,
@@ -34,7 +32,6 @@ export function PlaceHero({
   place: PlaceHeroData;
   heroImages: HeroImage[];
   stats: PlaceStat[];
-  videos?: PlaceVideo[];
   back?: { href: string; label: string };
   checkIn?: { checked: boolean; isAuthed: boolean };
   visitors?: { total: number; people: CheckInPerson[] };
@@ -42,7 +39,9 @@ export function PlaceHero({
 }) {
   return (
     <HeroFrame images={heroImages.map((i) => i.url)}>
-      <div className="mx-auto max-w-7xl px-4 pb-10 pt-6 sm:px-6 sm:pb-6 sm:pt-5">
+      {/* pb rộng: HeroFrame có overflow-hidden nên bóng của deck ảnh phải rơi
+          trọn trong section, không thì bị cắt ngang ở mép thanh tab sticky. */}
+      <div className="mx-auto max-w-7xl px-4 pb-14 pt-6 sm:px-6 sm:pb-12 sm:pt-5">
         <div className="grid items-center gap-10 lg:grid-cols-[1fr_1.4fr] lg:gap-12">
           {/* Trái: chữ */}
           <div>
@@ -153,17 +152,11 @@ export function PlaceHero({
             )}
           </div>
 
-          {/* Phải: chồng ảnh — z cao hơn sticky tab (z-40) để shadow đè lên,
-              vẫn thấp hơn header (z-50). */}
-          <div className="relative z-[45]">
+          {/* Phải: chồng ảnh. z chỉ có tác dụng trong section (HeroFrame đã
+              `isolate`) — đủ để bóng đè lên cột chữ; muốn bóng không bị cắt thì
+              phải chừa pb ở khung ngoài, xem ghi chú trên. */}
+          <div className="relative z-10">
             <PlaceHeroStack images={heroImages} />
-            {videos.length > 0 && (
-              <PlaceVideos
-                videos={videos}
-                placeName={place.name}
-                className="absolute bottom-3 right-3 z-40 w-[88px] sm:bottom-4 sm:right-4 lg:-bottom-5 lg:-right-5 lg:w-[112px]"
-              />
-            )}
           </div>
         </div>
       </div>

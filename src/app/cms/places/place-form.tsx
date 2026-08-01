@@ -86,7 +86,7 @@ export function PlaceForm({
     setValues((p) => ({ ...p, [key]: v }));
   }
 
-  // "Trước khi đi" — thêm/sửa/xóa từng dòng tên + nội dung.
+  // "Thông tin chung" — thêm/sửa/xóa từng dòng tên + nội dung.
   function addFact() {
     setValues((p) => ({
       ...p,
@@ -472,10 +472,10 @@ export function PlaceForm({
           </div>
         </FormSection>
 
-        {/* Trước khi đi — danh sách tên + nội dung */}
+        {/* Thông tin chung — danh sách tên + nội dung */}
         <FormSection
-          title="Trước khi đi"
-          description="Thông tin nhanh hiển thị cạnh phần giới thiệu (vd: Thời điểm đẹp — Tháng 11 đến tháng 4)."
+          title="Thông tin chung"
+          description="Vài thông tin nổi bật nhất về nơi này, hiển thị cạnh phần giới thiệu (vd: Thời điểm đẹp — Tháng 11 đến tháng 4). Nội dung ngắn gọn, mỗi dòng một ý."
         >
           <div className="space-y-2">
             {values.quickInfo.length > 0 && (

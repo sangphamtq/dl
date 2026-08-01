@@ -5,6 +5,8 @@ import { Ic } from "@/components/icon";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { coverUrl } from "@/lib/place-image";
+import { cn } from "@/lib/utils";
+import { PlaceAboutVideo } from "@/components/site/place-about-video";
 import {
   SPOT_CATEGORY_LABELS,
   ACCOMMODATION_CATEGORY_LABELS,
@@ -22,6 +24,8 @@ import { CommunityPreview } from "@/components/site/community-preview";
 import { getFeed } from "@/lib/community-feed";
 import { PlaceViewTracker } from "@/components/site/place-view-tracker";
 import { PlaceHero } from "@/components/site/place-hero";
+import { PlaceHeroExplore } from "@/components/site/place-hero-explore";
+import { PlaceHeroSwitch } from "@/components/site/place-hero-switch";
 import { PlaceTabs } from "@/components/site/place-tabs";
 import { ReviewsSection, type ReviewListItem } from "@/components/site/place-reviews";
 import { summarizeReviews } from "@/lib/review-meta";
@@ -353,6 +357,10 @@ export default async function PlaceDetailPage({
   const counts = await getPlaceCounts(place.id);
   const stats = buildPlaceStats(place.viewCount);
   const tabs = buildPlaceTabs(place.slug, counts);
+  const heroReviews =
+    isDestination && reviewSummary.total > 0
+      ? { stars: reviewSummary.stars, total: reviewSummary.total }
+      : undefined;
 
   // Vài thảo luận cộng đồng mới nhất về điểm đến này (xem trước).
   const communityPosts = (
@@ -402,9 +410,12 @@ export default async function PlaceDetailPage({
 
   const videos = await resolveVideos(place.videos);
 
-  // "Trước khi đi": danh sách {label, value} biên tập trong CMS.
+  // "Thông tin chung": danh sách {label, value} biên tập trong CMS.
   const quickFacts =
     (place.quickInfo as { label: string; value: string }[] | null) ?? [];
+
+  // Câu đầu mô tả tách ra làm lede (phóng to), phần còn lại là thân bài.
+  const [lede, descBody] = splitLede(place.description);
 
   return (
     <div className="flex flex-1 flex-col">
@@ -416,88 +427,125 @@ export default async function PlaceDetailPage({
       <SiteHeader />
 
       <main className="flex-1">
-        <PlaceHero
-          place={place}
-          heroImages={heroImages}
-          stats={stats}
-          videos={videos}
-          back={{ href: "/diem-den", label: "Điểm đến" }}
-          checkIn={checkIn}
-          visitors={visitors}
-          reviews={
-            isDestination && reviewSummary.total > 0
-              ? { stars: reviewSummary.stars, total: reviewSummary.total }
-              : undefined
+        <PlaceHeroSwitch
+          classic={
+            <PlaceHero
+              place={place}
+              heroImages={heroImages}
+              stats={stats}
+              back={{ href: "/diem-den", label: "Điểm đến" }}
+              checkIn={checkIn}
+              visitors={visitors}
+              reviews={heroReviews}
+            />
+          }
+          bento={
+            <PlaceHeroExplore
+              place={place}
+              heroImages={heroImages}
+              counts={counts}
+              videos={videos}
+              facts={quickFacts}
+              back={{ href: "/diem-den", label: "Điểm đến" }}
+              checkIn={checkIn}
+              visitors={visitors}
+              reviews={heroReviews}
+            />
           }
         />
 
         {/* Thanh tab: Tổng quan + xem tất cả từng listing + nút Video */}
-        <PlaceTabs items={tabs} videos={videos} placeName={place.name} />
+        <PlaceTabs items={tabs} />
 
         <div className="mx-auto max-w-7xl space-y-16 px-4 py-14 sm:space-y-20 sm:px-6 sm:py-20">
-          {/* Đôi nét — heading Quiri + thân bài 2 cột (mô tả · thông tin) */}
+          {/* Đôi nét — nhịp editorial: lede phóng to → thân bài 2 cột báo chí →
+              hàng tag + bài giới thiệu → hàng fact kẻ mảnh. Hero phía trên đã rất
+              đậm (ảnh, số liệu, video) và ngay dưới là băng ảnh "Địa điểm đáng
+              ghé", nên mục này cố tình sạch, không card/bóng để làm quãng nghỉ. */}
           {(place.description || quickFacts.length > 0) && (
             <section id="doi-net" className="scroll-mt-32">
-              <SectionHeading eyebrow="Đôi nét" title={`Về ${place.name}`} />
-              <div
-                className={
-                  quickFacts.length > 0
-                    ? "mt-6 grid gap-8 lg:grid-cols-[1fr_20rem] lg:items-start lg:gap-16"
-                    : "mt-6 max-w-prose"
-                }
-              >
+              {/* KHÔNG có SectionHeading: đây là mục mở đầu, ngay dưới hero đã
+                  có tên điểm đến cỡ lớn và thanh tab "Tổng quan" — thêm một
+                  nhãn nữa chỉ là tầng chữ thứ ba nói cùng một chuyện. Lede cỡ
+                  lớn tự đóng vai mở màn. Các section sau vẫn giữ heading vì
+                  chúng cần được phân biệt với nhau.
+                  Cột phải (24rem) vì media chính là video TikTok khổ dọc: bề
+                  rộng cột chính là thứ khống chế chiều cao 9/16 của nó.
+                  "Thông tin chung" nằm TRONG cột trái chứ không thành hàng
+                  riêng bên dưới: chữ không thôi thì thấp hơn video một quãng,
+                  gom vào đây vừa lấp đúng chỗ trống vừa bớt một tầng cho mục. */}
+              <div className="grid gap-8 lg:grid-cols-[1fr_24rem] lg:items-start lg:gap-14">
                 <div>
-                  {place.description && (
-                    <p className="whitespace-pre-line leading-8 text-foreground/90">
-                      {place.description}
+                  {lede && (
+                    // Drop cap thay cho tiêu đề đã bỏ — báo hiệu điểm mở đầu
+                    // bằng chính chữ, không thêm hoạ tiết.
+                    // `leading-[0.85]` + `mt-1`: chừa chỗ cho dấu tiếng Việt khi
+                    // chữ đầu là Ở/Ấ/Đ… (leading quá chặt sẽ ăn mất dấu).
+                    // Bỏ `text-balance` vì cân dòng đá nhau với chữ float.
+                    <p className="text-xl font-medium leading-relaxed text-foreground first-letter:float-left first-letter:mr-2.5 first-letter:mt-1 first-letter:text-[3.25rem] first-letter:font-semibold first-letter:leading-[0.85] sm:text-2xl sm:leading-relaxed sm:first-letter:text-[4rem]">
+                      {lede}
                     </p>
                   )}
-                  {place.tags.length > 0 && (
-                    <div className="mt-5 flex flex-wrap gap-2">
-                      {place.tags.map((t) => (
-                        <span
-                          key={t}
-                          className="rounded-full border border-border bg-card px-3.5 py-1.5 text-sm font-medium"
-                        >
-                          {t}
-                        </span>
-                      ))}
-                    </div>
+                  {descBody && (
+                    <p className="mt-4 whitespace-pre-line leading-7 text-muted-foreground">
+                      {descBody}
+                    </p>
                   )}
+                  {/* Bài giới thiệu đặt NGAY DƯỚI mô tả (trước khối Thông tin
+                      chung): nó là phần đọc tiếp của mạch chữ, còn Thông tin
+                      chung là dữ kiện tra cứu — để xen vào giữa thì đứt mạch.
+                      Bỏ dạng viên thuốc bo tròn + ảnh tròn: mục này giờ toàn
+                      chữ và đường kẻ mảnh, một viên nền xám nổi lên giữa đó
+                      lạc hệ. Thay bằng một hàng phẳng, ảnh chữ nhật bo nhẹ. */}
                   {introPost && (
                     <Link
                       href={`/blog/${introPost.slug}`}
-                      className="group mt-6 inline-flex max-w-full items-center gap-3 rounded-full bg-muted/60 py-1.5 pl-1.5 pr-5 transition-colors hover:bg-primary/10"
+                      className="group mt-6 flex items-center gap-4"
                     >
-                      <span className="relative size-11 shrink-0 overflow-hidden rounded-full ring-2 ring-background">
+                      <span className="relative size-14 shrink-0 overflow-hidden rounded-lg bg-muted">
                         <Image
-                          src={coverUrl(introPost.images, introPost.slug, 96, 96)}
+                          src={coverUrl(
+                            introPost.images,
+                            introPost.slug,
+                            160,
+                            160,
+                          )}
                           alt=""
                           fill
-                          sizes="44px"
-                          className="object-cover transition-transform duration-500 group-hover:scale-110"
+                          sizes="56px"
+                          className="object-cover transition-transform duration-500 group-hover:scale-105"
                         />
                       </span>
-                      <span className="min-w-0">
-                        <span className="block text-[0.65rem] font-semibold uppercase tracking-wide text-primary">
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-[0.65rem] font-semibold uppercase tracking-wide text-muted-foreground">
                           Bài giới thiệu
                         </span>
-                        <span className="block max-w-[15rem] truncate text-sm font-semibold text-foreground transition-colors group-hover:text-primary">
+                        <span className="mt-0.5 block line-clamp-2 font-semibold leading-6 text-foreground decoration-primary/40 underline-offset-4 transition-colors group-hover:text-primary group-hover:underline">
                           {introPost.title}
                         </span>
                       </span>
                       <Ic
                         icon="arrow-right"
-                        className="ml-1 size-4 shrink-0 text-muted-foreground transition-all group-hover:translate-x-0.5 group-hover:text-primary"
+                        className="size-4 shrink-0 text-muted-foreground transition-all group-hover:translate-x-0.5 group-hover:text-primary"
                         aria-hidden
                       />
                     </Link>
                   )}
+                  {quickFacts.length > 0 && <QuickInfo facts={quickFacts} />}
                 </div>
-                {quickFacts.length > 0 && <QuickInfo facts={quickFacts} />}
+                {videos.length > 0 ? (
+                  <PlaceAboutVideo videos={videos} placeName={place.name} />
+                ) : (
+                  <AboutMedia
+                    images={heroImages}
+                    slug={place.slug}
+                    name={place.name}
+                  />
+                )}
               </div>
             </section>
           )}
+
 
           {/* Điểm đến con (chỉ tỉnh) — lưới (là Place, cấp khác) */}
           {showChildren && (
@@ -688,26 +736,85 @@ export default async function PlaceDetailPage({
 }
 
 
-/* ── Thẻ "Trước khi đi" cạnh đoạn Giới thiệu (nội dung từ CMS) ─────── */
+/* ── Tách câu đầu của mô tả làm lede (đoạn dẫn phóng to) ────────────
+   Ngắt ở dấu kết câu + khoảng trắng + chữ HOA kế tiếp, nên "2.000m" hay
+   "1.600m" (dấu chấm phân cách hàng nghìn kiểu Việt) không bị hiểu là hết câu.
+   Câu đầu quá ngắn hoặc quá dài thì bỏ qua, trả nguyên văn về thân bài. */
+function splitLede(text: string | null): [string | null, string | null] {
+  if (!text) return [null, null];
+  const m = text.match(/^([\s\S]+?[.!?…])\s+(?=[\p{Lu}"'"“„])/u);
+  const first = m?.[1];
+  if (!first || first.length < 40 || first.length > 320) return [null, text];
+  return [first, text.slice(m[0].length) || null];
+}
+
+/* ── Cụm ảnh của mục Đôi nét (dùng khi Place chưa có video) ───────────
+   Ảnh lớn + một ảnh vuông chồng lấn ở góc. Ảnh nhỏ nằm TRONG khung ảnh lớn
+   (inset dương) chứ không tràn ra ngoài — offset âm ở cột phải dễ sinh cuộn
+   ngang trên mobile. Thiếu ảnh thì mỗi ô lấy một seed placeholder khác nhau
+   để không lặp lại cùng một tấm; upload ảnh thật vào Place là tự thay. */
+function AboutMedia({
+  images,
+  slug,
+  name,
+}: {
+  images: { url: string; alt?: string | null }[];
+  slug: string;
+  name: string;
+}) {
+  const big = images[0] ?? { url: coverUrl([], `${slug}-doi-net`, 900, 1100) };
+  const small = images[1];
+  return (
+    <div className="mx-auto w-full max-w-[15rem] space-y-3 lg:max-w-none">
+      <div className="relative aspect-[3/4] overflow-hidden rounded-2xl bg-muted shadow-lg shadow-black/10">
+        <Image
+          src={big.url}
+          alt={big.alt || name}
+          fill
+          sizes="(min-width: 1024px) 16rem, 15rem"
+          className="object-cover"
+        />
+      </div>
+      {small && (
+        <div className="relative aspect-[16/10] overflow-hidden rounded-2xl bg-muted">
+          <Image
+            src={small.url}
+            alt={small.alt || name}
+            fill
+            sizes="(min-width: 1024px) 16rem, 15rem"
+            className="object-cover"
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── "Thông tin chung" trong cột trái của mục Đôi nét (nội dung từ CMS)
+   Kẻ mảnh, không card/bóng: hero phía trên và băng ảnh phía dưới đã đủ đậm.
+   Luôn 2 cột — đặt dưới phần chữ trong cột trái nên không đủ rộng cho 4.
+   Đường kẻ dọc tính theo chỉ số thay vì nth-child: ô mở đầu mỗi hàng (chỉ số
+   chẵn) không có kẻ trái, ô còn lại thì có. */
 function QuickInfo({ facts }: { facts: { label: string; value: string }[] }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-5">
-      <p className="flex items-center gap-2 text-sm font-semibold">
-        <Ic icon="compass" className="size-4 text-primary" aria-hidden />
-        Trước khi đi
-      </p>
-      <dl className="mt-3 divide-y divide-border/60">
-        {facts.map((f, i) => (
-          <div
-            key={i}
-            className="flex items-baseline justify-between gap-4 py-2.5"
-          >
-            <dt className="text-sm text-muted-foreground">{f.label}</dt>
-            <dd className="text-right text-sm font-medium">{f.value}</dd>
-          </div>
-        ))}
-      </dl>
-    </div>
+    <dl className="mt-7 grid grid-cols-2 gap-y-5 border-y border-border/60 py-6">
+      {facts.map((f, i) => (
+        <div
+          key={i}
+          className={cn(
+            "border-border/60 pr-5",
+            i % 2 === 0 ? "" : "border-l pl-5",
+          )}
+        >
+          <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {f.label}
+          </dt>
+          <dd className="mt-1.5 break-words text-sm font-medium leading-6 text-foreground">
+            {f.value}
+          </dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 

@@ -260,12 +260,12 @@ export default async function PlaceDetailPage({
             )}
           </section>
 
-          {/* Trước khi đi (quickInfo) */}
+          {/* Thông tin chung (quickInfo) */}
           {quickInfo.length > 0 && (
             <section>
               <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight">
                 <Info className="size-4 text-muted-foreground" aria-hidden />
-                Trước khi đi
+                Thông tin chung
               </h2>
               <dl className="mt-3 divide-y overflow-hidden rounded-xl border">
                 {quickInfo.map((f, i) => (

@@ -509,7 +509,6 @@ export default async function PlaceListingPage({
           place={place}
           heroImages={heroData.heroImages}
           stats={stats}
-          videos={heroData.videos}
           back={{ href: `/diem-den/${place.slug}`, label: "Tổng quan" }}
           checkIn={checkIn}
           visitors={visitors}
@@ -521,7 +520,7 @@ export default async function PlaceListingPage({
         />
 
         {/* Thanh tab: Tổng quan + xem tất cả từng listing + nút Video */}
-        <PlaceTabs items={tabs} videos={heroData.videos} placeName={place.name} />
+        <PlaceTabs items={tabs} />
 
         <div
           className={`mx-auto px-4 py-14 sm:px-6 sm:py-20 max-w-7xl`}

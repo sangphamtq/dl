@@ -130,7 +130,6 @@ export default async function PlaceCommunityPage({
           place={place}
           heroImages={heroData.heroImages}
           stats={stats}
-          videos={heroData.videos}
           back={{ href: `/diem-den/${place.slug}`, label: "Tổng quan" }}
           checkIn={checkIn}
           visitors={visitors}
@@ -141,7 +140,7 @@ export default async function PlaceCommunityPage({
           }
         />
 
-        <PlaceTabs items={tabs} videos={heroData.videos} placeName={place.name} />
+        <PlaceTabs items={tabs} />
 
         <div className="bg-muted/30">
         <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">

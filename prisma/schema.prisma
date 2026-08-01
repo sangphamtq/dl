@@ -335,7 +335,8 @@ model Place {
 
   tags String[] @default([])
 
-  // "Trước khi đi": danh sách {label, value} biên tập trong CMS (hiển thị cạnh giới thiệu)
+  // "Thông tin chung": vài thông tin nổi bật {label, value} biên tập trong CMS
+  // (hiển thị trong thẻ cạnh phần giới thiệu ở trang Place)
   quickInfo Json?
 
   // AdminFields

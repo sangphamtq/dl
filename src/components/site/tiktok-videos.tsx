@@ -5,13 +5,7 @@ import Image from "next/image";
 import { Play, ExternalLink } from "@/components/icons";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-
-// Player chính thức của TikTok (nhẹ hơn embed blockquote). Tắt mô tả/gợi ý
-// video lạ, giữ phụ đề + thanh điều khiển. KHÔNG autoplay: trình duyệt ép tắt
-// tiếng video tự phát — để user bấm play trong player thì mới có âm thanh.
-const PLAYER_BASE = "https://www.tiktok.com/player/v1";
-const PLAYER_PARAMS =
-  "music_info=0&description=0&rel=0&native_context_menu=0&closed_caption=1&controls=1";
+import { tiktokPlayerSrc, tiktokSearchUrl } from "@/lib/tiktok";
 
 export type PlaceVideo = {
   id: string;
@@ -20,7 +14,7 @@ export type PlaceVideo = {
 };
 
 // Logo TikTok đơn sắc (lucide không có icon brand) — tô theo currentColor.
-function TikTokGlyph({ className }: { className?: string }) {
+export function TikTokGlyph({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden className={className}>
       <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.3 0 .59.05.86.13V9.4a6.33 6.33 0 0 0-1-.06A6.34 6.34 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-6.9a8.16 8.16 0 0 0 4.77 1.53v-3.4a4.85 4.85 0 0 1-1.04-.14z" />
@@ -59,7 +53,7 @@ function VideoModal({
           {open && (
             <iframe
               key={`${current.id}-${active}`}
-              src={`${PLAYER_BASE}/${current.id}?${PLAYER_PARAMS}`}
+              src={tiktokPlayerSrc(current.id)}
               title={labelOf(active)}
               allow="autoplay; fullscreen"
               className="absolute inset-0 size-full"
@@ -109,7 +103,7 @@ function VideoModal({
 
         {/* Tìm thêm video trên TikTok */}
         <a
-          href={`https://www.tiktok.com/search?q=${encodeURIComponent(`du lịch ${placeName}`)}`}
+          href={tiktokSearchUrl(placeName)}
           target="_blank"
           rel="noopener noreferrer"
           className="mx-auto mt-4 flex w-fit items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/20"
@@ -175,69 +169,6 @@ export function PlaceVideos({
             {videos.length > 1 ? `${videos.length} video` : "Xem video"}
           </span>
         </span>
-      </button>
-
-      <VideoModal
-        videos={videos}
-        placeName={placeName}
-        open={open}
-        onOpenChange={setOpen}
-        active={active}
-        setActive={setActive}
-      />
-    </>
-  );
-}
-
-/* ── Nút "Video" trong thanh tab sticky → mở từ bất kỳ vị trí cuộn ── */
-export function PlaceVideoTabButton({
-  videos,
-  placeName,
-  className,
-}: {
-  videos: PlaceVideo[];
-  placeName: string;
-  className?: string;
-}) {
-  const [open, setOpen] = useState(false);
-  const [active, setActive] = useState(0);
-
-  if (videos.length === 0) return null;
-  const first = videos[0];
-
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => {
-          setActive(0);
-          setOpen(true);
-        }}
-        aria-label="Xem video điểm đến"
-        className={cn(
-          "inline-flex shrink-0 items-center gap-2 py-3.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground",
-          className,
-        )}
-      >
-        <span className="relative -my-1 size-7 shrink-0 overflow-hidden rounded-full bg-muted">
-          {first.thumbnail && (
-            <Image
-              src={first.thumbnail}
-              alt=""
-              fill
-              sizes="28px"
-              unoptimized
-              className="object-cover"
-            />
-          )}
-          <span className="absolute inset-0 grid place-items-center bg-black/30">
-            <Play className="size-3 fill-white text-white" aria-hidden />
-          </span>
-        </span>
-        Video
-        {videos.length > 1 && (
-          <span className="tabular-nums text-muted-foreground">{videos.length}</span>
-        )}
       </button>
 
       <VideoModal

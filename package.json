@@ -12,6 +12,7 @@
     "export:excel": "tsx scripts/export-excel.ts",
     "seed:places": "tsx prisma/seed-places.ts",
     "seed:phan-thiet": "tsx prisma/seed-phan-thiet.ts",
+    "seed:ta-xua": "tsx prisma/seed-ta-xua.ts",
     "seed:reviews-phan-thiet": "tsx prisma/seed-reviews-phan-thiet.ts",
     "seed:homestay-phan-thiet": "tsx prisma/seed-homestay-phan-thiet.ts",
     "seed:blog": "tsx prisma/seed-blog.ts",
