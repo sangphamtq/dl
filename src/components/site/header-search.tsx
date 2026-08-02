@@ -26,18 +26,20 @@ export function HeaderSearch() {
 
   return (
     <>
-      {/* Desktop (lg+): ô giả input, bấm mở palette */}
+      {/* Desktop: ô giả input, bấm mở palette. Cố ý HẸP — nav vừa tăng cỡ chữ
+          nên chỗ trống ở khoảng 1024–1280px rất sát. Nhãn "Tìm kiếm" bỏ dấu ba
+          chấm; gợi ý phím ⌘K đã chuyển vào ô input trong modal.
+          h-10 + bg-muted/40: khớp CHÍNH XÁC nhóm tiện ích bên cạnh (nút size-9
+          trong khung p-0.5 = 40px, nền muted/40) để hai khối thành một hàng
+          liền mạch, không lệch cao và không lệch sắc. */}
       <button
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Tìm kiếm"
-        className="hidden h-9 w-48 items-center gap-2 rounded-full border border-transparent bg-muted/60 pl-3.5 pr-2 text-sm text-muted-foreground transition-colors hover:bg-muted lg:flex xl:w-56"
+        className="hidden h-10 w-36 items-center gap-1.5 rounded-full border border-transparent bg-muted/40 pl-3.5 pr-4 text-sm text-muted-foreground transition-colors hover:bg-muted/70 lg:flex xl:w-44"
       >
         <Search className="size-4 shrink-0" aria-hidden />
-        <span className="flex-1 text-left">Tìm kiếm…</span>
-        <kbd className="pointer-events-none hidden items-center rounded-full border bg-background px-2 font-mono text-[0.7rem] text-muted-foreground xl:inline-flex">
-          ⌘K
-        </kbd>
+        <span className="flex-1 text-left">Tìm kiếm</span>
       </button>
 
       {/* Mobile/tablet (< lg): icon mở palette */}
@@ -47,7 +49,7 @@ export function HeaderSearch() {
             type="button"
             aria-label="Tìm kiếm"
             onClick={() => setOpen(true)}
-            className="grid size-9 place-items-center rounded-full text-foreground transition-colors hover:bg-muted lg:hidden"
+            className="grid size-10 place-items-center rounded-full text-foreground transition-colors hover:bg-muted/70 lg:hidden"
           >
             <Search className="size-4" aria-hidden />
           </button>

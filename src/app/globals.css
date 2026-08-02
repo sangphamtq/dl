@@ -44,6 +44,7 @@
   --color-primary: var(--primary);
   --color-warm-foreground: var(--warm-foreground);
   --color-warm: var(--warm);
+  --color-warm-bright: var(--warm-bright);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
@@ -68,6 +69,12 @@
   --primary-foreground: #ffffff;
   --warm: #ff8800;
   --warm-foreground: #ffffff;
+  /* Accent cam đặt TRÊN ẢNH TỐI (hero) — cố ý KHÔNG khai báo lại trong .dark:
+     hero luôn là ảnh tối ở cả hai theme, nếu dùng --warm thì ở dark mode nó lấy
+     bản đã làm dịu (oklch .72 .17 50 — tối và ngả đỏ) nên chìm vào ảnh.
+     Dùng hex thay oklch: oklch(.82 .18 62) bị ép về gamut sRGB thành #ffaf62 —
+     cam phấn, nhạt hơn cả --warm chứ không nổi hơn. */
+  --warm-bright: #ff9a1f;
   --secondary: #edeae4;
   --secondary-foreground: #1f2226;
   --muted: #edeae4;

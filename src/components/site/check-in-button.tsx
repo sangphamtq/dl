@@ -46,6 +46,10 @@ export function CheckInButton({
   initialChecked,
   isAuthed,
   reviewable = true,
+  tone = "default",
+  variant = "bare",
+  iconOnly = false,
+  className,
 }: {
   targetKind: TargetKind;
   targetId: string;
@@ -56,6 +60,16 @@ export function CheckInButton({
   isAuthed: boolean;
   // Có đánh giá được không (điểm đến lớn & spot = true; tỉnh = false → toggle trực tiếp).
   reviewable?: boolean;
+  // "onDark": nút nằm thẳng trên ảnh (hero full-bleed) → chữ trắng thay vì foreground.
+  tone?: "default" | "onDark";
+  /** "solid": nút có nền (CTA chính trên ảnh). Màu do component quyết theo trạng
+   *  thái — chưa đến: nền trắng chữ đậm (nổi nhất trên ảnh); đã đến: chip mờ
+   *  viền mảnh (xác nhận xong thì không cần hét nữa). */
+  variant?: "bare" | "solid";
+  /** Chỉ icon (nhãn chuyển thành aria-label/title) — dùng khi chỗ đặt quá hẹp. */
+  iconOnly?: boolean;
+  /** Ghi đè hình dáng nút (vd viên tròn hairline ở hero). Đặt sau nên thắng. */
+  className?: string;
 }) {
   const [checked, setChecked] = useState(initialChecked);
   const [pending, startTransition] = useTransition();
@@ -118,6 +132,8 @@ export function CheckInButton({
     });
   }
 
+  const label = checked ? "Đã đến" : "Đánh dấu đã đến";
+
   return (
     <>
       <button
@@ -125,9 +141,22 @@ export function CheckInButton({
         onClick={onClick}
         disabled={pending}
         aria-pressed={checked}
+        aria-label={iconOnly ? label : undefined}
+        title={iconOnly ? label : undefined}
         className={cn(
           ACTION_BASE,
-          checked ? "text-warm hover:text-warm/80" : "text-foreground hover:text-warm",
+          variant === "solid"
+            ? checked
+              ? "border border-white/40 bg-white/10 text-white hover:bg-white/20"
+              : "bg-white text-neutral-900 shadow-lg shadow-black/20 hover:bg-white/90"
+            : checked
+              ? tone === "onDark"
+                ? "text-warm-bright hover:text-warm-bright/80"
+                : "text-warm hover:text-warm/80"
+              : tone === "onDark"
+                ? "text-white/85 hover:text-white"
+                : "text-foreground hover:text-warm",
+          className,
         )}
       >
         {pending ? (
@@ -137,7 +166,7 @@ export function CheckInButton({
         ) : (
           <MapPinPlus className="size-4 transition-transform group-hover:-translate-y-0.5" aria-hidden />
         )}
-        {checked ? "Đã đến" : "Đánh dấu đã đến"}
+        {!iconOnly && label}
       </button>
 
       {isAuthed && reviewable && (

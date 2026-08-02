@@ -7,6 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { FormSection } from "@/components/cms/form-section";
 import { updateSettings, type SettingsInput } from "./actions";
 
@@ -85,6 +92,39 @@ export function SettingsForm({
               placeholder="Mô tả ngắn hiển thị trên kết quả tìm kiếm & chia sẻ."
               rows={3}
             />
+          </div>
+        </FormSection>
+
+        {/* Giao diện */}
+        <FormSection
+          title="Giao diện"
+          description="Áp dụng cho toàn bộ trang điểm đến."
+        >
+          <div className="space-y-2">
+            <Label htmlFor="heroLayout">Kiểu hero trang điểm đến</Label>
+            <Select
+              value={values.heroLayout}
+              onValueChange={(v) =>
+                set("heroLayout", v as SettingsInput["heroLayout"])
+              }
+            >
+              <SelectTrigger id="heroLayout" className="w-full sm:w-96">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="center">
+                  Ảnh tràn viền · tên ở giữa
+                </SelectItem>
+                <SelectItem value="classic">
+                  2 cột · chữ trái, chồng ảnh phải
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              {values.heroLayout === "center"
+                ? "Ảnh phủ gần trọn màn hình, tên đặt giữa — mạnh về thị giác, hợp khi ảnh bìa đẹp."
+                : "Chữ bên trái, chồng ảnh bên phải — nhiều thông tin hơn ngay màn hình đầu."}
+            </p>
           </div>
         </FormSection>
 

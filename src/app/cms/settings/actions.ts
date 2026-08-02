@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { SETTINGS_ID } from "@/lib/settings";
+import { HeroLayout } from "@/generated/prisma/enums";
 
 type Result = { ok: true } | { ok: false; error: string };
 
@@ -25,6 +26,7 @@ export type SettingsInput = {
   facebookUrl: string;
   instagramUrl: string;
   youtubeUrl: string;
+  heroLayout: HeroLayout;
 };
 
 // Lưu cấu hình site (upsert singleton). Revalidate toàn site vì header/footer/
@@ -43,6 +45,10 @@ export async function updateSettings(input: SettingsInput): Promise<Result> {
     facebookUrl: clean(input.facebookUrl),
     instagramUrl: clean(input.instagramUrl),
     youtubeUrl: clean(input.youtubeUrl),
+    heroLayout:
+      input.heroLayout === HeroLayout.classic
+        ? HeroLayout.classic
+        : HeroLayout.center,
   };
 
   await prisma.siteSetting.upsert({
@@ -52,6 +58,8 @@ export async function updateSettings(input: SettingsInput): Promise<Result> {
   });
 
   revalidatePath("/", "layout");
+  // Kiểu hero đổi → mọi trang điểm đến phải render lại (revalidate cả route động).
+  revalidatePath("/diem-den/[placeSlug]", "page");
   return { ok: true };
 }
 

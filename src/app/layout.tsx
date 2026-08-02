@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import {
+  Be_Vietnam_Pro,
   Cabin,
   Geist_Mono,
   Mali,
@@ -24,6 +25,20 @@ const cabin = Cabin({
 const plusJakarta = Plus_Jakarta_Sans({
   variable: "--font-heading",
   subsets: ["latin", "latin-ext", "vietnamese"],
+  display: "swap",
+});
+
+// Font display CHỈ dùng cho tên điểm đến ở hero. Đổi font display = đổi đúng
+// khối này (biến `--font-display` giữ nguyên tên). Bắt buộc font phải có subset
+// "vietnamese" — thiếu thì trình duyệt ghép dấu từ font khác, cỡ lớn lộ ngay.
+// Be Vietnam Pro: sans hình học của foundry Việt, dấu là nét nguyên bản trong
+// chính bộ chữ (không phải bộ Việt gắn thêm) → cân và đúng vị trí ở cỡ lớn.
+// KHÔNG phải variable font → khai báo `weight` tĩnh, và ở chỗ dùng đừng đặt
+// `font-variation-settings` (font không có trục nào để chỉnh).
+const display = Be_Vietnam_Pro({
+  variable: "--font-display",
+  subsets: ["latin", "latin-ext", "vietnamese"],
+  weight: ["700", "800"],
   display: "swap",
 });
 
@@ -65,7 +80,7 @@ export default function RootLayout({
   return (
     <html
       lang="vi"
-      className={`${cabin.variable} ${plusJakarta.variable} ${geistMono.variable} ${mali.variable} ${dancingScript.variable} h-full antialiased`}
+      className={`${cabin.variable} ${plusJakarta.variable} ${display.variable} ${geistMono.variable} ${mali.variable} ${dancingScript.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         {children}

@@ -34,6 +34,7 @@ export default async function SettingsPage() {
     facebookUrl: settings.facebookUrl ?? "",
     instagramUrl: settings.instagramUrl ?? "",
     youtubeUrl: settings.youtubeUrl ?? "",
+    heroLayout: settings.heroLayout,
   };
 
   const integrations = [

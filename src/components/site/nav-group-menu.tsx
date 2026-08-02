@@ -50,19 +50,20 @@ export function NavGroupMenu({
         aria-expanded={open}
         onClick={() => setOpen(false)}
         className={cn(
-          "relative flex h-full items-center gap-1 pl-3 pr-2.5 text-sm font-medium transition-colors",
+          "relative flex h-full items-center gap-1 pl-2.5 pr-2 text-base font-medium transition-colors",
           active
             ? "font-semibold text-primary"
             : open
-              ? "text-foreground"
-              : "text-muted-foreground hover:text-foreground",
+              ? "text-foreground group-data-[solid=false]/header:text-white"
+              : "text-muted-foreground hover:text-foreground group-data-[solid=false]/header:text-white/85 group-data-[solid=false]/header:hover:text-white",
         )}
       >
         {label}
         <ChevronDown
           className={cn(
-            "size-3.5 transition-transform duration-200",
+            "size-4 transition-transform duration-200",
             open ? "rotate-180 text-foreground" : "text-muted-foreground",
+          "group-data-[solid=false]/header:text-white/70",
           )}
           aria-hidden
         />

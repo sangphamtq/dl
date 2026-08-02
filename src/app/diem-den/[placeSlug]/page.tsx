@@ -22,10 +22,10 @@ import { SpotShowcase } from "@/components/site/spot-showcase";
 import { Rail } from "@/components/site/rail";
 import { CommunityPreview } from "@/components/site/community-preview";
 import { getFeed } from "@/lib/community-feed";
+import { getSettings } from "@/lib/settings";
 import { PlaceViewTracker } from "@/components/site/place-view-tracker";
 import { PlaceHero } from "@/components/site/place-hero";
-import { PlaceHeroExplore } from "@/components/site/place-hero-explore";
-import { PlaceHeroSwitch } from "@/components/site/place-hero-switch";
+import { PlaceHeroCenter } from "@/components/site/place-hero-center";
 import { PlaceTabs } from "@/components/site/place-tabs";
 import { ReviewsSection, type ReviewListItem } from "@/components/site/place-reviews";
 import { summarizeReviews } from "@/lib/review-meta";
@@ -288,6 +288,7 @@ export default async function PlaceDetailPage({
   });
 
   const staff = await isStaffViewer();
+  const settings = await getSettings(); // kiểu hero dùng chung toàn site
   if (!place || (place.status !== "published" && !staff)) notFound();
 
   // Trạng thái check-in "đã đến" của user hiện tại + tổng số người đã đến.
@@ -424,35 +425,35 @@ export default async function PlaceDetailPage({
         name={place.name}
         provinceName={place.provinceName}
       />
-      <SiteHeader />
+      {/* Hero ảnh tràn viền → header chìm lên trên (fixed, trong suốt). Hero
+          "2 cột" nền sáng nên giữ header đặc như mọi trang khác. */}
+      <SiteHeader overlay={settings.heroLayout === "center"} />
 
       <main className="flex-1">
-        <PlaceHeroSwitch
-          classic={
-            <PlaceHero
-              place={place}
-              heroImages={heroImages}
-              stats={stats}
-              back={{ href: "/diem-den", label: "Điểm đến" }}
-              checkIn={checkIn}
-              visitors={visitors}
-              reviews={heroReviews}
-            />
-          }
-          bento={
-            <PlaceHeroExplore
-              place={place}
-              heroImages={heroImages}
-              counts={counts}
-              videos={videos}
-              facts={quickFacts}
-              back={{ href: "/diem-den", label: "Điểm đến" }}
-              checkIn={checkIn}
-              visitors={visitors}
-              reviews={heroReviews}
-            />
-          }
-        />
+        {/* Kiểu hero là CÀI ĐẶT CHUNG toàn site (SiteSetting.heroLayout, đổi ở
+            /cms/settings) — mỗi trang chỉ render MỘT hero, không có toggle phía
+            khách. */}
+        {settings.heroLayout === "classic" ? (
+          <PlaceHero
+            place={place}
+            heroImages={heroImages}
+            stats={stats}
+            back={{ href: "/diem-den", label: "Điểm đến" }}
+            checkIn={checkIn}
+            visitors={visitors}
+            reviews={heroReviews}
+          />
+        ) : (
+          <PlaceHeroCenter
+            place={place}
+            heroImages={heroImages}
+            stats={stats}
+            back={{ href: "/diem-den", label: "Điểm đến" }}
+            checkIn={checkIn}
+            visitors={visitors}
+            reviews={heroReviews}
+          />
+        )}
 
         {/* Thanh tab: Tổng quan + xem tất cả từng listing + nút Video */}
         <PlaceTabs items={tabs} />

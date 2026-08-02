@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { safeQuery } from "@/lib/db-safe";
+import type { HeroLayout } from "@/generated/prisma/enums";
 
 export const SETTINGS_ID = "singleton";
 
@@ -11,6 +12,8 @@ export type SiteSettings = {
   facebookUrl: string | null;
   instagramUrl: string | null;
   youtubeUrl: string | null;
+  /** Kiểu hero áp dụng cho MỌI trang điểm đến. */
+  heroLayout: HeroLayout;
 };
 
 // Giá trị mặc định khi chưa lưu cấu hình.
@@ -23,6 +26,7 @@ const DEFAULTS: SiteSettings = {
   facebookUrl: null,
   instagramUrl: null,
   youtubeUrl: null,
+  heroLayout: "center",
 };
 
 // Đọc cấu hình site (gộp với mặc định). Dùng ở layout, header, footer, metadata.
@@ -41,5 +45,6 @@ export async function getSettings(): Promise<SiteSettings> {
     facebookUrl: row.facebookUrl,
     instagramUrl: row.instagramUrl,
     youtubeUrl: row.youtubeUrl,
+    heroLayout: row.heroLayout,
   };
 }

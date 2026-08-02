@@ -231,6 +231,13 @@ export function CommandPalette({
             value={q}
             onValueChange={setQ}
             placeholder="Tìm điểm đến, địa điểm, lưu trú, bài viết…"
+            // Gợi ý phím tắt chuyển từ nút ở header vào đây — nút header nhờ vậy
+            // gọn hẳn, còn người dùng vẫn học được phím mở nhanh khi đang dùng.
+            trailing={
+              <kbd className="pointer-events-none hidden shrink-0 items-center rounded-full border bg-muted/40 px-2 py-0.5 font-mono text-[0.65rem] text-muted-foreground sm:inline-flex">
+                ⌘K
+              </kbd>
+            }
           />
           <CommandList className="max-h-[min(62vh,480px)] p-2">
             {term &&

@@ -21,7 +21,7 @@ export function LichTrinhNavLink() {
           aria-label="Lịch trình của tôi"
           aria-current={active ? "page" : undefined}
           className={cn(
-            "grid size-9 place-items-center rounded-full transition-colors",
+            "grid size-10 place-items-center rounded-full transition-colors",
             active
               ? "bg-primary/10 text-primary"
               : "text-foreground hover:bg-muted",

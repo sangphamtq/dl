@@ -13,14 +13,8 @@ import { DaDenNavLink } from "./da-den-nav-link";
 import { LichTrinhNavLink } from "./lich-trinh-nav-link";
 import { HeaderSearch } from "./header-search";
 import { SiteNav, type NavEntry, type NavLink } from "./site-nav";
-import { Badge } from "@/components/ui/badge";
+import { HeaderChrome } from "./header-chrome";
 import { TooltipProvider } from "@/components/ui/tooltip";
-
-// Badge vai trò cạnh avatar — chỉ hiện cho staff (admin/editor).
-const STAFF_ROLE_BADGE: Record<string, { label: string; className: string }> = {
-  admin: { label: "Admin", className: "bg-primary/10 text-primary" },
-  editor: { label: "Editor", className: "bg-muted text-muted-foreground" },
-};
 
 // Nav: 2 nhóm dropdown (click nhãn → `href`) + 2 link phẳng ở giữa.
 const NAV: NavEntry[] = [
@@ -69,7 +63,13 @@ const MOBILE_LINKS: NavLink[] = NAV.flatMap((e) => {
   return [e as NavLink];
 });
 
-export async function SiteHeader() {
+export async function SiteHeader({
+  /** Chìm trên hero: header `fixed`, nền trong suốt tới khi cuộn. Chỉ bật ở
+   *  trang có hero ảnh tràn viền — nền sáng thì chữ trắng không đọc được. */
+  overlay = false,
+}: {
+  overlay?: boolean;
+} = {}) {
   const [session, settings, provinces] = await Promise.all([
     auth(),
     getSettings(),
@@ -83,8 +83,12 @@ export async function SiteHeader() {
   const provinceNames = provinces.map((p) => p.name);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/85 backdrop-blur-md">
-      <div className="flex h-16 w-full items-center gap-1 px-4 sm:gap-2 sm:px-6 lg:px-8">
+    <HeaderChrome overlay={overlay}>
+      {/* Thanh nền vẫn tràn viền (viền đáy + nền mờ chạy hết bề ngang), chỉ NỘI
+          DUNG bó vào container max-w-7xl — trùng đúng container của hero và các
+          section bên dưới, nên logo/nav thẳng hàng với nội dung trang thay vì
+          dính mép màn hình ở màn rộng. */}
+      <div className="mx-auto flex h-16 w-full max-w-7xl items-center gap-1 px-4 sm:gap-2 sm:px-6">
         {/* Cụm trái — điều hướng mobile + logo */}
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           <MobileNav
@@ -104,15 +108,19 @@ export async function SiteHeader() {
               width={31}
               height={36}
               priority
-              className="h-8 w-auto sm:h-11"
+              className="h-8 w-auto transition-[filter] duration-500 group-data-[solid=false]/header:drop-shadow-[0_1px_6px_rgba(0,0,0,0.55)] sm:h-11"
             />
+            {/* Wordmark là chữ MỘT MÀU PHẲNG #0E3E27 (xanh rất tối) → đặt lên
+                ảnh hero là chìm. Khi header trong suốt thì đảo thành trắng bằng
+                `brightness-0 invert`; mascot bên trái KHÔNG đụng tới nên logo
+                vẫn giữ màu. Header đặc thì trả về ảnh gốc. */}
             <Image
               src="/logo_wordmark.png"
               alt={settings.siteName}
               width={77}
               height={16}
               priority
-              className="h-3.5 w-auto sm:h-4.5"
+              className="h-3.5 w-auto transition-[filter] duration-500 group-data-[solid=false]/header:brightness-0 group-data-[solid=false]/header:invert group-data-[solid=false]/header:drop-shadow-[0_1px_6px_rgba(0,0,0,0.5)] sm:h-4.5"
             />
           </Link>
         </div>
@@ -128,8 +136,11 @@ export async function SiteHeader() {
 
           {user ? (
             <>
-              {/* Cụm tiện ích gom trên nền segmented mờ — đọc như một khối */}
-              <div className="ml-1 flex items-center gap-0.5 rounded-full bg-muted/40 p-0.5">
+              {/* Cụm tiện ích: icon TRẦN, chỉ hiện nền tròn khi hover/active.
+                  Bỏ khung segmented mờ vì cạnh ô tìm kiếm (đã có nền) và avatar
+                  thì ba khối nền xếp liền nhau — nặng, và trên hero ảnh thành ba
+                  mảng xám. Giờ chỉ còn MỘT mảng nền duy nhất là ô tìm kiếm. */}
+              <div className="ml-0.5 flex items-center gap-0.5">
                 <DaDenNavLink />
                 {/* Lịch trình (ẩn trên màn rất hẹp — vẫn có trong menu + nút nổi) */}
                 <div className="hidden sm:flex">
@@ -141,13 +152,8 @@ export async function SiteHeader() {
                   realtimeEnabled={ablyEnabled()}
                 />
               </div>
-              {user.role && STAFF_ROLE_BADGE[user.role] && (
-                <Badge
-                  className={`ml-0.5 hidden border-transparent px-1.5 text-[0.7rem] font-semibold sm:inline-flex ${STAFF_ROLE_BADGE[user.role].className}`}
-                >
-                  {STAFF_ROLE_BADGE[user.role].label}
-                </Badge>
-              )}
+              {/* Hairline ngăn "hành động" (tiện ích) với "tài khoản" */}
+              <span aria-hidden className="mx-1.5 h-6 w-px bg-border" />
               <UserMenu
                 user={{
                   name: user.name,
@@ -163,13 +169,13 @@ export async function SiteHeader() {
             <div className="ml-1 flex items-center gap-2">
               <Link
                 href="/login"
-                className="hidden h-9 items-center rounded-full border border-border px-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted sm:inline-flex"
+                className="hidden h-10 items-center rounded-full border border-border px-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted sm:inline-flex"
               >
                 Đăng ký
               </Link>
               <Link
                 href="/login"
-                className="inline-flex h-9 items-center rounded-full bg-warm px-4 text-sm font-semibold text-warm-foreground transition-colors hover:bg-warm/90"
+                className="inline-flex h-10 items-center rounded-full bg-warm px-4 text-sm font-semibold text-warm-foreground transition-colors hover:bg-warm/90"
               >
                 Đăng nhập
               </Link>
@@ -178,6 +184,6 @@ export async function SiteHeader() {
         </div>
         </TooltipProvider>
       </div>
-    </header>
+    </HeaderChrome>
   );
 }

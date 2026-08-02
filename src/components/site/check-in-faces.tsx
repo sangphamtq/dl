@@ -43,9 +43,15 @@ const initial = (name: string | null) =>
 export function CheckInFaces({
   people,
   total,
+  label = "Vivu-er đã đến",
+  tone = "default",
 }: {
   people: CheckInPerson[];
   total: number;
+  /** Nhãn cạnh avatar — hero full-bleed truyền vào dạng "128 Vivu-er". */
+  label?: string;
+  /** "onDark": stack nằm thẳng trên ảnh → nhãn chữ trắng. */
+  tone?: "default" | "onDark";
 }) {
   const [open, setOpen] = useState(false);
   if (total <= 0 || people.length === 0) return null;
@@ -76,8 +82,15 @@ export function CheckInFaces({
               </AvatarGroupCount>
             )}
           </AvatarGroup>
-          <span className="text-sm text-muted-foreground group-hover:text-foreground">
-            Vivu-er đã đến
+          <span
+            className={cn(
+              "text-sm transition-colors",
+              tone === "onDark"
+                ? "text-white/70 group-hover:text-white"
+                : "text-muted-foreground group-hover:text-foreground",
+            )}
+          >
+            {label}
           </span>
         </button>
       </DialogTrigger>

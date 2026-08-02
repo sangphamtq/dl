@@ -22,6 +22,14 @@ enum PlaceKind {
   destination // Điểm đến lớn
 }
 
+// Kiểu hero của trang chi tiết điểm đến — cài đặt CHUNG toàn site (SiteSetting):
+// classic = 2 cột (chữ trái + deck ảnh phải), hợp nơi có nhiều ảnh điểm đến con;
+// center  = ảnh tràn viền, tên đặt giữa, hợp nơi có một tấm ảnh đủ mạnh.
+enum HeroLayout {
+  classic
+  center
+}
+
 // Cấu hình site dạng singleton (luôn 1 bản ghi id="singleton").
 model SiteSetting {
   id           String   @id @default("singleton")
@@ -32,7 +40,9 @@ model SiteSetting {
   facebookUrl  String?
   instagramUrl String?
   youtubeUrl   String?
-  updatedAt    DateTime @updatedAt
+  // Kiểu hero áp dụng cho MỌI trang điểm đến (cài đặt chung, không theo từng nơi).
+  heroLayout   HeroLayout @default(center)
+  updatedAt    DateTime   @updatedAt
 }
 
 enum PublishStatus {

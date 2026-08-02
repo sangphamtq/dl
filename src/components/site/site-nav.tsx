@@ -31,7 +31,7 @@ export function SiteNav({
   const pathname = usePathname();
 
   return (
-    <nav className={cn("h-full items-center gap-1", className)}>
+    <nav className={cn("h-full items-center gap-0.5", className)}>
       {entries.map((e) => {
         if ("items" in e || "columns" in e)
           return (
@@ -51,10 +51,10 @@ export function SiteNav({
             href={e.href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "relative flex h-full items-center px-3 text-sm font-medium transition-colors",
+              "relative flex h-full items-center px-2.5 text-base font-medium transition-colors",
               active
                 ? "font-semibold text-primary"
-                : "text-muted-foreground hover:text-foreground",
+                : "text-muted-foreground hover:text-foreground group-data-[solid=false]/header:text-white/85 group-data-[solid=false]/header:hover:text-white",
             )}
           >
             {e.label}
