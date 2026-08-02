@@ -18,7 +18,7 @@ import { RelatedPosts } from "@/components/site/related-posts";
 import { isStaffViewer } from "@/lib/preview";
 import { PlaceCard } from "@/components/site/place-card";
 import { SectionHeading } from "@/components/site/section-heading";
-import { SpotShowcase } from "@/components/site/spot-showcase";
+import { SpotSpotlight } from "@/components/site/spot-spotlight";
 import { Rail } from "@/components/site/rail";
 import { CommunityPreview } from "@/components/site/community-preview";
 import { getFeed } from "@/lib/community-feed";
@@ -256,6 +256,16 @@ export default async function PlaceDetailPage({
           wardName: true,
           districtName: true,
           images: listingImages,
+          // Phần "thực tế" cho dải Spotlight: giờ mở cửa, điểm nhấn và số
+          // Vivu-er đã đến.
+          openingHours: true,
+          tags: true,
+          highlights: {
+            orderBy: { order: "asc" },
+            take: 3,
+            select: { title: true },
+          },
+          _count: { select: { checkIns: true } },
         },
       },
       specialties: {
@@ -565,7 +575,7 @@ export default async function PlaceDetailPage({
         {/* Tham quan (Spot) — band full-width (ngoài container) */}
         {place.spots.length > 0 && (
           <section id="tham-quan" className="scroll-mt-32">
-            <SpotShowcase
+            <SpotSpotlight
               title="Địa điểm đáng ghé"
               eyebrow="Tham quan"
               count={counts.spot}
@@ -578,7 +588,16 @@ export default async function PlaceDetailPage({
                   : null,
                 location: s.wardName ?? s.districtName ?? null,
                 image: coverUrl(s.images, s.slug),
-                description: s.description ?? s.tagline,
+                tagline: s.tagline,
+                description: s.description,
+                // Fact rút gọn — dựng ở server để component client chỉ nhận
+                // chuỗi (tên icon là string, `Ic` tra bảng khi render).
+                facts: [{ icon: "clock", text: s.openingHours }].filter(
+                  (f): f is { icon: string; text: string } => Boolean(f.text),
+                ),
+                tags: s.tags.slice(0, 3),
+                highlights: s.highlights.map((h) => h.title),
+                visits: s._count.checkIns,
               }))}
             />
           </section>

@@ -379,3 +379,24 @@
     animation: none;
   }
 }
+
+/* Thanh tiến trình của dải "Địa điểm đáng ghé": tô từ trái sang phải trong đúng
+   một lượt. Dùng CSS animation (không phải transition + state) để lúc tạm dừng
+   chỉ cần `animation-play-state: paused` — vạch đứng im TẠI CHỖ, không bị tháo
+   ra lắp lại nên không nháy, và lúc chạy tiếp thì đi tiếp từ đúng vị trí đó.
+   PHẢI khai báo qua class: nếu chỉ đặt `animation` bằng inline style thì không
+   có CSS nào tham chiếu tới @keyframes, và Lightning CSS sẽ loại nó khi build. */
+@keyframes spot-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+.spot-progress {
+  animation-name: spot-progress;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+  transform-origin: left;
+}
