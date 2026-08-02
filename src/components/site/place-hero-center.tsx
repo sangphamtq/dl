@@ -161,9 +161,9 @@ export function PlaceHeroCenter({
           <>
             <span
               aria-hidden
-              className="mx-auto mt-7 block h-px w-10 bg-white/30"
+              className="mx-auto mt-5 block h-px w-10 bg-white/30 sm:mt-7"
             />
-            <p className="mx-auto mt-6 max-w-2xl text-balance text-[clamp(1.125rem,2.4vw,1.65rem)] leading-snug text-white/85">
+            <p className="mx-auto mt-4 max-w-2xl text-balance sm:mt-6 text-[clamp(1.125rem,2.4vw,1.65rem)] leading-snug text-white/85">
               {place.tagline}
             </p>
           </>
@@ -171,7 +171,7 @@ export function PlaceHeroCenter({
 
 
         {hasMeta && (
-          <dl className="mx-auto mt-10 flex flex-wrap items-start justify-center gap-y-6">
+          <dl className="mx-auto mt-7 flex flex-wrap items-start justify-center gap-y-5 sm:mt-10 sm:gap-y-6">
             {stats.map((s) => (
               <div key={s.label} className={ITEM}>
                 <dt className={DT}>{s.label}</dt>

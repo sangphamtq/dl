@@ -76,18 +76,20 @@ export function PlaceHeroCanvas({
   children: React.ReactNode;
   intervalMs?: number;
 }) {
-  // Hero chỉ QUAY VÒNG 5 ảnh đầu — `buildHeroImages` gộp cả ảnh bìa của điểm đến
-  // con nên mảng có thể hơn chục tấm. Giới hạn ở đây để:
-  // - dải phim khớp 1:1 với vòng chạy (không phải lật trang, không phải cửa sổ
-  //   trượt — hai cách đó đều buộc người xem phải đoán quy luật);
-  // - không nạp cả chục ảnh khổ lớn làm lớp nền chỉ để hiện một tấm.
-  // Toàn bộ ảnh vẫn xem được qua "Xem tất cả N ảnh" (lightbox).
+  // Vòng chạy = 5 ảnh THẬT đầu tiên. Dải khớp 1:1 với vòng chạy (không lật
+  // trang, không cửa sổ trượt) và không nạp cả chục ảnh khổ lớn làm lớp nền.
+  // Toàn bộ ảnh vẫn xem được qua "Xem tất cả N ảnh".
   const shots = images.slice(0, 5);
   const n = shots.length;
   const total = images.length;
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
+  // Lightbox giữ index RIÊNG: nó duyệt được toàn bộ ảnh, trong khi hero chỉ
+  // quay vòng 5 ảnh đầu. Trước đây lightbox dùng chung `index` của hero rồi bị
+  // hero kẹp lại ở 0–4 → chọn ảnh thứ 6 thì carousel nhảy đúng ảnh nhưng số
+  // đếm, chú thích và thumbnail đang chọn đứng im ở ảnh cũ.
   const [lightbox, setLightbox] = useState(false);
+  const [lbIndex, setLbIndex] = useState(0);
   const [reduced, setReduced] = useState(false);
 
   useEffect(() => {
@@ -177,11 +179,15 @@ export function PlaceHeroCanvas({
         </svg>
       </div>
 
-      {/* Header trang là `fixed` và chìm lên hero, nên hero cao trọn màn hình
-          (100svh) và tự chừa 4rem trên cùng để thanh trong hero (back/chia sẻ)
-          không chui xuống dưới logo. pb đủ lớn để nội dung không đè lên đỉnh
-          mây (mây cao ~60% chiều cao dải). */}
-      <div className="relative mx-auto flex h-[100svh] max-h-[48rem] min-h-[35rem] w-full max-w-7xl flex-col px-4 pb-12 pt-[calc(4rem+1.25rem)] sm:px-6 sm:pb-16 lg:pb-20">
+      {/* Header trang là `fixed` và chìm lên hero, nên hero tự chừa 4rem trên
+          cùng để thanh trong hero (back/chia sẻ) không chui xuống dưới logo. pb
+          đủ lớn để nội dung không đè lên đỉnh mây (mây cao ~60% chiều cao dải).
+          Chiều cao theo thiết bị:
+          - mobile/tablet: `h-auto` — cao đúng bằng nội dung (~650px). Ép 100svh
+            ở đây vừa thừa (điện thoại màn dài thành hero lê thê) vừa rủi ro:
+            section có overflow-hidden nên máy màn ngắn sẽ bị CẮT mất dải ảnh.
+          - lg trở lên: trọn màn hình, kẹp trần 58rem cho màn rất cao. */}
+      <div className="relative mx-auto flex h-auto min-h-[34rem] w-full max-w-7xl flex-col px-4 pb-10 pt-[calc(4rem+1.25rem)] sm:px-6 sm:pb-14 lg:h-[100svh] lg:max-h-[58rem] lg:min-h-[38rem] lg:pb-20">
         {topBar}
 
         <div
@@ -213,11 +219,7 @@ export function PlaceHeroCanvas({
             {/* Ô chú thích LUÔN chiếm chỗ (h-5 = đúng một dòng text-sm): chỉ ảnh
                 của điểm đến/địa điểm con mới có caption + link, ảnh thường thì
                 không — để nó tự mất/hiện thì cả cụm nhảy lên xuống mỗi lần đổi ảnh. */}
-            <div
-              className={cn(
-                "flex h-5 items-center justify-center",
-              )}
-            >
+            <div className="flex h-5 items-center justify-center">
               {active.caption &&
                 (active.href ? (
                   <Link
@@ -262,7 +264,11 @@ export function PlaceHeroCanvas({
                       vị trí kim vừa cho biết còn bao lâu, vừa cho biết đang ở
                       khung nào. Khỏi cần vạch riêng cho từng ảnh (rối) hay phóng
                       to ảnh đang xem (giật layout). */}
-                  <div className="relative flex overflow-hidden rounded">
+                  {/* Cuộn ngang khi dải rộng hơn màn: khung to nên 6 khung là
+                      quá bề ngang điện thoại. Kim tiến trình nằm TRONG lớp cuộn
+                      (w-max) nên vẫn trải đúng bề ngang thật của dải. */}
+                  <div className="max-w-full overflow-x-auto hide-scrollbar">
+                    <div className="relative flex w-max overflow-hidden rounded-lg">
                         {shots.map((img, i) => (
                           <button
                             key={i}
@@ -271,7 +277,7 @@ export function PlaceHeroCanvas({
                             aria-label={`Ảnh ${i + 1}`}
                             aria-current={i === index ? "true" : undefined}
                             className={cn(
-                              "relative h-11 w-11 shrink-0 border-l border-black/25 transition-opacity duration-500 first:border-l-0 sm:w-14",
+                              "relative h-16 w-20 shrink-0 border-l border-black/25 transition-opacity duration-500 first:border-l-0 sm:h-20 sm:w-28",
                               i === index
                                 ? "opacity-100"
                                 : "opacity-35 hover:opacity-70",
@@ -281,7 +287,7 @@ export function PlaceHeroCanvas({
                               src={img.url}
                               alt=""
                               fill
-                              sizes="56px"
+                              sizes="112px"
                               className="object-cover"
                             />
                           </button>
@@ -311,13 +317,17 @@ export function PlaceHeroCanvas({
                           )}
                         </span>
                     </div>
+                  </div>
                 </>
               )}
             </div>
 
             <button
               type="button"
-              onClick={() => setLightbox(true)}
+              onClick={() => {
+                setLbIndex(index);
+                setLightbox(true);
+              }}
               className="group mt-3 inline-flex items-center gap-2 text-sm text-white/70 transition-colors hover:text-white"
             >
               <Camera className="size-4 shrink-0" aria-hidden />
@@ -337,13 +347,14 @@ export function PlaceHeroCanvas({
       {lightbox && (
         <HeroLightbox
           images={images}
-          index={index}
-          // Lightbox xem được cả những ảnh ngoài vòng chạy; chỉ đồng bộ ngược khi
-          // ảnh đó nằm trong vòng chạy, tránh đẩy hero tới index không tồn tại.
-          onIndexChange={(i) => {
-            if (i < n) setIndex(i);
+          index={lbIndex}
+          onIndexChange={setLbIndex}
+          // Đóng lại: chỉ kéo hero theo nếu ảnh vừa xem nằm trong vòng chạy;
+          // ngoài vùng đó thì hero giữ nguyên ảnh cũ.
+          onClose={() => {
+            setLightbox(false);
+            if (lbIndex < n) setIndex(lbIndex);
           }}
-          onClose={() => setLightbox(false)}
         />
       )}
     </section>
