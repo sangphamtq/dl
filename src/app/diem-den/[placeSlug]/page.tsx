@@ -10,8 +10,10 @@ import { PlaceAboutVideo } from "@/components/site/place-about-video";
 import {
   SPOT_CATEGORY_LABELS,
   ACCOMMODATION_CATEGORY_LABELS,
+  ACTIVITY_CATEGORY_LABELS,
   label,
 } from "@/lib/listing-labels";
+import { ticketPriceLabel } from "@/lib/tickets";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { RelatedPosts } from "@/components/site/related-posts";
@@ -19,7 +21,8 @@ import { isStaffViewer } from "@/lib/preview";
 import { PlaceCard } from "@/components/site/place-card";
 import { SectionHeading } from "@/components/site/section-heading";
 import { SpotSpotlight } from "@/components/site/spot-spotlight";
-import { Rail } from "@/components/site/rail";
+import { ExperienceStrip } from "@/components/site/experience-strip";
+import { FoodMosaic } from "@/components/site/food-mosaic";
 import { CommunityPreview } from "@/components/site/community-preview";
 import { getFeed } from "@/lib/community-feed";
 import { getSettings } from "@/lib/settings";
@@ -41,83 +44,6 @@ import {
 } from "@/lib/place-meta";
 
 const pub = { status: "published" as const };
-
-// Card trải nghiệm — ảnh trên (khung 4:3), tên + fact (thời lượng · mùa) bên
-// dưới. Sạch, không phủ gradient — chữ đọc trên nền, không "ảnh tối".
-function ExperienceCard({
-  href,
-  name,
-  slug,
-  images,
-  facts,
-}: {
-  href: string;
-  name: string;
-  slug: string;
-  images: { url: string; isCover: boolean }[];
-  facts: { icon: string; text: string }[];
-}) {
-  const duration = facts.find((f) => f.icon === "clock");
-  const season = facts.find((f) => f.icon === "calendar");
-  return (
-    <Link href={href} className="group block">
-      <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-muted">
-        <Image
-          src={coverUrl(images, slug)}
-          alt={name}
-          fill
-          sizes="(min-width: 1024px) 25vw, (min-width: 640px) 40vw, 80vw"
-          className="object-cover"
-        />
-        {duration && (
-          <span className="absolute bottom-2.5 left-2.5 inline-flex items-center gap-1 rounded-md bg-background/90 px-2 py-1 text-xs font-medium">
-            <Ic icon="clock" className="size-3 text-primary" aria-hidden />
-            {duration.text}
-          </span>
-        )}
-      </div>
-      <h3 className="mt-3 font-semibold tracking-tight transition-colors group-hover:text-primary">
-        {name}
-      </h3>
-      {season && (
-        <p className="mt-1 inline-flex items-center gap-1.5 text-sm text-muted-foreground">
-          <Ic icon="calendar" className="size-3.5 shrink-0" aria-hidden />
-          {season.text}
-        </p>
-      )}
-    </Link>
-  );
-}
-
-// Card đặc sản — gallery ảnh vuông, tên phủ lên đáy ("ăn ảnh").
-function SpecialtyCard({
-  href,
-  name,
-  slug,
-  images,
-}: {
-  href: string;
-  name: string;
-  slug: string;
-  images: { url: string; isCover: boolean }[];
-}) {
-  return (
-    <Link href={href} className="group block">
-      <div className="relative aspect-square overflow-hidden rounded-xl bg-muted">
-        <Image
-          src={coverUrl(images, slug)}
-          alt={name}
-          fill
-          sizes="(min-width: 1024px) 20vw, (min-width: 640px) 25vw, 40vw"
-          className="object-cover"
-        />
-      </div>
-      <h3 className="mt-2.5 text-sm font-semibold leading-snug tracking-tight transition-colors group-hover:text-primary">
-        {name}
-      </h3>
-    </Link>
-  );
-}
 
 // Card lưu trú — ảnh + tên + loại hình + huy hiệu đã xác minh (danh bạ chính chủ).
 function StayCard({
@@ -233,13 +159,18 @@ export default async function PlaceDetailPage({
         // 'spot' = đặc trưng nhỏ chỉ ở 1 spot → không hiện ở cấp điểm đến.
         where: { ...pub, kind: { not: "spot" } },
         orderBy: [{ isFeatured: "desc" }, { order: "asc" }, { name: "asc" }],
-        take: 6,
+        // 8: băng ảnh kéo ngang, không bị giới hạn bởi bề ngang màn hình như
+        // một lưới — cho thêm vài khuôn hình nữa để kéo đã tay.
+        take: 8,
         select: {
           slug: true,
           name: true,
           description: true,
+          category: true,
           durationText: true,
           seasonText: true,
+          ticketFree: true,
+          ticketTiers: true,
           images: listingImages,
         },
       },
@@ -271,12 +202,23 @@ export default async function PlaceDetailPage({
       specialties: {
         where: pub,
         orderBy: [{ isFeatured: "desc" }, { order: "asc" }, { name: "asc" }],
-        take: 8,
+        // 5 = số ô của khảm ảnh (xem CELLS trong FoodMosaic).
+        take: 5,
         select: {
           slug: true,
           name: true,
+          tags: true,
           images: listingImages,
+          // "Ăn ở N quán" trên ô lớn — đếm ở DB, không kéo cả danh sách về.
+          _count: { select: { eateries: true } },
         },
+      },
+      eateries: {
+        where: pub,
+        orderBy: [{ isFeatured: "desc" }, { order: "asc" }, { name: "asc" }],
+        // 6 = hai hàng đủ ba cột ở lg; dài hơn thì đã có "Xem tất cả".
+        take: 6,
+        select: { slug: true, name: true, category: true, meals: true },
       },
       accommodations: {
         where: pub,
@@ -603,63 +545,61 @@ export default async function PlaceDetailPage({
           </section>
         )}
 
-        <div className="mx-auto max-w-7xl space-y-16 px-4 py-14 sm:space-y-20 sm:px-6 sm:py-20">
-          {/* Trải nghiệm — rail card sạch */}
-          {place.activities.length > 0 && (
-            <section id="trai-nghiem" className="scroll-mt-32">
-              <SectionHeading
-                eyebrow="Trải nghiệm"
-                title="Trải nghiệm nổi bật"
-                href={`/diem-den/${place.slug}/hoat-dong`}
-                count={counts.activity}
-                unit="trải nghiệm"
-              />
-              <div className="mt-6">
-                <Rail itemClassName="basis-4/5 sm:basis-2/5 lg:basis-1/4">
-                  {place.activities.map((a) => (
-                    <ExperienceCard
-                      key={a.slug}
-                      href={`/hoat-dong/${a.slug}`}
-                      name={a.name}
-                      slug={a.slug}
-                      images={a.images}
-                      facts={[
-                        a.durationText && { icon: "clock", text: a.durationText },
-                        a.seasonText && {
-                          icon: "calendar",
-                          text: a.seasonText,
-                        },
-                      ].filter(
-                        (x): x is { icon: string; text: string } => Boolean(x),
-                      )}
-                    />
-                  ))}
-                </Rail>
-              </div>
-            </section>
-          )}
+        {/* Trải nghiệm — băng ảnh panorama, TRÀN VIỀN nên nằm ngoài container
+            (xem ExperienceStrip: cố tình khác bố cục dải Địa điểm phía trên) */}
+        {place.activities.length > 0 && (
+          <section id="trai-nghiem" className="scroll-mt-32">
+            <ExperienceStrip
+              eyebrow="Trải nghiệm"
+              title="Trải nghiệm nổi bật"
+              href={`/diem-den/${place.slug}/hoat-dong`}
+              count={counts.activity}
+              unit="trải nghiệm"
+              items={place.activities.map((a) => ({
+                slug: a.slug,
+                name: a.name,
+                category: a.category
+                  ? label(ACTIVITY_CATEGORY_LABELS, a.category)
+                  : null,
+                image: coverUrl(a.images, a.slug),
+                // Ghi chú dưới tên: bao lâu · mùa nào · giá. Tối đa 2 mục cho
+                // vừa một dòng trên khổ ảnh hẹp nhất của băng.
+                facts: [
+                  a.durationText,
+                  a.seasonText,
+                  ticketPriceLabel(a.ticketFree, a.ticketTiers),
+                ]
+                  .map(shortFact)
+                  .filter((f): f is string => Boolean(f))
+                  .slice(0, 2),
+              }))}
+            />
+          </section>
+        )}
 
-          {/* Ẩm thực (đặc sản) — rail card nhỏ */}
-          {place.specialties.length > 0 && (
+        <div className="mx-auto max-w-7xl space-y-16 px-4 py-14 sm:space-y-20 sm:px-6 sm:py-20">
+          {/* Ẩm thực — khảm ảnh tĩnh (món) + danh sách quán (xem FoodMosaic:
+              cố tình đứng yên, ba mục phía trên đều chuyển động ngang) */}
+          {(place.specialties.length > 0 || place.eateries.length > 0) && (
             <section id="am-thuc" className="scroll-mt-32">
-              <SectionHeading
-                eyebrow="Ẩm thực"
-                title="Đặc sản địa phương"
+              <FoodMosaic
+                placeName={place.name}
                 href={`/diem-den/${place.slug}/am-thuc`}
                 count={counts.specialty + counts.eatery}
-                unit="món"
+                specialties={place.specialties.map((sp) => ({
+                  slug: sp.slug,
+                  name: sp.name,
+                  tag: sp.tags[0] ?? null,
+                  eateryCount: sp._count.eateries,
+                  images: sp.images,
+                }))}
+                eateries={place.eateries.map((e) => ({
+                  slug: e.slug,
+                  name: e.name,
+                  category: e.category,
+                  meals: e.meals,
+                }))}
               />
-              <Rail itemClassName="basis-2/5 sm:basis-1/4 lg:basis-1/5">
-                {place.specialties.map((sp) => (
-                  <SpecialtyCard
-                    key={sp.slug}
-                    href={`/diem-den/${place.slug}/am-thuc#specialty-${sp.slug}`}
-                    name={sp.name}
-                    slug={sp.slug}
-                    images={sp.images}
-                  />
-                ))}
-              </Rail>
             </section>
           )}
 
@@ -755,6 +695,19 @@ export default async function PlaceDetailPage({
   );
 }
 
+
+/* ── Rút gọn một fact cho dòng ghi chú trên "tuyến đường" trải nghiệm ──
+   Biên tập hay viết cả vế phụ vào `seasonText` ("Quanh năm; rộn ràng nhất dịp
+   lễ hội") hay `durationText` ("Nửa ngày (đi về trong ngày)"). Trên vạch đường
+   chỉ có chỗ cho một dòng, nên cắt ở dấu `;` hoặc `(` đầu tiên: giữ mệnh đề
+   chính, bỏ phần giải thích — vẫn đọc được nguyên vẹn thay vì bị `truncate`
+   xén giữa chữ. KHÔNG cắt ở gạch ngang: nó là dấu nối khoảng ("Tháng 10 – 4",
+   "Nửa ngày – 1 ngày"), cắt vào là mất nửa thông tin. */
+function shortFact(text: string | null): string | null {
+  if (!text) return null;
+  const head = text.split(/[;(]/)[0].trim().replace(/[,.]$/, "");
+  return head || null;
+}
 
 /* ── Tách câu đầu của mô tả làm lede (đoạn dẫn phóng to) ────────────
    Ngắt ở dấu kết câu + khoảng trắng + chữ HOA kế tiếp, nên "2.000m" hay

@@ -7,18 +7,26 @@ import {
   SpotCategory,
   ActivityCategory,
   ActivityKind,
+  EateryCategory,
+  Meal,
   TransportDirection,
   TransportMode,
 } from "@/generated/prisma/enums";
 
-// Seed điểm đến Tà Xùa (Bắc Yên, Sơn La): Place + Spot + Activity + Transport.
+// Seed điểm đến Tà Xùa (Bắc Yên, Sơn La): Place + Spot + Activity + Eatery +
+// Specialty + Transport.
 // Idempotent: upsert theo slug; ảnh ghi đè mỗi lần chạy (xem IMAGES bên dưới).
 // Dùng: pnpm seed:ta-xua
 
 const now = new Date();
 const PUB = { status: PublishStatus.published, publishedAt: now } as const;
 
-type ImageOwner = { placeId: string } | { spotId: string } | { activityId: string };
+type ImageOwner =
+  | { placeId: string }
+  | { spotId: string }
+  | { activityId: string }
+  | { eateryId: string }
+  | { specialtyId: string };
 
 // Ảnh của một mục — ĐỂ TRỐNG để tự điền. Mỗi ảnh: { url, alt?, caption? }.
 // Ảnh đầu mảng tự thành ảnh bìa (isCover). Mảng rỗng → trang dùng ảnh fallback.
@@ -84,6 +92,27 @@ const IMAGES: Record<string, ImageInput[]> = {
   "kham-pha-ban-nguoi-mong-ta-xua": [],
   "ngam-hoa-do-quyen-ta-xua": [],
   "check-in-song-lung-khung-long": [],
+
+  // Quán ăn (Eatery)
+  "bep-homestay-ta-xua": [],
+  "lau-ga-den-ta-xua": [],
+  "quan-com-doi-che-ta-xua": [],
+  "quan-nuong-dem-ta-xua": [],
+  "nha-tra-shan-tuyet-ta-xua": [],
+  "ca-phe-ngam-may-ta-xua": [],
+  "quan-pho-sang-bac-yen": [],
+
+  // Đặc sản (Specialty)
+  "che-shan-tuyet-ta-xua": [],
+  "tao-meo-bac-yen": [],
+  "ga-den-ta-xua": [],
+  "thit-trau-gac-bep-ta-xua": [],
+  "lon-ban-nuong-ta-xua": [],
+  "ca-suoi-nuong-ta-xua": [],
+  "rau-cai-meo-ta-xua": [],
+  "mang-rung-ta-xua": [],
+  "xoi-nep-nuong-ta-xua": [],
+  "ruou-tao-meo-hang-chu": [],
 };
 
 async function main() {
@@ -1029,7 +1058,273 @@ async function main() {
     await setImages({ activityId: row.id }, IMAGES[slug] ?? [], name);
   }
 
-  // 5) Di chuyển (Transport) — getTo: cách đến từ ngoài; getAround: tại chỗ.
+  // ──────────────────────────────────────────────────────────────────────
+  // 5) Quán ăn (Eatery)
+  //
+  // Ẩm thực Tà Xùa KHÔNG giống một phố biển: cả xã chỉ có một con đường độc
+  // đạo, quán xá đếm trên đầu ngón tay và phần lớn khách ăn ngay tại bếp
+  // homestay (đặt cơm trước từ chiều). Danh sách dưới đây tôn trọng thực tế
+  // đó — thà ít mà đúng còn hơn dựng ra một "khu ẩm thực" không tồn tại.
+  //
+  // CHỦ Ý KHÔNG có `phone`/`bookingUrl`: số điện thoại là dữ liệu phải xác
+  // minh với chính chủ (xem định vị "danh bạ đã xác minh" trong CLAUDE.md).
+  // Seed ra một dãy số bịa là tiếp tay cho chính cái mà sản phẩm này muốn
+  // chống. Biên tập điền sau trong CMS khi đã gọi kiểm chứng.
+  // Toạ độ là VỊ TRÍ TƯƠNG ĐỐI quanh trung tâm bản, đủ để bản đồ không vỡ —
+  // cũng cần chỉnh lại khi khảo sát thực địa.
+  // ──────────────────────────────────────────────────────────────────────
+  const LOC = {
+    provinceName: "Sơn La",
+    districtName: "Huyện Bắc Yên",
+    wardName: "Xã Tà Xùa",
+  } as const;
+
+  const eateries = [
+    {
+      slug: "bep-homestay-ta-xua",
+      name: "Bếp homestay bản Tà Xùa",
+      category: EateryCategory.local,
+      meals: [Meal.breakfast, Meal.lunch, Meal.dinner],
+      address: "Bản Tà Xùa, dọc trục đường chính qua xã",
+      ...LOC,
+      lat: 21.2521,
+      lng: 104.4507,
+      openingHours: "Theo bữa đã đặt · sáng từ 5:30 cho khách săn mây",
+      notice:
+        "Phải báo trước ít nhất nửa buổi — bếp đi chợ theo số suất, không có sẵn để khách vãng lai vào gọi món.",
+      tags: ["cơm bản", "đặt trước", "ăn cùng chủ nhà"],
+      description:
+        "Cách ăn phổ biến nhất ở Tà Xùa: đặt cơm ngay tại homestay đang ở. Mâm thường có gà đen hoặc lợn bản, rau cải mèo hái sau nhà, măng rừng và một bát canh nóng — nấu theo kiểu người Mông, mặn tay và nhiều gia vị rừng. Khách săn mây có thể xin gói xôi mang đi từ 5h sáng.",
+    },
+    {
+      slug: "lau-ga-den-ta-xua",
+      name: "Lẩu gà đen Tà Xùa",
+      category: EateryCategory.local,
+      meals: [Meal.dinner, Meal.latenight],
+      address: "Trung tâm bản Tà Xùa, gần khu homestay",
+      ...LOC,
+      lat: 21.2508,
+      lng: 104.4516,
+      openingHours: "11:00 – 21:00",
+      notice: "Gà đen làm mất khoảng 45 phút — gọi điện đặt trước khi lên tới bản.",
+      tags: ["lẩu", "gà đen", "buổi tối", "hợp nhóm"],
+      description:
+        "Quán ăn tối đông nhất bản, hầu như đoàn nào cũng ghé một bữa. Nồi lẩu gà đen nấu với thuốc bắc và gừng núi rất hợp thời tiết 10 độ; ăn kèm rau cải mèo nhúng, măng chua và chén muối chấm hạt dổi.",
+    },
+    {
+      slug: "quan-com-doi-che-ta-xua",
+      name: "Quán cơm đồi chè",
+      category: EateryCategory.local,
+      meals: [Meal.breakfast, Meal.lunch],
+      address: "Đoạn đường qua đồi chè cổ thụ, bản Bẹ",
+      ...LOC,
+      lat: 21.2634,
+      lng: 104.4429,
+      openingHours: "7:00 – 15:00",
+      notice: "Hết đồ là nghỉ sớm, ngày vắng khách có khi đóng cửa cả buổi chiều.",
+      tags: ["cơm bình dân", "ăn trưa", "ven đường"],
+      description:
+        "Quán cơm bình dân bên đường vòng qua đồi chè, tiện cho chặng giữa buổi khi vừa đi bộ về từ cây cô đơn. Món quen: cơm rang, mì xào, trứng ốp, thêm đĩa rau cải mèo xào tỏi và ấm chè Shan tuyết nóng miễn phí.",
+    },
+    {
+      slug: "quan-nuong-dem-ta-xua",
+      name: "Quán nướng đêm bản Tà Xùa",
+      category: EateryCategory.bbq,
+      meals: [Meal.dinner, Meal.latenight],
+      address: "Trung tâm bản Tà Xùa",
+      ...LOC,
+      lat: 21.2497,
+      lng: 104.4523,
+      openingHours: "17:00 – 23:00",
+      notice: "Ngồi ngoài trời quanh bếp than — mùa đông nhớ mặc đủ ấm.",
+      tags: ["nướng", "ăn đêm", "lai rai"],
+      description:
+        "Bếp than đỏ giữa trời lạnh, phục vụ thịt lợn bản ba chỉ, cá suối kẹp tre, ngô nướng và rau củ. Chỗ tụ tập buổi tối của cả khách lẫn thanh niên trong bản, thường mở tới khi hết khách.",
+    },
+    {
+      slug: "nha-tra-shan-tuyet-ta-xua",
+      name: "Nhà trà Shan tuyết",
+      category: EateryCategory.cafe,
+      meals: [Meal.cafe],
+      address: "Bản Bẹ, cạnh vùng chè cổ thụ",
+      ...LOC,
+      lat: 21.2657,
+      lng: 104.4418,
+      openingHours: "8:00 – 18:00",
+      tags: ["thưởng trà", "chè Shan tuyết", "mua quà"],
+      description:
+        "Không gian pha trà của một hộ làm chè trong bản: chủ nhà tráng ấm, pha thử vài lứa chè Shan tuyết cổ thụ và kể chuyện trèo hái búp trên cây trăm tuổi. Uống xong mua chè khô mang về — đây là chỗ mua đúng gốc, khỏi lo hàng trộn.",
+    },
+    {
+      slug: "ca-phe-ngam-may-ta-xua",
+      name: "Cà phê ngắm mây",
+      category: EateryCategory.cafe,
+      meals: [Meal.cafe, Meal.breakfast],
+      address: "Sườn núi rìa bản Tà Xùa, hướng ra thung lũng",
+      ...LOC,
+      lat: 21.2545,
+      lng: 104.4489,
+      openingHours: "5:30 – 20:00",
+      notice: "Sáng có mây thì kín chỗ ban công từ 6h — muốn ngồi mép ngoài phải đi sớm.",
+      tags: ["view thung lũng", "săn mây", "buổi sáng"],
+      description:
+        "Quán cà phê có ban công đua ra thung lũng, mở từ tờ mờ sáng đúng giờ mây lên. Cách ngắm mây nhàn nhất cho ai ngại trèo mỏm: gọi một ly cà phê nóng hoặc ấm trà, ngồi nhìn sương dâng kín bên dưới.",
+    },
+    {
+      slug: "quan-pho-sang-bac-yen",
+      name: "Phở sáng thị trấn Bắc Yên",
+      category: EateryCategory.local,
+      meals: [Meal.breakfast],
+      address: "Thị trấn Bắc Yên, gần bến xe",
+      provinceName: "Sơn La",
+      districtName: "Huyện Bắc Yên",
+      wardName: "Thị trấn Bắc Yên",
+      lat: 21.1889,
+      lng: 104.4145,
+      openingHours: "5:00 – 10:00",
+      tags: ["ăn sáng", "trên đường lên", "bình dân"],
+      description:
+        "Bữa sáng của khách vừa xuống xe khách đêm, trước khi chạy 13km đèo lên bản. Phở bò nước trong, bánh phở dai, thêm quẩy — ăn cho ấm bụng vì trên bản sáng sớm hầu như chưa quán nào mở.",
+    },
+  ];
+
+  const eateryId: Record<string, string> = {};
+  for (const [i, e] of eateries.entries()) {
+    const { slug, name, ...rest } = e;
+    const row = await prisma.eatery.upsert({
+      where: { slug },
+      update: { ...rest, order: i, placeId: taXua.id, ...PUB },
+      create: { slug, name, ...rest, order: i, placeId: taXua.id, ...PUB },
+    });
+    eateryId[slug] = row.id;
+    await setImages({ eateryId: row.id }, IMAGES[slug] ?? [], name);
+  }
+
+  // ──────────────────────────────────────────────────────────────────────
+  // 6) Đặc sản (Specialty) — món/sản vật DÙNG LẠI, gắn 2–4 quán tiêu biểu
+  //
+  // Đúng mô hình trong CLAUDE.md: đặc sản là "món", quán là "chỗ" — không tạo
+  // kiểu "gà đen quán X". Sản vật mang về làm quà (chè, táo mèo, rượu) thì
+  // không ép gắn quán; chỗ mua nói trong phần mô tả vì schema Specialty hiện
+  // chưa có trường `whereToBuy`.
+  // ──────────────────────────────────────────────────────────────────────
+  const specialties: {
+    slug: string;
+    name: string;
+    description: string;
+    tags: string[];
+    isFeatured?: boolean;
+    eateries?: string[];
+  }[] = [
+    {
+      slug: "che-shan-tuyet-ta-xua",
+      name: "Chè Shan tuyết Tà Xùa",
+      isFeatured: true,
+      description:
+        "Búp chè hái trên những gốc Shan tuyết cổ thụ vài trăm tuổi, thân phủ địa y trắng như tuyết, phải trèo lên cây mới hái được. Nước vàng sánh, chát nhẹ đầu lưỡi rồi ngọt hậu rất lâu — thứ đặc sản làm nên tên tuổi Tà Xùa trước cả biển mây. Mua chè khô ngay tại hộ làm chè trong bản là chắc gốc nhất.",
+      tags: ["quà", "chè", "cổ thụ", "đặc sản gốc"],
+      eateries: ["nha-tra-shan-tuyet-ta-xua", "ca-phe-ngam-may-ta-xua"],
+    },
+    {
+      slug: "tao-meo-bac-yen",
+      name: "Táo mèo (sơn tra) Bắc Yên",
+      isFeatured: true,
+      description:
+        "Quả sơn tra mọc trên các sườn núi Bắc Yên, chín rộ tháng 8–10, vỏ vàng ửng hồng, ăn tươi thì chát chua giòn. Người bản đem ngâm đường, ngâm rượu, làm ô mai hoặc mứt — hũ táo mèo là món quà quen nhất khách mang về từ cung này.",
+      tags: ["quà", "trái cây", "mùa thu", "ngâm rượu"],
+    },
+    {
+      slug: "ga-den-ta-xua",
+      name: "Gà đen (gà H'Mông)",
+      isFeatured: true,
+      description:
+        "Giống gà người Mông nuôi thả trên núi, da và xương đều đen, thịt chắc và ngọt hơn hẳn gà xuôi. Ngon nhất là nồi lẩu nấu thuốc bắc với gừng núi ăn giữa trời lạnh, hoặc nướng nguyên con trên than xoa mật ong rừng.",
+      tags: ["lẩu", "bữa tối", "đặc sản", "hợp trời lạnh"],
+      eateries: ["lau-ga-den-ta-xua", "bep-homestay-ta-xua"],
+    },
+    {
+      slug: "thit-trau-gac-bep-ta-xua",
+      name: "Thịt trâu gác bếp",
+      description:
+        "Thịt trâu thái dọc thớ, ướp mắc khén, hạt dổi và ớt rồi treo lên gác bếp hun khói hàng tháng trời. Miếng thịt khô quắt, xé ra vẫn đỏ và thơm mùi khói — nhâm nhi với rượu ngô buổi tối, hoặc mua túi hút chân không mang về.",
+      tags: ["quà", "hun khói", "nhậu", "mắc khén"],
+      eateries: ["bep-homestay-ta-xua", "quan-nuong-dem-ta-xua"],
+    },
+    {
+      slug: "lon-ban-nuong-ta-xua",
+      name: "Lợn bản nướng",
+      description:
+        "Lợn cắp nách nuôi thả trong bản, con chỉ chừng mươi mười lăm cân nên thịt săn, lớp mỡ mỏng. Ba chỉ ướp mắc khén nướng than là món gọi nhiều nhất ở quán nướng đêm; bếp homestay thì hay làm thêm món hấp hoặc xào lăn.",
+      tags: ["nướng", "bữa tối", "mắc khén"],
+      eateries: ["quan-nuong-dem-ta-xua", "bep-homestay-ta-xua"],
+    },
+    {
+      slug: "ca-suoi-nuong-ta-xua",
+      name: "Cá suối nướng",
+      description:
+        "Cá bắt ở các con suối chảy dưới thung lũng, con nhỏ bằng hai ngón tay, kẹp tre nướng nguyên con trên than. Giòn từ đầu đến đuôi, chấm muối ớt hạt dổi — ăn vặt lai rai chứ không phải món chính.",
+      tags: ["nướng", "ăn vặt", "cá suối"],
+      eateries: ["quan-nuong-dem-ta-xua"],
+    },
+    {
+      slug: "rau-cai-meo-ta-xua",
+      name: "Rau cải mèo",
+      description:
+        "Rau người Mông trồng quanh nhà, lá dày, cọng giòn, vị hơi đắng rồi ngọt lại — càng rét càng ngon. Đơn giản nhất là xào tỏi hoặc nhúng lẩu; bát canh cải mèo nấu gừng là thứ giải rượu quen thuộc của bữa tối trên bản.",
+      tags: ["rau", "bữa cơm", "mùa đông"],
+      eateries: ["bep-homestay-ta-xua", "quan-com-doi-che-ta-xua", "lau-ga-den-ta-xua"],
+    },
+    {
+      slug: "mang-rung-ta-xua",
+      name: "Măng rừng",
+      description:
+        "Măng đắng, măng nứa lấy từ rừng quanh bản, mùa rộ vào cuối xuân. Măng đắng nướng cả củ rồi chấm chẩm chéo là kiểu ăn bản địa nhất; ngoài ra còn măng chua om, măng xào — món nào cũng có mặt trong mâm cơm homestay.",
+      tags: ["rừng", "bữa cơm", "mùa xuân"],
+      eateries: ["bep-homestay-ta-xua", "lau-ga-den-ta-xua"],
+    },
+    {
+      slug: "xoi-nep-nuong-ta-xua",
+      name: "Xôi nếp nương",
+      description:
+        "Nếp nương trồng trên rẫy, đồ trong chõ gỗ nên hạt dẻo mà rời, để nguội vẫn mềm. Gói lá chuối mang theo đi săn mây từ 5h sáng là hợp nhất — no lâu, không cần hâm, ăn với muối vừng hoặc thịt gác bếp xé.",
+      tags: ["ăn sáng", "mang đi đường", "săn mây"],
+      eateries: ["bep-homestay-ta-xua"],
+    },
+    {
+      slug: "ruou-tao-meo-hang-chu",
+      name: "Rượu táo mèo Hang Chú",
+      description:
+        "Rượu nấu ở xã Hang Chú cùng huyện Bắc Yên, đem ngâm với sơn tra chín thành thứ rượu vàng hổ phách, chua nhẹ và thơm mùi táo. Uống một chén nhỏ cho ấm người buổi tối; mua can hoặc chai làm quà thì hỏi ngay chủ homestay để lấy đúng rượu bản.",
+      tags: ["quà", "rượu", "táo mèo", "buổi tối"],
+    },
+  ];
+
+  for (const [i, sp] of specialties.entries()) {
+    const { slug, name, eateries: eaterySlugs, ...rest } = sp;
+    const connect = (eaterySlugs ?? []).map((sl) => ({ id: eateryId[sl] }));
+    const row = await prisma.specialty.upsert({
+      where: { slug },
+      update: {
+        ...rest,
+        order: i,
+        placeId: taXua.id,
+        eateries: { set: connect },
+        ...PUB,
+      },
+      create: {
+        slug,
+        name,
+        ...rest,
+        order: i,
+        placeId: taXua.id,
+        eateries: { connect },
+        ...PUB,
+      },
+    });
+    await setImages({ specialtyId: row.id }, IMAGES[slug] ?? [], name);
+  }
+
+  // 7) Di chuyển (Transport) — getTo: cách đến từ ngoài; getAround: tại chỗ.
   // Không có slug → idempotent bằng deleteMany theo placeId rồi tạo lại.
   const D = TransportDirection;
   const M = TransportMode;
@@ -1147,7 +1442,7 @@ async function main() {
   }
 
   console.log(
-    `✓ Seed Tà Xùa xong: 1 tỉnh, 1 điểm đến, ${spots.length} địa điểm, ${activities.length} hoạt động, ${transports.length} cách di chuyển.`,
+    `✓ Seed Tà Xùa xong: 1 tỉnh, 1 điểm đến, ${spots.length} địa điểm, ${activities.length} hoạt động, ${eateries.length} quán ăn, ${specialties.length} đặc sản, ${transports.length} cách di chuyển.`,
   );
 }
 
