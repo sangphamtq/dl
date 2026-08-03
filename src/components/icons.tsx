@@ -168,6 +168,7 @@ export const Users = make("users");
 export const Utensils = make("utensils");
 export const UtensilsCrossed = make("utensils-crossed");
 export const Wallet = make("wallet");
+export const WifiOff = make("wifi-off");
 export const X = make("x");
 export const XCircle = make("x-circle");
 export const XIcon = make("x");

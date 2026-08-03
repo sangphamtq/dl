@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import {
   Be_Vietnam_Pro,
   Cabin,
@@ -12,6 +12,9 @@ import { getSettings } from "@/lib/settings";
 import { BackToTop } from "@/components/site/back-to-top";
 import { ItineraryFab } from "@/components/site/itinerary-fab";
 import { AnalyticsProvider } from "@/components/site/analytics-provider";
+import { PwaRegister } from "@/components/site/pwa-register";
+import { InstallPrompt } from "@/components/site/install-prompt";
+import { THEME_COLOR } from "@/lib/pwa";
 import "./globals.css";
 
 const cabin = Cabin({
@@ -64,19 +67,42 @@ const mali = Mali({
   display: "swap",
 });
 
+// PWA: màu thanh trạng thái khi chạy dạng app (Android/Chrome đọc từ đây).
+// Cố ý KHÔNG đặt `viewportFit: "cover"` — nội dung sẽ tràn vào vùng tai thỏ và
+// thanh home của iPhone, mà các phần tử fixed hiện có (FAB, nút lên đầu trang)
+// chưa chừa `safe-area-inset`. Muốn tràn viền thì làm cùng lúc với việc đó.
+export const viewport: Viewport = {
+  themeColor: THEME_COLOR,
+};
+
 export async function generateMetadata(): Promise<Metadata> {
   const s = await getSettings();
   return {
     title: { default: `${s.siteName} — ${s.tagline}`, template: `%s · ${s.siteName}` },
     description: s.description,
+    applicationName: s.siteName,
+    // <link rel="manifest"> do app/manifest.ts tự sinh; khối này là phần iOS
+    // không đọc manifest: tên trên màn hình chính, icon, kiểu thanh trạng thái.
+    appleWebApp: {
+      capable: true,
+      title: s.siteName,
+      statusBarStyle: "default",
+    },
+    // Favicon vẫn do app/icon.png (file convention) lo; ở đây chỉ bổ sung icon
+    // màn hình chính của iOS — bản 180×180, nền đục (iOS không nhận alpha).
+    icons: {
+      apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }],
+    },
   };
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const { siteName } = await getSettings();
+
   return (
     <html
       lang="vi"
@@ -88,6 +114,8 @@ export default function RootLayout({
         <BackToTop />
         <Toaster richColors position="top-center" />
         <AnalyticsProvider />
+        <PwaRegister />
+        <InstallPrompt siteName={siteName} />
       </body>
     </html>
   );

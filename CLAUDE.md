@@ -521,6 +521,36 @@ components.json                  # cấu hình shadcn (style, alias, base color)
   `text-muted-foreground`) thay vì màu cứng.
 - Trước khi báo "đã xong", chạy `pnpm exec tsc --noEmit` và `pnpm lint` để chắc không lỗi.
 
+## PWA (cài được lên màn hình chính + dùng khi mất sóng)
+
+Site là một PWA. Các mảnh ghép:
+
+| File | Vai trò |
+|---|---|
+| `src/app/manifest.ts` | Web app manifest (Next phục vụ ở `/manifest.webmanifest`, tự chèn `<link rel="manifest">`). Tên/mô tả lấy từ `getSettings()`, `revalidate = 3600` |
+| `src/lib/pwa.ts` | Hằng dùng chung: `THEME_COLOR`, `BACKGROUND_COLOR`, `OFFLINE_URL` |
+| `public/sw.js` | Service worker viết tay (không build tool) |
+| `public/icons/` | Icon 192/512 (`any` + `maskable`) + `apple-touch-icon.png` — sinh từ `public/logo_mark.png` |
+| `src/components/site/pwa-register.tsx` | Đăng ký SW; có bản mới thì hiện toast "Tải lại" |
+| `src/components/site/install-prompt.tsx` | Mời cài app (Chromium dùng `beforeinstallprompt`; iOS chỉ hướng dẫn Chia sẻ → Thêm vào MH chính) |
+| `src/app/offline/page.tsx` | Trang dự phòng khi mất mạng, được precache lúc SW cài |
+
+Lưu ý khi sửa:
+- **Đổi `sw.js` thì PHẢI tăng `VERSION`** trong file đó, nếu không cache cũ không bị dọn.
+- SW **chỉ chạy ở production**. Ở `pnpm dev`, `PwaRegister` chủ động gỡ mọi SW và xoá cache
+  `halivivu-*` — tránh cảnh "sửa code mà trình duyệt vẫn trả bản cũ".
+- Chiến lược: điều hướng trang = network-first (mất mạng → bản đã xem → `/offline`);
+  `/_next/static` + `/fonts` = cache-first; ảnh = stale-while-revalidate. Còn lại không đụng.
+- **Không cache khu vực cá nhân** — danh sách `NEVER_CACHE` trong `sw.js` (`/api/`, `/cms`,
+  `/sale`, `/login`, `/tai-khoan`, `/thong-bao`, `/kiem-tra`). Thêm route riêng tư mới thì
+  nhớ thêm vào đây, kèm `HIDDEN_ON` trong `install-prompt.tsx` nếu không muốn mời cài app.
+- Chỉ chặn request có `mode === "navigate"`; prefetch RSC của App Router cố tình để nguyên
+  cho mạng, tránh cache nhầm payload RSC rồi trả về cho một request document.
+- Đổi icon: sửa `public/logo_mark.png` rồi sinh lại bộ `public/icons/` (192/512 `any`,
+  192/512 `maskable` — mascot nằm trong vòng an toàn 80%, 180 `apple-touch-icon` nền đục).
+- Cố ý **chưa** đặt `viewportFit: "cover"` ở `layout.tsx`: các phần tử fixed hiện có
+  (`ItineraryFab`, `BackToTop`) chưa chừa `safe-area-inset`. Làm tràn viền thì làm cùng lúc.
+
 ## Phạm vi hiện tại
 
 Đã có: scaffold + đăng nhập Google + shadcn/ui + **Prisma đã migrate lên Postgres (Neon)**

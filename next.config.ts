@@ -12,6 +12,19 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "*.vn" },
     ],
   },
+  async headers() {
+    return [
+      {
+        // Service worker phải luôn được kiểm tra lại, nếu không trình duyệt giữ
+        // bản cũ và bản cập nhật (đổi VERSION trong sw.js) không bao giờ tới.
+        source: "/sw.js",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=0, must-revalidate" },
+          { key: "Content-Type", value: "application/javascript; charset=utf-8" },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

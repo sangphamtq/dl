@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { safeQuery } from "@/lib/db-safe";
 import type { HeroLayout } from "@/generated/prisma/enums";
@@ -30,7 +31,9 @@ const DEFAULTS: SiteSettings = {
 };
 
 // Đọc cấu hình site (gộp với mặc định). Dùng ở layout, header, footer, metadata.
-export async function getSettings(): Promise<SiteSettings> {
+// Bọc `cache()` của React: một request render có thể gọi 3–4 lần (metadata, header,
+// footer, trang) nhưng chỉ đi tới DB đúng một lần.
+export const getSettings = cache(async function getSettings(): Promise<SiteSettings> {
   // DB chưa kết nối → dùng mặc định để root layout/header/footer không văng lỗi.
   const row = await safeQuery(
     () => prisma.siteSetting.findUnique({ where: { id: SETTINGS_ID } }),
@@ -47,4 +50,4 @@ export async function getSettings(): Promise<SiteSettings> {
     youtubeUrl: row.youtubeUrl,
     heroLayout: row.heroLayout,
   };
-}
+});
