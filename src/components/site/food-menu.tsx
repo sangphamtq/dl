@@ -139,7 +139,7 @@ function Row({ s, href }: { s: FoodSpecialty; href: string }) {
             alt=""
             fill
             sizes="144px"
-            className="object-cover transition-transform duration-500 ease-out group-hover:scale-105 motion-reduce:transition-none"
+            className="object-cover"
           />
         </span>
 

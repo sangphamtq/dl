@@ -7,7 +7,6 @@ import {
   Loader2,
   PenLine,
   Trash2,
-  MessageSquareText,
   Heart,
   CircleCheck,
   Meh,
@@ -47,6 +46,7 @@ import {
 } from "@/components/ui/popover";
 import { LoginDrawer } from "@/components/site/login-drawer";
 import { StarRating } from "@/components/site/star-rating";
+import { SectionHeading } from "@/components/site/section-heading";
 import { submitReview, deleteReview } from "@/app/diem-den/review-actions";
 import {
   REVIEW_STANCES,
@@ -100,22 +100,24 @@ const PILL_TONE: Record<StanceTone, string> = {
   negSoft: "bg-warm/10 text-warm",
   negative: "bg-destructive/10 text-destructive",
 };
-// Pill cảm nhận trên danh sách review — 1 accent: tích cực xanh, tiêu cực xám.
-const STANCE_PILL: Record<StanceTone, string> = {
-  positive: "bg-primary/10 text-primary",
-  posSoft: "bg-primary/10 text-primary",
-  negSoft: "bg-muted text-muted-foreground",
-  negative: "bg-muted text-muted-foreground",
-};
-// Card cảm nhận khi được chọn — cả card nhuộm tông.
+// Card cảm nhận khi được chọn trong FORM viết đánh giá — cả card nhuộm tông.
 const STANCE_SELECTED: Record<StanceTone, string> = {
   positive: "border-primary/40 bg-primary/10 text-primary",
   posSoft: "border-primary/30 bg-primary/10 text-primary",
   negSoft: "border-warm/40 bg-warm/10 text-warm",
   negative: "border-destructive/40 bg-destructive/10 text-destructive",
 };
+// Chip nhãn trong form (chọn điểm cộng / cần lưu ý).
 const HL_CHIP = "bg-primary/10 text-primary";
 const CV_CHIP = "bg-warm/10 text-warm";
+
+// Màu CHỮ của mức cảm nhận trên danh sách review (không nền, không viền).
+const STANCE_TEXT: Record<StanceTone, string> = {
+  positive: "text-primary",
+  posSoft: "text-primary/85",
+  negSoft: "text-warm",
+  negative: "text-destructive",
+};
 
 const initial = (name: string | null) =>
   (name?.trim().charAt(0) || "?").toUpperCase();
@@ -199,27 +201,37 @@ export function ReviewsSection({
   );
   const shown = showAll ? filtered : filtered.slice(0, INITIAL);
 
+  const writeBtn = (
+    <button
+      type="button"
+      onClick={onWrite}
+      className="inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-primary transition-colors hover:text-primary/80"
+    >
+      <PenLine className="size-4" aria-hidden />
+      {myReview ? "Sửa đánh giá của bạn" : "Viết đánh giá"}
+    </button>
+  );
+
   return (
     <section id="danh-gia" className="scroll-mt-32">
-      <div className="flex items-baseline justify-between gap-6">
-        <h2 className="text-2xl font-bold tracking-tight">
-          Vivu-er nói gì về {target.name}
-        </h2>
-        <button
-          type="button"
-          onClick={onWrite}
-          className="group inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-primary transition-colors hover:text-primary/80"
-        >
-          <PenLine className="size-4" aria-hidden />
-          {myReview ? "Sửa đánh giá của bạn" : "Viết đánh giá"}
-        </button>
-      </div>
+      {/* Cùng khuôn tiêu đề với MỌI mục khác của trang (nhãn viết tay + tiêu đề
+          display + đường bay + con số). Đây là cái tên của một mục trong cùng
+          một trang, nên nó phải đọc ra như các mục kia — không phải chỗ để tôi
+          tự ý dùng biến thể khác. Không truyền `href`: đánh giá không có trang
+          danh mục riêng, chỗ đó dành cho nút viết đánh giá. */}
+      <SectionHeading
+        eyebrow="Đánh giá"
+        title={`Vivu-er nói gì về ${target.name}`}
+        count={hasReviews ? summary.total : undefined}
+        unit="đánh giá"
+        actions={writeBtn}
+      />
 
       {hasReviews ? (
         <div className="mt-6 grid gap-8 lg:grid-cols-[2fr_3fr] lg:gap-12">
-          {/* Trái: tóm tắt + biểu đồ (sticky trên desktop) */}
+          {/* Trái: tổng hợp (dính khi cuộn trên desktop) */}
           <div className="lg:sticky lg:top-28 lg:self-start">
-            <SummaryPanel
+            <Summary
               summary={summary}
               activeStance={stanceFilter}
               onSelectStance={(s) =>
@@ -228,18 +240,13 @@ export function ReviewsSection({
             />
           </div>
 
-          {/* Phải: tiếng nói — danh sách review */}
+          {/* Phải: danh sách đánh giá */}
           <div>
-            <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2">
+            <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-2">
               {stanceFilter && (
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
                   <span className="text-muted-foreground">Đang lọc:</span>
-                  <span
-                    className={cn(
-                      "rounded-full px-2 py-0.5 text-xs font-medium",
-                      STANCE_PILL[stanceMeta(stanceFilter).tone],
-                    )}
-                  >
+                  <span className="font-medium">
                     {stanceMeta(stanceFilter).label}
                   </span>
                   <button
@@ -303,19 +310,15 @@ export function ReviewsSection({
           </div>
         </div>
       ) : (
-        <div className="mt-8 flex flex-col items-center gap-2 py-6 text-center">
-          <MessageSquareText
-            className="size-8 text-muted-foreground/50"
-            aria-hidden
-          />
+        <div className="mt-8 py-6">
           <p className="font-medium">Chưa có đánh giá nào</p>
-          <p className="max-w-sm text-sm text-muted-foreground">
+          <p className="mt-1 max-w-sm text-sm text-muted-foreground">
             Là Vivu-er đầu tiên chia sẻ cảm nhận về {target.name}.
           </p>
           <button
             type="button"
             onClick={onWrite}
-            className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
             <PenLine className="size-4" aria-hidden />
             Đánh dấu đã đến & đánh giá
@@ -347,14 +350,6 @@ export function ReviewsSection({
 }
 
 // ── Panel hero tổng hợp — "mặt" biên tập, đúng ngôn ngữ design system ─
-function verdictLead(pct: number) {
-  if (pct >= 85) return "Gần như ai cũng thấy đáng đi";
-  if (pct >= 70) return "Hầu hết thấy đáng đi";
-  if (pct >= 50) return "Phần lớn thấy đáng đi";
-  if (pct >= 30) return "Ý kiến khá chia";
-  return "Nhiều người thấy chưa đáng đi";
-}
-
 // Nút ⓘ giải thích cách tính điểm — tự đọc trọng số SCORE_POS/SCORE_NEG (đổi
 // trọng số trong review-meta là bảng này tự cập nhật).
 function ScoreInfo() {
@@ -406,9 +401,10 @@ function ScoreInfo() {
   );
 }
 
-// Biểu đồ phân bố 4 mức cảm nhận — thanh ngang, nhãn trực tiếp (không color-alone).
-// Mỗi hàng là một nút lọc: bấm để chỉ xem review ở mức đó.
-function StanceChart({
+// Phân bố 4 mức — mỗi hàng là một nút lọc. Nhãn + số + % viết thẳng, thanh mảnh
+// bên dưới. Không chấm màu, không viên chip: nhãn đã nói rõ mức nào, thêm một
+// chấm màu cạnh nó chỉ là màu cho có.
+function StanceRows({
   summary,
   active,
   onSelect,
@@ -419,34 +415,43 @@ function StanceChart({
 }) {
   const max = summary.total || 1;
   return (
-    <div className="-mx-2 space-y-1">
+    <div className="-mx-2">
       {summary.stance.map((s) => {
         const on = active === s.value;
+        const empty = s.count === 0;
         return (
           <button
             key={s.value}
             type="button"
+            disabled={empty}
             onClick={() => onSelect(s.value)}
             aria-pressed={on}
             className={cn(
-              "block w-full rounded-lg px-2 py-1.5 text-left transition-colors",
-              on
-                ? "bg-primary/5 ring-1 ring-inset ring-primary/20"
-                : "hover:bg-muted/60",
+              "block w-full rounded-lg px-2 py-2 text-left transition-colors",
+              empty ? "cursor-default" : on ? "bg-muted" : "hover:bg-muted/60",
             )}
           >
-            <div className="flex items-baseline gap-2 text-xs">
-              <span className={on ? "font-medium text-foreground" : "text-muted-foreground"}>
+            <div className="flex items-baseline gap-2 text-sm">
+              <span
+                className={cn(
+                  "truncate",
+                  empty
+                    ? "text-muted-foreground/60"
+                    : on
+                      ? "font-medium text-foreground"
+                      : "text-foreground/80",
+                )}
+              >
                 {s.label}
               </span>
-              <span className="tabular-nums text-muted-foreground/70">
+              <span className="ml-auto shrink-0 tabular-nums text-muted-foreground">
                 {s.count}
               </span>
-              <span className="ml-auto tabular-nums font-medium text-muted-foreground">
+              <span className="w-9 shrink-0 text-right tabular-nums text-muted-foreground">
                 {s.pct}%
               </span>
             </div>
-            <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+            <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-muted">
               <div
                 className={cn("h-full rounded-full", BAR_TONE[s.tone])}
                 style={{ width: `${(s.count / max) * 100}%` }}
@@ -459,41 +464,39 @@ function StanceChart({
   );
 }
 
-// Nhóm nhãn nổi bật (điểm cộng / cần lưu ý) — tiêu đề màu + badge kèm số lượng.
+// Nhãn nổi bật: một dòng tiêu đề + các nhãn nối bằng dấu chấm giữa. Bản trước
+// đóng mỗi nhãn thành một viên chip màu — bốn nhãn thành bốn viên, cộng với chip
+// trên từng đánh giá bên phải nữa thì cả mục thành một rổ viên thuốc.
 function AspectGroup({
   title,
-  accent,
-  chip,
   items,
 }: {
   title: string;
-  accent: string;
-  chip: string;
   items: { value: string; label: string; count: number }[];
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
-      <span className={cn("mr-0.5 shrink-0 text-xs font-semibold", accent)}>
-        {title}
-      </span>
-      {items.map((it) => (
-        <span
-          key={it.value}
-          className={cn(
-            "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
-            chip,
+    <p className="text-sm">
+      <span className="text-muted-foreground">{title}: </span>
+      {items.map((it, i) => (
+        <span key={it.value}>
+          {i > 0 && <span className="text-muted-foreground"> · </span>}
+          <span className="text-foreground/90">{it.label}</span>
+          {it.count > 1 && (
+            <span className="tabular-nums text-muted-foreground"> {it.count}</span>
           )}
-        >
-          {it.label}
-          <span className="tabular-nums opacity-70">{it.count}</span>
         </span>
       ))}
-    </div>
+    </p>
   );
 }
 
-// Cột trái: tóm tắt + biểu đồ (card nổi mềm). Biểu đồ kiêm bộ lọc theo cảm nhận.
-function SummaryPanel({
+// Cột tổng hợp. Không bọc card nổi có đổ bóng: nó là một khối chữ + mấy thanh
+// mảnh, dựng thành thẻ nổi chỉ để trông "có thiết kế".
+//
+// KHÔNG in câu kết luận kiểu "Gần như ai cũng thấy đáng đi": đó là một câu do
+// hàm if-else sinh ra theo ngưỡng phần trăm, đọc như lời biên tập mà không ai
+// viết. Số liệu tự nói đủ.
+function Summary({
   summary,
   activeStance,
   onSelectStance,
@@ -505,51 +508,33 @@ function SummaryPanel({
   const topHl = summary.highlights.slice(0, 4);
   const topCv = summary.caveats.slice(0, 3);
   return (
-    <div className="rounded-2xl bg-card p-6 shadow-lg shadow-black/5">
+    <div>
       <div className="flex items-baseline gap-2">
-        <span className="text-4xl font-bold tabular-nums leading-none">
+        <span className="text-3xl font-bold tabular-nums leading-none">
           {summary.stars.toFixed(1).replace(".", ",")}
         </span>
-        <span className="text-sm font-medium text-muted-foreground">/ 5</span>
+        <span className="text-sm text-muted-foreground">/ 5</span>
         <ScoreInfo />
       </div>
-      <div className="mt-2">
+      <div className="mt-2 flex items-center gap-2">
         <StarRating value={summary.stars} size="size-4" />
+        <span className="text-sm tabular-nums text-muted-foreground">
+          {summary.total} đánh giá
+        </span>
       </div>
-      <p className="mt-2 text-sm">
-        <span className="font-semibold">{verdictLead(summary.score)}</span>
-        <span className="text-muted-foreground"> · {summary.total} đánh giá</span>
-      </p>
 
-      <div className="mt-6">
-        <StanceChart
+      <div className="mt-5 border-t border-border/60 pt-3">
+        <StanceRows
           summary={summary}
           active={activeStance}
           onSelect={onSelectStance}
         />
-        <p className="mt-2 px-0.5 text-xs text-muted-foreground">
-          Bấm một mức để lọc đánh giá
-        </p>
       </div>
 
       {(topHl.length > 0 || topCv.length > 0) && (
-        <div className="mt-4 space-y-2 border-t border-border/50 pt-4">
-          {topHl.length > 0 && (
-            <AspectGroup
-              title="Điểm cộng"
-              accent="text-foreground/70"
-              chip="bg-muted text-foreground/90"
-              items={topHl}
-            />
-          )}
-          {topCv.length > 0 && (
-            <AspectGroup
-              title="Cần lưu ý"
-              accent="text-foreground/70"
-              chip="bg-muted text-foreground/90"
-              items={topCv}
-            />
-          )}
+        <div className="mt-4 space-y-1.5 border-t border-border/60 pt-4">
+          {topHl.length > 0 && <AspectGroup title="Điểm cộng" items={topHl} />}
+          {topCv.length > 0 && <AspectGroup title="Cần lưu ý" items={topCv} />}
         </div>
       )}
     </div>
@@ -599,20 +584,13 @@ function ReviewCard({
       </Avatar>
 
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-            <p className="text-sm font-semibold">
-              {review.author.name ?? "Vivu-er ẩn danh"}
-            </p>
-            <span
-              className={cn(
-                "rounded-full px-2 py-0.5 text-xs font-medium",
-                STANCE_PILL[meta.tone],
-              )}
-            >
-              {meta.label}
-            </span>
-          </div>
+        <div className="flex items-baseline gap-2">
+          <p className="truncate text-sm font-semibold">
+            {review.author.name ?? "Vivu-er ẩn danh"}
+          </p>
+          <p className="shrink-0 text-xs text-muted-foreground">
+            {fmtDate(review.createdAt)}
+          </p>
 
           {review.isMine && (
             <DropdownMenu>
@@ -646,8 +624,12 @@ function ReviewCard({
             </DropdownMenu>
           )}
         </div>
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          {fmtDate(review.createdAt)}
+
+        {/* Mức cảm nhận: CHỮ có màu theo tông, không viên chip. Mỗi đánh giá một
+            viên chip màu, cạnh cột tổng hợp cũng đầy chip, thì cả mục thành một
+            rổ viên thuốc. */}
+        <p className={cn("mt-1 text-sm font-medium", STANCE_TEXT[meta.tone])}>
+          {meta.label}
         </p>
 
         {review.content && (
@@ -657,12 +639,12 @@ function ReviewCard({
         )}
 
         {hlLabels.length > 0 && (
-          <p className="mt-2 text-xs text-muted-foreground">
+          <p className="mt-2 text-sm text-muted-foreground">
             {hlLabels.join(" · ")}
           </p>
         )}
         {cvLabels.length > 0 && (
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="mt-1 text-sm text-muted-foreground">
             Lưu ý: {cvLabels.join(" · ")}
           </p>
         )}

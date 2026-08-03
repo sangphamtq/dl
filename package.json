@@ -15,6 +15,7 @@
     "seed:ta-xua": "tsx prisma/seed-ta-xua.ts",
     "seed:reviews-phan-thiet": "tsx prisma/seed-reviews-phan-thiet.ts",
     "seed:homestay-phan-thiet": "tsx prisma/seed-homestay-phan-thiet.ts",
+    "seed:homestay-ta-xua": "tsx prisma/seed-homestay-ta-xua.ts",
     "seed:blog": "tsx prisma/seed-blog.ts",
     "seed:blog-phan-thiet": "tsx prisma/seed-blog-phan-thiet.ts",
     "seed:community": "tsx prisma/seed-community.ts",

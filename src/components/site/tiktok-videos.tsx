@@ -160,7 +160,7 @@ export function PlaceVideos({
           />
         )}
         <span className="absolute inset-0 grid place-items-center bg-black/15 transition-colors group-hover:bg-black/30">
-          <span className="grid size-9 place-items-center rounded-full bg-background/90 text-primary shadow-md backdrop-blur transition-transform group-hover:scale-110">
+          <span className="grid size-9 place-items-center rounded-full bg-background/90 text-primary shadow-md backdrop-blur">
             <Play className="size-4 translate-x-px fill-current" aria-hidden />
           </span>
         </span>

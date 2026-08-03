@@ -362,7 +362,7 @@ export default async function BlogPage({
                             alt={c.label}
                             fill
                             sizes="176px"
-                            className="object-cover transition-transform duration-500 group-hover:scale-105"
+                            className="object-cover"
                           />
                         )}
                         <div
@@ -402,7 +402,7 @@ export default async function BlogPage({
                         alt={lead.title}
                         fill
                         sizes="(min-width: 1024px) 40rem, 100vw"
-                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        className="object-cover"
                       />
                       <div
                         aria-hidden
@@ -495,7 +495,7 @@ export default async function BlogPage({
                           alt={p.title}
                           fill
                           sizes="(min-width: 1024px) 22rem, (min-width: 640px) 45vw, 100vw"
-                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                          className="object-cover"
                         />
                       </div>
                       <div className="mt-4 flex min-w-0 flex-col">

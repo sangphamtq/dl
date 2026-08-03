@@ -303,8 +303,10 @@ export function SpotSpotlight({
   if (n === 0) return null;
   const active = items[Math.min(index, n - 1)];
 
+  // KHÔNG đặt nền ở gốc: dải bọc ngoài (xem Band ở trang Place) quyết định nền,
+  // nhờ vậy khung mat trắng của ảnh nổi lên được trên nền nhạt.
   return (
-    <div className="relative isolate w-full overflow-hidden bg-background">
+    <div className="relative isolate w-full overflow-hidden">
       {/* Sàn chiều cao: phần cao hơn nội dung KHÔNG thành khoảng trống — cột
           danh sách nuốt hết (`lg:items-stretch` + hàng `lg:flex-1`), còn khung
           ảnh bên trái cũng cao theo cột. Nâng con số này là cách duy nhất để

@@ -9,11 +9,9 @@ import { cn } from "@/lib/utils";
 import { PlaceAboutVideo } from "@/components/site/place-about-video";
 import {
   SPOT_CATEGORY_LABELS,
-  ACCOMMODATION_CATEGORY_LABELS,
   ACTIVITY_CATEGORY_LABELS,
   label,
 } from "@/lib/listing-labels";
-import { ticketPriceLabel } from "@/lib/tickets";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { RelatedPosts } from "@/components/site/related-posts";
@@ -21,8 +19,9 @@ import { isStaffViewer } from "@/lib/preview";
 import { PlaceCard } from "@/components/site/place-card";
 import { SectionHeading } from "@/components/site/section-heading";
 import { SpotSpotlight } from "@/components/site/spot-spotlight";
-import { ExperienceStrip } from "@/components/site/experience-strip";
+import { ExperienceGrid } from "@/components/site/experience-grid";
 import { FoodMenu } from "@/components/site/food-menu";
+import { StayDirectory } from "@/components/site/stay-directory";
 import { CommunityPreview } from "@/components/site/community-preview";
 import { getFeed } from "@/lib/community-feed";
 import { getSettings } from "@/lib/settings";
@@ -45,51 +44,36 @@ import {
 
 const pub = { status: "published" as const };
 
-// Card lưu trú — ảnh + tên + loại hình + huy hiệu đã xác minh (danh bạ chính chủ).
-function StayCard({
-  href,
-  name,
-  slug,
-  images,
-  category,
-  isVerified,
+// Dải nội dung của trang. Trang này trước đây là 9 khối TRẮNG liên tiếp nên cuộn
+// một hồi là mất phương hướng — không biết đang ở mục thứ mấy, cũng không có gì
+// dừng mắt lại. `tint` cho một dải nền `muted` rất nhạt; xen kẽ trắng/nhạt tạo
+// nhịp mà không cần thêm viền, bóng hay hoạ tiết nào.
+//
+// Nền đặt trên MỘT dải tràn hết bề ngang, container nằm bên trong — không phải
+// nền của riêng khối nội dung: nền chỉ rộng bằng nội dung thì đọc ra là một cái
+// thẻ khổng lồ, không phải một chương của trang.
+//
+// `bleed`: khối tự dựng container riêng (dải Địa điểm cần ảnh tràn mép) → chỉ
+// bọc nền, không bọc container.
+function Band({
+  tint,
+  bleed,
+  children,
 }: {
-  href: string;
-  name: string;
-  slug: string;
-  images: { url: string; isCover: boolean }[];
-  category: string | null;
-  isVerified: boolean;
+  tint?: boolean;
+  bleed?: boolean;
+  children: React.ReactNode;
 }) {
   return (
-    <Link
-      href={href}
-      className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-colors hover:border-primary/40"
-    >
-      <div className="relative aspect-[4/3] overflow-hidden bg-muted">
-        <Image
-          src={coverUrl(images, slug)}
-          alt={name}
-          fill
-          sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 90vw"
-          className="object-cover"
-        />
-        {isVerified && (
-          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-md bg-background/90 px-2.5 py-1 text-xs font-semibold text-primary backdrop-blur">
-            <Ic icon="badge-check" className="size-3.5" aria-hidden />
-            Đã xác minh
-          </span>
-        )}
-      </div>
-      <div className="p-4">
-        <h3 className="line-clamp-1 text-lg font-semibold tracking-tight transition-colors group-hover:text-primary">
-          {name}
-        </h3>
-        {category && (
-          <p className="mt-1 text-sm text-muted-foreground">{category}</p>
-        )}
-      </div>
-    </Link>
+    <div className={tint ? "bg-muted/60" : undefined}>
+      {bleed ? (
+        children
+      ) : (
+        <div className="mx-auto max-w-7xl space-y-16 px-4 py-14 sm:space-y-20 sm:px-6 sm:py-20">
+          {children}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -159,9 +143,9 @@ export default async function PlaceDetailPage({
         // 'spot' = đặc trưng nhỏ chỉ ở 1 spot → không hiện ở cấp điểm đến.
         where: { ...pub, kind: { not: "spot" } },
         orderBy: [{ isFeatured: "desc" }, { order: "asc" }, { name: "asc" }],
-        // 8: băng ảnh kéo ngang, không bị giới hạn bởi bề ngang màn hình như
-        // một lưới — cho thêm vài khuôn hình nữa để kéo đã tay.
-        take: 8,
+        // 4 = một hàng bốn thẻ ở lg (xem ExperienceGrid); còn lại đi qua link
+        // "Xem tất cả".
+        take: 4,
         select: {
           slug: true,
           name: true,
@@ -169,9 +153,14 @@ export default async function PlaceDetailPage({
           category: true,
           durationText: true,
           seasonText: true,
-          ticketFree: true,
-          ticketTiers: true,
           images: listingImages,
+          // "Diễn ra ở" — hai spot đầu để in tên thật, cộng tổng số cho "+N".
+          spotLinks: {
+            take: 2,
+            orderBy: { order: "asc" },
+            select: { spot: { select: { name: true } } },
+          },
+          _count: { select: { spotLinks: true } },
         },
       },
       spots: {
@@ -225,12 +214,19 @@ export default async function PlaceDetailPage({
       accommodations: {
         where: pub,
         orderBy: [{ isFeatured: "desc" }, { order: "asc" }, { name: "asc" }],
+        // 4 = ĐÚNG MỘT HÀNG bốn ô (xem StayDirectory). Tab tổng quan chỉ giới
+        // thiệu cái nổi bật; xem hết thì qua trang /luu-tru.
         take: 4,
         select: {
           slug: true,
           name: true,
           category: true,
+          address: true,
           isVerified: true,
+          // Kênh chính chủ: chỉ để BIẾT có kênh nào, không render link ở đây.
+          zalo: true,
+          phone: true,
+          facebookUrl: true,
           images: listingImages,
         },
       },
@@ -310,6 +306,14 @@ export default async function PlaceDetailPage({
   }));
 
   const counts = await getPlaceCounts(place.id);
+  // Số chỗ ở ĐÃ xác minh chính chủ — hiện thành "N/M đã xác minh" ở section Lưu
+  // trú. Đếm riêng vì `place.accommodations` chỉ lấy 6 mục đầu.
+  const verifiedStays =
+    counts.accommodation > 0
+      ? await prisma.accommodation.count({
+          where: { placeId: place.id, ...pub, isVerified: true },
+        })
+      : 0;
   const stats = buildPlaceStats(place.viewCount);
   const tabs = buildPlaceTabs(place.slug, counts);
   const heroReviews =
@@ -372,6 +376,17 @@ export default async function PlaceDetailPage({
   // Câu đầu mô tả tách ra làm lede (phóng to), phần còn lại là thân bài.
   const [lede, descBody] = splitLede(place.description);
 
+  // Nhịp nền nhạt/trắng bắt đầu từ mục TRẢI NGHIỆM: hai mục mở đầu (Đôi nét,
+  // Địa điểm đáng ghé) để trắng — mục Địa điểm đã có khối ảnh đóng khung rất
+  // đậm, thêm nền nhạt nữa là hai tín hiệu cùng lúc.
+  //
+  // Từ Trải nghiệm trở xuống thì gọi `tinted()` cho từng dải: lần gọi ĐẦU trả
+  // về nhạt, rồi luân phiên. Đếm theo dải THỰC SỰ được render (không gắn cứng
+  // vào từng mục) nên điểm đến thiếu mục nào — chưa có thảo luận cộng đồng, chưa
+  // có lưu trú… — nhịp vẫn đúng, không bị hai dải cùng màu dính nhau.
+  let bandIndex = 0;
+  const tinted = () => bandIndex++ % 2 === 0;
+
   return (
     <div className="flex flex-1 flex-col">
       <PlaceViewTracker
@@ -412,7 +427,8 @@ export default async function PlaceDetailPage({
         {/* Thanh tab: Tổng quan + xem tất cả từng listing + nút Video */}
         <PlaceTabs items={tabs} />
 
-        <div className="mx-auto max-w-7xl space-y-16 px-4 py-14 sm:space-y-20 sm:px-6 sm:py-20">
+        {(place.description || quickFacts.length > 0 || showChildren) && (
+        <Band>
           {/* Đôi nét — nhịp editorial: lede phóng to → thân bài 2 cột báo chí →
               hàng tag + bài giới thiệu → hàng fact kẻ mảnh. Hero phía trên đã rất
               đậm (ảnh, số liệu, video) và ngay dưới là băng ảnh "Địa điểm đáng
@@ -468,7 +484,7 @@ export default async function PlaceDetailPage({
                           alt=""
                           fill
                           sizes="56px"
-                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                          className="object-cover"
                         />
                       </span>
                       <span className="min-w-0 flex-1">
@@ -513,11 +529,13 @@ export default async function PlaceDetailPage({
               </div>
             </section>
           )}
+        </Band>
+        )}
 
-        </div>
-
-        {/* Tham quan (Spot) — band full-width (ngoài container) */}
+        {/* Tham quan (Spot) — nền TRẮNG, ảnh tràn mép nên `bleed` (khối tự dựng
+            container riêng). */}
         {place.spots.length > 0 && (
+          <Band bleed>
           <section id="tham-quan" className="scroll-mt-32">
             <SpotSpotlight
               title="Địa điểm đáng ghé"
@@ -545,43 +563,41 @@ export default async function PlaceDetailPage({
               }))}
             />
           </section>
+          </Band>
         )}
 
-        {/* Trải nghiệm — băng ảnh panorama, TRÀN VIỀN nên nằm ngoài container
-            (xem ExperienceStrip: cố tình khác bố cục dải Địa điểm phía trên) */}
+        {/* Trải nghiệm — bốn thẻ dọc, tĩnh (xem ExperienceGrid). Nằm TRONG
+            container: bản băng ảnh tràn viền cũ đứng ngay dưới dải Địa điểm cũng
+            tràn viền, hai khối lớn liền nhau đọc ra như một chuỗi. */}
         {place.activities.length > 0 && (
-          <section id="trai-nghiem" className="scroll-mt-32">
-            <ExperienceStrip
-              eyebrow="Trải nghiệm"
-              title="Trải nghiệm nổi bật"
-              href={`/diem-den/${place.slug}/hoat-dong`}
-              count={counts.activity}
-              unit="trải nghiệm"
-              items={place.activities.map((a) => ({
-                slug: a.slug,
-                name: a.name,
-                category: a.category
-                  ? label(ACTIVITY_CATEGORY_LABELS, a.category)
-                  : null,
-                image: coverUrl(a.images, a.slug),
-                // Ghi chú dưới tên: bao lâu · mùa nào · giá. Tối đa 2 mục cho
-                // vừa một dòng trên khổ ảnh hẹp nhất của băng.
-                facts: [
-                  a.durationText,
-                  a.seasonText,
-                  ticketPriceLabel(a.ticketFree, a.ticketTiers),
-                ]
-                  .map(shortFact)
-                  .filter((f): f is string => Boolean(f))
-                  .slice(0, 2),
-              }))}
-            />
-          </section>
+          <Band tint={tinted()}>
+            <section id="trai-nghiem" className="scroll-mt-32">
+              <ExperienceGrid
+                eyebrow="Trải nghiệm"
+                title="Trải nghiệm nổi bật"
+                href={`/diem-den/${place.slug}/hoat-dong`}
+                count={counts.activity}
+                unit="trải nghiệm"
+                items={place.activities.map((a) => ({
+                  slug: a.slug,
+                  name: a.name,
+                  category: a.category
+                    ? label(ACTIVITY_CATEGORY_LABELS, a.category)
+                    : null,
+                  image: coverUrl(a.images, a.slug),
+                  duration: shortFact(a.durationText),
+                  season: shortFact(a.seasonText),
+                  spotNames: a.spotLinks.map((l) => l.spot.name),
+                  spotCount: a._count.spotLinks,
+                }))}
+              />
+            </section>
+          </Band>
         )}
 
-        <div className="mx-auto max-w-7xl space-y-16 px-4 py-14 sm:space-y-20 sm:px-6 sm:py-20">
-          {/* Ẩm thực — thực đơn có ảnh từng món (xem FoodMenu) + danh sách quán */}
-          {(place.specialties.length > 0 || place.eateries.length > 0) && (
+        {/* Ẩm thực — thực đơn có ảnh từng món (xem FoodMenu) + danh sách quán */}
+        {(place.specialties.length > 0 || place.eateries.length > 0) && (
+          <Band tint={tinted()}>
             <section id="am-thuc" className="scroll-mt-32">
               <FoodMenu
                 placeName={place.name}
@@ -603,35 +619,23 @@ export default async function PlaceDetailPage({
                 }))}
               />
             </section>
-          )}
+          </Band>
+        )}
 
-          {/* Lưu trú — rail */}
-          {place.accommodations.length > 0 && (
+        {/* Lưu trú + trạng thái rỗng */}
+        {(place.accommodations.length > 0 || !hasAnyContent) && (
+          <Band tint={tinted()}>
+            {/* Lưu trú — một hàng bốn ô ảnh, chữ + huy hiệu xác minh đặt trên
+                ảnh (xem StayDirectory) */}
+            {place.accommodations.length > 0 && (
             <section id="luu-tru" className="scroll-mt-32">
-              <SectionHeading
-                eyebrow="Nghỉ ngơi"
-                title="Nơi lưu trú"
+              <StayDirectory
+                placeName={place.name}
                 href={`/diem-den/${place.slug}/luu-tru`}
-                count={counts.accommodation}
-                unit="chỗ ở"
+                total={counts.accommodation}
+                verifiedTotal={verifiedStays}
+                stays={place.accommodations}
               />
-              <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-                {place.accommodations.map((ac) => (
-                  <StayCard
-                    key={ac.slug}
-                    href={`/luu-tru/${ac.slug}`}
-                    name={ac.name}
-                    slug={ac.slug}
-                    images={ac.images}
-                    category={
-                      ac.category
-                        ? label(ACCOMMODATION_CATEGORY_LABELS, ac.category)
-                        : null
-                    }
-                    isVerified={ac.isVerified}
-                  />
-                ))}
-              </div>
             </section>
           )}
 
@@ -648,10 +652,13 @@ export default async function PlaceDetailPage({
                 lại sau nhé.
               </p>
             </div>
-          )}
+            )}
+          </Band>
+        )}
 
-          {/* Hỏi đáp cộng đồng — xem trước vài thảo luận */}
-          {communityPosts.length > 0 && (
+        {/* Hỏi đáp cộng đồng — xem trước vài thảo luận */}
+        {communityPosts.length > 0 && (
+          <Band tint={tinted()}>
             <section id="hoi-dap" className="scroll-mt-32">
               <SectionHeading
                 eyebrow="Cộng đồng"
@@ -662,10 +669,12 @@ export default async function PlaceDetailPage({
               />
               <CommunityPreview posts={communityPosts} />
             </section>
-          )}
+          </Band>
+        )}
 
-          {/* Đánh giá của Vivu-er (chỉ điểm đến lớn) */}
-          {isDestination && (
+        {/* Đánh giá của Vivu-er (chỉ điểm đến lớn) */}
+        {isDestination && (
+          <Band tint={tinted()}>
             <ReviewsSection
               target={{
                 kind: "place",
@@ -679,10 +688,10 @@ export default async function PlaceDetailPage({
               myReview={myReviewRow}
               isAuthed={checkIn.isAuthed}
             />
-          )}
-        </div>
+          </Band>
+        )}
 
-        {/* Cẩm nang */}
+        {/* Cẩm nang — tự dựng container riêng nên đứng ngoài Band */}
         <RelatedPosts type="place" id={place.id} />
       </main>
 
