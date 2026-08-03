@@ -3,7 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
-import { ArrowRight, ArrowUpRight, Pause, Play } from "@/components/icons";
+import { ArrowUpRight, Pause, Play } from "@/components/icons";
+import { SectionHeading } from "@/components/site/section-heading";
 import { cn } from "@/lib/utils";
 import {
   Carousel,
@@ -239,6 +240,7 @@ function SpotPanel({ s, on }: { s: SpotSpotlightItem; on: boolean }) {
 // đếm bắt đầu lại từ mục vừa bấm.
 export function SpotSpotlight({
   title,
+  eyebrow,
   count,
   allHref,
   spots,
@@ -308,7 +310,18 @@ export function SpotSpotlight({
           ảnh bên trái cũng cao theo cột. Nâng con số này là cách duy nhất để
           dải cao lên mà không phải độn padding rỗng. */}
       <div className="relative mx-auto flex w-full max-w-7xl flex-col px-4 py-10 sm:px-6 sm:py-12 lg:min-h-[46rem] lg:px-8 lg:py-12">
-        <div className="grid flex-1 gap-8 lg:grid-cols-12 lg:items-stretch lg:gap-12">
+        {/* Heading dùng chung `SectionHeading` — chính khuôn "nhãn viết tay +
+            đường bay" này đã được đưa vào component để mọi section trên trang
+            cùng một giọng. */}
+        <SectionHeading
+          eyebrow={eyebrow}
+          title={title}
+          href={allHref}
+          count={count}
+          unit="địa điểm"
+        />
+
+        <div className="mt-8 grid flex-1 gap-8 lg:mt-10 lg:grid-cols-12 lg:items-stretch lg:gap-12">
           <div className="relative isolate flex min-w-0 flex-col pb-6 lg:col-span-7 lg:pb-14 lg:pr-12 xl:pr-20">
             {/* Ảnh bám đúng CỘT TRÁI: `right-0` neo vào mép phải của cột, lề
                 trái lùi ra đúng bằng khoảng cách từ cột tới mép màn hình —
@@ -380,12 +393,6 @@ export function SpotSpotlight({
                   phần ảnh không có chữ nào. */}
               <div className="absolute inset-2.5 sm:inset-3 lg:inset-3.5 lg:bottom-7 bg-[radial-gradient(125%_115%_at_0%_100%,rgba(0,0,0,0.85)_0%,rgba(0,0,0,0.6)_30%,rgba(0,0,0,0.2)_64%,rgba(0,0,0,0.02)_100%)]" />
             </div>
-
-            {/* KHÔNG hiện tên section. Ảnh + tên địa điểm cỡ lớn đã nói rõ đây
-                là mục gì; thêm một tiêu đề nữa ở góc trên chỉ chia đôi sự chú ý.
-                Vẫn giữ một <h2> ẩn cho screen reader và cho dàn ý heading của
-                trang — bỏ hẳn thì section này biến mất khỏi mục lục trợ năng. */}
-            <h2 className="sr-only">{title}</h2>
 
             {/* MỌI khối chữ đều được render và xếp CHỒNG lên nhau trong cùng một
                 ô lưới (`col-start-1 row-start-1`), chỉ khối đang chọn là hiện.
@@ -494,21 +501,6 @@ export function SpotSpotlight({
               </Carousel>
             </div>
 
-            {/* "Xem tất cả" tách khỏi lưới, đứng dưới cùng cột — nó là bước tiếp
-                theo chứ không phải một địa điểm thứ bảy. */}
-            <Link
-              href={allHref}
-              className="group mt-5 inline-flex items-center gap-2 text-sm font-semibold text-foreground transition-colors hover:text-primary"
-            >
-              Xem tất cả
-              {count != null && (
-                <span className="tabular-nums">{count} địa điểm</span>
-              )}
-              <ArrowRight
-                className="size-4 transition-transform group-hover:translate-x-0.5"
-                aria-hidden
-              />
-            </Link>
           </div>
         </div>
       </div>

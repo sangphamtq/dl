@@ -104,7 +104,6 @@ const IMAGES: Record<string, ImageInput[]> = {
 
   // Đặc sản (Specialty)
   "che-shan-tuyet-ta-xua": [],
-  "tao-meo-bac-yen": [],
   "ga-den-ta-xua": [],
   "thit-trau-gac-bep-ta-xua": [],
   "lon-ban-nuong-ta-xua": [],
@@ -112,7 +111,6 @@ const IMAGES: Record<string, ImageInput[]> = {
   "rau-cai-meo-ta-xua": [],
   "mang-rung-ta-xua": [],
   "xoi-nep-nuong-ta-xua": [],
-  "ruou-tao-meo-hang-chu": [],
 };
 
 async function main() {
@@ -1193,7 +1191,11 @@ async function main() {
     const { slug, name, ...rest } = e;
     const row = await prisma.eatery.upsert({
       where: { slug },
-      update: { ...rest, order: i, placeId: taXua.id, ...PUB },
+      // KHÔNG áp `...PUB` khi update (chỉ khi create): biên tập đã ẩn/hiện mục
+      // nào trong CMS thì lần chạy seed sau phải TÔN TRỌNG lựa chọn đó. Ép
+      // published mỗi lần chạy là âm thầm bật lại đúng những thứ người ta vừa
+      // tắt — kiểu bug rất khó lần ra.
+      update: { ...rest, order: i, placeId: taXua.id },
       create: { slug, name, ...rest, order: i, placeId: taXua.id, ...PUB },
     });
     eateryId[slug] = row.id;
@@ -1201,12 +1203,15 @@ async function main() {
   }
 
   // ──────────────────────────────────────────────────────────────────────
-  // 6) Đặc sản (Specialty) — món/sản vật DÙNG LẠI, gắn 2–4 quán tiêu biểu
+  // 6) Đặc sản (Specialty) — MÓN ĂN dùng lại, gắn 2–4 quán tiêu biểu
   //
   // Đúng mô hình trong CLAUDE.md: đặc sản là "món", quán là "chỗ" — không tạo
-  // kiểu "gà đen quán X". Sản vật mang về làm quà (chè, táo mèo, rượu) thì
-  // không ép gắn quán; chỗ mua nói trong phần mô tả vì schema Specialty hiện
-  // chưa có trường `whereToBuy`.
+  // kiểu "gà đen quán X".
+  //
+  // PHẠM VI: chỉ MÓN ĂN TẠI CHỖ. Dự án KHÔNG làm phần đặc sản mua làm quà, nên
+  // sản vật đóng gói (táo mèo, rượu táo mèo) không có mặt ở đây — lần seed đầu
+  // có, nay đã bỏ và có bước dọn bên dưới. Sản vật nào vẫn cần kể thì sống ở
+  // nơi khác: chè Shan tuyết là `Activity` "Thưởng trà" + `Eatery` "Nhà trà".
   // ──────────────────────────────────────────────────────────────────────
   const specialties: {
     slug: string;
@@ -1221,17 +1226,9 @@ async function main() {
       name: "Chè Shan tuyết Tà Xùa",
       isFeatured: true,
       description:
-        "Búp chè hái trên những gốc Shan tuyết cổ thụ vài trăm tuổi, thân phủ địa y trắng như tuyết, phải trèo lên cây mới hái được. Nước vàng sánh, chát nhẹ đầu lưỡi rồi ngọt hậu rất lâu — thứ đặc sản làm nên tên tuổi Tà Xùa trước cả biển mây. Mua chè khô ngay tại hộ làm chè trong bản là chắc gốc nhất.",
-      tags: ["quà", "chè", "cổ thụ", "đặc sản gốc"],
+        "Búp chè hái trên những gốc Shan tuyết cổ thụ vài trăm tuổi, thân phủ địa y trắng như tuyết, phải trèo lên cây mới hái được. Nước vàng sánh, chát nhẹ đầu lưỡi rồi ngọt hậu rất lâu — thứ đặc sản làm nên tên tuổi Tà Xùa trước cả biển mây. Ngồi ở nhà trà trong bản để chủ nhà tráng ấm pha thử vài lứa là cách thưởng đúng nhất.",
+      tags: ["chè", "cổ thụ", "đặc sản gốc"],
       eateries: ["nha-tra-shan-tuyet-ta-xua", "ca-phe-ngam-may-ta-xua"],
-    },
-    {
-      slug: "tao-meo-bac-yen",
-      name: "Táo mèo (sơn tra) Bắc Yên",
-      isFeatured: true,
-      description:
-        "Quả sơn tra mọc trên các sườn núi Bắc Yên, chín rộ tháng 8–10, vỏ vàng ửng hồng, ăn tươi thì chát chua giòn. Người bản đem ngâm đường, ngâm rượu, làm ô mai hoặc mứt — hũ táo mèo là món quà quen nhất khách mang về từ cung này.",
-      tags: ["quà", "trái cây", "mùa thu", "ngâm rượu"],
     },
     {
       slug: "ga-den-ta-xua",
@@ -1246,8 +1243,8 @@ async function main() {
       slug: "thit-trau-gac-bep-ta-xua",
       name: "Thịt trâu gác bếp",
       description:
-        "Thịt trâu thái dọc thớ, ướp mắc khén, hạt dổi và ớt rồi treo lên gác bếp hun khói hàng tháng trời. Miếng thịt khô quắt, xé ra vẫn đỏ và thơm mùi khói — nhâm nhi với rượu ngô buổi tối, hoặc mua túi hút chân không mang về.",
-      tags: ["quà", "hun khói", "nhậu", "mắc khén"],
+        "Thịt trâu thái dọc thớ, ướp mắc khén, hạt dổi và ớt rồi treo lên gác bếp hun khói hàng tháng trời. Miếng thịt khô quắt, xé ra vẫn đỏ và thơm mùi khói — nhâm nhi với rượu ngô trong bữa tối ở bản.",
+      tags: ["hun khói", "nhậu", "mắc khén"],
       eateries: ["bep-homestay-ta-xua", "quan-nuong-dem-ta-xua"],
     },
     {
@@ -1290,26 +1287,26 @@ async function main() {
       tags: ["ăn sáng", "mang đi đường", "săn mây"],
       eateries: ["bep-homestay-ta-xua"],
     },
-    {
-      slug: "ruou-tao-meo-hang-chu",
-      name: "Rượu táo mèo Hang Chú",
-      description:
-        "Rượu nấu ở xã Hang Chú cùng huyện Bắc Yên, đem ngâm với sơn tra chín thành thứ rượu vàng hổ phách, chua nhẹ và thơm mùi táo. Uống một chén nhỏ cho ấm người buổi tối; mua can hoặc chai làm quà thì hỏi ngay chủ homestay để lấy đúng rượu bản.",
-      tags: ["quà", "rượu", "táo mèo", "buổi tối"],
-    },
   ];
+
+  // Dọn hai bản ghi của lần seed đầu: sản vật đóng gói, không phải món ăn tại
+  // chỗ → ngoài phạm vi (xem chú thích mục 6). Xoá theo slug nên chỉ đụng đúng
+  // hai cái này, không ảnh hưởng gì do biên tập tự thêm trong CMS.
+  await prisma.specialty.deleteMany({
+    where: { slug: { in: ["tao-meo-bac-yen", "ruou-tao-meo-hang-chu"] } },
+  });
 
   for (const [i, sp] of specialties.entries()) {
     const { slug, name, eateries: eaterySlugs, ...rest } = sp;
     const connect = (eaterySlugs ?? []).map((sl) => ({ id: eateryId[sl] }));
     const row = await prisma.specialty.upsert({
       where: { slug },
+      // KHÔNG áp `...PUB` khi update — xem chú thích ở vòng lặp Eatery.
       update: {
         ...rest,
         order: i,
         placeId: taXua.id,
         eateries: { set: connect },
-        ...PUB,
       },
       create: {
         slug,

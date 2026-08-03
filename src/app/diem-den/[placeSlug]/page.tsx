@@ -22,7 +22,7 @@ import { PlaceCard } from "@/components/site/place-card";
 import { SectionHeading } from "@/components/site/section-heading";
 import { SpotSpotlight } from "@/components/site/spot-spotlight";
 import { ExperienceStrip } from "@/components/site/experience-strip";
-import { FoodMosaic } from "@/components/site/food-mosaic";
+import { FoodMenu } from "@/components/site/food-menu";
 import { CommunityPreview } from "@/components/site/community-preview";
 import { getFeed } from "@/lib/community-feed";
 import { getSettings } from "@/lib/settings";
@@ -202,22 +202,24 @@ export default async function PlaceDetailPage({
       specialties: {
         where: pub,
         orderBy: [{ isFeatured: "desc" }, { order: "asc" }, { name: "asc" }],
-        // 5 = số ô của khảm ảnh (xem CELLS trong FoodMosaic).
-        take: 5,
+        // 6 = hai cột × ba hàng menu (xem FoodMenu); còn lại đi qua link "Xem
+        // tất cả" — trang tổng quan chỉ xem trước, danh mục là trang /am-thuc.
+        take: 6,
         select: {
           slug: true,
           name: true,
           tags: true,
           images: listingImages,
-          // "Ăn ở N quán" trên ô lớn — đếm ở DB, không kéo cả danh sách về.
+          // Hai quán tiêu biểu (in tên thật ở món mở đầu) + tổng số cho "+N".
+          eateries: { take: 2, orderBy: { name: "asc" }, select: { name: true } },
           _count: { select: { eateries: true } },
         },
       },
       eateries: {
         where: pub,
         orderBy: [{ isFeatured: "desc" }, { order: "asc" }, { name: "asc" }],
-        // 6 = hai hàng đủ ba cột ở lg; dài hơn thì đã có "Xem tất cả".
-        take: 6,
+        // 3 = một hàng ba cột, cùng tinh thần "chỉ hiện nổi bật" với phần món.
+        take: 3,
         select: { slug: true, name: true, category: true, meals: true },
       },
       accommodations: {
@@ -473,7 +475,7 @@ export default async function PlaceDetailPage({
                         <span className="block text-[0.65rem] font-semibold uppercase tracking-wide text-muted-foreground">
                           Bài giới thiệu
                         </span>
-                        <span className="mt-0.5 block line-clamp-2 font-semibold leading-6 text-foreground decoration-primary/40 underline-offset-4 transition-colors group-hover:text-primary group-hover:underline">
+                        <span className="mt-0.5 line-clamp-2 font-semibold leading-6 text-foreground decoration-primary/40 underline-offset-4 transition-colors group-hover:text-primary group-hover:underline">
                           {introPost.title}
                         </span>
                       </span>
@@ -578,18 +580,18 @@ export default async function PlaceDetailPage({
         )}
 
         <div className="mx-auto max-w-7xl space-y-16 px-4 py-14 sm:space-y-20 sm:px-6 sm:py-20">
-          {/* Ẩm thực — khảm ảnh tĩnh (món) + danh sách quán (xem FoodMosaic:
-              cố tình đứng yên, ba mục phía trên đều chuyển động ngang) */}
+          {/* Ẩm thực — thực đơn có ảnh từng món (xem FoodMenu) + danh sách quán */}
           {(place.specialties.length > 0 || place.eateries.length > 0) && (
             <section id="am-thuc" className="scroll-mt-32">
-              <FoodMosaic
+              <FoodMenu
                 placeName={place.name}
                 href={`/diem-den/${place.slug}/am-thuc`}
                 count={counts.specialty + counts.eatery}
                 specialties={place.specialties.map((sp) => ({
                   slug: sp.slug,
                   name: sp.name,
-                  tag: sp.tags[0] ?? null,
+                  tags: sp.tags,
+                  eateryNames: sp.eateries.map((e) => e.name),
                   eateryCount: sp._count.eateries,
                   images: sp.images,
                 }))}
