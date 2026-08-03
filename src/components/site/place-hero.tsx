@@ -42,7 +42,7 @@ export function PlaceHero({
       {/* pb rộng: HeroFrame có overflow-hidden nên bóng của deck ảnh phải rơi
           trọn trong section, không thì bị cắt ngang ở mép thanh tab sticky. */}
       <div className="mx-auto max-w-7xl px-4 pb-14 pt-6 sm:px-6 sm:pb-12 sm:pt-5">
-        <div className="grid items-center gap-10 lg:grid-cols-[1fr_1.4fr] lg:gap-12">
+        <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-[1fr_1.4fr] lg:gap-12">
           {/* Trái: chữ */}
           <div>
             <div className="mb-5 flex items-center justify-between gap-3">

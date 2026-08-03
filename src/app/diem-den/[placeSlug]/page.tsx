@@ -445,7 +445,7 @@ export default async function PlaceDetailPage({
                   "Thông tin chung" nằm TRONG cột trái chứ không thành hàng
                   riêng bên dưới: chữ không thôi thì thấp hơn video một quãng,
                   gom vào đây vừa lấp đúng chỗ trống vừa bớt một tầng cho mục. */}
-              <div className="grid gap-8 lg:grid-cols-[1fr_24rem] lg:items-start lg:gap-14">
+              <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_24rem] lg:items-start lg:gap-14">
                 <div>
                   {lede && (
                     // Drop cap thay cho tiêu đề đã bỏ — báo hiệu điểm mở đầu

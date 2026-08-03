@@ -111,7 +111,7 @@ export function StayDirectory({
 
       {/* Một hàng: bốn ô từ lg. Hẹp hơn thì hai cột, rồi một cột — bốn ô dàn
           ngang trên màn 768px chỉ còn ~180px/ô, chữ trên ảnh hết chỗ. */}
-      <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <ul className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stays.map((s, i) => (
           <StayTile
             key={s.slug}

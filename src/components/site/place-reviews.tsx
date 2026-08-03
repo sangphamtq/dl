@@ -228,7 +228,7 @@ export function ReviewsSection({
       />
 
       {hasReviews ? (
-        <div className="mt-6 grid gap-8 lg:grid-cols-[2fr_3fr] lg:gap-12">
+        <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[2fr_3fr] lg:gap-12">
           {/* Trái: tổng hợp (dính khi cuộn trên desktop) */}
           <div className="lg:sticky lg:top-28 lg:self-start">
             <Summary

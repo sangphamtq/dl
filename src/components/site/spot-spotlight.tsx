@@ -323,7 +323,12 @@ export function SpotSpotlight({
           unit="địa điểm"
         />
 
-        <div className="mt-8 grid flex-1 gap-8 lg:mt-10 lg:grid-cols-12 lg:items-stretch lg:gap-12">
+        {/* `grid-cols-1` phải VIẾT RÕ: bỏ trống thì cột ngầm là track `auto`
+            (co theo max-content) — tên/mô tả địa điểm dài là track phình tới cả
+            nghìn px, chữ tràn ra ngoài màn hình rồi bị `overflow-hidden` xén.
+            `grid-cols-1` của Tailwind = `minmax(0,1fr)` nên track không bao giờ
+            vượt bề ngang cha. Áp dụng cho mọi lưới chỉ khai báo cột ở lg. */}
+        <div className="mt-8 grid flex-1 grid-cols-1 gap-8 lg:mt-10 lg:grid-cols-12 lg:items-stretch lg:gap-12">
           <div className="relative isolate flex min-w-0 flex-col pb-6 lg:col-span-7 lg:pb-14 lg:pr-12 xl:pr-20">
             {/* Ảnh bám đúng CỘT TRÁI: `right-0` neo vào mép phải của cột, lề
                 trái lùi ra đúng bằng khoảng cách từ cột tới mép màn hình —

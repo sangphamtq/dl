@@ -11,7 +11,7 @@ const dateFmt = new Intl.DateTimeFormat("vi-VN", {
 // Xem trước vài thảo luận cộng đồng của điểm đến (read-only) → link tới permalink.
 export function CommunityPreview({ posts }: { posts: PostData[] }) {
   return (
-    <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {posts.map((p) => (
         <Link
           key={p.id}

@@ -72,7 +72,10 @@ export function FoodMenu({
       {specialties.length > 0 && (
         // Hai cột từ lg: một cột dài suốt bề ngang trang thì dây chấm dẫn dài
         // tới 600px, ra một dải chấm thưa thớt chứ không phải nét dẫn của menu.
-        <ul className="mt-6 grid gap-x-14 lg:grid-cols-2">
+        // `grid-cols-1` viết rõ ở mức mặc định: thiếu nó thì cột ngầm là track
+        // `auto` co theo max-content — tên món + tên quán không xuống dòng được
+        // sẽ đẩy hàng rộng ra ~500px, làm CẢ TRANG cuộn ngang trên điện thoại.
+        <ul className="mt-6 grid grid-cols-1 gap-x-14 lg:grid-cols-2">
           {specialties.map((s) => (
             <Row key={s.slug} s={s} href={`${href}#specialty-${s.slug}`} />
           ))}
@@ -95,7 +98,7 @@ export function FoodMenu({
             </Link>
           </div>
 
-          <ul className="mt-1 grid gap-x-12 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="mt-1 grid grid-cols-1 gap-x-12 sm:grid-cols-2 lg:grid-cols-3">
             {eateries.map((e) => (
               <li key={e.slug}>
                 <Link
@@ -145,17 +148,23 @@ function Row({ s, href }: { s: FoodSpecialty; href: string }) {
 
         <span className="min-w-0 flex-1">
           {/* items-baseline: chấm dẫn phải nằm đúng đường chân chữ của tên món,
-              không phải giữa dòng — lệch một chút là nhìn ra ngay. */}
-          <span className="flex items-baseline">
-            <span className="truncate font-[family-name:var(--font-display)] text-lg font-bold tracking-tight transition-colors group-hover:text-primary lg:text-xl">
+              không phải giữa dòng — lệch một chút là nhìn ra ngay.
+              DƯỚI sm thì XẾP DỌC: cột chữ chỉ còn ~215px, nhồi cả tên + dây
+              chấm + nhãn vào một dòng thì tên món bị xén ngay giữa ("Gà đen (gà
+              H'M…") mà dây chấm chỉ còn vài chấm — mất luôn ý nghĩa "menu".
+              Bỏ dây chấm, hạ nhãn xuống dòng riêng: tên món được trọn bề ngang. */}
+          <span className="flex flex-col items-start sm:flex-row sm:items-baseline">
+            <span className="max-w-full truncate font-[family-name:var(--font-display)] text-lg font-bold tracking-tight transition-colors group-hover:text-primary lg:text-xl">
               {s.name}
             </span>
             <span
               aria-hidden
-              className="mx-3 h-0 min-w-4 flex-1 border-b border-dotted border-border"
+              className="hidden h-0 min-w-4 flex-1 border-b border-dotted border-border sm:mx-3 sm:block"
             />
             {s.tags[0] && (
-              <span className={cn(MICRO, "shrink-0 text-warm")}>{s.tags[0]}</span>
+              <span className={cn(MICRO, "mt-1 shrink-0 text-warm sm:mt-0")}>
+                {s.tags[0]}
+              </span>
             )}
           </span>
 

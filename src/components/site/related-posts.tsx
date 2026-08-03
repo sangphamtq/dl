@@ -87,7 +87,7 @@ export async function RelatedPosts({ type, id }: { type: RefType; id: string }) 
       />
 
       {rest.length > 0 ? (
-        <div className="mt-7 grid gap-8 lg:grid-cols-[1.15fr_1fr] lg:gap-14">
+        <div className="mt-7 grid grid-cols-1 gap-8 lg:grid-cols-[1.15fr_1fr] lg:gap-14">
           <Lead p={lead} />
           <ul className="divide-y divide-border/60">
             {rest.map((p) => (
@@ -176,7 +176,7 @@ function Solo({ p }: { p: Post }) {
   return (
     <Link
       href={`/blog/${p.slug}`}
-      className="group mt-7 grid gap-6 sm:grid-cols-[minmax(0,24rem)_1fr] sm:items-center sm:gap-8"
+      className="group mt-7 grid grid-cols-1 gap-6 sm:grid-cols-[minmax(0,24rem)_1fr] sm:items-center sm:gap-8"
     >
       <span className="relative block aspect-[16/9] overflow-hidden rounded-2xl bg-muted">
         <Image
