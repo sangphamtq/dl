@@ -561,18 +561,26 @@ Lưu ý khi sửa:
 - **Hình khối iOS, đừng "cải tiến" thành Material:** tràn hết bề ngang, dán sát đáy, KHÔNG
   bo góc/đổ bóng; phân cách bằng hairline 1px ở mép trên; nền trong mờ + `backdrop-blur` +
   `backdrop-saturate` (rơi về nền gần đục khi máy không hỗ trợ `backdrop-filter`); cao
-  **49pt** + `env(safe-area-inset-bottom)`. Mục đang mở chỉ đổi **icon viền → icon đặc** +
+  **49pt** + đệm đáy. Mục đang mở chỉ đổi **icon viền → icon đặc** +
   màu tint — không viên nền, không gạch chân. Chạm thì mờ đi, không gợn sóng.
 - **Icon bản đặc** (`home-fill`, `compass-fill`…) sinh từ map `FILLED` trong
   `scripts/build-icons.mjs` — bỏ qua `STYLE` để lấy bản `-rounded` filled của Material.
   Thêm tab mới cần icon đặc thì thêm vào map đó rồi chạy `node scripts/build-icons.mjs`.
+- **Né thanh công cụ trình duyệt (Safari iOS, Chrome Android):** thanh địa chỉ dưới ĐÈ lên
+  đáy khung nhìn bố cục, nên `fixed bottom-0` bị khuất. `BottomNav` đo phần bị che bằng
+  `visualViewport` (`clientHeight − vv.height − vv.offsetTop`) rồi ghi vào
+  `--browser-bottom-chrome` trên `<html>`. Cộng vào **PADDING** chứ không phải `bottom` —
+  nền vẫn kéo sát mép máy, chỉ icon/nhãn được nâng lên. Che > 160px thì coi là **bàn phím
+  ảo** và bỏ qua (bàn phím che thanh tab là đúng hành vi iOS). Không có `visualViewport`
+  thì biến giữ `0px` → y như cũ.
 - **Ẩn ở** `/cms`, `/sale`, `/login`, `/offline` (`HIDDEN_ON` — giữ đồng bộ với
   `install-prompt.tsx` và `NEVER_CACHE` trong `sw.js`).
 - **Xếp chỗ cho các nút nổi khác:** khi hiện, component gắn `data-bottom-nav` lên `<html>`;
-  `globals.css` đổi `--bottom-nav-h` thành `calc(3.125rem + env(safe-area-inset-bottom))`
-  (dưới `lg`). `BackToTop`, `InstallPrompt`, dock của `PeerBar` cộng biến này vào `bottom`
-  → tự nằm trên thanh tab. **Thêm phần tử `fixed` bám đáy mới thì cộng
-  `var(--bottom-nav-h)` vào `bottom`.**
+  `globals.css` đổi `--bottom-nav-h` thành `49pt + max(safe-area, 0.5rem) +
+  var(--browser-bottom-chrome)` (dưới `lg`). `BackToTop`, `InstallPrompt`, dock của
+  `PeerBar` cộng biến này vào `bottom` → tự nằm trên thanh tab **và trên cả thanh công cụ
+  trình duyệt**. **Thêm phần tử `fixed` bám đáy mới thì cộng `var(--bottom-nav-h)` vào
+  `bottom`.**
 - **Khối giữ chỗ** cuối trang cao đúng bằng thanh (viết thẳng số, không đọc biến — biến chỉ
   có giá trị sau khi hydrate) để footer không bị khuất; riêng trang bản đồ (`*/ban-do`, cao
   `100dvh`, không cuộn) thì bỏ khối này, thanh tab đè lên bản đồ.

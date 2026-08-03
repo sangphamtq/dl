@@ -112,6 +112,44 @@ export function BottomNav() {
     };
   }, [hidden]);
 
+  // ── Né thanh công cụ dưới của trình duyệt ────────────────────────────────
+  // Safari trên iPhone (và Chrome Android) đặt thanh địa chỉ/điều hướng ĐÈ lên
+  // đáy khung nhìn bố cục. Một phần tử `fixed bottom-0` vì thế nằm KHUẤT sau
+  // thanh đó ở trạng thái thanh đang bung ra.
+  //
+  // `visualViewport` cho biết vùng thực sự nhìn thấy: phần đáy bị che =
+  // chiều cao khung nhìn bố cục − (chiều cao thấy được + phần đã trượt lên).
+  // Đẩy con số đó vào `--browser-bottom-chrome`; thanh tab cộng nó vào
+  // PADDING (không phải `bottom`) nên nền vẫn kéo sát mép máy, chỉ icon/nhãn
+  // được nâng lên khỏi thanh trình duyệt — giống hệt cách vật liệu của tab bar
+  // iOS phủ xuống dưới vùng home indicator.
+  //
+  // Trình duyệt không có `visualViewport` → biến giữ 0 → y như trước.
+  useEffect(() => {
+    if (hidden) return;
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const el = document.documentElement;
+
+    const update = () => {
+      const covered = Math.round(el.clientHeight - vv.height - vv.offsetTop);
+      // Che nhiều hơn ngần này thì là BÀN PHÍM ảo, không phải thanh công cụ.
+      // Lúc đó để nguyên: bàn phím che thanh tab là đúng hành vi của iOS, đẩy
+      // thanh tab lên ngồi trên bàn phím mới là sai.
+      const chrome = covered > 0 && covered < 160 ? covered : 0;
+      el.style.setProperty("--browser-bottom-chrome", `${chrome}px`);
+    };
+
+    update();
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+      el.style.removeProperty("--browser-bottom-chrome");
+    };
+  }, [hidden]);
+
   if (hidden) return null;
 
   // Trang bản đồ cao đúng 100dvh và KHÔNG cuộn (/ban-do và
@@ -123,12 +161,14 @@ export function BottomNav() {
     <>
       {/* Chỗ trống cuối trang: thanh `fixed` không đẩy được nội dung, thiếu khối
           này thì footer và nút cuối trang nằm khuất sau thanh. Chiều cao phải
-          KHỚP thanh thật (49pt + hairline + safe area) — cố ý viết thẳng số thay
-          vì đọc `--bottom-nav-h`, vì biến đó chỉ có giá trị sau khi hydrate. */}
+          KHỚP thanh thật (49pt + hairline + đệm đáy) — cố ý viết thẳng số thay
+          vì đọc `--bottom-nav-h`, vì biến đó chỉ có giá trị sau khi hydrate.
+          KHÔNG cộng `--browser-bottom-chrome`: đó là phần trình duyệt phủ lên
+          khung nhìn, không phải chỗ trống của trang. */}
       {!overlayOnly && (
         <div
           aria-hidden
-          className="h-[calc(3.125rem+env(safe-area-inset-bottom))] shrink-0 lg:hidden"
+          className="h-[calc(3.125rem+max(env(safe-area-inset-bottom),0.5rem))] shrink-0 lg:hidden"
         />
       )}
 
@@ -139,8 +179,10 @@ export function BottomNav() {
           // Vật liệu mờ. Máy không hỗ trợ backdrop-filter thì rơi về nền gần đục
           // để nhãn vẫn đọc được trên ảnh.
           "bg-background/95 supports-[backdrop-filter]:bg-background/75 supports-[backdrop-filter]:backdrop-blur-2xl supports-[backdrop-filter]:backdrop-saturate-150",
-          // Thanh home indicator của iPhone: chừa chỗ, phần nền vẫn kéo xuống hết.
-          "pb-[env(safe-area-inset-bottom)]",
+          // Đệm đáy = (vùng home indicator của iPhone, tối thiểu 8px để nhãn
+          // không dính mép máy) + (phần đáy bị thanh công cụ trình duyệt che,
+          // đo bằng visualViewport ở trên). Là PADDING nên nền vẫn kéo sát mép.
+          "pb-[calc(max(env(safe-area-inset-bottom),0.5rem)+var(--browser-bottom-chrome,0px))]",
         )}
       >
         <ul className="flex h-[3.0625rem] items-stretch">

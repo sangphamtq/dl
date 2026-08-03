@@ -123,8 +123,14 @@
    chiếm chỗ nữa. Con số khớp khối giữ chỗ trong bottom-nav.tsx. */
 @media (max-width: 1023px) {
   :root[data-bottom-nav] {
-    /* 49pt (chuẩn tab bar iOS) + hairline 1px + vùng home indicator. */
-    --bottom-nav-h: calc(3.125rem + env(safe-area-inset-bottom));
+    /* 49pt (chuẩn tab bar iOS) + hairline 1px + đệm đáy (vùng home indicator,
+       tối thiểu 8px) + phần đáy bị thanh công cụ trình duyệt che.
+       `--browser-bottom-chrome` do BottomNav đo bằng visualViewport rồi ghi lên
+       <html>; mặc định 0px nên trình duyệt không che thì không ai lệch. */
+    --bottom-nav-h: calc(
+      3.125rem + max(env(safe-area-inset-bottom), 0.5rem) +
+        var(--browser-bottom-chrome, 0px)
+    );
   }
 }
 
