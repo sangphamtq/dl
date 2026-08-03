@@ -465,7 +465,7 @@ src/
 │   ├── globals.css              # Tailwind v4 + biến CSS theme của shadcn
 │   └── page.tsx                 # trang chủ (đang được bảo vệ) — Card + Avatar + Button
 ├── components/ui/               # component shadcn (button, card, avatar, dropdown, sheet, sidebar, ...)
-├── components/site/             # chrome public: site-header, user-menu, mobile-nav
+├── components/site/             # chrome public: site-header, user-menu, mobile-nav, bottom-nav
 ├── components/cms/              # chrome CMS: AppSidebar (dùng shadcn `sidebar`), placeholder
 ├── hooks/use-mobile.ts          # hook responsive (shadcn sidebar dùng)
 ├── lib/utils.ts                 # helper cn() (clsx + tailwind-merge)
@@ -550,6 +550,34 @@ Lưu ý khi sửa:
   192/512 `maskable` — mascot nằm trong vòng an toàn 80%, 180 `apple-touch-icon` nền đục).
 - Cố ý **chưa** đặt `viewportFit: "cover"` ở `layout.tsx`: các phần tử fixed hiện có
   (`ItineraryFab`, `BackToTop`) chưa chừa `safe-area-inset`. Làm tràn viền thì làm cùng lúc.
+  (`BottomNav` đã dùng `max(0.75rem, env(safe-area-inset-bottom))` nên sẵn sàng.)
+
+## Thanh tab dưới trên mobile (`BottomNav`)
+
+`src/components/site/bottom-nav.tsx` — dựng theo khuôn **UITabBar của iOS**, chỉ hiện dưới
+`lg` (từ `lg` đã có nav ngang trong header). 5 mục: Trang chủ · Khám phá · Bản đồ · Cộng
+đồng · Tài khoản; các mục còn lại (Cẩm nang, Uy tín, Thông tin) vẫn ở menu hamburger.
+
+- **Hình khối iOS, đừng "cải tiến" thành Material:** tràn hết bề ngang, dán sát đáy, KHÔNG
+  bo góc/đổ bóng; phân cách bằng hairline 1px ở mép trên; nền trong mờ + `backdrop-blur` +
+  `backdrop-saturate` (rơi về nền gần đục khi máy không hỗ trợ `backdrop-filter`); cao
+  **49pt** + `env(safe-area-inset-bottom)`. Mục đang mở chỉ đổi **icon viền → icon đặc** +
+  màu tint — không viên nền, không gạch chân. Chạm thì mờ đi, không gợn sóng.
+- **Icon bản đặc** (`home-fill`, `compass-fill`…) sinh từ map `FILLED` trong
+  `scripts/build-icons.mjs` — bỏ qua `STYLE` để lấy bản `-rounded` filled của Material.
+  Thêm tab mới cần icon đặc thì thêm vào map đó rồi chạy `node scripts/build-icons.mjs`.
+- **Ẩn ở** `/cms`, `/sale`, `/login`, `/offline` (`HIDDEN_ON` — giữ đồng bộ với
+  `install-prompt.tsx` và `NEVER_CACHE` trong `sw.js`).
+- **Xếp chỗ cho các nút nổi khác:** khi hiện, component gắn `data-bottom-nav` lên `<html>`;
+  `globals.css` đổi `--bottom-nav-h` thành `calc(3.125rem + env(safe-area-inset-bottom))`
+  (dưới `lg`). `BackToTop`, `InstallPrompt`, dock của `PeerBar` cộng biến này vào `bottom`
+  → tự nằm trên thanh tab. **Thêm phần tử `fixed` bám đáy mới thì cộng
+  `var(--bottom-nav-h)` vào `bottom`.**
+- **Khối giữ chỗ** cuối trang cao đúng bằng thanh (viết thẳng số, không đọc biến — biến chỉ
+  có giá trị sau khi hydrate) để footer không bị khuất; riêng trang bản đồ (`*/ban-do`, cao
+  `100dvh`, không cuộn) thì bỏ khối này, thanh tab đè lên bản đồ.
+- Không đọc session (root layout **không** được gọi `auth()` — sẽ phá `force-static` của
+  `/offline`). Mục Tài khoản trỏ `/tai-khoan/da-den`, trang đó tự redirect về `/login`.
 
 ## Phạm vi hiện tại
 

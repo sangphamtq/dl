@@ -10,6 +10,7 @@ import {
 import { Toaster } from "sonner";
 import { getSettings } from "@/lib/settings";
 import { BackToTop } from "@/components/site/back-to-top";
+import { BottomNav } from "@/components/site/bottom-nav";
 import { ItineraryFab } from "@/components/site/itinerary-fab";
 import { AnalyticsProvider } from "@/components/site/analytics-provider";
 import { PwaRegister } from "@/components/site/pwa-register";
@@ -110,6 +111,9 @@ export default async function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         {children}
+        {/* Thanh nav dưới (mobile) — đặt TRƯỚC các nút nổi khác vì nó gắn
+            `data-bottom-nav` để những nút đó biết mà né chỗ. */}
+        <BottomNav />
         <ItineraryFab />
         <BackToTop />
         <Toaster richColors position="top-center" />

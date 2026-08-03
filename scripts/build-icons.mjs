@@ -111,6 +111,17 @@ const EXTRAS = {
   "add-to-home-screen": "add-to-home-screen",
 };
 
+// Bản ĐẶC (filled) của vài icon — thanh tab dưới (BottomNav) đổi icon từ viền
+// sang đặc cho mục đang mở, đúng lối tab bar của iOS. Các key này KHÔNG đi qua
+// STYLE (đó mới là điểm khác): lấy thẳng bản `-rounded` filled của Material.
+const FILLED = {
+  "home-fill": "home",
+  "compass-fill": "explore",
+  "map-pinned-fill": "location-on",
+  "messages-square-fill": "forum",
+  "user-fill": "person",
+};
+
 // key (dùng trong <Ic icon="key"/>) → tên Material đầy đủ (kèm STYLE)
 const pairs = [];
 for (const L of LUCIDE) pairs.push([kebab(L), DICT[kebab(L)] ?? kebab(L)]);
@@ -135,6 +146,19 @@ for (const [key, base] of pairs) {
       ...(d.height ? { height: d.height } : {}),
     };
   else missing.push(`${key} (${base}${STYLE})`);
+}
+
+// Bản đặc: bỏ qua STYLE, ưu tiên `-rounded` (filled, cùng bo tròn với bộ viền).
+for (const [key, base] of Object.entries(FILLED)) {
+  const cand = [`${base}-rounded`, base].find(has);
+  const d = cand && resolve(cand);
+  if (d)
+    icons[key] = {
+      body: d.body,
+      ...(d.width ? { width: d.width } : {}),
+      ...(d.height ? { height: d.height } : {}),
+    };
+  else missing.push(`${key} (${base}-rounded)`);
 }
 
 fs.writeFileSync(

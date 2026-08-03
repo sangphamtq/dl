@@ -151,7 +151,7 @@ export function PeerBar({
   return (
     <>
       <div aria-hidden className="h-20" />
-      <div className="pointer-events-none fixed inset-x-0 bottom-3 z-40 flex justify-center px-3">
+      <div className="pointer-events-none fixed inset-x-0 bottom-[calc(0.75rem+var(--bottom-nav-h))] z-40 flex justify-center px-3">
         <div className="pointer-events-auto flex max-w-[calc(100vw-1.5rem)] items-center gap-2 rounded-2xl border border-border/60 bg-background/80 p-1.5 shadow-xl shadow-black/5 backdrop-blur-xl">
           <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {groups.map((g, gi) => (

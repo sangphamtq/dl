@@ -108,7 +108,7 @@ export function InstallPrompt({ siteName }: { siteName: string }) {
       role="dialog"
       aria-label={`Cài ${siteName} vào màn hình chính`}
       className={cn(
-        "fixed inset-x-4 bottom-4 z-40 rounded-2xl border border-border/60 bg-background/95 p-4 shadow-lg shadow-black/10 backdrop-blur",
+        "fixed inset-x-4 bottom-[calc(1rem+var(--bottom-nav-h))] z-40 rounded-2xl border border-border/60 bg-background/95 p-4 shadow-lg shadow-black/10 backdrop-blur",
         "animate-in fade-in slide-in-from-bottom-4 duration-300",
         "sm:inset-x-auto sm:left-6 sm:w-[22rem]",
       )}

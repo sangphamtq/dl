@@ -109,6 +109,23 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Chỗ mà thanh nav dưới (BottomNav) đang chiếm. Mặc định 0 — chỉ có giá trị
+     thật khi thanh đó thực sự hiển thị (mobile + không phải trang bị ẩn).
+     Mọi phần tử `fixed` bám đáy (nút lên đầu trang, lời mời cài app, dock
+     chuyển nhanh điểm đến) cộng biến này vào `bottom` để tự xếp lên trên thanh
+     nav, thay vì mỗi nơi tự đoán một con số. */
+  --bottom-nav-h: 0px;
+}
+
+/* `data-bottom-nav` do chính BottomNav gắn/gỡ trên <html> khi mount. Bọc trong
+   media query vì từ lg thanh đó `lg:hidden` — attribute còn đó nhưng không
+   chiếm chỗ nữa. Con số khớp khối giữ chỗ trong bottom-nav.tsx. */
+@media (max-width: 1023px) {
+  :root[data-bottom-nav] {
+    /* 49pt (chuẩn tab bar iOS) + hairline 1px + vùng home indicator. */
+    --bottom-nav-h: calc(3.125rem + env(safe-area-inset-bottom));
+  }
 }
 
 .dark {
