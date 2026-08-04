@@ -105,6 +105,8 @@ const EXTRAS = {
   backpack: "backpack",
   signpost: "signpost",
   calendar: "calendar-month",
+  // Xe máy — KHÁC `bike` (Material "pedal-bike" = xe đạp).
+  "two-wheeler": "two-wheeler",
   // PWA: hướng dẫn "Thêm vào màn hình chính" (iOS Safari dùng nút Chia sẻ).
   "install-mobile": "install-mobile",
   "ios-share": "ios-share",

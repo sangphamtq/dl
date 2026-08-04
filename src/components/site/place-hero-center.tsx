@@ -20,8 +20,12 @@ type PlaceHeroData = {
 
 // Cỡ chữ "micro" của hero: nhãn dải số liệu và nhãn nút back dùng chung một
 // khuôn, nhờ vậy nút back đọc ra là chi tiết của hero chứ không phải nút lạ.
-const MICRO = "text-[0.68rem] font-medium uppercase tracking-[0.16em]";
-const DT = `${MICRO} text-white/50`;
+//
+// Giãn ký tự vừa phải (0.1em) chứ không rộng như trước (0.16em): chữ Việt viết
+// HOA còn phải cõng dấu, giãn quá thì mắt phải ghép lại từng chữ cái. Cỡ cũng
+// nhích lên một nấc — 0.68rem ở chữ hoa là dưới ngưỡng đọc lướt.
+const MICRO = "text-[0.72rem] font-medium uppercase tracking-[0.1em]";
+const DT = `${MICRO} text-white/75`;
 
 // Viên tròn hairline dùng cho MỌI nút ở thanh trên (back · đã đến · chia sẻ):
 // một hình dáng duy nhất, phân biệt nhau bằng icon chứ không bằng kiểu nút.
@@ -31,7 +35,7 @@ const CIRCLE =
 // Ô số liệu: vạch DỌC mảnh ngăn cách (thay hairline ngang của bản canh trái).
 // Mobile bỏ vạch — các ô xuống dòng thì vạch đầu dòng sẽ thành lạc lõng.
 const ITEM =
-  "px-6 text-center sm:border-l sm:border-white/15 sm:px-8 sm:first:border-l-0";
+  "px-6 text-center sm:border-l sm:border-white/25 sm:px-8 sm:first:border-l-0";
 
 // Hero full-bleed CANH GIỮA — cùng khung ảnh với bản editorial, khác cách xếp.
 // Bố cục đối xứng cần vài thứ khác hẳn bản canh trái:
@@ -170,12 +174,16 @@ export function PlaceHeroCenter({
         )}
 
 
+        {/* Bóng chữ mềm cho CẢ cụm meta. Tên điểm đến cỡ lớn thì scrim là đủ,
+            nhưng chữ micro ở đây rơi vào quãng scrim mỏng nhất và vắt qua đủ
+            loại ảnh — gặp mảng trời sáng là mất hút. Bóng toả rộng, không lệch
+            (0 0 12px) nên không thành viền nổi, chỉ tách chữ khỏi nền. */}
         {hasMeta && (
-          <dl className="mx-auto mt-7 flex flex-wrap items-start justify-center gap-y-5 sm:mt-10 sm:gap-y-6">
+          <dl className="mx-auto mt-7 flex flex-wrap items-start justify-center gap-y-5 [text-shadow:0_0_12px_rgba(0,0,0,0.55)] sm:mt-10 sm:gap-y-6">
             {stats.map((s) => (
               <div key={s.label} className={ITEM}>
                 <dt className={DT}>{s.label}</dt>
-                <dd className="mt-1.5 flex h-8 items-center justify-center text-lg font-semibold tabular-nums text-white">
+                <dd className="mt-1.5 flex h-8 items-center justify-center text-xl font-semibold tabular-nums text-white">
                   {s.value.toLocaleString("vi-VN")}
                 </dd>
               </div>
@@ -188,7 +196,7 @@ export function PlaceHeroCenter({
                   <Link
                     href={`/diem-den/${place.slug}#danh-gia`}
                     scroll
-                    className="group inline-flex items-baseline gap-1.5 text-lg font-semibold text-white"
+                    className="group inline-flex items-baseline gap-1.5 text-xl font-semibold text-white"
                   >
                     <Star
                       className="size-4 shrink-0 translate-y-0.5 fill-warm-bright text-warm-bright"
@@ -197,11 +205,11 @@ export function PlaceHeroCenter({
                     <span className="tabular-nums">
                       {reviews.stars.toFixed(1).replace(".", ",")}
                     </span>
-                    <span className="text-sm font-normal text-white/60 transition-colors group-hover:text-white">
+                    <span className="text-sm font-normal text-white/75 transition-colors group-hover:text-white">
                       {reviews.total} nhận xét
                     </span>
                     <ChevronDown
-                      className="size-4 shrink-0 translate-y-0.5 text-white/50 transition-transform group-hover:translate-y-1"
+                      className="size-4 shrink-0 translate-y-0.5 text-white/70 transition-transform group-hover:translate-y-1"
                       aria-hidden
                     />
                   </Link>

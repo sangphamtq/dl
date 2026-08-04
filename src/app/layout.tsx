@@ -11,7 +11,6 @@ import { Toaster } from "sonner";
 import { getSettings } from "@/lib/settings";
 import { BackToTop } from "@/components/site/back-to-top";
 import { BottomNav } from "@/components/site/bottom-nav";
-import { ItineraryFab } from "@/components/site/itinerary-fab";
 import { AnalyticsProvider } from "@/components/site/analytics-provider";
 import { PwaRegister } from "@/components/site/pwa-register";
 import { InstallPrompt } from "@/components/site/install-prompt";
@@ -70,7 +69,7 @@ const mali = Mali({
 
 // PWA: màu thanh trạng thái khi chạy dạng app (Android/Chrome đọc từ đây).
 // Cố ý KHÔNG đặt `viewportFit: "cover"` — nội dung sẽ tràn vào vùng tai thỏ và
-// thanh home của iPhone, mà các phần tử fixed hiện có (FAB, nút lên đầu trang)
+// thanh home của iPhone, mà các phần tử fixed hiện có (nút lên đầu trang)
 // chưa chừa `safe-area-inset`. Muốn tràn viền thì làm cùng lúc với việc đó.
 export const viewport: Viewport = {
   themeColor: THEME_COLOR,
@@ -114,7 +113,6 @@ export default async function RootLayout({
         {/* Thanh nav dưới (mobile) — đặt TRƯỚC các nút nổi khác vì nó gắn
             `data-bottom-nav` để những nút đó biết mà né chỗ. */}
         <BottomNav />
-        <ItineraryFab />
         <BackToTop />
         <Toaster richColors position="top-center" />
         <AnalyticsProvider />

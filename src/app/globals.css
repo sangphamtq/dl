@@ -423,3 +423,33 @@
   animation-fill-mode: forwards;
   transform-origin: left;
 }
+
+/* Gợi ý "kéo xuống" ở hero: một vệt sáng trượt dọc theo vạch rồi tan đi, lặp
+   lại. Cùng ngôn ngữ với chấm sáng của thanh tiến trình dải ảnh — chuyển động
+   nói "còn nữa ở phía dưới" mà không cần mũi tên nhấp nháy.
+   PHẢI khai báo qua class chứ đừng đặt `animation` bằng inline style: không có
+   CSS nào tham chiếu tới @keyframes thì Lightning CSS sẽ loại nó khi build. */
+@keyframes scroll-cue {
+  0% {
+    transform: translateY(-120%);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(220%);
+    opacity: 0;
+  }
+}
+.scroll-cue {
+  animation: scroll-cue 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .scroll-cue {
+    animation: none;
+  }
+}

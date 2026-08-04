@@ -549,7 +549,7 @@ Lưu ý khi sửa:
 - Đổi icon: sửa `public/logo_mark.png` rồi sinh lại bộ `public/icons/` (192/512 `any`,
   192/512 `maskable` — mascot nằm trong vòng an toàn 80%, 180 `apple-touch-icon` nền đục).
 - Cố ý **chưa** đặt `viewportFit: "cover"` ở `layout.tsx`: các phần tử fixed hiện có
-  (`ItineraryFab`, `BackToTop`) chưa chừa `safe-area-inset`. Làm tràn viền thì làm cùng lúc.
+  (`BackToTop`) chưa chừa `safe-area-inset`. Làm tràn viền thì làm cùng lúc.
   (`BottomNav` đã dùng `max(0.75rem, env(safe-area-inset-bottom))` nên sẵn sàng.)
 
 ## Thanh tab dưới trên mobile (`BottomNav`)
