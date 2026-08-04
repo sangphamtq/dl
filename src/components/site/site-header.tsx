@@ -64,8 +64,10 @@ const MOBILE_LINKS: NavLink[] = NAV.flatMap((e) => {
 });
 
 export async function SiteHeader({
-  /** Chìm trên hero: header `fixed`, nền trong suốt tới khi cuộn. Chỉ bật ở
-   *  trang có hero ảnh tràn viền — nền sáng thì chữ trắng không đọc được. */
+  /** Chìm trên hero: header `fixed` (hero bắt đầu từ y=0 và chạy dưới nó) và
+   *  tint gần như trong veo cho tới khi cuộn. Chỉ bật ở trang có hero ảnh tràn
+   *  viền; trang thường dùng `sticky` + tint đậm sẵn. Cả hai chế độ đều là băng
+   *  kính chữ trắng — header không bao giờ đặc lại. */
   overlay = false,
 }: {
   overlay?: boolean;
@@ -88,7 +90,12 @@ export async function SiteHeader({
           DUNG bó vào container max-w-7xl — trùng đúng container của hero và các
           section bên dưới, nên logo/nav thẳng hàng với nội dung trang thay vì
           dính mép màn hình ở màn rộng. */}
-      <div className="mx-auto flex h-16 w-full max-w-7xl items-center gap-1 px-4 sm:gap-2 sm:px-6">
+      {/* Nav bám ngay sau logo (căn trái); cụm tiện ích bên phải dùng `flex-1`
+          để tự dồn về mép. */}
+      {/* text-shadow mảnh: băng kính rất nhạt nên chữ trắng cần một chút viền
+          tối để không tan vào nội dung trôi phía sau. Cố ý giữ nhẹ — đậm hơn là
+          chữ trông nhoè. */}
+      <div className="mx-auto flex h-16 w-full max-w-7xl items-center gap-1 px-4 [text-shadow:0_1px_2px_rgb(0_0_0/0.28)] sm:gap-2 sm:px-6">
         {/* Cụm trái — điều hướng mobile + logo */}
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           <MobileNav
@@ -108,25 +115,24 @@ export async function SiteHeader({
               width={31}
               height={36}
               priority
-              className="h-8 w-auto transition-[filter] duration-500 group-data-[solid=false]/header:drop-shadow-[0_1px_6px_rgba(0,0,0,0.55)] sm:h-11"
+              className="h-8 w-auto drop-shadow-[0_1px_6px_rgba(0,0,0,0.55)] sm:h-11"
             />
-            {/* Wordmark là chữ MỘT MÀU PHẲNG #0E3E27 (xanh rất tối) → đặt lên
-                ảnh hero là chìm. Khi header trong suốt thì đảo thành trắng bằng
-                `brightness-0 invert`; mascot bên trái KHÔNG đụng tới nên logo
-                vẫn giữ màu. Header đặc thì trả về ảnh gốc. */}
+            {/* Wordmark là chữ MỘT MÀU PHẲNG #0E3E27 (xanh rất tối) → trên băng
+                kính tối là chìm, nên đảo thành trắng bằng `brightness-0 invert`.
+                Mascot bên trái KHÔNG đụng tới nên logo vẫn giữ màu. */}
             <Image
               src="/logo_wordmark.png"
               alt={settings.siteName}
               width={77}
               height={16}
               priority
-              className="h-3.5 w-auto transition-[filter] duration-500 group-data-[solid=false]/header:brightness-0 group-data-[solid=false]/header:invert group-data-[solid=false]/header:drop-shadow-[0_1px_6px_rgba(0,0,0,0.5)] sm:h-4.5"
+              className="h-3.5 w-auto brightness-0 invert drop-shadow-[0_1px_6px_rgba(0,0,0,0.5)] sm:h-4.5"
             />
           </Link>
         </div>
 
-        {/* Desktop nav — căn giữa */}
-        <SiteNav entries={NAV} className="hidden lg:flex" />
+        {/* Desktop nav — căn trái, nối tiếp logo */}
+        <SiteNav entries={NAV} className="hidden lg:ml-3 lg:flex xl:ml-6" />
 
         {/* Cụm phải — tiện ích: tìm kiếm · tài khoản (flex-1, dồn phải) */}
         <TooltipProvider delayDuration={300}>
@@ -153,7 +159,10 @@ export async function SiteHeader({
                 />
               </div>
               {/* Hairline ngăn "hành động" (tiện ích) với "tài khoản" */}
-              <span aria-hidden className="mx-1.5 h-6 w-px bg-border" />
+              <span
+                aria-hidden
+                className="mx-1.5 h-6 w-px bg-white/25"
+              />
               <UserMenu
                 user={{
                   name: user.name,
@@ -169,7 +178,7 @@ export async function SiteHeader({
             <div className="ml-1 flex items-center gap-2">
               <Link
                 href="/login"
-                className="hidden h-10 items-center rounded-full border border-border px-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted sm:inline-flex"
+                className="hidden h-10 items-center rounded-full border border-white/30 px-4 text-sm font-semibold text-white transition-colors hover:bg-white/10 sm:inline-flex"
               >
                 Đăng ký
               </Link>

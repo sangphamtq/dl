@@ -52,7 +52,9 @@ export function MobileNav({ links, isAuthed, provinces, homeProvince }: Props) {
             />
           </SheetTitle>
         </SheetHeader>
-        <nav className="flex flex-col gap-1 p-4">
+        {/* font-heading: giữ cùng chữ với nav desktop — cùng một menu, đổi thiết
+            bị không nên đổi mặt chữ. */}
+        <nav className="flex flex-col gap-1 p-4 font-heading">
           {/* Tỉnh của bạn */}
           <div className="mb-3">
             <p className="px-1 text-sm font-semibold text-foreground">

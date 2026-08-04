@@ -133,11 +133,13 @@ export default async function Home() {
 
   return (
     <div className="flex flex-1 flex-col">
-      <SiteHeader />
+      {/* Header chìm trên hero: ảnh chạy từ y=0 lên tận mép trên, thanh nav chỉ
+          là một băng đóng khung nổi bên trên nó. Cuộn xuống thì thanh đặc lại. */}
+      <SiteHeader overlay />
 
       <main className="flex-1">
         {/* ─── HERO — thẻ kính nổi trên ảnh ─────────────────────── */}
-        <section className="relative isolate flex min-h-[40rem] items-center justify-center overflow-hidden px-4 sm:px-6 sm:min-h-[calc(100svh-4rem)]">
+        <section className="relative isolate flex min-h-[40rem] items-center justify-center overflow-hidden px-4 sm:min-h-svh sm:px-6">
           <Image
             src={heroBg}
             alt={
@@ -155,7 +157,7 @@ export default async function Home() {
 
           {/* Tên nơi thật trong ảnh nền */}
           {places[0] && (
-            <div className="absolute inset-x-0 top-20 sm:top-24">
+            <div className="absolute inset-x-0 top-24 sm:top-28">
               <div className="mx-auto max-w-6xl px-4 sm:px-6">
                 <span className="hero-rise inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-xs font-medium text-white/85 ring-1 ring-white/15 backdrop-blur">
                   <Ic icon="map-pin" className="size-3.5" aria-hidden />
