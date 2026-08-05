@@ -124,11 +124,11 @@
 @media (max-width: 1023px) {
   :root[data-bottom-nav] {
     /* 49pt (chuẩn tab bar iOS) + hairline 1px + đệm đáy (vùng home indicator,
-       tối thiểu 8px) + phần đáy bị thanh công cụ trình duyệt che.
-       `--browser-bottom-chrome` do BottomNav đo bằng visualViewport rồi ghi lên
-       <html>; mặc định 0px nên trình duyệt không che thì không ai lệch. */
+       tối thiểu 8px, cộng 6px thở thêm) + phần đáy bị thanh công cụ trình duyệt
+       che. `--browser-bottom-chrome` do BottomNav đo bằng visualViewport rồi
+       ghi lên <html>; mặc định 0px nên trình duyệt không che thì không ai lệch. */
     --bottom-nav-h: calc(
-      3.125rem + max(env(safe-area-inset-bottom), 0.5rem) +
+      3.125rem + max(env(safe-area-inset-bottom), 0.5rem) + 0.375rem +
         var(--browser-bottom-chrome, 0px)
     );
   }

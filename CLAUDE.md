@@ -563,9 +563,14 @@ Lưu ý khi sửa:
   `backdrop-saturate` (rơi về nền gần đục khi máy không hỗ trợ `backdrop-filter`); cao
   **49pt** + đệm đáy. Mục đang mở chỉ đổi **icon viền → icon đặc** +
   màu tint — không viên nền, không gạch chân. Chạm thì mờ đi, không gợn sóng.
-- **Icon bản đặc** (`home-fill`, `compass-fill`…) sinh từ map `FILLED` trong
-  `scripts/build-icons.mjs` — bỏ qua `STYLE` để lấy bản `-rounded` filled của Material.
-  Thêm tab mới cần icon đặc thì thêm vào map đó rồi chạy `node scripts/build-icons.mjs`.
+- **Icon vẽ riêng, KHÔNG dùng `Ic`/Material Symbols:** `src/components/site/tab-icons.tsx`
+  (`TabIcon`) — 5 icon × 2 bản (viền/đặc), vẽ theo ngôn ngữ SF Symbols: nét mảnh 1.7
+  trên khung 24, đầu nét & góc bo tròn, hình mở. Material Symbols nét dày và khối
+  đặc, xếp cạnh nhau ở cỡ 25px thì thanh tab trông nặng, lệch hẳn so với app iOS.
+  Chỉ dựng từ đường thẳng + cung tròn (không bezier tự do) để còn soi lại toạ độ;
+  vài bản đặc khoét lỗ bằng `fill-rule="evenodd"` (kim la bàn, chấm hội thoại) vì
+  không thể vẽ đè màu nền lên nền trong mờ. Thêm tab mới thì thêm hình vào hai map
+  `OUTLINE`/`FILLED` trong file đó — không đụng `scripts/build-icons.mjs` nữa.
 - **Né thanh công cụ trình duyệt (Safari iOS, Chrome Android):** thanh địa chỉ dưới ĐÈ lên
   đáy khung nhìn bố cục, nên `fixed bottom-0` bị khuất. `BottomNav` đo phần bị che bằng
   `visualViewport` (`clientHeight − vv.height − vv.offsetTop`) rồi ghi vào

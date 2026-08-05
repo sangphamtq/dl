@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
-import { Ic } from "@/components/icon";
+import { TabIcon, type TabIconName } from "./tab-icons";
 import { cn } from "@/lib/utils";
 
 // Khu vực riêng tư / trang tự chứa — không có thanh tab dưới.
@@ -13,9 +13,8 @@ const HIDDEN_ON = ["/cms", "/sale", "/login", "/offline"];
 type Item = {
   href: string;
   label: string;
-  /** Tên icon bản VIỀN (mục không mở) và bản ĐẶC (mục đang mở). */
-  icon: string;
-  iconFill: string;
+  /** Icon riêng của thanh tab (xem tab-icons.tsx) — tự có bản viền & bản đặc. */
+  icon: TabIconName;
   /** Chỉ khớp đúng đường dẫn này (dùng cho trang chủ). */
   exact?: boolean;
   /** Các tiền tố route cũng tính là "đang ở mục này". */
@@ -31,14 +30,12 @@ const ITEMS: Item[] = [
     href: "/",
     label: "Trang chủ",
     icon: "home",
-    iconFill: "home-fill",
     exact: true,
   },
   {
     href: "/diem-den",
     label: "Khám phá",
     icon: "compass",
-    iconFill: "compass-fill",
     // Mọi trang chi tiết listing đều là nhánh của luồng khám phá → giữ mục này
     // sáng để người dùng biết mình đang ở đâu trong site.
     match: [
@@ -55,20 +52,17 @@ const ITEMS: Item[] = [
   {
     href: "/ban-do",
     label: "Bản đồ",
-    icon: "map-pinned",
-    iconFill: "map-pinned-fill",
+    icon: "map",
   },
   {
     href: "/cong-dong",
     label: "Cộng đồng",
-    icon: "messages-square",
-    iconFill: "messages-square-fill",
+    icon: "community",
   },
   {
     href: "/tai-khoan/da-den",
     label: "Tài khoản",
-    icon: "user",
-    iconFill: "user-fill",
+    icon: "account",
     match: ["/tai-khoan", "/thong-bao", "/lich-trinh"],
   },
 ];
@@ -168,7 +162,7 @@ export function BottomNav() {
       {!overlayOnly && (
         <div
           aria-hidden
-          className="h-[calc(3.125rem+max(env(safe-area-inset-bottom),0.5rem))] shrink-0 lg:hidden"
+          className="h-[calc(3.125rem+max(env(safe-area-inset-bottom),0.5rem)+0.375rem)] shrink-0 lg:hidden"
         />
       )}
 
@@ -180,9 +174,12 @@ export function BottomNav() {
           // để nhãn vẫn đọc được trên ảnh.
           "bg-background/95 supports-[backdrop-filter]:bg-background/75 supports-[backdrop-filter]:backdrop-blur-2xl supports-[backdrop-filter]:backdrop-saturate-150",
           // Đệm đáy = (vùng home indicator của iPhone, tối thiểu 8px để nhãn
-          // không dính mép máy) + (phần đáy bị thanh công cụ trình duyệt che,
-          // đo bằng visualViewport ở trên). Là PADDING nên nền vẫn kéo sát mép.
-          "pb-[calc(max(env(safe-area-inset-bottom),0.5rem)+var(--browser-bottom-chrome,0px))]",
+          // không dính mép máy) + 6px thở thêm + (phần đáy bị thanh công cụ
+          // trình duyệt che, đo bằng visualViewport ở trên). Là PADDING nên nền
+          // vẫn kéo sát mép. 6px này CỘNG THÊM chứ không phải nâng sàn: máy có
+          // home indicator (safe-area 34px) cũng được nhấc lên, không thì chỉ
+          // máy không khuyết mới thấy khác.
+          "pb-[calc(max(env(safe-area-inset-bottom),0.5rem)+0.375rem+var(--browser-bottom-chrome,0px))]",
         )}
       >
         <ul className="flex h-[3.0625rem] items-stretch">
@@ -198,10 +195,10 @@ export function BottomNav() {
                     active ? "text-primary" : "text-muted-foreground",
                   )}
                 >
-                  <Ic
-                    icon={active ? it.iconFill : it.icon}
+                  <TabIcon
+                    name={it.icon}
+                    active={active}
                     className="size-[1.5625rem] shrink-0"
-                    aria-hidden
                   />
                   {/* 10px/medium là đúng cỡ nhãn tab bar iOS (SF Caption 2).
                       Siết tracking một chút vì tiếng Việt nhiều dấu, chữ dày

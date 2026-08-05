@@ -86,15 +86,11 @@ export async function SiteHeader({
 
   return (
     <HeaderChrome overlay={overlay}>
-      {/* Thanh nền vẫn tràn viền (viền đáy + nền mờ chạy hết bề ngang), chỉ NỘI
-          DUNG bó vào container max-w-7xl — trùng đúng container của hero và các
-          section bên dưới, nên logo/nav thẳng hàng với nội dung trang thay vì
-          dính mép màn hình ở màn rộng. */}
-      {/* Nav bám ngay sau logo (căn trái); cụm tiện ích bên phải dùng `flex-1`
-          để tự dồn về mép. */}
-      {/* text-shadow mảnh: băng kính rất nhạt nên chữ trắng cần một chút viền
-          tối để không tan vào nội dung trôi phía sau. Cố ý giữ nhẹ — đậm hơn là
-          chữ trông nhoè. */}
+      {/* Băng nền tràn viền do HeaderChrome vẽ; ở đây chỉ bó NỘI DUNG vào
+          `max-w-7xl` — trùng container của hero và các section bên dưới nên
+          logo/nav thẳng hàng với nội dung trang.
+          text-shadow mảnh vì kính rất nhạt: chữ trắng cần một chút viền tối để
+          không tan vào nội dung trôi phía sau. Cố ý giữ nhẹ, đậm hơn là nhoè. */}
       <div className="mx-auto flex h-16 w-full max-w-7xl items-center gap-1 px-4 [text-shadow:0_1px_2px_rgb(0_0_0/0.28)] sm:gap-2 sm:px-6">
         {/* Cụm trái — điều hướng mobile + logo */}
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
@@ -134,7 +130,7 @@ export async function SiteHeader({
         {/* Desktop nav — căn trái, nối tiếp logo */}
         <SiteNav entries={NAV} className="hidden lg:ml-3 lg:flex xl:ml-6" />
 
-        {/* Cụm phải — tiện ích: tìm kiếm · tài khoản (flex-1, dồn phải) */}
+        {/* Cụm phải — tiện ích: tìm kiếm · tài khoản (flex-1, dồn về mút phải) */}
         <TooltipProvider delayDuration={300}>
         <div className="flex flex-1 items-center justify-end gap-1">
           {/* Tìm kiếm — ô bấm + Command palette (⌘K); dưới lg là icon */}

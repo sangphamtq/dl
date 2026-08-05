@@ -113,16 +113,14 @@ const EXTRAS = {
   "add-to-home-screen": "add-to-home-screen",
 };
 
-// Bản ĐẶC (filled) của vài icon — thanh tab dưới (BottomNav) đổi icon từ viền
-// sang đặc cho mục đang mở, đúng lối tab bar của iOS. Các key này KHÔNG đi qua
-// STYLE (đó mới là điểm khác): lấy thẳng bản `-rounded` filled của Material.
-const FILLED = {
-  "home-fill": "home",
-  "compass-fill": "explore",
-  "map-pinned-fill": "location-on",
-  "messages-square-fill": "forum",
-  "user-fill": "person",
-};
+// Bản ĐẶC (filled) của vài icon. Các key này KHÔNG đi qua STYLE (đó mới là điểm
+// khác): lấy thẳng bản `-rounded` filled của Material.
+//
+// ĐANG RỖNG: thanh tab dưới trước đây dùng chỗ này cho cặp viền/đặc, nay đã có
+// bộ icon vẽ riêng ở `src/components/site/tab-icons.tsx` (Material quá dày, đặt
+// cạnh nhau ở cỡ tab bar thì lệch hẳn so với app iOS). Cần bản đặc cho chỗ khác
+// thì thêm vào đây rồi chạy `node scripts/build-icons.mjs`.
+const FILLED = {};
 
 // key (dùng trong <Ic icon="key"/>) → tên Material đầy đủ (kèm STYLE)
 const pairs = [];

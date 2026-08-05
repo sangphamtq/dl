@@ -25,36 +25,37 @@ const getServerScrolled = () => false;
 
 // Vỏ ngoài của SiteHeader.
 //
-// Header KHÔNG BAO GIỜ đặc lại. Ở mọi trang public nó luôn là một BĂNG KÍNH chữ
-// trắng: hairline trên + dưới chạy hết bề ngang, nền tối trong mờ + blur, nội
-// dung trang trôi bên dưới vẫn thấy được. Cuộn xuống chỉ làm tint ĐẬM THÊM chứ
-// không đổi sang thanh trắng đục.
+// Header là một BĂNG KÍNH TRÀN VIỀN dính sát mép trên: nền tối trong mờ + blur
+// chạy hết bề ngang, hairline ở mép dưới, chỉ NỘI DUNG bó vào `max-w-7xl` —
+// trùng container của hero và các section bên dưới, nên logo/nav thẳng hàng với
+// nội dung trang thay vì dính mép màn hình ở màn rộng.
 //
-// Hai chế độ chỉ khác nhau ở vị trí và độ đậm lúc nghỉ:
+// CHIỀU CAO HEADER = h-16 = 64px. Các thanh lọc/tab dính bên dưới (place-tabs,
+// spot-section-nav, spot-filter, destination-filter) dùng `top-16` cho khớp —
+// đổi số ở đây thì phải đổi cả bên đó (kể cả `rootMargin` của observer).
+//
+// Header KHÔNG BAO GIỜ đặc lại: ở mọi trang public nó luôn là kính chữ trắng,
+// nội dung trang trôi bên dưới vẫn thấy được. Cuộn xuống chỉ làm tint đậm thêm,
+// thanh không xê dịch.
+//
+// Hai chế độ chỉ khác nhau ở vị trí trong luồng và độ đậm lúc nghỉ:
 // - `overlay` (trang có hero ảnh tràn viền): `fixed` để hero bắt đầu từ y=0 và
-//   chạy dưới header; lúc chưa cuộn thì tint gần như trong veo và thanh tụt
-//   xuống ~10px để lộ một dải ảnh phía trên — cảm giác "băng nổi" đóng khung.
+//   chạy dưới header; lúc chưa cuộn thì tint gần như trong veo, ảnh nguyên vẹn.
 // - thường: `sticky` (nội dung bắt đầu ngay dưới thanh, không bị khuất) và tint
 //   đậm sẵn — vì sau lưng có thể là một trang trắng toát.
-//
-// Độ đậm lúc `deep`: hai lớp cộng lại ≈ black/21 (trên nền trắng ra ~#cacaca).
-// Rất nhạt — ưu tiên vẻ thoáng, thanh gần như chỉ là một lớp kính mờ. Đánh đổi:
-// chữ trắng chỉ còn ~1.6:1, thấp hơn nhiều ngưỡng AA (4.5:1); trên nền sáng
-// gắt sẽ khó đọc. Thứ duy nhất còn đỡ là blur (`backdrop-blur-lg` làm nhoè hoạ
-// tiết phía sau) + một bóng chữ mảnh (xem site-header).
-// Thang để quay lại nếu cần đọc rõ hơn — chỉ sửa lớp tint thứ hai bên dưới:
-// black/25 ≈ 2.3:1 · black/40 ≈ 3.4:1 · black/55 ≈ 5:1 (đạt AA).
 //
 // Mẹo màu: gắn luôn class `dark` lên header. Dự án khai báo
 // `@custom-variant dark (&:is(.dark *))` nên MỌI thành phần con (nav, ô tìm
 // kiếm, menu người dùng…) tự đổi sang token dark = chữ sáng trên nền tối,
 // khỏi phải sửa màu cứng trong từng component.
 //
-// Chuyển trạng thái: các lớp nền ĐỀU LUÔN TỒN TẠI và chỉ đổi `opacity`, KHÔNG
-// gắn/gỡ khỏi DOM và cũng không dựa vào `transition-colors`. Lý do:
-// - `transition-colors` không áp cho `backdrop-filter` → blur sẽ bật/tắt phựt;
-// - lớp mount/unmount thì không có gì để chạy transition.
-// Đổi opacity của cả lớp giải quyết cả hai, lại rẻ (chỉ compositing).
+// Hai trạng thái phải KHÁC NHAU RÕ, và thứ mắt bắt được là ĐỘ MỜ KÍNH chứ
+// không phải sắc độ tint:
+// - nghỉ (đỉnh trang có hero): blur 2px, không tint, không hairline;
+// - cuộn: blur mạnh + black/20 + hairline (trên nền trắng ra ~#cacaca).
+// Tint /20 rất nhạt nên chữ trắng chỉ ~1.6:1, dưới xa ngưỡng AA (4.5:1) — bù
+// bằng blur + bóng chữ (xem site-header). Thang để quay lại nếu cần đọc rõ
+// hơn: /25 ≈ 2.3:1 · /40 ≈ 3.4:1 · /55 ≈ 5:1 (đạt AA).
 export function HeaderChrome({
   overlay,
   children,
@@ -68,7 +69,6 @@ export function HeaderChrome({
     getServerScrolled,
   );
   const deep = !overlay || scrolled;
-  const fade = "transition-opacity duration-500 ease-out";
 
   return (
     <header
@@ -78,45 +78,42 @@ export function HeaderChrome({
         overlay ? "fixed" : "sticky",
       )}
     >
-      {/* Scrim đỉnh — chỉ dùng lúc thanh còn trong veo trên hero. Cao hơn
-          header và fade hẳn ra ngoài mép dưới: nếu gradient chỉ cao bằng header
-          thì nó phải tắt trong đúng 4rem, mắt đọc ra thành một thanh tối vắt
-          ngang. */}
+      {/* Scrim đỉnh — chỉ lúc còn trong veo trên hero. Cao hơn header và fade
+          hẳn ra ngoài mép dưới: nếu gradient chỉ cao bằng header thì nó phải
+          tắt trong đúng 4rem, mắt đọc ra thành một thanh tối vắt ngang. */}
       {overlay && (
         <div
           aria-hidden
           className={cn(
-            "pointer-events-none absolute inset-x-0 top-0 -z-10 h-32 bg-gradient-to-b from-black/40 via-black/10 to-transparent",
-            fade,
+            "pointer-events-none absolute inset-x-0 top-0 -z-10 h-32 bg-gradient-to-b from-black/40 via-black/10 to-transparent transition-opacity duration-500 ease-out",
             deep ? "opacity-0" : "opacity-100",
           )}
         />
       )}
+      {/* Hai lớp kính, CHỒNG NHAU và chỉ đổi `opacity` — mấu chốt: `transition`
+          KHÔNG áp được cho `backdrop-filter`, nên muốn độ mờ kính chuyển mượt
+          thì phải mờ dần cả LỚP mang blur, chứ không phải đổi giá trị blur.
+          Ở opacity 0 lớp coi như không tồn tại, blur của nó cũng tắt theo. */}
 
-      {/* Thân thanh. Trên hero lúc chưa cuộn thì đẩy xuống 10px (dải ảnh phía
-          trên = phần "nổi" của khung); còn lại nằm sát mép. */}
+      {/* Lớp NGHỈ (đỉnh trang có hero): kính rất nhẹ — blur 2px, không tint,
+          không hairline. Ảnh hero gần như nguyên vẹn, chỉ hơi "có mặt kính". */}
       <div
+        aria-hidden
         className={cn(
-          "relative isolate transition-[margin] duration-500 ease-out",
-          overlay && !deep ? "mt-2.5" : "mt-0",
+          "pointer-events-none absolute inset-0 -z-10 backdrop-blur-[2px] transition-opacity duration-500 ease-out",
+          deep ? "opacity-0" : "opacity-100",
         )}
-      >
-        {/* Băng kính — LUÔN hiện, không bao giờ tắt */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 -z-10 border-y border-white/20 bg-black/10 backdrop-blur-lg backdrop-saturate-150"
-        />
-        {/* Lớp tint đậm thêm: cộng với lớp trên ≈ black/21 */}
-        <div
-          aria-hidden
-          className={cn(
-            "pointer-events-none absolute inset-0 -z-10 bg-black/12",
-            fade,
-            deep ? "opacity-100" : "opacity-0",
-          )}
-        />
-        {children}
-      </div>
+      />
+      {/* Lớp CUỘN: kính thật — blur mạnh + tint + hairline mép dưới. Thanh dính
+          sát y=0 nên mép trên không bao giờ lộ ra, chỉ cần `border-b`. */}
+      <div
+        aria-hidden
+        className={cn(
+          "pointer-events-none absolute inset-0 -z-10 border-b border-white/20 bg-black/20 backdrop-blur-lg backdrop-saturate-150 transition-opacity duration-500 ease-out",
+          deep ? "opacity-100" : "opacity-0",
+        )}
+      />
+      {children}
     </header>
   );
 }
