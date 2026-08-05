@@ -32,6 +32,7 @@ import { PlaceTabs } from "@/components/site/place-tabs";
 import { ReviewsSection, type ReviewListItem } from "@/components/site/place-reviews";
 import { summarizeReviews } from "@/lib/review-meta";
 import { PeerBar } from "@/components/site/peer-bar";
+import { PlainProse } from "@/components/site/plain-prose";
 import { getDestinationPeerGroups } from "@/lib/peers";
 import {
   getPlaceCounts,
@@ -458,9 +459,10 @@ export default async function PlaceDetailPage({
                     </p>
                   )}
                   {descBody && (
-                    <p className="mt-4 whitespace-pre-line leading-7 text-muted-foreground">
-                      {descBody}
-                    </p>
+                    <PlainProse
+                      text={descBody}
+                      className="mt-4 leading-7 text-muted-foreground"
+                    />
                   )}
                   {/* Bài giới thiệu đặt NGAY DƯỚI mô tả (trước khối Thông tin
                       chung): nó là phần đọc tiếp của mạch chữ, còn Thông tin

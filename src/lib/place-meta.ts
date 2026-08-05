@@ -170,6 +170,8 @@ export type PlaceTab = {
   href: string;
   label: string;
   icon?: "overview" | "map" | "community"; // tab đặc biệt (Tổng quan / Bản đồ / Cộng đồng)
+  /** Số mục của loại đó. Chỉ tab listing mới có (Tổng quan/Bản đồ/Cộng đồng thì không). */
+  count?: number;
 };
 
 // Tabs sticky: "Tổng quan" về trang Place + mỗi loại listing có dữ liệu → trang "xem tất cả".
@@ -178,15 +180,20 @@ export function buildPlaceTabs(placeSlug: string, counts: PlaceCounts): PlaceTab
   const base = `/diem-den/${placeSlug}`;
   // Mục đầu = "Tổng quan" dạng icon (gọn); chỉ hiện khi có ≥1 loại listing.
   const tabs: PlaceTab[] = [{ href: base, label: "Tổng quan", icon: "overview" }];
-  const add = (loai: string, label: string) =>
-    tabs.push({ href: `${base}/${loai}`, label });
+  // `count` đi kèm để thanh tab hiện được số mục — thanh chỉ liệt kê loại NÀO
+  // CÓ dữ liệu (điều kiện > 0 bên dưới), nên số này luôn ≥ 1, không bao giờ là
+  // một tab rỗng dẫn tới trang trống.
+  const add = (loai: string, label: string, count: number) =>
+    tabs.push({ href: `${base}/${loai}`, label, count });
 
-  if (counts.spot > 0) add("dia-diem", "Địa điểm");
-  if (counts.activity > 0) add("hoat-dong", "Trải nghiệm");
-  if (counts.specialty + counts.eatery > 0) add("am-thuc", "Ẩm thực");
-  if (counts.accommodation > 0) add("luu-tru", "Nơi lưu trú");
+  if (counts.spot > 0) add("dia-diem", "Địa điểm", counts.spot);
+  if (counts.activity > 0) add("hoat-dong", "Trải nghiệm", counts.activity);
+  if (counts.specialty + counts.eatery > 0)
+    add("am-thuc", "Ẩm thực", counts.specialty + counts.eatery);
+  if (counts.accommodation > 0)
+    add("luu-tru", "Nơi lưu trú", counts.accommodation);
   // Di chuyển: màn hình riêng trong route động [loai] (không có trang chi tiết per-item).
-  if (counts.transport > 0) add("di-chuyen", "Di chuyển");
+  if (counts.transport > 0) add("di-chuyen", "Di chuyển", counts.transport);
 
   // Cộng đồng: luôn hiện, render riêng bên phải thanh tab (như Bản đồ).
   tabs.push({ href: `${base}/cong-dong`, label: "Cộng đồng", icon: "community" });

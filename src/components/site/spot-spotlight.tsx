@@ -3,7 +3,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
-import { ArrowUpRight, Pause, Play } from "@/components/icons";
+import {
+  ArrowUpRight,
+  ChevronLeft,
+  ChevronRight,
+  Pause,
+  Play,
+} from "@/components/icons";
 import { SectionHeading } from "@/components/site/section-heading";
 import { cn } from "@/lib/utils";
 import {
@@ -149,16 +155,29 @@ function SpotRow({
 // Khối chữ của MỘT địa điểm trong dải. Tách riêng vì mọi khối đều được render
 // (xếp chồng trong cùng một ô lưới) chứ không chỉ khối đang xem — xem chú thích
 // ở chỗ gọi.
-function SpotPanel({ s, on }: { s: SpotSpotlightItem; on: boolean }) {
+function SpotPanel({
+  s,
+  on,
+  /** `false` khi mỗi khối nằm trong MỘT thẻ riêng của carousel (mobile): lúc đó
+   *  không cần xếp chồng, không cần ẩn/hiện — thẻ nào hiện thì chữ của thẻ đó
+   *  hiện theo. */
+  stacked = true,
+}: {
+  s: SpotSpotlightItem;
+  on: boolean;
+  stacked?: boolean;
+}) {
   return (
     <div
-      inert={!on}
-      aria-hidden={!on}
+      inert={stacked && !on}
+      aria-hidden={stacked && !on}
       className={cn(
-        "col-start-1 row-start-1 transition-all duration-500 ease-out motion-reduce:transition-none",
-        on
-          ? "translate-y-0 opacity-100"
-          : "pointer-events-none translate-y-3 opacity-0",
+        stacked &&
+          "col-start-1 row-start-1 transition-all duration-500 ease-out motion-reduce:transition-none",
+        stacked &&
+          (on
+            ? "translate-y-0 opacity-100"
+            : "pointer-events-none translate-y-3 opacity-0"),
       )}
     >
       {/* Khối chữ neo ở ĐÁY ảnh, không canh giữa. Hai lý do:
@@ -292,16 +311,33 @@ export function SpotSpotlight({
     };
   }, [index, playing, n]);
 
-  // Dải thẻ ngang (dưới lg) tự kéo mục đang xem vào giữa khung. Chỉ cuộn CHÍNH
-  // dải này (scrollLeft), không dùng scrollIntoView — nó sẽ kéo cả trang theo
-  // khi section chưa lọt hẳn trong viewport.
+  // ── Thẻ ảnh vuốt được (dưới lg) ─────────────────────────────────────────
+  // Hai chiều: lượt tự đổi kéo carousel sang thẻ tương ứng, và người vuốt tay
+  // thì carousel báo ngược về `index` để cột danh sách bên dưới sáng đúng hàng.
+  // Chạm tay vào là DỪNG tự đổi: người dùng đã cầm lái, để nó tiếp tục nhảy sau
+  // 7 giây thì thẻ đang xem bị giật đi mất. Nút play/pause có sẵn để chạy lại.
   const [api, setApi] = useState<CarouselApi | null>(null);
   useEffect(() => {
     api?.scrollTo(index);
   }, [api, index]);
+  useEffect(() => {
+    if (!api) return;
+    const onSelect = () => setIndex(api.selectedScrollSnap());
+    const onPointerDown = () => setPaused(true);
+    api.on("select", onSelect);
+    api.on("pointerDown", onPointerDown);
+    return () => {
+      api.off("select", onSelect);
+      api.off("pointerDown", onPointerDown);
+    };
+  }, [api]);
 
   if (n === 0) return null;
   const active = items[Math.min(index, n - 1)];
+  const go = (step: number) => {
+    setPaused(true);
+    setIndex((i) => (i + step + n) % n);
+  };
 
   // KHÔNG đặt nền ở gốc: dải bọc ngoài (xem Band ở trang Place) quyết định nền,
   // nhờ vậy khung mat trắng của ảnh nổi lên được trên nền nhạt.
@@ -329,7 +365,76 @@ export function SpotSpotlight({
             `grid-cols-1` của Tailwind = `minmax(0,1fr)` nên track không bao giờ
             vượt bề ngang cha. Áp dụng cho mọi lưới chỉ khai báo cột ở lg. */}
         <div className="mt-8 grid flex-1 grid-cols-1 gap-8 lg:mt-10 lg:grid-cols-12 lg:items-stretch lg:gap-12">
-          <div className="relative isolate flex min-w-0 flex-col pb-6 lg:col-span-7 lg:pb-14 lg:pr-12 xl:pr-20">
+          <div
+            id={panelId}
+            className="relative isolate flex min-w-0 flex-col pb-6 lg:col-span-7 lg:pb-14 lg:pr-12 xl:pr-20"
+          >
+            {/* ── DƯỚI lg: thẻ ảnh VUỐT ĐƯỢC ─────────────────────────────────
+                Trước đây mobile dùng chung khung ảnh tuyệt đối của desktop: ảnh
+                là lớp nền phía sau khối chữ, nên CHIỀU CAO ẢNH DO ĐỘ DÀI MÔ TẢ
+                quyết định — địa điểm nào chữ dài là ảnh bị kéo cao ngoằng, mỗi
+                mục một khổ khác nhau. Ở đây ảnh có TỈ LỆ CỐ ĐỊNH (3/4), chữ nằm
+                đè ở đáy trong đúng khung đó, nên mọi mục cùng một khổ.
+                Mỗi địa điểm là một thẻ của carousel → vuốt ngang được, cộng hai
+                nút lùi/tiến cho người không quen vuốt (và cho chuột trên tablet). */}
+            <div className="relative -mx-4 sm:-mx-6 lg:hidden">
+              <Carousel
+                setApi={setApi}
+                opts={{ align: "start", loop: true }}
+                aria-label="Ảnh địa điểm"
+              >
+                <CarouselContent className="ml-0">
+                  {items.map((s, i) => (
+                    <CarouselItem key={s.slug} className="basis-full pl-0">
+                      {/* Cùng lối "ảnh in lồng khung" như bản desktop: mat nền
+                          trang + hairline quanh miệng khoét. */}
+                      <div className="relative aspect-[3/4] bg-background p-2.5 ring-1 ring-border sm:p-3">
+                        <div className="absolute inset-2.5 overflow-hidden sm:inset-3">
+                          <Image
+                            src={s.image}
+                            alt=""
+                            fill
+                            priority={i === 0}
+                            sizes="100vw"
+                            className="object-cover"
+                          />
+                          <div className="absolute inset-0 bg-[radial-gradient(125%_115%_at_0%_100%,rgba(0,0,0,0.85)_0%,rgba(0,0,0,0.6)_30%,rgba(0,0,0,0.2)_64%,rgba(0,0,0,0.02)_100%)]" />
+                          <span
+                            aria-hidden
+                            className="pointer-events-none absolute inset-0 shadow-[inset_0_2px_6px_rgba(0,0,0,0.22)] ring-1 ring-black/15"
+                          />
+                        </div>
+                        <div className="absolute inset-x-5 bottom-5 sm:inset-x-6 sm:bottom-6">
+                          <SpotPanel s={s} on stacked={false} />
+                        </div>
+                      </div>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+              </Carousel>
+
+              {/* Lùi/tiến: đặt ở GÓC TRÊN–PHẢI của ảnh. Khối chữ neo ở góc
+                  trái–dưới nên đây là góc duy nhất luôn trống, khỏi che nội dung. */}
+              {n > 1 && (
+                <div className="absolute right-5 top-5 flex gap-2 sm:right-6 sm:top-6">
+                  {[
+                    { step: -1, label: "Địa điểm trước", Icon: ChevronLeft },
+                    { step: 1, label: "Địa điểm sau", Icon: ChevronRight },
+                  ].map(({ step, label, Icon }) => (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() => go(step)}
+                      aria-label={label}
+                      className="grid size-10 place-items-center rounded-full bg-black/35 text-white ring-1 ring-white/25 backdrop-blur-sm transition-colors hover:bg-black/55 active:bg-black/60"
+                    >
+                      <Icon className="size-5" aria-hidden />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Ảnh bám đúng CỘT TRÁI: `right-0` neo vào mép phải của cột, lề
                 trái lùi ra đúng bằng khoảng cách từ cột tới mép màn hình —
                 `(100vw - bề ngang container)/2 + padding`.
@@ -348,7 +453,7 @@ export function SpotSpotlight({
                 ngay là một vệt xám bị xén. */}
             <div
               aria-hidden
-              className="absolute inset-y-0 -left-4 -right-4 overflow-hidden bg-background p-2.5 shadow-[0_6px_18px_-10px_rgba(0,0,0,0.35)] ring-1 ring-border sm:-left-6 sm:-right-6 sm:p-3 lg:p-3.5 lg:pb-7 lg:inset-y-0 lg:right-0 lg:-left-[calc((100vw-min(100vw,80rem))/2+2rem)]"
+              className="absolute inset-y-0 right-0 hidden overflow-hidden bg-background p-3.5 pb-7 shadow-[0_6px_18px_-10px_rgba(0,0,0,0.35)] ring-1 ring-border lg:block lg:-left-[calc((100vw-min(100vw,80rem))/2+2rem)]"
             >
               {/* Ghi chú trong dải mat đáy: số thứ tự + loại địa điểm, cỡ rất
                   nhỏ, màu nhạt — đúng chỗ và đúng cách người ta ghi chú dưới một
@@ -368,7 +473,7 @@ export function SpotSpotlight({
                   không có nó thì mat chỉ là một dải trắng viền ngoài. */}
               <span
                 aria-hidden
-                className="pointer-events-none absolute inset-2.5 z-10 shadow-[inset_0_2px_6px_rgba(0,0,0,0.22)] ring-1 ring-black/15 sm:inset-3 lg:inset-3.5 lg:bottom-7"
+                className="pointer-events-none absolute inset-3.5 bottom-7 z-10 shadow-[inset_0_2px_6px_rgba(0,0,0,0.22)] ring-1 ring-black/15"
               />
 
               {/* Lớp trong: đây mới là vùng ảnh thật (nằm trong khung). */}
@@ -376,7 +481,7 @@ export function SpotSpotlight({
                 <div
                   key={s.slug}
                   className={cn(
-                    "absolute inset-2.5 overflow-hidden transition-opacity duration-700 ease-out sm:inset-3 lg:inset-3.5 lg:bottom-7",
+                    "absolute inset-3.5 bottom-7 overflow-hidden transition-opacity duration-700 ease-out",
                     i === index ? "opacity-100" : "opacity-0",
                   )}
                 >
@@ -398,7 +503,7 @@ export function SpotSpotlight({
                   đặt chữ rồi tan nhanh ra ngoài. Trước đây là hai lớp gradient
                   thẳng chồng nhau — cộng dồn nên chỗ nào cũng bị tối, kể cả
                   phần ảnh không có chữ nào. */}
-              <div className="absolute inset-2.5 sm:inset-3 lg:inset-3.5 lg:bottom-7 bg-[radial-gradient(125%_115%_at_0%_100%,rgba(0,0,0,0.85)_0%,rgba(0,0,0,0.6)_30%,rgba(0,0,0,0.2)_64%,rgba(0,0,0,0.02)_100%)]" />
+              <div className="absolute inset-3.5 bottom-7 bg-[radial-gradient(125%_115%_at_0%_100%,rgba(0,0,0,0.85)_0%,rgba(0,0,0,0.6)_30%,rgba(0,0,0,0.2)_64%,rgba(0,0,0,0.02)_100%)]" />
             </div>
 
             {/* MỌI khối chữ đều được render và xếp CHỒNG lên nhau trong cùng một
@@ -410,11 +515,10 @@ export function SpotSpotlight({
                 bắt được tab/chuột — `opacity-0` một mình thì link bên trong vẫn
                 tab vào được.
                 `content-center`: canh giữa cụm khối chữ trong phần cao còn lại
-                của cột trái (sau khi trừ tiêu đề). */}
-            <div
-              id={panelId}
-              className="relative grid flex-1 content-end"
-            >
+                của cột trái (sau khi trừ tiêu đề).
+                CHỈ từ lg: dưới lg chữ đã nằm trong từng thẻ carousel ở trên,
+                render cả khối này nữa là chữ hiện hai lần. */}
+            <div className="relative hidden flex-1 content-end lg:grid">
               {items.map((s, i) => (
                 <SpotPanel key={s.slug} s={s} on={i === index} />
               ))}
@@ -458,54 +562,32 @@ export function SpotSpotlight({
               )}
             </div>
 
-            {/* Hai cách trình bày cùng một danh sách:
-                  · từ lg — CỘT DỌC, sáu mục nhìn thấy hết một lượt;
-                  · dưới lg — CAROUSEL Embla (component `carousel` của dự án).
-                Màn hẹp không đủ chỗ cho sáu hàng, mà `overflow-x` thuần thì trên
-                desktop-thu-nhỏ không kéo bằng chuột được và không có quán tính;
-                Embla cho vuốt/kéo mượt, snap từng thẻ, và ta gọi `scrollTo` để
-                lượt tự chuyển kéo thẻ tương ứng vào khung. */}
+            {/* MỘT cách trình bày cho mọi khổ: CỘT DỌC, sáu mục nhìn thấy hết
+                một lượt.
+                Dưới lg trước đây là carousel ngang (Embla): vuốt mượt nhưng chỉ
+                thấy ~1,5 thẻ mỗi lúc, nên phần lớn danh sách nằm ngoài màn hình
+                và người dùng không biết có bao nhiêu địa điểm — trong khi đây là
+                mục "đáng ghé", tức là cái cần liếc qua HẾT rồi mới chọn. Cột dọc
+                dài thêm vài trăm px nhưng cuộn dọc là thao tác sẵn có của trang,
+                không phải một cử chỉ riêng phải phát hiện ra. */}
             <div
               onMouseEnter={() => setHover(true)}
               onMouseLeave={() => setHover(false)}
               onFocusCapture={() => setHover(true)}
               onBlurCapture={() => setHover(false)}
-              className="lg:flex lg:flex-1 lg:flex-col"
+              className="flex flex-1 flex-col"
             >
-              <div className="hidden lg:flex lg:flex-1 lg:flex-col">
-                {items.map((s, i) => (
-                  <SpotRow
-                    key={s.slug}
-                    s={s}
-                    i={i}
-                    on={i === index}
-                    playing={playing}
-                    panelId={panelId}
-                    onSelect={() => setIndex(i)}
-                  />
-                ))}
-              </div>
-
-              <Carousel
-                setApi={setApi}
-                opts={{ align: "start", dragFree: false }}
-                className="-mx-4 px-4 sm:-mx-6 sm:px-6 lg:hidden"
-              >
-                <CarouselContent className="-ml-3">
-                  {items.map((s, i) => (
-                    <CarouselItem key={s.slug} className="basis-[17rem] pl-3">
-                      <SpotRow
-                        s={s}
-                        i={i}
-                        on={i === index}
-                        playing={playing}
-                        panelId={panelId}
-                        onSelect={() => setIndex(i)}
-                      />
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
-              </Carousel>
+              {items.map((s, i) => (
+                <SpotRow
+                  key={s.slug}
+                  s={s}
+                  i={i}
+                  on={i === index}
+                  playing={playing}
+                  panelId={panelId}
+                  onSelect={() => setIndex(i)}
+                />
+              ))}
             </div>
 
           </div>
