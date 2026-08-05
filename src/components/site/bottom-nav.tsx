@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { TabIcon, type TabIconName } from "./tab-icons";
+import { CommandPalette } from "./command-palette";
+import { MobileMenuSheet } from "./mobile-menu-sheet";
 import { cn } from "@/lib/utils";
 
 // Khu vực riêng tư / trang tự chứa — không có thanh tab dưới.
@@ -11,20 +13,37 @@ import { cn } from "@/lib/utils";
 const HIDDEN_ON = ["/cms", "/sale", "/login", "/offline"];
 
 type Item = {
-  href: string;
   label: string;
   /** Icon riêng của thanh tab (xem tab-icons.tsx) — tự có bản viền & bản đặc. */
   icon: TabIconName;
-  /** Chỉ khớp đúng đường dẫn này (dùng cho trang chủ). */
-  exact?: boolean;
-  /** Các tiền tố route cũng tính là "đang ở mục này". */
-  match?: string[];
-};
+} & (
+  | {
+      /** Mục điều hướng: mở một trang. */
+      href: string;
+      /** Chỉ khớp đúng đường dẫn này (dùng cho trang chủ). */
+      exact?: boolean;
+      /** Các tiền tố route cũng tính là "đang ở mục này". */
+      match?: string[];
+      action?: never;
+    }
+  | {
+      /** Mục hành động: mở lớp phủ, KHÔNG đổi trang. */
+      action: "menu";
+      href?: never;
+    }
+);
 
 // 5 mục — đúng mức tối đa của một tab bar iOS, và cũng là mức còn đọc được nhãn
-// ở 375px. Cẩm nang / Uy tín / Thông tin vẫn nằm trong menu hamburger của
-// header: thanh dưới là lối đi NHANH tới các khu vực hay quay lại, không phải
-// bản sao của nav.
+// ở 375px.
+//
+// Từ khi BỎ HEADER ở mobile, thanh này là điều hướng DUY NHẤT. Bốn mục đầu là
+// các KHU VỰC của site; mục cuối là MENU — bảng trượt từ đáy gom nốt phần header
+// cũ còn giữ: tìm kiếm, tài khoản, thông báo, đã đến, lịch trình, cẩm nang, uy
+// tín, thông tin, tỉnh của bạn.
+//
+// Tìm kiếm CỐ Ý không chiếm một tab: nó là một hành động, không phải một nơi để
+// ở lại, mà chỗ trên thanh thì chỉ có năm. Nó nằm ngay đầu bảng menu dưới dạng
+// một ô tìm kiếm — vẫn trong tầm ngón cái, chỉ tốn thêm một chạm.
 const ITEMS: Item[] = [
   {
     href: "/",
@@ -59,15 +78,11 @@ const ITEMS: Item[] = [
     label: "Cộng đồng",
     icon: "community",
   },
-  {
-    href: "/tai-khoan/da-den",
-    label: "Tài khoản",
-    icon: "account",
-    match: ["/tai-khoan", "/thong-bao", "/lich-trinh"],
-  },
+  { action: "menu", label: "Menu", icon: "menu" },
 ];
 
 function isActive(pathname: string, it: Item) {
+  if (!it.href) return false;
   if (it.exact) return pathname === it.href;
   const prefixes = it.match ?? [it.href];
   return prefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`));
@@ -92,6 +107,8 @@ function isActive(pathname: string, it: Item) {
 export function BottomNav() {
   const pathname = usePathname();
   const hidden = HIDDEN_ON.some((p) => pathname.startsWith(p));
+  const [search, setSearch] = useState(false);
+  const [menu, setMenu] = useState(false);
 
   // Đánh dấu trên <html> để CSS đặt `--bottom-nav-h` (xem globals.css). Các nút
   // nổi khác (lên đầu trang, mời cài app, thanh chuyển nhanh điểm đến) cộng biến
@@ -184,34 +201,71 @@ export function BottomNav() {
       >
         <ul className="flex h-[3.0625rem] items-stretch">
           {ITEMS.map((it) => {
-            const active = isActive(pathname, it);
+            // Mục hành động sáng lên khi lớp phủ của nó đang mở — cùng một tín
+            // hiệu "đang ở đây" với mục điều hướng, chỉ khác cái "đây" là một
+            // lớp phủ chứ không phải một trang.
+            const active = it.action ? menu : isActive(pathname, it);
+            const inner = (
+              <>
+                <TabIcon
+                  name={it.icon}
+                  active={active}
+                  className="size-[1.5625rem] shrink-0"
+                />
+                {/* 10px/medium là đúng cỡ nhãn tab bar iOS (SF Caption 2).
+                    Siết tracking một chút vì tiếng Việt nhiều dấu, chữ dày
+                    hơn tiếng Anh ở cùng cỡ. */}
+                <span className="text-[0.625rem] font-medium leading-none tracking-[-0.01em]">
+                  {it.label}
+                </span>
+              </>
+            );
+            const klass = cn(
+              "flex h-full w-full flex-col items-center justify-center gap-[3px] transition-opacity duration-100 active:opacity-50",
+              active ? "text-primary" : "text-muted-foreground",
+            );
+
             return (
-              <li key={it.href} className="flex-1">
-                <Link
-                  href={it.href}
-                  aria-current={active ? "page" : undefined}
-                  className={cn(
-                    "flex h-full flex-col items-center justify-center gap-[3px] transition-opacity duration-100 active:opacity-50",
-                    active ? "text-primary" : "text-muted-foreground",
-                  )}
-                >
-                  <TabIcon
-                    name={it.icon}
-                    active={active}
-                    className="size-[1.5625rem] shrink-0"
-                  />
-                  {/* 10px/medium là đúng cỡ nhãn tab bar iOS (SF Caption 2).
-                      Siết tracking một chút vì tiếng Việt nhiều dấu, chữ dày
-                      hơn tiếng Anh ở cùng cỡ. */}
-                  <span className="text-[0.625rem] font-medium leading-none tracking-[-0.01em]">
-                    {it.label}
-                  </span>
-                </Link>
+              <li key={it.href ?? it.action} className="flex-1">
+                {it.action ? (
+                  <button
+                    type="button"
+                    onClick={() => setMenu(true)}
+                    aria-expanded={active}
+                    aria-label={it.label}
+                    className={klass}
+                  >
+                    {inner}
+                  </button>
+                ) : (
+                  <Link
+                    href={it.href}
+                    aria-current={active ? "page" : undefined}
+                    className={klass}
+                  >
+                    {inner}
+                  </Link>
+                )}
               </li>
             );
           })}
         </ul>
       </nav>
+
+      {/* Hai lớp phủ. Đặt ở đây (không phải trong từng trang) vì từ khi bỏ
+          header ở mobile, thanh tab là nơi DUY NHẤT gọi chúng.
+          Ô tìm kiếm nằm TRONG bảng menu, nên nó phải đóng bảng rồi mới mở
+          palette — hai lớp phủ chồng nhau thì khoá cuộn và bẫy focus của chúng
+          đá nhau. Chờ hết animation trượt xuống của bảng (~200ms) mới mở. */}
+      <CommandPalette open={search} onOpenChange={setSearch} />
+      <MobileMenuSheet
+        open={menu}
+        onOpenChange={setMenu}
+        onSearch={() => {
+          setMenu(false);
+          setTimeout(() => setSearch(true), 220);
+        }}
+      />
     </>
   );
 }

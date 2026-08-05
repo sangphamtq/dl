@@ -74,7 +74,11 @@ export function HeaderChrome({
     <header
       data-deep={deep}
       className={cn(
-        "group/header dark relative top-0 z-50 w-full",
+        // CHỈ từ lg. Ở mobile không có header: điều hướng dồn hết xuống thanh
+        // tab dưới (Trang chủ · Khám phá · Tìm kiếm · Cộng đồng · Menu) — ngón
+        // cái với tới được, và trả lại 64px trên cùng cho nội dung.
+        // Kéo theo: mọi thanh dính bên dưới phải neo `top-0 lg:top-16`.
+        "group/header dark relative top-0 z-50 hidden w-full lg:block",
         overlay ? "fixed" : "sticky",
       )}
     >

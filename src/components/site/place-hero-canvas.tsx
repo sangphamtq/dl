@@ -288,9 +288,23 @@ export function PlaceHeroCanvas({
         </svg>
       </div>
 
-      {/* Header trang là `fixed` và chìm lên hero, nên hero tự chừa 4rem trên
-          cùng để thanh trong hero (back/chia sẻ) không chui xuống dưới logo. pb
-          đủ lớn để nội dung không đè lên đỉnh mây (mây cao ~60% chiều cao dải).
+      {/* Scrim đỉnh — CHỈ ở mobile. Từ lg, header `fixed` chìm lên hero đã mang
+          sẵn scrim của nó; dưới lg không còn header nào cả, nên thanh back/chia
+          sẻ (vòng tròn hairline trắng, không nền) sẽ tan biến trên một tấm ảnh
+          sáng. Dải tối rất nhẹ này là thứ duy nhất giữ chúng đọc được. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/45 via-black/15 to-transparent lg:hidden"
+      />
+
+      {/* Đệm trên:
+          - từ lg: chừa 4rem cho header `fixed` chìm lên hero, để thanh trong
+            hero (back/chia sẻ) không chui xuống dưới logo;
+          - dưới lg: KHÔNG còn header, nên chỉ chừa vùng an toàn của máy
+            (`safe-area-inset-top` — tai thỏ / dynamic island khi chạy dạng app)
+            cộng một khoảng thở. Nhờ vậy hero lấy lại đúng 64px đã mất và thanh
+            điều khiển nằm ngay tầm mắt thay vì trôi xuống giữa ảnh.
+          pb đủ lớn để nội dung không đè lên đỉnh mây (mây cao ~60% chiều cao dải).
           Chiều cao theo thiết bị:
           - mobile/tablet: `h-auto` — cao đúng bằng nội dung (~650px). Ép 100svh
             ở đây vừa thừa (điện thoại màn dài thành hero lê thê) vừa rủi ro:
@@ -299,7 +313,7 @@ export function PlaceHeroCanvas({
       {/* Xem ghi chú ở CONTENT_HITS về cách chia vùng kéo / vùng chữ. */}
       <div
         className={cn(
-          "pointer-events-none relative mx-auto flex h-auto min-h-[34rem] w-full max-w-7xl flex-col px-4 pb-10 pt-[calc(4rem+1.25rem)] sm:px-6 sm:pb-14 lg:h-[100svh] lg:max-h-[58rem] lg:min-h-[38rem] lg:pb-20",
+          "pointer-events-none relative mx-auto flex h-auto min-h-[32rem] w-full max-w-7xl flex-col px-4 pb-10 pt-[calc(env(safe-area-inset-top)+0.875rem)] sm:px-6 sm:pb-14 lg:h-[100svh] lg:max-h-[58rem] lg:min-h-[38rem] lg:pb-20 lg:pt-[calc(4rem+1.25rem)]",
           CONTENT_HITS,
         )}
       >

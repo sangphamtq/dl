@@ -1,14 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { ArrowUpRight } from "@/components/icons";
+import { ArrowUp, ArrowUpRight, X } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { tiktokPlayerSrc, tiktokSearchUrl } from "@/lib/tiktok";
 import {
   TikTokGlyph,
   type PlaceVideo,
 } from "@/components/site/tiktok-videos";
+
+// Nút trên player thu nhỏ: nền tối trong mờ để nổi trên mọi khung hình video.
+const MINI_BTN =
+  "grid size-7 place-items-center rounded-full bg-black/55 text-white ring-1 ring-white/25 backdrop-blur-sm transition-colors hover:bg-black/75";
 
 /* ── Clip kề bên: dải mờ cao gần bằng player, thò ra hai cạnh ─────────
    Đặt ABSOLUTE theo player (`inset-y-[5%]` → cao 90% player) chứ không nằm
@@ -70,6 +74,63 @@ export function PlaceAboutVideo({
   placeName: string;
 }) {
   const [active, setActive] = useState(0);
+
+  // ── Thu nhỏ thành player góc màn khi cuộn qua ────────────────────────────
+  // Ràng buộc quyết định cách làm: KHÔNG được dời <iframe> sang chỗ khác trong
+  // DOM (portal, hay render ở nhánh khác) — trình duyệt tải lại iframe, TikTok
+  // chạy lại từ đầu và mất luôn chỗ đang xem. Nên player thu nhỏ phải là CHÍNH
+  // node đó, chỉ đổi class từ `absolute inset-0` sang `fixed` + khổ nhỏ.
+  // Hộp ngoài (`boxRef`) giữ nguyên chỗ trong luồng nên trang không nhảy khi
+  // player rời đi.
+  const boxRef = useRef<HTMLDivElement | null>(null);
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const [away, setAway] = useState(false); // hộp đã cuộn khỏi tầm nhìn
+  const [engaged, setEngaged] = useState(false); // người dùng đã bấm vào player
+  const [dismissed, setDismissed] = useState(false);
+
+  // Chỉ thu nhỏ khi người dùng ĐÃ bấm vào player. Không có cách nào hỏi iframe
+  // của TikTok "đang phát chưa" (khác origin), nên dùng dấu hiệu gần nhất: click
+  // vào iframe làm cửa sổ mất focus và `activeElement` chính là iframe đó.
+  // Thiếu điều kiện này thì ai chỉ lướt qua cũng bị một khung video bám theo.
+  useEffect(() => {
+    const onBlur = () => {
+      if (document.activeElement === iframeRef.current) setEngaged(true);
+    };
+    window.addEventListener("blur", onBlur);
+    return () => window.removeEventListener("blur", onBlur);
+  }, []);
+
+  useEffect(() => {
+    const el = boxRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([e]) => {
+        // CHỈ tính là "đã cuộn qua" khi hộp nằm PHÍA TRÊN vùng quan sát. Nếu
+        // chỉ xét `!isIntersecting` thì cuộn ngược lên hero (hộp rơi xuống dưới
+        // khung nhìn) cũng bật player thu nhỏ — mà lúc đó nút mũi tên LÊN lại
+        // chỉ sai hướng, phải cuộn xuống mới về được chỗ cũ.
+        //
+        // So với `rootBounds.top`, KHÔNG phải với 0. IntersectionObserver chỉ
+        // báo đúng LÚC vượt ranh giới, mà ranh giới đây đã bị `rootMargin` đẩy
+        // xuống 72px — nên ngay khoảnh khắc đó `bottom` ≈ 72, chưa âm. Đo với
+        // mốc 0 thì điều kiện không bao giờ đúng, cuộn tiếp cũng không có lần
+        // báo nào nữa (observer không bắn liên tục) → player không bao giờ thu
+        // nhỏ. Đây chính là lỗi làm nó ngừng hoạt động.
+        const top = e.rootBounds?.top ?? 0;
+        setAway(!e.isIntersecting && e.boundingClientRect.bottom <= top + 1);
+        // Cuộn trở lại chỗ cũ thì xoá dấu "đã tắt" — lần cuộn qua sau lại mời
+        // thu nhỏ, thay vì tắt một lần là tắt vĩnh viễn.
+        if (e.isIntersecting) setDismissed(false);
+      },
+      // Rời hẳn khung nhìn mới tính, không phải vừa nhú lên mép trên.
+      { threshold: 0, rootMargin: "-72px 0px -20% 0px" },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  const mini = away && engaged && !dismissed;
+
   const current = videos[active];
   if (!current) return null;
   const labelOf = (i: number) =>
@@ -94,14 +155,75 @@ export function PlaceAboutVideo({
             onSelect={() => setActive(prev)}
           />
         )}
-        <iframe
-          key={current.id}
-          src={tiktokPlayerSrc(current.id)}
-          title={label}
-          allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-          loading="lazy"
-          className="relative z-10 aspect-[9/16] w-full rounded-2xl bg-muted shadow-xl shadow-black/15"
-        />
+        {/* Hộp giữ chỗ: luôn nằm trong luồng, đúng khổ 9/16 của player. Player
+            bên trong rời đi (fixed) thì chỗ này vẫn còn, trang không co giật.
+            `z-10` (nằm trên hai clip mờ hai bên) TẠO MỘT NGỮ CẢNH XẾP LỚP, nên
+            `z-50` của player thu nhỏ bên trong chỉ có tác dụng TRONG hộp này —
+            so với phần còn lại của trang nó vẫn chỉ là lớp 10, thua thanh tab
+            dính (z-40) và bị đè. Vì vậy phải nâng z của CHÍNH HỘP khi thu nhỏ. */}
+        <div
+          ref={boxRef}
+          className={cn(
+            "relative aspect-[9/16] w-full",
+            mini ? "z-50" : "z-10",
+          )}
+        >
+          <div
+            className={cn(
+              "overflow-hidden rounded-2xl bg-muted shadow-xl shadow-black/15",
+              mini
+                ? // Góc dưới–phải, trên thanh tab dưới (`--bottom-nav-h`).
+                  // Không dùng transition giữa hai trạng thái: absolute↔fixed là
+                  // đổi hệ toạ độ, nội suy ra một đường bay chéo qua cả trang.
+                  "fixed bottom-[calc(var(--bottom-nav-h,0px)+1rem)] right-4 z-50 w-32 shadow-2xl ring-1 ring-black/10 sm:right-6 sm:w-40"
+                : "absolute inset-0",
+            )}
+          >
+            <iframe
+              ref={iframeRef}
+              key={current.id}
+              src={tiktokPlayerSrc(current.id)}
+              title={label}
+              allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+              loading="lazy"
+              className="aspect-[9/16] w-full"
+            />
+            {/* Hai nút của player thu nhỏ. Không thể dùng chính khung video làm
+                vùng bấm "quay lại": click ở đó thuộc về iframe TikTok (nút phát,
+                thanh tua), chặn lấy là hỏng luôn phần điều khiển. Nên phải có
+                nút riêng. */}
+            {mini && (
+              <div className="absolute right-1.5 top-1.5 flex gap-1">
+                <button
+                  type="button"
+                  // Cuộn hộp giữ chỗ về giữa màn; nó vào tầm nhìn thì
+                  // IntersectionObserver tự tắt chế độ thu nhỏ — không cần set
+                  // state ở đây, khỏi hai nguồn sự thật đá nhau.
+                  onClick={() =>
+                    boxRef.current?.scrollIntoView({
+                      behavior: "smooth",
+                      block: "center",
+                    })
+                  }
+                  aria-label="Quay lại video trong bài"
+                  title="Quay lại video trong bài"
+                  className={MINI_BTN}
+                >
+                  <ArrowUp className="size-4" aria-hidden />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDismissed(true)}
+                  aria-label="Đóng video thu nhỏ"
+                  title="Đóng"
+                  className={MINI_BTN}
+                >
+                  <X className="size-4" aria-hidden />
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
         {next !== null && (
           <SideVideo
             video={videos[next]}

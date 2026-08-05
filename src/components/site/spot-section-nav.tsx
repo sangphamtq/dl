@@ -59,14 +59,19 @@ export function SpotSectionNav({
     return () => obs.disconnect();
   }, [navItems, currentId]);
 
-  // Sentinel ngay trên thanh: khi nó vượt lên trên mốc dính (top-16 = 64px)
-  // → thanh đang ghim dưới header → thêm bóng mềm (giống PlaceTabs).
+  // Sentinel ngay trên thanh: khi nó vượt lên trên mốc dính → thanh đang ghim
+  // → thêm bóng mềm.
+  //
+  // Mốc dính KHÁC NHAU theo khổ màn: từ lg thanh ghim dưới header (64px), còn ở
+  // mobile không có header nên nó ghim thẳng vào mép trên (0). Dùng nhầm một
+  // con số là bóng bật/tắt lệch đúng 64px so với lúc thanh thật sự dính.
   useEffect(() => {
     const el = sentinelRef.current;
     if (!el) return;
+    const offset = window.matchMedia("(min-width: 1024px)").matches ? 64 : 0;
     const obs = new IntersectionObserver(
       ([e]) => setStuck(!e.isIntersecting),
-      { rootMargin: "-64px 0px 0px 0px", threshold: 0 },
+      { rootMargin: `-${offset}px 0px 0px 0px`, threshold: 0 },
     );
     obs.observe(el);
     return () => obs.disconnect();
@@ -101,7 +106,7 @@ export function SpotSectionNav({
       <div ref={sentinelRef} aria-hidden className="h-0" />
       <div
         className={cn(
-          "sticky top-16 z-40 border-b border-border/60 bg-background/80 backdrop-blur-lg transition-shadow duration-200",
+          "sticky top-0 lg:top-16 z-40 border-b border-border/60 bg-background/80 backdrop-blur-lg transition-shadow duration-200",
           stuck && "shadow-sm",
         )}
       >

@@ -1,6 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Mở dev server cho các origin trong mạng LAN (mở site trên điện thoại thật).
+  // Từ Next 15.3 mọi request dev tới từ origin KHÁC `localhost` đều bị chặn nếu
+  // không khai ở đây — client HMR không bắt tay được, hậu quả nhìn thấy trên máy
+  // là trang TỰ TẢI LẠI liên tục và không kịp bấm gì.
+  // Máy khác IP thì thêm vào danh sách này (chỉ ảnh hưởng `next dev`).
+  allowedDevOrigins: ["192.168.1.145"],
+
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "picsum.photos" },

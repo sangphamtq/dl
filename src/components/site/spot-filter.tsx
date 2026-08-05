@@ -79,7 +79,7 @@ export function SpotFilter({
   return (
     <div>
       {/* Toolbar sticky: tìm kiếm + sắp xếp */}
-      <div className="sticky top-16 z-30 -mx-4 border-b border-border/60 bg-background/85 backdrop-blur sm:-mx-6">
+      <div className="sticky top-0 lg:top-16 z-30 -mx-4 border-b border-border/60 bg-background/85 backdrop-blur sm:-mx-6">
         <div className="flex items-center gap-3 overflow-x-auto px-4 py-3 sm:px-6 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <div className="relative w-44 shrink-0 sm:w-60">
             <Ic

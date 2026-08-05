@@ -24,7 +24,9 @@ export type TabIconName =
   | "compass"
   | "map"
   | "community"
-  | "account";
+  | "account"
+  | "search"
+  | "menu";
 
 const OUTLINE: Record<TabIconName, React.ReactNode> = {
   // Mái nhà + thân, hai nét rời — đúng kiểu `house` của SF.
@@ -65,6 +67,21 @@ const OUTLINE: Record<TabIconName, React.ReactNode> = {
       <path d="M5.4 20a6.6 6.6 0 0 1 13.2 0" />
     </>
   ),
+  search: (
+    <>
+      <circle cx="10.9" cy="10.9" r="6.6" />
+      <path d="M15.8 15.8 20.2 20.2" />
+    </>
+  ),
+  // Ba vạch. Vạch giữa NGẮN hơn một chút: khối ba vạch đều nhau nhìn ra là icon
+  // Material; lệch nhịp một chút mới ra chất SF.
+  menu: (
+    <>
+      <path d="M4 7.2h16" />
+      <path d="M4 12h13" />
+      <path d="M4 16.8h16" />
+    </>
+  ),
 };
 
 const FILLED: Record<TabIconName, React.ReactNode> = {
@@ -96,6 +113,21 @@ const FILLED: Record<TabIconName, React.ReactNode> = {
     <>
       <circle cx="12" cy="8.5" r="4" />
       <path d="M5.2 20.4a6.8 6.8 0 0 1 13.6 0 .9.9 0 0 1-.9.9H6.1a.9.9 0 0 1-.9-.9Z" />
+    </>
+  ),
+  // Kính lúp đặc + cán bo tròn hai đầu (cán vẽ bằng hai nửa cung, không phải
+  // nét stroke — bản đặc không được để sót nét viền nào).
+  search: (
+    <>
+      <circle cx="10.9" cy="10.9" r="6.9" />
+      <path d="M16.4 15.1a1.1 1.1 0 0 0-1.56 1.56l3.4 3.4a1.1 1.1 0 0 0 1.56-1.56Z" />
+    </>
+  ),
+  menu: (
+    <>
+      <rect x="4" y="6.2" width="16" height="2" rx="1" />
+      <rect x="4" y="11" width="13" height="2" rx="1" />
+      <rect x="4" y="15.8" width="16" height="2" rx="1" />
     </>
   ),
 };

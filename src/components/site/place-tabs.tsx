@@ -93,12 +93,22 @@ export function PlaceTabs({ items }: { items: PlaceTab[] }) {
   const pathname = usePathname();
   const tabRefs = useRef<Record<string, HTMLAnchorElement | null>>({});
 
-  // Cuộn tab active vào giữa khi đổi route.
+  // Kéo tab đang mở vào giữa DẢI khi đổi route.
+  //
+  // Cuộn CHÍNH dải này bằng `scrollLeft`, KHÔNG dùng `scrollIntoView`: kể cả với
+  // `block: "nearest"`, khi thanh tab còn nằm dưới màn hình (lúc mới mở trang,
+  // hero còn chiếm hết khung nhìn) trình duyệt sẽ cuộn luôn CẢ TRANG xuống cho
+  // nó lọt vào tầm nhìn — người dùng vừa mở trang điểm đến đã bị nhảy qua hero.
+  const navRef = useRef<HTMLElement | null>(null);
   useIsoLayoutEffect(() => {
-    tabRefs.current[pathname]?.scrollIntoView({
-      block: "nearest",
-      inline: "center",
-    });
+    const nav = navRef.current;
+    const el = tabRefs.current[pathname];
+    if (!nav || !el) return;
+    const offset =
+      el.getBoundingClientRect().left -
+      nav.getBoundingClientRect().left +
+      nav.scrollLeft;
+    nav.scrollTo({ left: offset - (nav.clientWidth - el.clientWidth) / 2 });
   }, [pathname, items]);
 
   // Bản đồ + Cộng đồng tách riêng → render bên phải (không cuộn mất).
@@ -112,11 +122,14 @@ export function PlaceTabs({ items }: { items: PlaceTab[] }) {
   if (navItems.length <= 1 && !mapTab && !communityTab) return null;
 
   return (
-    <div className="sticky top-16 z-40 border-b border-border/60 bg-background">
+    <div className="sticky top-0 lg:top-16 z-40 border-b border-border/60 bg-background">
         <div className="mx-auto flex h-12 max-w-7xl items-center gap-3 px-4 font-heading sm:px-6">
           {/* flex-1 để dải tab luôn chiếm hết phần trống → lớp mask chỉ ăn vào
               khoảng trống khi chưa tràn, và fade đúng chữ khi tràn. */}
-          <nav className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto [-ms-overflow-style:none] [mask-image:linear-gradient(to_right,black_calc(100%_-_2rem),transparent)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <nav
+            ref={navRef}
+            className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto [-ms-overflow-style:none] [mask-image:linear-gradient(to_right,black_calc(100%_-_2rem),transparent)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
             {navItems.map((it) => {
               const active = pathname === it.href;
               return (
@@ -134,10 +147,14 @@ export function PlaceTabs({ items }: { items: PlaceTab[] }) {
                       : "font-medium text-muted-foreground hover:text-foreground",
                   )}
                 >
+                  {/* Icon CHỈ từ sm. Ở khổ điện thoại dải tab đã phải cuộn
+                      ngang, mỗi icon ăn thêm ~22px là bớt đi một phần nhãn nhìn
+                      thấy được — mà nhãn mới là thứ đọc ra mục gì. Bỏ icon thì
+                      thường vừa hết các mục trong một màn, khỏi cuộn. */}
                   <SectionIcon
                     tab={it}
                     className={cn(
-                      "size-4 shrink-0",
+                      "hidden size-4 shrink-0 sm:block",
                       active ? "text-warm" : "opacity-70",
                     )}
                   />
