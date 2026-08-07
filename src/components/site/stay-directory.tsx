@@ -3,10 +3,7 @@ import Link from "next/link";
 import {
   ArrowUpRight,
   BadgeCheck,
-  Link2,
   MapPin,
-  MessageCircle,
-  Phone,
   ShieldCheck,
 } from "@/components/icons";
 import { cn } from "@/lib/utils";
@@ -20,11 +17,6 @@ export type StayEntry = {
   category: string | null;
   address: string | null;
   isVerified: boolean;
-  // Kênh chính chủ — ở tầng này chỉ cần BIẾT CÓ hay không; bấm vào thẻ mới ra
-  // trang chi tiết để liên hệ thật.
-  zalo: string | null;
-  phone: string | null;
-  facebookUrl: string | null;
   images: { url: string; isCover: boolean }[];
 };
 
@@ -44,16 +36,16 @@ const GLASS = "rounded-full bg-black/35 text-white backdrop-blur-md";
 // nằm dưới ảnh trên nền đặc. Bản trước đặt hết chữ chồng lên ảnh — đẹp lúc ảnh
 // tối, nhưng ảnh homestay phần lớn là trời sáng và tường trắng, phải dằn một lớp
 // phủ đen khá đậm mới đọc được chữ, tức là làm mờ chính tấm ảnh để cứu chữ. Tách
-// hai lớp ra thì ảnh giữ nguyên độ trong, chữ đạt tương phản thật, và cụm tin cậy
-// (huy hiệu + kênh liên hệ) có chỗ đứng rõ ràng thay vì chen vào khuôn hình.
+// hai lớp ra thì ảnh giữ nguyên độ trong và chữ đạt tương phản thật.
 //
 // Còn lại đúng mẫu card listing trong skill `design`: ảnh 4/3 bo góc lớn → nhãn
-// loại hình → tên → địa chỉ → dòng nhấn ở đáy (ở đây là kênh chính chủ, đứng đúng
-// chỗ mà card thương mại đặt giá — Accommodation không có trường giá).
+// loại hình → tên → địa chỉ. Thẻ KHÔNG bày kênh liên hệ (Zalo/điện thoại/FB):
+// bốn hàng icon giống hệt nhau chỉ làm nặng lưới mà không phân biệt được chỗ nào
+// với chỗ nào — liên hệ là việc của trang chi tiết, bấm vào là tới.
 //
 // Vẫn giữ nguyên định vị của mục này (xem CLAUDE.md: danh bạ ĐÃ XÁC MINH CHÍNH
-// CHỦ, không phải OTA): huy hiệu xác minh, kênh liên hệ chính chủ và một cảnh báo
-// cọc cho cả section đều còn.
+// CHỦ, không phải OTA): huy hiệu xác minh trên ảnh, con số đã xác minh ở đầu và
+// một cảnh báo cọc cho cả section.
 //
 // Là Server Component: mọi thứ tĩnh, không tốn byte JS nào.
 export function StayDirectory({
@@ -71,11 +63,6 @@ export function StayDirectory({
 }) {
   if (stays.length === 0) return null;
 
-  // Có mục nào bày được kênh liên hệ không? Quyết định cách hiển thị sự THIẾU
-  // kênh bên dưới: khi cả hàng đều trắng kênh thì nói MỘT lần ở đầu section,
-  // lặp lại trên từng ô chỉ thành bức tường phủ định.
-  const anyChannel = stays.some((s) => s.zalo || s.phone || s.facebookUrl);
-
   return (
     <div>
       <SectionHeading
@@ -86,25 +73,25 @@ export function StayDirectory({
         unit="chỗ ở"
       />
 
-      {/* Định vị + tình trạng xác minh, gộp một dòng: nói thẳng đây là danh bạ
-          (không đặt phòng) và hiện đúng con số đã kiểm chứng — kể cả khi là 0. */}
-      <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2">
-        <p className="max-w-prose leading-relaxed text-muted-foreground">
-          Danh bạ để bạn{" "}
-          <span className="font-medium text-foreground">
-            liên hệ trực tiếp chủ nhà
-          </span>{" "}
-          — không qua trung gian, không đặt phòng tại đây.
-        </p>
+      {/* DỮ KIỆN, không phải lời giới thiệu.
+          Bản trước mở bằng một câu quảng bá ("Danh bạ để bạn liên hệ trực tiếp
+          chủ nhà — không qua trung gian, không đặt phòng tại đây"), rồi mỗi thẻ
+          lại ghi "Liên hệ chính chủ", rồi cuối section lại một đoạn dặn dò nữa:
+          BA lớp chữ nói đúng một điều, bao quanh bốn tấm ảnh trong một bản xem
+          trước. Nay còn hai NHÃN — mỗi nhãn một dữ kiện tra được. */}
+      <div className="mt-5 flex flex-wrap items-center gap-2">
+        <span className="rounded-md bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+          Danh bạ, không đặt phòng
+        </span>
         {verifiedTotal > 0 ? (
-          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-            <BadgeCheck className="size-4" aria-hidden />
+          <span className="inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+            <BadgeCheck className="size-3.5 shrink-0" aria-hidden />
             {`${verifiedTotal}${total ? `/${total}` : ""} đã xác minh chính chủ`}
           </span>
         ) : (
-          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
-            <ShieldCheck className="size-4" aria-hidden />
-            Kênh liên hệ đang được kiểm chứng
+          <span className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+            <ShieldCheck className="size-3.5 shrink-0" aria-hidden />
+            Chưa chỗ nào được xác minh
           </span>
         )}
       </div>
@@ -113,57 +100,24 @@ export function StayDirectory({
           ngang trên màn 768px chỉ còn ~180px/ô, chữ trên ảnh hết chỗ. */}
       <ul className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stays.map((s, i) => (
-          <StayTile
-            key={s.slug}
-            s={s}
-            priority={i < 4}
-            showMissingChannel={anyChannel}
-          />
+          <StayTile key={s.slug} s={s} priority={i < 4} />
         ))}
       </ul>
 
-      {/* Cảnh báo cọc — MỘT lần cho cả section, một dòng mảnh. Đây là lý do mục
-          này tồn tại nên không được thiếu; nhưng cũng không lặp trên từng ô, vì
-          cảnh báo lặp lại thì người ta ngừng đọc. */}
+      {/* Cảnh báo cọc — MỘT câu, luôn đúng, không rẽ nhánh theo số đã xác minh.
+          Đây là lý do mục này tồn tại (xem CLAUDE.md) nên không được bỏ; nhưng
+          nó là một QUY TẮC, không phải đoạn giải nghĩa huy hiệu. */}
       <p className="mt-5 flex items-start gap-2 text-xs leading-relaxed text-muted-foreground">
         <ShieldCheck className="mt-0.5 size-3.5 shrink-0 text-warm" aria-hidden />
-        {verifiedTotal > 0 ? (
-          <span>
-            Chỉ liên hệ và chuyển khoản qua kênh hiển thị ở trang từng chỗ ở. Huy
-            hiệu <span className="font-medium text-foreground">đã xác minh</span>{" "}
-            nghĩa là chúng tôi đã kiểm chứng đúng chính chủ — chưa có huy hiệu thì
-            bạn tự đối chiếu kỹ trước khi cọc.
-          </span>
-        ) : (
-          <span>
-            Chưa chỗ nào ở đây được xác minh chính chủ.{" "}
-            <span className="font-medium text-foreground">Đừng chuyển cọc</span>{" "}
-            cho bất kỳ số hay tài khoản nào tự nhận là chủ nhà khi bạn chưa tự đối
-            chiếu được.
-          </span>
-        )}
+        Chỉ chuyển cọc qua kênh liên hệ hiển thị trên trang từng chỗ ở.
       </p>
     </div>
   );
 }
 
 // Một thẻ: ảnh 4/3 lồng trong lòng thẻ (+ huy hiệu xác minh nổi trên ảnh) → nhãn
-// loại hình → tên → địa chỉ → dòng kênh chính chủ ở đáy.
-function StayTile({
-  s,
-  priority,
-  showMissingChannel,
-}: {
-  s: StayEntry;
-  priority: boolean;
-  showMissingChannel: boolean;
-}) {
-  const channels = [
-    s.zalo && { icon: MessageCircle, text: "Zalo" },
-    s.phone && { icon: Phone, text: "Điện thoại" },
-    s.facebookUrl && { icon: Link2, text: "Facebook" },
-  ].filter((c): c is { icon: typeof Phone; text: string } => Boolean(c));
-
+// loại hình → tên → địa chỉ.
+function StayTile({ s, priority }: { s: StayEntry; priority: boolean }) {
   return (
     <li className="h-full">
       <Link
@@ -218,29 +172,6 @@ function StayTile({
               <MapPin className="size-3.5 shrink-0" aria-hidden />
               <span className="truncate">{s.address}</span>
             </span>
-          )}
-
-          {/* mt-auto: dòng tin cậy luôn tì xuống đáy thẻ, nên bốn thẻ cạnh nhau
-              có tên dài ngắn khác nhau vẫn thẳng một đường ở dưới. */}
-          {channels.length > 0 ? (
-            <span className="mt-auto flex items-center gap-2 border-t border-border/60 pt-2.5 text-xs text-muted-foreground">
-              <ShieldCheck className="size-3.5 shrink-0 text-primary" aria-hidden />
-              Liên hệ chính chủ
-              <span className="ml-auto flex items-center gap-1 text-foreground/50">
-                {channels.map((c) => (
-                  <span key={c.text}>
-                    <c.icon className="size-3.5" aria-hidden />
-                    <span className="sr-only">{c.text}</span>
-                  </span>
-                ))}
-              </span>
-            </span>
-          ) : (
-            showMissingChannel && (
-              <span className="mt-auto block border-t border-border/60 pt-2.5 text-xs text-muted-foreground/70">
-                Chưa có kênh liên hệ
-              </span>
-            )
           )}
         </span>
       </Link>

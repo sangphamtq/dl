@@ -236,3 +236,56 @@ export async function getThread(
   post.replies = await getReplyTree(post.id, currentUserId);
   return post;
 }
+
+// Tóm tắt cộng đồng của MỘT điểm đến — cho khối xem trước ở trang tổng quan.
+//
+// KHÔNG dùng `getFeed` cho việc này: feed trả về `PostData` đầy đủ (ảnh, like,
+// hồ sơ CTV, cờ ghim/khoá…) để dựng thẻ bài tương tác được, trong khi khối xem
+// trước chỉ cần vài dòng chữ và mấy con số. Truy vấn riêng nhẹ hơn hẳn và nói rõ
+// ý định.
+export type CommunityDigest = {
+  /** Tổng số bài của điểm đến (gồm cả rao dịch vụ) — chỉ số "có người". */
+  total: number;
+  /** Số người từng đăng bài — "có bao nhiêu người", khác hẳn số bài. */
+  people: number;
+  /** Hoạt động gần nhất — chỉ số "còn sống hay đã nguội". */
+  lastAt: Date | null;
+  threads: {
+    slug: string;
+    type: string;
+    body: string;
+    replyCount: number;
+  }[];
+};
+
+export async function getPlaceCommunityDigest(
+  placeId: string,
+  take = 3,
+): Promise<CommunityDigest> {
+  const base = { placeId, isHidden: false };
+  const [total, authors, latest, threads] = await Promise.all([
+    prisma.thread.count({ where: base }),
+    prisma.thread.groupBy({ by: ["authorId"], where: base }),
+    prisma.thread.findFirst({
+      where: base,
+      orderBy: { lastActivityAt: "desc" },
+      select: { lastActivityAt: true },
+    }),
+    prisma.thread.findMany({
+      // BỎ `sale`: rao dịch vụ là quảng cáo của CTV, không phải bằng chứng có
+      // cộng đồng. Để nó chiếm chỗ trong khối xem trước là biếu không một suất
+      // quảng cáo ngay trang tổng quan — và nó thường là bài mới nhất nên gần
+      // như luôn đứng đầu nếu không loại ra.
+      where: { ...base, type: { not: "sale" } },
+      orderBy: { lastActivityAt: "desc" },
+      take,
+      select: { slug: true, type: true, body: true, replyCount: true },
+    }),
+  ]);
+  return {
+    total,
+    people: authors.length,
+    lastAt: latest?.lastActivityAt ?? null,
+    threads,
+  };
+}

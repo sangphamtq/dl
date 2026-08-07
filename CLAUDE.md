@@ -421,23 +421,30 @@ Mở đầu (bản sắc) → Ăn ở đâu → Quán nước & cà phê → Tr�
   có 10–20 món; nơi *view-led* (núi) thực chất chỉ 3–4 món nhưng nhiều quán cảnh. **Đừng ép
   hai khối cân nhau.**
 
-**Ẩm thực ở tab tổng quan** (`/diem-den/[placeSlug]`, `FoodMenu`) — bản xem trước, cùng các
-khối với màn hình đầy đủ, chỉ khác số lượng:
+**Ẩm thực ở tab tổng quan** (`/diem-den/[placeSlug]`, `FoodMenu`) — **MỘT HÀNG BỐN Ô**, cùng
+khuôn thẻ với `StayDirectory`/`SpotSpotlight`: ảnh 4/3 lồng trong thẻ → nhãn loại → tên →
+dòng nhấn ở đáy. Một link "Xem tất cả" duy nhất trên tiêu đề.
 
-```
-❶ Ăn ở đâu   3 quán · danh sách CHỮ, không ảnh
-❷ Quán nước  3 quán · dải Ô ẢNH + huy hiệu hướng nhìn + giờ vàng
-```
-
-- **Hai khối cố tình hai hình thức khác nhau**, không phải cho vui: quán ăn chỉ cần tên +
-  kiểu (danh sách chữ, tiết kiệm chiều cao); quán view bán bằng CẢNH nên bắt buộc có ảnh —
-  một dòng chữ "Rooftop Hoàng Hôn · Cà phê" không bán được gì.
+- **KHÔNG tách quán ăn / quán nước thành hai khối.** Trục ăn-uống là thứ cần khi xếp lịch
+  bữa — việc của màn hình Ẩm thực đầy đủ. Ở bản xem trước câu hỏi chỉ là "quanh đây ăn uống
+  chỗ nào đáng ghé", nên phân biệt bằng **nhãn trên từng ô**, không bằng khối riêng.
+  (Bản trước là 2 khối, mỗi khối một link "Xem tất cả" → cộng link tiêu đề là **3 link cùng
+  trỏ một chỗ**, và section mở đầu bằng danh sách chữ không ảnh giữa một trang lấy ảnh làm
+  chủ. Nó vốn cân được nhờ khối "Món phải thử" gánh phần hình; khối đó gỡ đi thì mất điểm tựa.)
+- **Giữ chỗ cho quán nước** (`pickVenues`): tối đa 2/4 ô, quán có `viewType` ưu tiên. Không
+  xếp chung rồi cắt — quán nước đứng cuối theo `order` nên cách đó gần như không bao giờ cho
+  chúng lọt, đúng ở những nơi mà cảnh mới là lý do người ta tới. Vì vậy quán nước cũng phải
+  **truy vấn RIÊNG** (`prisma.eatery.findMany`), không dùng chung `take` với quán ăn.
+- **Huy hiệu "Nhìn ra …" hiện cho MỌI quán có `viewType`, kể cả quán ăn** — view của quán ăn
+  (Hải sản Bờ Kè 24: "bàn sát biển") trước đây bị giấu kín trong khối chữ.
+- **Nhãn ô ưu tiên `category`** ("Cà phê", "Hải sản" — đã tự nói ăn hay uống), chỉ rơi về
+  "Quán ăn"/"Quán nước" khi category trống hoặc `other`. Đừng rẽ nhánh theo `venueKind`
+  trước: quán `both` sẽ ra nhãn khác hẳn quán `drink` cùng loại.
+- **Dòng đáy** = `bestTime` (giờ vàng, `text-primary` — quyết định đi hay không), nếu không
+  có thì bữa + khu vực.
 - Khối "Món phải thử" (6 món, hàng menu ảnh vuông + dây chấm dẫn) đã gỡ cùng đợt tắt phần
   món ăn. Tiêu đề section đổi "Ăn gì ở X" → **"Ăn uống ở X"**, đơn vị đếm "món & quán" →
   "quán", và tab Ẩm thực chỉ còn đếm `counts.eatery` (`buildPlaceTabs`).
-- **Quán nước phải truy vấn RIÊNG** (`prisma.eatery.findMany`), không dùng chung `take` với
-  quán ăn: chúng đứng cuối theo `order` nên gộp chung là gần như không bao giờ lọt vào —
-  đúng những nơi lẽ ra chúng phải dẫn trang. Trong khối, quán **có `viewType` xếp trước**.
 
 **Mẫu hiển thị Listing — mọi Listing đều CÓ trang chi tiết:**
 - **Trang danh sách** (`/diem-den/[placeSlug]/[loai]`): render **card preview** (ảnh bìa

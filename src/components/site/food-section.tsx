@@ -433,7 +433,7 @@ export function FoodSection({
   );
 }
 
-// Card quán ăn — hàng ngang: ảnh + tên + loại · giá + khu vực + mô tả + bữa.
+// Card quán ăn — hàng ngang: ảnh + tên + loại + khu vực + mô tả + chip bữa.
 function EateryCard({
   eatery: e,
   onClick,

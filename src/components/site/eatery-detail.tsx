@@ -79,12 +79,33 @@ export function EateryDetail({ data }: { data: EateryDetailData }) {
         return acc;
       }, [])
       .join(", ") || null;
-  const facts = [
+  const facts: {
+    icon: typeof Clock;
+    label: string;
+    value: React.ReactNode;
+  }[] = [
     // Quán view: hướng nhìn & giờ vàng đứng trước — đó là lý do khách tới.
     { icon: Eye, label: "Nhìn ra", value: label(VIEW_TYPE_LABELS, data.viewType) },
     { icon: Sunrise, label: "Giờ / mùa đẹp", value: data.bestTime },
     { icon: Clock, label: "Giờ mở cửa", value: data.openingHours },
-    { icon: UtensilsCrossed, label: "Bữa", value: mealLabels.join(" · ") || null },
+    // Bữa là NHIỀU giá trị rời → mỗi bữa một chip, không nối thành một chuỗi.
+    {
+      icon: UtensilsCrossed,
+      label: "Bữa",
+      value:
+        mealLabels.length > 0 ? (
+          <span className="flex flex-wrap gap-1.5">
+            {mealLabels.map((m) => (
+              <span
+                key={m}
+                className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
+              >
+                {m}
+              </span>
+            ))}
+          </span>
+        ) : null,
+    },
     { icon: MapPin, label: "Địa chỉ", value: fullAddress },
     { icon: Phone, label: "Điện thoại", value: data.phone },
   ].filter((f) => f.value);

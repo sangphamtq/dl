@@ -62,93 +62,118 @@ function SpotRow({
   panelId: string;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onSelect}
-      aria-current={on ? "true" : undefined}
-      aria-controls={panelId}
-      // Hover và active nằm trên CÙNG MỘT THANG: nền hàng. Rỗng → chạm vào →
-      // đang xem, mỗi bậc đậm hơn bậc trước. Trước đây hover có nền mà active
-      // lại không, nên hàng đang rê chuột trông "được chọn" hơn cả hàng đang
-      // thực sự phát — hai tín hiệu đá nhau.
-      // Riêng active có thêm hai thứ mà hover không có, và cả hai đều mang
-      // thông tin chứ không phải trang trí: số thứ tự chuyển cam, và thanh tiến
-      // trình cho biết còn bao lâu.
+    // Hàng có HAI việc: bấm vào đâu cũng CHỌN để xem ảnh lớn, riêng cái TÊN là
+    // link thật sang trang địa điểm. Trước đây cả hàng chỉ là nút chọn nên muốn
+    // sang trang phải chọn rồi mới bấm được link trong khung ảnh — hai bước cho
+    // một việc, và không mở được tab mới.
+    //
+    // Không được đặt <a> trong <button>, nên nút chọn là một lớp PHỦ toàn hàng
+    // nằm dưới nội dung; nội dung để `pointer-events-none` cho chuột xuyên
+    // xuống nút, riêng cái tên bật lại `pointer-events-auto` để nó tự nhận cú
+    // bấm của mình.
+    <div
       className={cn(
-        "group relative flex w-full items-center gap-3 rounded-xl p-2 text-left transition-colors",
-        "lg:gap-4 lg:px-2 lg:py-2.5",
+        "group relative flex items-center rounded-xl transition-colors",
         on ? "bg-muted" : "hover:bg-muted/40",
       )}
     >
+      <button
+        type="button"
+        onClick={onSelect}
+        aria-current={on ? "true" : undefined}
+        aria-controls={panelId}
+        // Lớp phủ không có chữ bên trong → phải tự đặt tên cho trình đọc màn hình.
+        aria-label={`Xem ảnh ${s.name}`}
+        className="absolute inset-0 rounded-xl"
+      />
+
+      {/* Hover và active nằm trên CÙNG MỘT THANG: nền hàng. Rỗng → chạm vào →
+          đang xem, mỗi bậc đậm hơn bậc trước. Trước đây hover có nền mà active
+          lại không, nên hàng đang rê chuột trông "được chọn" hơn cả hàng đang
+          thực sự phát — hai tín hiệu đá nhau.
+          Riêng active có thêm hai thứ mà hover không có, và cả hai đều mang
+          thông tin chứ không phải trang trí: số thứ tự chuyển cam, và thanh tiến
+          trình cho biết còn bao lâu. */}
       <span
-        aria-hidden
         className={cn(
-          "hidden w-7 shrink-0 self-start pt-0.5 font-[family-name:var(--font-display)] text-xl font-extrabold tabular-nums leading-none tracking-tight transition-colors lg:block",
-          on ? "text-warm" : "text-muted-foreground/40",
+          "pointer-events-none relative flex min-w-0 flex-1 items-center gap-3 p-2 text-left",
+          "lg:gap-4 lg:px-2 lg:py-2.5",
         )}
       >
-        {num(i)}
-      </span>
-
-      <span
-        className={cn(
-          "relative h-[4.75rem] w-24 shrink-0 overflow-hidden rounded-lg bg-muted transition-opacity lg:h-[5.5rem] lg:w-32",
-          on ? "opacity-100" : "opacity-90",
-        )}
-      >
-        <Image
-          src={s.image}
-          alt=""
-          fill
-          sizes="112px"
-          className="object-cover"
-        />
-      </span>
-
-      <span className="min-w-0 flex-1">
-        <span
-          className={cn(
-            "block truncate font-semibold tracking-tight transition-colors lg:text-lg",
-            on ? "text-foreground" : "text-foreground/90",
-          )}
-        >
-          {s.name}
-        </span>
-        {/* Tagline: câu chốt của biên tập, đứng ngay dưới tên vì nó là thứ
-            khiến người ta muốn bấm vào. Chỉ MỘT dòng — hàng trong danh sách chia
-            đều chiều cao cột, cho nó xuống hai dòng là sáu hàng vỡ nhịp. */}
-        {s.tagline && (
-          <span className="mt-1 block truncate text-sm text-foreground/70">
-            {s.tagline}
-          </span>
-        )}
-        <span className="mt-1 block truncate text-xs text-muted-foreground">
-          {[s.location, s.facts[0]?.text].filter(Boolean).join(" · ")}
-        </span>
-
-        {/* Rãnh của thanh tiến trình LUÔN được render, kể cả ở mục chưa chọn
-            (lúc đó trong suốt). Chỉ render khi `on` thì mục vừa được chọn tự cao
-            thêm ~10px, cả cột xô lên xuống mỗi 7 giây. */}
         <span
           aria-hidden
           className={cn(
-            "mt-2 block h-0.5 w-full max-w-[9rem] overflow-hidden rounded-full transition-colors",
-            on ? "bg-border" : "bg-transparent",
+            "hidden w-7 shrink-0 self-start pt-0.5 font-[family-name:var(--font-display)] text-xl font-extrabold tabular-nums leading-none tracking-tight transition-colors lg:block",
+            on ? "text-warm" : "text-muted-foreground/40",
           )}
         >
-          {on && (
-            <span
-              key={`${s.slug}-run`}
-              className="spot-progress block h-full w-full bg-warm"
-              style={{
-                animationDuration: `${INTERVAL}ms`,
-                animationPlayState: playing ? "running" : "paused",
-              }}
-            />
+          {num(i)}
+        </span>
+
+        <span
+          className={cn(
+            "relative h-[4.75rem] w-24 shrink-0 overflow-hidden rounded-lg bg-muted transition-opacity lg:h-[5.5rem] lg:w-32",
+            on ? "opacity-100" : "opacity-90",
           )}
+        >
+          <Image
+            src={s.image}
+            alt=""
+            fill
+            sizes="112px"
+            className="object-cover"
+          />
+        </span>
+
+        <span className="min-w-0 flex-1">
+          {/* Cái TÊN là link — đích duy nhất trong hàng dẫn sang trang địa điểm.
+              `pointer-events-auto` để nó nhận cú bấm của mình thay vì để lọt
+              xuống lớp phủ chọn ảnh bên dưới. */}
+          <Link
+            href={`/dia-diem/${s.slug}`}
+            className={cn(
+              "pointer-events-auto block truncate font-semibold tracking-tight underline-offset-4 transition-colors hover:text-primary hover:underline lg:text-lg",
+              on ? "text-foreground" : "text-foreground/90",
+            )}
+          >
+            {s.name}
+          </Link>
+          {/* Tagline: câu chốt của biên tập, đứng ngay dưới tên vì nó là thứ
+              khiến người ta muốn bấm vào. Chỉ MỘT dòng — hàng trong danh sách chia
+              đều chiều cao cột, cho nó xuống hai dòng là sáu hàng vỡ nhịp. */}
+          {s.tagline && (
+            <span className="mt-1 block truncate text-sm text-foreground/70">
+              {s.tagline}
+            </span>
+          )}
+          <span className="mt-1 block truncate text-xs text-muted-foreground">
+            {[s.location, s.facts[0]?.text].filter(Boolean).join(" · ")}
+          </span>
+
+          {/* Rãnh của thanh tiến trình LUÔN được render, kể cả ở mục chưa chọn
+              (lúc đó trong suốt). Chỉ render khi `on` thì mục vừa được chọn tự cao
+              thêm ~10px, cả cột xô lên xuống mỗi 7 giây. */}
+          <span
+            aria-hidden
+            className={cn(
+              "mt-2 block h-0.5 w-full max-w-[9rem] overflow-hidden rounded-full transition-colors",
+              on ? "bg-border" : "bg-transparent",
+            )}
+          >
+            {on && (
+              <span
+                key={`${s.slug}-run`}
+                className="spot-progress block h-full w-full bg-warm"
+                style={{
+                  animationDuration: `${INTERVAL}ms`,
+                  animationPlayState: playing ? "running" : "paused",
+                }}
+              />
+            )}
+          </span>
         </span>
       </span>
-    </button>
+    </div>
   );
 }
 
@@ -598,9 +623,27 @@ export function SpotSpotlight({
                 />
               ))}
             </div>
+            {/* Lối sang tab Địa điểm: thanh NÉT ĐỨT rộng bằng cột, ngay dưới
+                danh sách. Đây là khuôn "nút cuối danh sách" đã có ở mục Đánh
+                giá ("Xem thêm N đánh giá") — cùng một việc thì cùng một hình,
+                khỏi đẻ thêm kiểu mới.
+                Nét đứt để nó KHÔNG bị đọc nhầm thành hàng thứ bảy: sáu hàng
+                trên đều đặc và có ảnh, thanh này rỗng và đứt nét nên mắt hiểu
+                ngay đó là điều khiển, không phải một địa điểm nữa. */}
+            <Link
+              href={allHref}
+              className="group mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border/70 py-3 text-sm font-medium text-muted-foreground transition-colors hover:border-primary/50 hover:bg-muted/40 hover:text-foreground"
+            >
+              Xem tất cả{count != null ? ` ${count}` : ""} địa điểm
+              <ArrowUpRight
+                className="size-4 shrink-0 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+                aria-hidden
+              />
+            </Link>
 
           </div>
         </div>
+
       </div>
 
       <p className="sr-only" aria-live="polite">

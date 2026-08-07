@@ -23,7 +23,7 @@ import { ExperienceGrid } from "@/components/site/experience-grid";
 import { FoodMenu } from "@/components/site/food-menu";
 import { StayDirectory } from "@/components/site/stay-directory";
 import { CommunityPreview } from "@/components/site/community-preview";
-import { getFeed } from "@/lib/community-feed";
+import { getPlaceCommunityDigest } from "@/lib/community-feed";
 import { getSettings } from "@/lib/settings";
 import { PlaceViewTracker } from "@/components/site/place-view-tracker";
 import { PlaceHero } from "@/components/site/place-hero";
@@ -197,9 +197,21 @@ export default async function PlaceDetailPage({
       eateries: {
         where: { ...pub, venueKind: { in: ["eat", "both"] as const } },
         orderBy: [{ isFeatured: "desc" }, { order: "asc" }, { name: "asc" }],
-        // 3 = một hàng ba cột, cùng tinh thần "chỉ hiện nổi bật" với phần món.
-        take: 3,
-        select: { slug: true, name: true, category: true, meals: true },
+        // Lấy dư 4 ô của section: `FoodMenu` giữ chỗ cho quán nước nên số ô
+        // dành cho quán ăn thay đổi theo dữ liệu từng nơi.
+        take: 6,
+        select: {
+          slug: true,
+          name: true,
+          category: true,
+          venueKind: true,
+          viewType: true,
+          bestTime: true,
+          meals: true,
+          wardName: true,
+          districtName: true,
+          images: listingImages,
+        },
       },
       accommodations: {
         where: pub,
@@ -213,10 +225,6 @@ export default async function PlaceDetailPage({
           category: true,
           address: true,
           isVerified: true,
-          // Kênh chính chủ: chỉ để BIẾT có kênh nào, không render link ở đây.
-          zalo: true,
-          phone: true,
-          facebookUrl: true,
           images: listingImages,
         },
       },
@@ -324,17 +332,17 @@ export default async function PlaceDetailPage({
           select: {
             slug: true,
             name: true,
+            category: true,
+            venueKind: true,
             viewType: true,
             bestTime: true,
+            meals: true,
+            wardName: true,
+            districtName: true,
             images: listingImages,
           },
         })
       : [];
-  // 3 = một hàng ba ô ảnh. Quán có view lên trước rồi mới cắt, nên nơi nào có
-  // đủ quán cảnh thì hàng này toàn quán cảnh.
-  const drinks = [...drinkVenues]
-    .sort((a, b) => Number(Boolean(b.viewType)) - Number(Boolean(a.viewType)))
-    .slice(0, 3);
 
   const stats = buildPlaceStats(place.viewCount);
   const tabs = buildPlaceTabs(place.slug, counts);
@@ -343,15 +351,8 @@ export default async function PlaceDetailPage({
       ? { stars: reviewSummary.stars, total: reviewSummary.total }
       : undefined;
 
-  // Vài thảo luận cộng đồng mới nhất về điểm đến này (xem trước).
-  const communityPosts = (
-    await getFeed({
-      placeId: place.id,
-      take: 3,
-      sort: "active",
-      currentUserId: userId ?? null,
-    })
-  ).posts;
+  // Tóm tắt cộng đồng của điểm đến: mấy con số "có người" + vài bài mới.
+  const community = await getPlaceCommunityDigest(place.id);
 
   // Thanh chuyển nhanh: mọi điểm đến lớn gom theo miền (làm nổi cái đang xem).
   const peerGroups = await getDestinationPeerGroups();
@@ -386,7 +387,7 @@ export default async function PlaceDetailPage({
     place.spots.length > 0 ||
     place.activities.length > 0 ||
     place.eateries.length > 0 ||
-    drinks.length > 0 ||
+    drinkVenues.length > 0 ||
     place.accommodations.length > 0 ||
     counts.transport > 0;
 
@@ -619,21 +620,16 @@ export default async function PlaceDetailPage({
           </Band>
         )}
 
-        {/* Ẩm thực — danh sách quán ăn + dải ô ảnh quán nước (xem FoodMenu) */}
-        {(place.eateries.length > 0 || drinks.length > 0) && (
+        {/* Ẩm thực — một hàng ô ảnh, quán ăn & quán nước chung (xem FoodMenu) */}
+        {(place.eateries.length > 0 || drinkVenues.length > 0) && (
           <Band tint={tinted()}>
             <section id="am-thuc" className="scroll-mt-32">
               <FoodMenu
                 placeName={place.name}
                 href={`/diem-den/${place.slug}/am-thuc`}
                 count={counts.eatery}
-                eateries={place.eateries.map((e) => ({
-                  slug: e.slug,
-                  name: e.name,
-                  category: e.category,
-                  meals: e.meals,
-                }))}
-                drinks={drinks}
+                eateries={place.eateries}
+                drinks={drinkVenues}
               />
             </section>
           </Band>
@@ -674,17 +670,21 @@ export default async function PlaceDetailPage({
         )}
 
         {/* Hỏi đáp cộng đồng — xem trước vài thảo luận */}
-        {communityPosts.length > 0 && (
+        {community.total > 0 && (
           <Band tint={tinted()}>
             <section id="hoi-dap" className="scroll-mt-32">
               <SectionHeading
                 eyebrow="Cộng đồng"
                 title="Hỏi đáp cộng đồng"
                 href={`/diem-den/${place.slug}/cong-dong`}
-                count={communityPosts.length}
+                count={community.total}
                 unit="thảo luận"
               />
-              <CommunityPreview posts={communityPosts} />
+              <CommunityPreview
+                digest={community}
+                href={`/diem-den/${place.slug}/cong-dong`}
+                placeName={place.name}
+              />
             </section>
           </Band>
         )}

@@ -231,17 +231,27 @@ export function ReviewsSection({
         <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[2fr_3fr] lg:gap-12">
           {/* Trái: tổng hợp (dính khi cuộn trên desktop) */}
           <div className="lg:sticky lg:top-28 lg:self-start">
-            <Summary
-              summary={summary}
-              activeStance={stanceFilter}
-              onSelectStance={(s) =>
-                setStanceFilter((cur) => (cur === s ? null : s))
-              }
-            />
+            {/* Mặt thẻ cho cả hai cột. Đây là section DUY NHẤT của trang không
+                có thẻ nào: mọi mục khác (Địa điểm, Ẩm thực, Lưu trú, Cộng đồng)
+                đều lấp dải bằng ô ảnh hoặc khung `bg-card`, nền `muted` chỉ lộ
+                ra ở khe. Ở đây chữ và vạch mảnh nằm thẳng trên nền nên gần như
+                cả dải là màu `muted` — cùng một tông ấy mà đọc ra tối và đục
+                hơn hẳn các mục trên. Giải pháp không phải bỏ tint (sẽ vỡ nhịp
+                trắng–nhạt xen kẽ của trang) mà là trả section về đúng ngôn ngữ
+                thẻ của các mục còn lại. */}
+            <div className="rounded-2xl border border-border/60 bg-card p-5 sm:p-6">
+              <Summary
+                summary={summary}
+                activeStance={stanceFilter}
+                onSelectStance={(s) =>
+                  setStanceFilter((cur) => (cur === s ? null : s))
+                }
+              />
+            </div>
           </div>
 
           {/* Phải: danh sách đánh giá */}
-          <div>
+          <div className="rounded-2xl border border-border/60 bg-card p-5 sm:p-6">
             <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-2">
               {stanceFilter && (
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
@@ -310,7 +320,7 @@ export function ReviewsSection({
           </div>
         </div>
       ) : (
-        <div className="mt-8 py-6">
+        <div className="mt-6 rounded-2xl border border-border/60 bg-card p-5 sm:p-6">
           <p className="font-medium">Chưa có đánh giá nào</p>
           <p className="mt-1 max-w-sm text-sm text-muted-foreground">
             Là Vivu-er đầu tiên chia sẻ cảm nhận về {target.name}.
