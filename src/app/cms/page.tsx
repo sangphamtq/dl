@@ -10,7 +10,6 @@ export default async function CmsDashboard() {
     users,
     activities,
     spots,
-    specialties,
     eateries,
     accommodations,
     transports,
@@ -20,14 +19,14 @@ export default async function CmsDashboard() {
     prisma.user.count(),
     prisma.activity.count(),
     prisma.spot.count(),
-    prisma.specialty.count(),
     prisma.eatery.count(),
     prisma.accommodation.count(),
     prisma.transport.count(),
   ]);
 
-  const listings =
-    activities + spots + specialties + eateries + accommodations + transports;
+  // Đặc sản KHÔNG cộng vào đây: mục /cms/specialties đang tắt nên bấm vào ô
+  // "Listing" cũng không tới được những bản ghi đó — đếm vào chỉ gây hiểu nhầm.
+  const listings = activities + spots + eateries + accommodations + transports;
 
   const stats = [
     { label: "Tỉnh & Điểm đến", value: places, icon: MapPin, href: "/cms/places" },

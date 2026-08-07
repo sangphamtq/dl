@@ -29,7 +29,7 @@ function resolve(name, depth = 0) {
 
 // Mọi icon lucide đang dùng trong repo (PascalCase). Cập nhật khi import icon mới.
 const LUCIDE =
-  "AlertCircle AlignCenter AlignLeft AlignRight ArrowDownWideNarrow ArrowLeft ArrowRight ArrowUp ArrowUpRight BadgeCheck BedDouble Bell Bike Bold BookOpen Building2 Bus CalendarClock CalendarDays Camera Car CarTaxiFront Check CheckCheck CheckCircle2 CheckIcon ChefHat ChevronDown ChevronDownIcon ChevronLeft ChevronLeftIcon ChevronRight ChevronRightIcon ChevronUp ChevronUpIcon ChevronsUpDown CircleCheck CircleIcon Clock Cloud Compass ConciergeBell Construction Crosshair Database DatabaseZap Download ExternalLink Eye EyeOff FileText Flag Footprints Frown Globe Heading2 Heading3 Heart HelpCircle Home Image ImageIcon ImageOff ImagePlus Info Italic KeyRound Landmark Layers LayoutDashboard LayoutGrid Lightbulb Link2 List ListOrdered Loader2 Lock LockOpen LogOut Mail Map MapPin MapPinCheck MapPinCheckInside MapPinPlus MapPinned Maximize Meh Menu MessageCircle MessageSquare MessageSquareText MessagesSquare MoreHorizontal MoreHorizontalIcon Mountain Navigation Newspaper PanelLeftIcon Pause PenLine Pencil Phone Pin PinOff Plane PlaneLanding Play Plus Quote Redo2 RefreshCw Reply RotateCcw RotateCw Route Search SearchIcon Send Settings Share2 Shield ShieldAlert ShieldCheck ShieldQuestion ShieldX Ship Sliders Smile Sparkles Star Store Strikethrough Tag ThumbsUp Ticket TrainFront Trash2 TriangleAlert Underline Undo2 UploadCloud User UserPlus Users Utensils UtensilsCrossed Wallet WifiOff X XCircle XIcon".split(
+  "AlertCircle AlignCenter AlignLeft AlignRight ArrowDownWideNarrow ArrowLeft ArrowRight ArrowUp ArrowUpRight BadgeCheck BedDouble Bell Bike Bold BookOpen Building2 Bus CalendarClock CalendarDays Camera Car CarTaxiFront Check CheckCheck CheckCircle2 CheckIcon ChefHat ChevronDown ChevronDownIcon ChevronLeft ChevronLeftIcon ChevronRight ChevronRightIcon ChevronUp ChevronUpIcon ChevronsUpDown CircleCheck CircleIcon Clock Cloud Coffee Compass ConciergeBell Construction Crosshair Database DatabaseZap Download ExternalLink Eye EyeOff FileText Flag Footprints Frown Globe Heading2 Heading3 Heart HelpCircle Home Image ImageIcon ImageOff ImagePlus Info Italic KeyRound Landmark Layers LayoutDashboard LayoutGrid Lightbulb Link2 List ListOrdered Loader2 Lock LockOpen LogOut Mail Map MapPin MapPinCheck MapPinCheckInside MapPinPlus MapPinned Maximize Meh Menu MessageCircle MessageSquare MessageSquareText MessagesSquare MoreHorizontal MoreHorizontalIcon Mountain Navigation Newspaper PanelLeftIcon Pause PenLine Pencil Phone Pin PinOff Plane PlaneLanding Play Plus Quote Redo2 RefreshCw Reply RotateCcw RotateCw Route Search SearchIcon Send Settings Share2 Shield ShieldAlert ShieldCheck ShieldQuestion ShieldX Ship Sliders Smile Sparkles Star Store Strikethrough Sunrise Tag ThumbsUp Ticket TrainFront Trash2 TriangleAlert Underline Undo2 UploadCloud User UserPlus Users Utensils UtensilsCrossed Wallet WifiOff X XCircle XIcon".split(
     " ",
   );
 
@@ -59,7 +59,8 @@ const DICT = {
   "chevron-left": "chevron-left", "chevron-right": "chevron-right",
   "chevron-up": "keyboard-arrow-up", "chevrons-up-down": "unfold-more",
   "circle-check": "check-circle", circle: "circle", clock: "schedule",
-  cloud: "cloud", compass: "explore", "concierge-bell": "room-service",
+  cloud: "cloud", coffee: "local-cafe", compass: "explore",
+  "concierge-bell": "room-service", sunrise: "wb-twilight",
   construction: "construction", crosshair: "my-location", database: "database",
   "database-zap": "database", download: "download",
   "external-link": "open-in-new", eye: "visibility", "eye-off": "visibility-off",

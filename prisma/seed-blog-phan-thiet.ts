@@ -94,21 +94,16 @@ async function main() {
   }
 
   // PostRef tới dữ liệu Phan Thiết nếu đã seed (không bắt buộc).
-  const [phanThiet, eateries, specialties] = await Promise.all([
+  const [phanThiet, eateries] = await Promise.all([
     prisma.place.findUnique({ where: { slug: "phan-thiet" }, select: { id: true } }),
     prisma.eatery.findMany({
       where: { slug: { in: ["hai-san-bo-ke-24", "lau-tha-hong-ngoc", "banh-can-cay-phuong"] } },
-      select: { id: true },
-    }),
-    prisma.specialty.findMany({
-      where: { slug: { in: ["nuoc-mam-phan-thiet", "banh-can-phan-thiet", "lau-tha-phan-thiet"] } },
       select: { id: true },
     }),
   ]);
 
   const refs = [
     ...(phanThiet ? [{ placeId: phanThiet.id }] : []),
-    ...specialties.map((s) => ({ specialtyId: s.id })),
     ...eateries.map((e) => ({ eateryId: e.id })),
   ];
 

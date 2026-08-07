@@ -7,7 +7,6 @@ import { SiteFooter } from "@/components/site/site-footer";
 import { PeerBar } from "@/components/site/peer-bar";
 import { getDestinationPeerGroups } from "@/lib/peers";
 import { ListingView } from "@/components/site/listing-view";
-import { type SpecialtyDetailData } from "@/components/site/specialty-detail";
 import { type EateryDetailData } from "@/components/site/eatery-detail";
 import { FoodSection } from "@/components/site/food-section";
 import { AccommodationSection } from "@/components/site/accommodation-section";
@@ -35,8 +34,8 @@ import {
 } from "@/lib/listing-labels";
 import { parseTicketTiers, formatVnd } from "@/lib/tickets";
 
-// Map token [loai] đơn loại → model + tiêu đề. Đặc sản & Quán ăn KHÔNG còn ở đây:
-// chúng hiển thị chi tiết inline trên tab gộp "am-thuc" (xem dưới).
+// Map token [loai] đơn loại → model + tiêu đề. Quán ăn KHÔNG có ở đây: nó hiển
+// thị chi tiết inline trên tab gộp "am-thuc" (xem dưới).
 const LOAI = {
   "hoat-dong": { title: "Hoạt động & trải nghiệm", model: "activity" },
   "dia-diem": { title: "Địa điểm tham quan", model: "spot" },
@@ -45,7 +44,7 @@ const LOAI = {
 
 type Loai = keyof typeof LOAI;
 
-// am-thuc = tab gộp: hiển thị chi tiết Đặc sản + Quán ăn trên cùng một trang.
+// am-thuc = tab gộp: Quán ăn + Quán nước, chi tiết mở bằng drawer tại chỗ.
 const AM_THUC = "am-thuc";
 // di-chuyen = màn hình Di chuyển (Transport) inline, không có trang chi tiết per-item.
 const DI_CHUYEN = "di-chuyen";
@@ -248,38 +247,10 @@ const FOOD_ORDER = [
   { popularity: "desc" as const },
   { name: "asc" as const },
 ];
-// Quan hệ liên kết chéo (eatery↔specialty) — card có ảnh bìa.
-const crossLinkSelect = {
-  where: { status: "published" as const },
-  orderBy: [{ isFeatured: "desc" as const }, { name: "asc" as const }],
-  select: {
-    slug: true,
-    name: true,
-    images: { where: { isCover: true }, take: 1, select: { url: true, isCover: true } },
-  },
-};
 const gallerySelect = {
   orderBy: [{ isCover: "desc" as const }, { order: "asc" as const }],
   select: { id: true, url: true, alt: true, isCover: true },
 };
-
-// Chi tiết đầy đủ Đặc sản của một place — render khối trên tab Ẩm thực.
-async function fetchSpecialtyDetails(
-  placeId: string,
-): Promise<SpecialtyDetailData[]> {
-  return prisma.specialty.findMany({
-    where: { placeId, status: "published" },
-    orderBy: FOOD_ORDER,
-    select: {
-      slug: true,
-      name: true,
-      description: true,
-      tags: true,
-      images: gallerySelect,
-      eateries: crossLinkSelect,
-    },
-  });
-}
 
 // Chi tiết đầy đủ Quán ăn của một place — render khối trên tab Ẩm thực.
 async function fetchEateryDetails(placeId: string): Promise<EateryDetailData[]> {
@@ -291,6 +262,9 @@ async function fetchEateryDetails(placeId: string): Promise<EateryDetailData[]> 
       name: true,
       description: true,
       category: true,
+      venueKind: true,
+      viewType: true,
+      bestTime: true,
       address: true,
       lat: true,
       lng: true,
@@ -305,7 +279,6 @@ async function fetchEateryDetails(placeId: string): Promise<EateryDetailData[]> 
       districtName: true,
       provinceName: true,
       images: gallerySelect,
-      specialties: crossLinkSelect,
     },
   });
 }
@@ -466,7 +439,6 @@ export default async function PlaceListingPage({
     ? {
         intro: foodMeta?.foodIntro ?? null,
         tips: foodMeta?.foodTips ?? [],
-        specialties: await fetchSpecialtyDetails(place.id),
         eateries: await fetchEateryDetails(place.id),
         experiences: await fetchFoodExperiences(place.id),
       }
@@ -526,14 +498,13 @@ export default async function PlaceListingPage({
           className={`mx-auto px-4 py-14 sm:px-6 sm:py-20 max-w-7xl`}
         >
           {food ? (
-            food.specialties.length === 0 && food.eateries.length === 0 ? (
+            food.eateries.length === 0 ? (
               <p className="text-muted-foreground">Chưa có nội dung ẩm thực.</p>
             ) : (
               <FoodSection
                 placeName={place.name}
                 intro={food.intro}
                 tips={food.tips}
-                specialties={food.specialties}
                 eateries={food.eateries}
                 experiences={food.experiences}
               />

@@ -112,7 +112,7 @@ export function EateryRowActions({
           <AlertDialogHeader>
             <AlertDialogTitle>Xóa “{name}”?</AlertDialogTitle>
             <AlertDialogDescription>
-              Hành động này không thể hoàn tác. Ảnh & liên kết đặc sản cũng sẽ bị
+              Hành động này không thể hoàn tác. Ảnh của quán cũng sẽ bị
               gỡ.
             </AlertDialogDescription>
           </AlertDialogHeader>

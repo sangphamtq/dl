@@ -9,7 +9,6 @@ import {
   MapPin,
   Compass,
   Mountain,
-  Sparkles,
   UtensilsCrossed,
   BedDouble,
   Bus,
@@ -71,7 +70,8 @@ const NAV: NavGroup[] = [
     items: [
       { href: "/cms/activities", label: "Hoạt động", icon: Compass },
       { href: "/cms/spots", label: "Địa điểm nhỏ", icon: Mountain },
-      { href: "/cms/specialties", label: "Đặc sản", icon: Sparkles },
+      // "Đặc sản" (/cms/specialties) tạm ẩn — phần món ăn đã gỡ khỏi trang công
+      // khai. Bật lại: trả dòng này về và sửa cờ trong specialties/layout.tsx.
       { href: "/cms/eateries", label: "Quán ăn", icon: UtensilsCrossed },
       { href: "/cms/accommodations", label: "Lưu trú", icon: BedDouble },
       { href: "/cms/transport", label: "Di chuyển", icon: Bus },

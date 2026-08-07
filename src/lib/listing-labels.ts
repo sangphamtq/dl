@@ -33,6 +33,27 @@ export const EATERY_CATEGORY_LABELS: Record<string, string> = {
   other: "Khác",
 };
 
+// Đến để ăn hay để ngồi — trục tách section "Ăn ở đâu" / "Quán nước & cà phê".
+export const VENUE_KIND_LABELS: Record<string, string> = {
+  eat: "Quán ăn",
+  drink: "Quán nước",
+  both: "Ăn & ngồi lâu",
+};
+
+// Hướng nhìn — nhãn chip lọc của section quán nước.
+export const VIEW_TYPE_LABELS: Record<string, string> = {
+  sea: "Biển",
+  valley: "Thung lũng",
+  cloud: "Biển mây",
+  mountain: "Núi",
+  lake: "Hồ",
+  river: "Sông",
+  city: "Thành phố",
+  oldtown: "Phố cổ",
+  rice: "Ruộng bậc thang",
+  garden: "Vườn",
+};
+
 export const ACCOMMODATION_CATEGORY_LABELS: Record<string, string> = {
   hotel: "Khách sạn",
   homestay: "Homestay",

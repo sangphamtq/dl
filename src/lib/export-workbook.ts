@@ -36,7 +36,6 @@ export type ExportCounts = {
   places: number;
   activities: number;
   spots: number;
-  specialties: number;
   eateries: number;
   accommodations: number;
   transports: number;
@@ -111,33 +110,18 @@ export async function buildExportWorkbook(): Promise<{
     ]),
   );
 
-  // ---- Đặc sản (Specialty) ----
-  const specialties = await prisma.specialty.findMany({
-    orderBy: { name: "asc" },
-    include: { place: { select: { name: true } }, _count: { select: { eateries: true, images: true } } },
-  });
-  addSheet(
-    wb,
-    "Đặc sản",
-    ["Tên", "Slug", "Điểm đến", "Mô tả", "Số quán liên kết", "Số ảnh", "Trạng thái", "Nổi bật", "Tags"],
-    specialties.map((s) => [
-      s.name, s.slug, s.place.name, s.description ?? "", s._count.eateries, s._count.images,
-      STATUS_VI[s.status] ?? s.status, yn(s.isFeatured), arr(s.tags),
-    ]),
-  );
-
   // ---- Quán ăn (Eatery) ----
   const eateries = await prisma.eatery.findMany({
     orderBy: { name: "asc" },
-    include: { place: { select: { name: true } }, _count: { select: { specialties: true, images: true } } },
+    include: { place: { select: { name: true } }, _count: { select: { images: true } } },
   });
   addSheet(
     wb,
     "Quán ăn",
-    ["Tên", "Slug", "Điểm đến", "Category", "Mô tả", "Địa chỉ", "Giờ mở", "SĐT", "Bữa", "Ghi chú", "Số đặc sản", "Số ảnh", "Trạng thái", "Nổi bật", "Tags"],
+    ["Tên", "Slug", "Điểm đến", "Category", "Mô tả", "Địa chỉ", "Giờ mở", "SĐT", "Bữa", "Ghi chú", "Số ảnh", "Trạng thái", "Nổi bật", "Tags"],
     eateries.map((e) => [
       e.name, e.slug, e.place.name, e.category ?? "", e.description ?? "", e.address ?? "", e.openingHours ?? "",
-      e.phone ?? "", arr(e.meals as unknown as string[]), e.notice ?? "", e._count.specialties, e._count.images,
+      e.phone ?? "", arr(e.meals as unknown as string[]), e.notice ?? "", e._count.images,
       STATUS_VI[e.status] ?? e.status, yn(e.isFeatured), arr(e.tags),
     ]),
   );
@@ -175,12 +159,11 @@ export async function buildExportWorkbook(): Promise<{
     places: places.length,
     activities: activities.length,
     spots: spots.length,
-    specialties: specialties.length,
     eateries: eateries.length,
     accommodations: accommodations.length,
     transports: transports.length,
     total:
-      places.length + activities.length + spots.length + specialties.length +
+      places.length + activities.length + spots.length +
       eateries.length + accommodations.length + transports.length,
   };
 

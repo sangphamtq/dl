@@ -19,7 +19,7 @@ async function main() {
   console.log(`✓ Đã xuất ${counts.total} bản ghi ra ${path.relative(process.cwd(), outPath)}`);
   console.log(
     `  Điểm đến: ${counts.places} · Hoạt động: ${counts.activities} · Địa điểm: ${counts.spots} · ` +
-      `Đặc sản: ${counts.specialties} · Quán ăn: ${counts.eateries} · Lưu trú: ${counts.accommodations} · ` +
+      `Quán ăn: ${counts.eateries} · Lưu trú: ${counts.accommodations} · ` +
       `Di chuyển: ${counts.transports}`,
   );
 }

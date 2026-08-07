@@ -50,8 +50,8 @@ một khóa `placeId` duy nhất.
 Place (province | destination)
 └── placeId ──┬── Hoạt động & trải nghiệm  (Activity)    trekking, chèo SUP, săn mây...
               ├── Địa điểm nhỏ            (Spot)          điểm tham quan con
-              ├── Đặc sản                 (Specialty)     món/sản vật đặc trưng
-              ├── Quán ăn nổi tiếng       (Eatery)        nơi ăn uống đề xuất
+              ├── Đặc sản                 (Specialty)     ⚠️ đang tắt (xem mục dưới)
+              ├── Quán ăn & quán nước     (Eatery)        chỗ ăn / cà phê view (venueKind)
               ├── Nơi lưu trú             (Accommodation) khách sạn/homestay
               └── Di chuyển               (Transport)     direction: getTo | getAround (inline)
 ```
@@ -127,21 +127,59 @@ Nếu chỉ là "việc tự nhiên ở đúng một chỗ, không đơn vị, k
 
 ### Đặc sản vs Quán ăn — mô hình khái niệm (song song Spot/Activity)
 
+> ⚠️ **`Specialty` (Đặc sản / món ăn) ĐANG TẮT — đọc trước khi động vào phần này.**
+> Toàn bộ hiển thị công khai của phần món ăn **đã gỡ** (trang Place, màn hình Ẩm thực,
+> khối cross-link trong drawer Quán ăn), và mục **`/cms/specialties` đã tạm khoá** bằng
+> cờ `DISABLED` trong `src/app/cms/specialties/layout.tsx` + ẩn khỏi sidebar CMS.
+> **Bảng `Specialty`, quan hệ M:N với `Eatery`, dữ liệu seed và ảnh vẫn còn NGUYÊN** —
+> không xoá gì, không migration nào. Phần dưới mô tả mô hình để khi bật lại còn biết
+> đường; đừng dựng lại UI từ đầu, lấy trong lịch sử git (`food-menu.tsx` khối hàng menu,
+> `specialty-detail.tsx`, `food-cross-link.tsx`, `food-layout.ts`).
+>
+> **Lý do tắt:** ở phần lớn điểm đến chỉ có vài món thật sự là đặc sản, phần còn lại là
+> "món ngon của một quán" — thứ `Specialty` không mô tả đúng (xem phân tích trong lịch sử
+> hội thoại). Chốt lại hướng đi trước khi bật lại.
+
 - **`Eatery` = một CHỖ ăn** (giống `Spot`): địa chỉ/toạ độ, giờ, giá, category (Ẩm thực).
 - **`Specialty` = một MÓN/sản vật đặc trưng DÙNG LẠI** (giống `Activity`): liên kết M:N tới
   nhiều `Eatery` bán nó. Tên ở mức món ("Chả mực Hạ Long"), gắn địa danh khi trùng; **KHÔNG**
   tạo "Chả mực quán X". Món signature chỉ-một-quán, không phổ biến → để trong mô tả `Eatery`.
 
-- **Ăn vs Quà** — `Specialty.kind`:
-  - `dish` (món ăn) → liên kết `Eatery` ("ăn ở đâu").
-  - `product` (sản vật/quà) → field `whereToBuy` (mua ở chợ/cửa hàng), KHÔNG ép link quán.
-- **Bữa ăn** — `Eatery.meals[]` (sáng/trưa/tối/cà phê/ăn vặt): **trục lọc chính** vì khách
-  xếp lịch ăn theo bữa. Khác `category` (kiểu món) — hai trục vuông góc. KHÔNG suy từ
-  `openingHours`; biên tập gắn trực tiếp.
+- **KHÔNG làm phần "quà / sản vật mua về".** Dự án chỉ nói chuyện ĂN TẠI CHỖ — không có
+  `Specialty.kind`, không có `whereToBuy`. Sản vật đóng gói nào vẫn đáng kể thì sống ở nơi
+  khác: chè Shan tuyết = `Activity` "Thưởng trà" + `Eatery` "Nhà trà", không phải một
+  `Specialty` riêng.
+- **Bữa ăn** — `Eatery.meals[]` (sáng/trưa/tối/ăn đêm/cà phê/ăn vặt): **trục lọc chính của
+  phần ĂN** vì khách xếp lịch ăn theo bữa. Khác `category` (kiểu món) — hai trục vuông góc.
+  KHÔNG suy từ `openingHours`; biên tập gắn trực tiếp.
 - **Liên kết M:N có chọn lọc:** mỗi món chỉ gắn **2–4 quán tiêu biểu** (đề xuất), không map
   hết. Quản lý **một chiều từ `Specialty`**; trang `Eatery` hiển thị ngược (read-only).
-- **Trường thực tế (đã có schema):** `Specialty`: `kind`, `whereToBuy`, `priceRange`.
-  `Eatery`: `meals[]`, `notice` ("nghỉ thứ 2"/"hết sớm"). PlaceableFields của Eatery đã có.
+- **Khi nào tạo `Specialty`:** món gắn được địa danh/vùng **và** chỉ được ít nhất một quán,
+  **hoặc** là món khách chủ động hỏi tên. Nguyên liệu/rau củ chung chung của cả vùng ("rau
+  cải mèo", "măng rừng") **đừng tạo card riêng** — gộp thành một món ("Mâm cơm bản") hoặc
+  để trong mô tả. Lưới 8 card mà 4 cái là rau thì mục "Món phải thử" loãng hết.
+- **Trường thực tế (đã có schema):** `Eatery`: `meals[]`, `notice` ("nghỉ thứ 2"/"hết
+  sớm"), + nhóm quán-view ngay dưới. **KHÔNG có `priceRange`** ở cả `Specialty` lẫn `Eatery`
+  — cố tình bỏ: thang $/$$/$$$ tương đối không nói được gì hữu ích cho quán ăn, giá cụ thể
+  thì thuộc về mô tả. (`priceRange` vẫn tồn tại ở `Spot`/`Accommodation`.)
+
+#### Quán nước / cà phê view — `venueKind`, `viewType`, `bestTime`
+
+Ở nhiều điểm đến (Tà Xùa, Mộc Châu, Đà Lạt ven…) khách tới quán **vì CẢNH, không vì món**.
+Ba trường trên `Eatery` tách chuyện đó ra khỏi trục bữa ăn:
+
+- **`venueKind`** `eat` | `drink` | `both` — trục **vuông góc** với `category` (kiểu món).
+  Quyết định quán nằm mục nào ngoài trang Ẩm thực: `eat`/`both` → "Ăn ở đâu";
+  `drink`/`both` → "Quán nước & cà phê". Mặc định `eat`.
+- **`viewType`** (`sea` `valley` `cloud` `mountain` `lake` `river` `city` `oldtown` `rice`
+  `garden`, null = không có view) — **trục lọc của mục quán nước**. Thay cho tag chữ tự do
+  kiểu "view đẹp": tag không lọc chuẩn được, không sắp xếp được.
+- **`bestTime`** — giờ/mùa cảnh đẹp nhất ("5:30–7:00 mùa mây"), **khác `openingHours`**.
+
+> **Ranh giới `Spot` ↔ `Eatery` (dễ tạo trùng — đọc kỹ):** chỗ **có bán đồ ăn/uống và giá trị
+> chính là ngồi lại** → `Eatery` (dù view đẹp). Điểm ngắm cảnh **công cộng, không bán gì, đến
+> rồi đi** → `Spot(viewpoint)`. **Không tạo cả hai cho cùng một chỗ.** Quán nằm ngay tại một
+> điểm ngắm nổi tiếng → điểm là `Spot`, quán là `Eatery` riêng, tên không được trùng.
 
 ### Nơi lưu trú (`Accommodation`) — mục tiêu & định vị (ĐỌC KỸ trước khi làm phần này)
 
@@ -196,8 +234,8 @@ loại hình & ngân sách, đủ thông tin vị trí/giá/liên hệ **đã ki
 | Tỉnh / Điểm đến lớn | `Place` | node phân cấp; `kind` ∈ {province, destination}, `parentId` tự tham chiếu |
 | Hoạt động/trải nghiệm | `Activity` | `placeId` bắt buộc; M:N với `Spot`; có trường đơn vị/đặt chỗ inline |
 | Địa điểm nhỏ | `Spot` | `placeId` bắt buộc; M:N với `Activity` |
-| Đặc sản | `Specialty` | `placeId` bắt buộc; M:N với `Eatery` |
-| Quán ăn | `Eatery` | `placeId` bắt buộc; M:N với `Specialty` |
+| Đặc sản | `Specialty` | ⚠️ **ĐANG TẮT** (ẩn khỏi trang công khai + khoá trong CMS; dữ liệu còn nguyên). `placeId` bắt buộc; M:N với `Eatery` |
+| Quán ăn / quán nước | `Eatery` | `placeId` bắt buộc; M:N với `Specialty`; `venueKind` (ăn/uống/cả hai) tách mục hiển thị; quán view có `viewType` + `bestTime` |
 | Nơi lưu trú | `Accommodation` | `placeId` bắt buộc; **danh bạ chỗ ở đã xác minh chính chủ** (không phải OTA); có kênh liên hệ thật + huy hiệu xác minh + chống lừa cọc |
 | Di chuyển | `Transport` | `placeId` bắt buộc; `direction` `getTo`/`getAround`; **màn hình riêng `/diem-den/[slug]/di-chuyen`; không có trang chi tiết per-item, không slug, không ảnh** |
 
@@ -338,7 +376,8 @@ cấp thể hiện qua **breadcrumb + nội dung trang**, không qua URL.
    vd: /diem-den/ha-long  ·  /diem-den/ha-long/quan-an
 ```
 `[loai]` = **loại màn hình của Place** (đừng nhầm với field `category`): `hoat-dong`
-(Activity) | `dia-diem` (Spot) | `am-thuc` (gộp Đặc sản + Quán ăn, chi tiết qua drawer) |
+(Activity) | `dia-diem` (Spot) | `am-thuc` (Quán ăn + Quán nước, chi tiết qua drawer —
+xem "Màn hình Ẩm thực" bên dưới; phần Đặc sản đang tắt) |
 `luu-tru` (Accommodation, lưới + drawer xem nhanh **và** trang chi tiết) | `di-chuyen`
 (Transport, 2 cột inline). Với `hoat-dong`/`dia-diem`/`luu-tru`, token này còn là **tiền tố
 trang chi tiết riêng** (`/luu-tru/[slug]` là đích chia sẻ cho lưu trú); còn `am-thuc`/
@@ -362,6 +401,43 @@ trùng tên, **gắn địa danh** để phân biệt (vd hai "Quán Cô Ba" →
 
 > **Tiền tố là từ khoá dành riêng:** `diem-den`, `hoat-dong`, `dia-diem`, `dac-san`,
 > `quan-an`, `luu-tru`, `di-chuyen`, `blog`, `login`, `api` — không được trùng với slug.
+
+**Màn hình Ẩm thực** (`/diem-den/[placeSlug]/am-thuc`, `FoodSection`) — thứ tự khối **co giãn
+theo dữ liệu từng nơi**, không cố định:
+
+```
+Mở đầu (bản sắc) → Ăn ở đâu → Quán nước & cà phê → Trải nghiệm ẩm thực → Mẹo
+   ❶ Ăn ở đâu           venueKind ∈ eat|both · lọc: bữa → kiểu
+   ❷ Quán nước & cà phê venueKind ∈ drink|both · ảnh TO hơn (view là hàng hoá)
+                        badge hướng nhìn + giờ vàng · lọc theo viewType
+```
+
+- Khối **"Món phải thử"** từng đứng đầu, cùng cơ chế **đảo thứ tự tự động** giữa món và
+  quán nước (`shouldLeadWithDrinks` trong `src/lib/food-layout.ts`): đã gỡ cả hai khi tắt
+  phần món ăn — còn hai khối thì không có gì để đảo. Bật lại món thì lấy lại từ git.
+- Quán `venueKind = both` cố ý xuất hiện ở **cả hai** khối.
+- Chip lọc bữa của ❷ **không có "Cà phê"** — đã có mục riêng, để lại thì hai chỗ cùng nghĩa.
+- Tỉ trọng đổi theo điểm đến giống hệt cặp Activity/Spot: nơi *dish-led* (biển, đô thị cổ)
+  có 10–20 món; nơi *view-led* (núi) thực chất chỉ 3–4 món nhưng nhiều quán cảnh. **Đừng ép
+  hai khối cân nhau.**
+
+**Ẩm thực ở tab tổng quan** (`/diem-den/[placeSlug]`, `FoodMenu`) — bản xem trước, cùng các
+khối với màn hình đầy đủ, chỉ khác số lượng:
+
+```
+❶ Ăn ở đâu   3 quán · danh sách CHỮ, không ảnh
+❷ Quán nước  3 quán · dải Ô ẢNH + huy hiệu hướng nhìn + giờ vàng
+```
+
+- **Hai khối cố tình hai hình thức khác nhau**, không phải cho vui: quán ăn chỉ cần tên +
+  kiểu (danh sách chữ, tiết kiệm chiều cao); quán view bán bằng CẢNH nên bắt buộc có ảnh —
+  một dòng chữ "Rooftop Hoàng Hôn · Cà phê" không bán được gì.
+- Khối "Món phải thử" (6 món, hàng menu ảnh vuông + dây chấm dẫn) đã gỡ cùng đợt tắt phần
+  món ăn. Tiêu đề section đổi "Ăn gì ở X" → **"Ăn uống ở X"**, đơn vị đếm "món & quán" →
+  "quán", và tab Ẩm thực chỉ còn đếm `counts.eatery` (`buildPlaceTabs`).
+- **Quán nước phải truy vấn RIÊNG** (`prisma.eatery.findMany`), không dùng chung `take` với
+  quán ăn: chúng đứng cuối theo `order` nên gộp chung là gần như không bao giờ lọt vào —
+  đúng những nơi lẽ ra chúng phải dẫn trang. Trong khối, quán **có `viewType` xếp trước**.
 
 **Mẫu hiển thị Listing — mọi Listing đều CÓ trang chi tiết:**
 - **Trang danh sách** (`/diem-den/[placeSlug]/[loai]`): render **card preview** (ảnh bìa

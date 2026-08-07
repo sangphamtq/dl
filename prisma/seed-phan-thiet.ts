@@ -9,6 +9,8 @@ import {
   ActivityKind,
   EateryCategory,
   Meal,
+  VenueKind,
+  ViewType,
   AccommodationCategory,
   PriceRange,
   TransportDirection,
@@ -82,6 +84,15 @@ const FOOD = {
   nuocMam: F + "m9VMJOw4aGbVbFFxeLGtBO2eXE0oTNdl4aqLIKZ7y59rPzVQ",
   thanhLong: F + "m9VMJOw4aGbVMMryv70xmWkuS4zvncQBOspdHe0rojq8wiaC",
   mucMotNang: F + "m9VMJOw4aGbVwxgIA6xPfv7TtDnqG58WPEKwhlSVOiFgU1ZI",
+};
+
+// Pool ảnh CẢNH (dùng lại ảnh của các Spot) — dành riêng cho quán nước, nơi thứ
+// khách "mua" là tầm nhìn chứ không phải món, nên ảnh bìa phải là cảnh.
+const SCENE = {
+  bien: F + "m9VMJOw4aGbVVLFiMOGrfcH3IL5QbghBD7ty4wjlxu80KkaJ",
+  bauTrang: F + "m9VMJOw4aGbVFQeJkN5pDvbxdNjE48eVyfrl2qSG5oOt3ksu",
+  langChai: F + "m9VMJOw4aGbV47vP3DhjsBNSi21ZO0E6Qknf9K5aCAzPGhXv",
+  doiCat: F + "m9VMJOw4aGbVOcQgLKNlS9oC6u4I8lqYVhvJFnANpGZDfxky",
 };
 
 // Pool ảnh lưu trú (resort/khách sạn/phòng) — tái dùng để dựng gallery nhiều ảnh.
@@ -182,6 +193,21 @@ const IMAGES: Record<string, ImageInput[]> = {
     { url: FOOD.cafe, alt: "Chè Thái Mũi Né" },
     { url: FOOD.thanhLong, alt: "Chè trái cây" },
   ],
+  "ca-phe-song-ca-ty": [
+    { url: SCENE.langChai, alt: "Cà phê sông Cà Ty", caption: "Nhìn ra sông lúc hoàng hôn" },
+    { url: FOOD.cafe, alt: "Ban công hướng sông" },
+    { url: SCENE.bien, alt: "Thuyền neo trên sông Cà Ty" },
+  ],
+  "rooftop-hoang-hon-mui-ne": [
+    { url: SCENE.bien, alt: "Rooftop Hoàng Hôn", caption: "Toàn cảnh vịnh Mũi Né" },
+    { url: FOOD.cafe, alt: "Chỗ ngồi mép ngoài" },
+    { url: SCENE.doiCat, alt: "Hướng nhìn ra đồi cát" },
+  ],
+  "ca-phe-bau-trang": [
+    { url: SCENE.bauTrang, alt: "Cà phê Bàu Trắng", caption: "Hồ sen giữa đồi cát" },
+    { url: SCENE.doiCat, alt: "Đồi cát trắng bao quanh" },
+    { url: FOOD.thanhLong, alt: "Nước ép thanh long" },
+  ],
 
   // Đặc sản (Specialty)
   "banh-can-phan-thiet": [
@@ -195,13 +221,6 @@ const IMAGES: Record<string, ImageInput[]> = {
   "goi-ca-mai-phan-thiet": [
     { url: FOOD.haiSan, alt: "Gỏi cá mai" },
     { url: FOOD.haiSan2, alt: "Cuốn bánh tráng" },
-  ],
-  "nuoc-mam-phan-thiet": [
-    { url: FOOD.nuocMam, alt: "Nước mắm Phan Thiết" },
-    { url: FOOD.mucMotNang, alt: "Ủ chượp truyền thống" },
-  ],
-  "thanh-long-binh-thuan": [
-    { url: FOOD.thanhLong, alt: "Thanh long Bình Thuận" },
   ],
   "rang-muc-phan-thiet": [
     { url: FOOD.rangMuc, alt: "Răng mực" },
@@ -218,10 +237,6 @@ const IMAGES: Record<string, ImageInput[]> = {
   "banh-xeo-phan-thiet": [
     { url: FOOD.banhXeo, alt: "Bánh xèo Phan Thiết" },
     { url: FOOD.rangMuc, alt: "Bánh xèo mực" },
-  ],
-  "com-ga-phan-thiet": [
-    { url: FOOD.banhCan, alt: "Cơm gà Phan Thiết" },
-    { url: FOOD.banhCanh, alt: "Gà ta thả vườn" },
   ],
   "dong-cat-mui-ne": [
     { url: FOOD.haiSan2, alt: "Dông cát Mũi Né" },
@@ -298,7 +313,8 @@ async function main() {
     "Hải sản ở bờ kè tính theo ký và theo giá thị trường: hỏi giá, cân tận mắt trước khi gọi chế biến.",
     "Khu bờ kè rất đông cuối tuần — đến sớm để có bàn sát biển, hoặc đi ngày thường cho thong thả.",
     "Ăn theo mùa cá: đồ biển ngon nhất khi biển êm; sau bão hoặc biển động, hải sản ít tươi và đắt hơn.",
-    "Mực một nắng và nước mắm nhĩ là hai thứ đặc trưng nhất để mua mang về — chọn nơi bán uy tín, có nguồn gốc rõ.",
+    "Quán cà phê hướng biển kín chỗ mép ngoài từ khoảng 16h30 những ngày trời trong — muốn ngồi ngắm hoàng hôn thì tới sớm hoặc gọi giữ bàn.",
+    "Muốn mua mang về thì nước mắm nhĩ, mực một nắng và thanh long là ba thứ đặc trưng nhất — chọn nơi bán uy tín, có nguồn gốc rõ.",
   ];
   const phanThiet = await prisma.place.upsert({
     where: { slug: "phan-thiet" },
@@ -921,6 +937,9 @@ async function main() {
       slug: "hai-san-bo-ke-24",
       name: "Hải sản Bờ Kè 24",
       category: EateryCategory.seafood,
+      // Vẫn là quán ĂN — nhưng bàn sát biển là thứ khách tranh nhau, nên có view.
+      viewType: ViewType.sea,
+      bestTime: "Chập tối, khi vừa lên đèn dọc bờ kè",
       meals: [Meal.dinner, Meal.latenight],
       address: "Đường Phạm Văn Đồng (khu Bờ Kè)",
       wardName: "Phường Phú Thủy",
@@ -1010,6 +1029,9 @@ async function main() {
       slug: "sandy-beach-cafe",
       name: "Sandy Beach Café",
       category: EateryCategory.cafe,
+      venueKind: VenueKind.both, // có món ăn nhẹ, nhưng người ta tới vì biển
+      viewType: ViewType.sea,
+      bestTime: "Sáng sớm hoặc chiều mát",
       meals: [Meal.breakfast, Meal.snack, Meal.cafe],
       address: "Đường Nguyễn Đình Chiểu",
       wardName: "Phường Hàm Tiến",
@@ -1079,6 +1101,7 @@ async function main() {
       slug: "oc-nuong-bo-ke",
       name: "Ốc nướng Bờ Kè",
       category: EateryCategory.bbq,
+      viewType: ViewType.sea,
       meals: [Meal.dinner, Meal.latenight],
       address: "Đường Phạm Văn Đồng (khu Bờ Kè)",
       wardName: "Phường Phú Thủy",
@@ -1096,6 +1119,7 @@ async function main() {
       slug: "che-thai-mui-ne",
       name: "Chè Thái Mũi Né",
       category: EateryCategory.cafe,
+      venueKind: VenueKind.drink,
       meals: [Meal.snack, Meal.cafe],
       address: "Đường Huỳnh Thúc Kháng",
       wardName: "Phường Mũi Né",
@@ -1109,33 +1133,114 @@ async function main() {
       description:
         "Quán chè nhỏ với chè Thái, chè khúc bạch và sữa chua mít — món giải nhiệt sau buổi chiều dạo biển. Thêm topping thanh long đỏ rất 'đúng chất' Bình Thuận.",
     },
+    {
+      slug: "ca-phe-song-ca-ty",
+      name: "Cà phê sông Cà Ty",
+      category: EateryCategory.cafe,
+      venueKind: VenueKind.drink,
+      viewType: ViewType.river,
+      bestTime: "17:00 – 18:30 lúc thuyền về, hoặc sau 19:00 khi cầu lên đèn",
+      meals: [Meal.cafe],
+      address: "Đường Trưng Trắc, đoạn nhìn sang cầu Lê Hồng Phong",
+      wardName: "Phường Đức Nghĩa",
+      districtName: "TP. Phan Thiết",
+      provinceName: "Bình Thuận",
+      lat: 10.9285,
+      lng: 108.1053,
+      openingHours: "6:30 – 22:30",
+      tags: ["view sông", "hoàng hôn", "trung tâm"],
+      description:
+        "Quán cà phê nhìn thẳng ra khúc sông Cà Ty chảy giữa lòng thành phố, nơi thuyền thúng và ghe cá neo kín hai bờ. Chiều muộn là lúc đẹp nhất: nắng hạ xuống mặt nước, đèn cầu Lê Hồng Phong bật lên. Đây là chỗ ngắm Phan Thiết 'phố' — khác hẳn cảnh biển ngoài Mũi Né.",
+    },
+    {
+      slug: "rooftop-hoang-hon-mui-ne",
+      name: "Rooftop Hoàng Hôn",
+      category: EateryCategory.cafe,
+      venueKind: VenueKind.drink,
+      viewType: ViewType.sea,
+      bestTime: "16:30 – 18:30, trong nhất vào mùa khô tháng 11 – tháng 4",
+      meals: [Meal.cafe, Meal.snack],
+      address: "Đường Nguyễn Đình Chiểu, tầng thượng",
+      wardName: "Phường Hàm Tiến",
+      districtName: "TP. Phan Thiết",
+      provinceName: "Bình Thuận",
+      lat: 10.9475,
+      lng: 108.2295,
+      phone: "0252 3847 210",
+      openingHours: "15:00 – 23:00",
+      notice: "Chiều đẹp trời kín bàn mép ngoài từ 16h30 — nên gọi giữ chỗ trước.",
+      tags: ["view biển", "hoàng hôn", "check-in"],
+      description:
+        "Sân thượng nhìn bao quát vịnh Mũi Né, hướng đúng chiều mặt trời lặn xuống biển. Có cocktail, cà phê và vài món ăn nhẹ nên ngồi được từ chiều sang tối. Người ta lên đây vì khung cảnh trước, đồ uống sau — cứ xác định vậy cho khỏi thất vọng về menu.",
+    },
+    {
+      slug: "ca-phe-bau-trang",
+      name: "Cà phê Bàu Trắng",
+      category: EateryCategory.cafe,
+      venueKind: VenueKind.drink,
+      viewType: ViewType.lake,
+      bestTime: "Sáng sớm 6:00 – 8:00 hoặc từ 16:00 — giữa trưa đồi cát nắng gắt",
+      meals: [Meal.cafe, Meal.snack],
+      address: "Ven hồ Bàu Trắng, xã Hòa Thắng",
+      wardName: "Xã Hòa Thắng",
+      districtName: "Huyện Bắc Bình",
+      provinceName: "Bình Thuận",
+      lat: 11.1836,
+      lng: 108.4142,
+      openingHours: "5:30 – 18:00",
+      notice: "Cách trung tâm Mũi Né ~35km — kết hợp trong chuyến đi đồi cát, đừng đi riêng.",
+      tags: ["view hồ", "đồi cát", "nghỉ chân"],
+      description:
+        "Quán nước dựng ngay mép hồ sen Bàu Trắng, lưng tựa đồi cát trắng. Chỗ nghỉ chân hợp lý giữa buổi chạy xe đồi cát: gọi ly nước dừa, ngồi dưới mái lá nhìn sen nở trên hồ giữa vùng cát. Đơn giản, không cầu kỳ — giá trị nằm ở chỗ ngồi.",
+    },
   ];
 
   const eateryId: Record<string, string> = {};
-  for (const e of eateries) {
+  for (const [i, e] of eateries.entries()) {
     const { slug, name, ...rest } = e;
     const row = await prisma.eatery.upsert({
       where: { slug },
-      update: { ...rest, placeId: phanThiet.id, ...PUB },
-      create: { slug, name, ...rest, placeId: phanThiet.id, ...PUB },
+      // KHÔNG áp `...PUB` khi update — xem chú thích ở vòng lặp Đặc sản.
+      update: { ...rest, order: i, placeId: phanThiet.id },
+      create: { slug, name, ...rest, order: i, placeId: phanThiet.id, ...PUB },
     });
     eateryId[slug] = row.id;
     await setImages({ eateryId: row.id }, IMAGES[slug] ?? [], name);
   }
 
-  // 6) Specialties — đặc sản nên thử (liên kết quán nếu có)
-  const specialties = [
+  // ──────────────────────────────────────────────────────────────────────
+  // 6) Đặc sản (Specialty) — MÓN ĂN dùng lại, gắn quán tiêu biểu
+  //
+  // PHẠM VI: chỉ MÓN ĂN TẠI CHỖ, và chỉ tạo khi món **gắn được địa danh** và
+  // **chỉ được ít nhất một quán** (xem CLAUDE.md). Vì vậy ba bản ghi của lần
+  // seed đầu đã bị bỏ, có bước dọn bên dưới:
+  //   · nước mắm, thanh long → thuần QUÀ, không ăn tại quán. Dự án không làm
+  //     phần quà; bản sắc này sống ở `foodIntro` ("thủ phủ nước mắm") và mẹo
+  //     cuối trang, đúng chỗ hơn là một card trong lưới "Món phải thử".
+  //   · cơm gà → món phổ thông cả nước, không có gì riêng của Phan Thiết;
+  //     nội dung đã nằm đủ trong mô tả quán `com-ga-ta-vi`.
+  // ──────────────────────────────────────────────────────────────────────
+  const specialties: {
+    slug: string;
+    name: string;
+    description: string;
+    tags: string[];
+    isFeatured?: boolean;
+    eateries: string[];
+  }[] = [
     {
       slug: "banh-can-phan-thiet",
       name: "Bánh căn Phan Thiết",
+      isFeatured: true,
       description:
         "Bánh đổ trên khuôn đất nung, giòn rìa mềm ruột, ăn kèm xíu mại, trứng cút và chan nước mắm cá kho kẹo đặc trưng. Là món điểm tâm bình dân nhưng làm nên 'thương hiệu' ẩm thực phố biển.",
       tags: ["ăn sáng", "đặc sản", "địa phương"],
-      eateries: ["banh-can-cay-phuong", "com-ga-ta-vi"],
+      eateries: ["banh-can-cay-phuong"],
     },
     {
       slug: "lau-tha-phan-thiet",
       name: "Lẩu thả",
+      isFeatured: true,
       description:
         "Đặc sản trứ danh Phan Thiết: cá mai/cá suốt tươi xếp quanh mẹt như cánh hoa, cuốn cùng rau, bún và chan nước lèo nấu từ cá, me, đậu phộng. Vừa đẹp mắt vừa thanh, càng ăn càng cuốn.",
       tags: ["đặc sản", "hải sản", "đặc trưng"],
@@ -1148,20 +1253,6 @@ async function main() {
         "Cá mai tươi rút xương trộn gỏi chua ngọt với thính, hành tây và rau thơm, cuốn bánh tráng chấm nước lèo sệt. Vị tươi mát, ít tanh — món khai vị 'gây thương nhớ' của vùng biển.",
       tags: ["gỏi", "hải sản", "khai vị"],
       eateries: ["hai-san-bo-ke-24", "hai-san-co-ni"],
-    },
-    {
-      slug: "nuoc-mam-phan-thiet",
-      name: "Nước mắm Phan Thiết",
-      description:
-        "Nước mắm cá cơm ủ chượp truyền thống trong thùng gỗ, độ đạm cao, màu cánh gián và hương đậm đặc trưng. Là đặc sản quà gắn liền với danh tiếng làng nghề trăm năm của Phan Thiết.",
-      tags: ["quà", "truyền thống", "làng nghề"],
-    },
-    {
-      slug: "thanh-long-binh-thuan",
-      name: "Thanh long Bình Thuận",
-      description:
-        "Bình Thuận là thủ phủ thanh long cả nước — trái to, mọng, vị ngọt thanh, có cả ruột trắng và ruột đỏ. Mua về làm quà hoặc thưởng thức tươi, ép nước đều ngon.",
-      tags: ["quà", "trái cây", "giải nhiệt"],
     },
     {
       slug: "rang-muc-phan-thiet",
@@ -1181,11 +1272,13 @@ async function main() {
     },
     {
       slug: "muc-mot-nang-phan-thiet",
+      // Giữ nguyên tên: vòng upsert cố tình KHÔNG cập nhật `name` khi update
+      // (chỉ khi create) — đổi tên ở đây sẽ không xuống được DB, chỉ tạo lệch.
       name: "Mực một nắng",
       description:
-        "Mực tươi phơi đúng một nắng để giữ độ dẻo ngọt, nướng lên thơm lừng chấm tương ớt. Món quà biển được ưa chuộng, dễ bảo quản, mang về làm quà rất hợp.",
-      tags: ["quà", "hải sản khô", "đặc sản"],
-      eateries: ["hai-san-co-ni"],
+        "Mực câu đêm đem phơi đúng một nắng rồi thôi — đủ để thịt se lại, dẻo và ngọt đậm hơn mực tươi, nhưng chưa khô cứng như mực khô. Nướng than ngay tại quán, xé sợi chấm tương ớt, ăn nóng là ngon nhất. Gọi kèm khi ngồi hải sản buổi tối chứ đừng để nguội mang về.",
+      tags: ["hải sản", "nướng", "buổi tối"],
+      eateries: ["hai-san-co-ni", "hai-san-bo-ke-24"],
     },
     {
       slug: "banh-xeo-phan-thiet",
@@ -1194,14 +1287,6 @@ async function main() {
         "Bánh xèo đổ nhỏ với nhân mực, tôm tươi, vỏ mỏng giòn rụm, ăn cuốn rau sống chấm nước mắm chua ngọt. Khác bánh xèo miền Tây ở kích thước nhỏ và topping hải sản đặc trưng vùng biển.",
       tags: ["ăn vặt", "đặc trưng", "hải sản"],
       eateries: ["banh-xeo-ba-hai"],
-    },
-    {
-      slug: "com-ga-phan-thiet",
-      name: "Cơm gà Phan Thiết",
-      description:
-        "Cơm nấu bằng nước luộc gà thơm vàng, ăn cùng gà ta xé hoặc chặt, kèm gỏi đu đủ và chén nước mắm gừng. Món cơm no bụng, phổ biến cho bữa trưa và tối.",
-      tags: ["cơm gà", "no bụng", "địa phương"],
-      eateries: ["com-ga-ta-vi"],
     },
     {
       slug: "dong-cat-mui-ne",
@@ -1213,21 +1298,38 @@ async function main() {
     },
   ];
 
-  for (const sp of specialties) {
+  // Dọn ba bản ghi của lần seed đầu (lý do ở chú thích mục 6). Xoá theo slug nên
+  // chỉ đụng đúng ba cái này, không ảnh hưởng gì do biên tập tự thêm trong CMS.
+  await prisma.specialty.deleteMany({
+    where: {
+      slug: {
+        in: [
+          "nuoc-mam-phan-thiet",
+          "thanh-long-binh-thuan",
+          "com-ga-phan-thiet",
+        ],
+      },
+    },
+  });
+
+  for (const [i, sp] of specialties.entries()) {
     const { slug, name, eateries: eaterySlugs, ...rest } = sp;
-    const connect = (eaterySlugs ?? []).map((sl) => ({ id: eateryId[sl] }));
+    const connect = eaterySlugs.map((sl) => ({ id: eateryId[sl] }));
     const row = await prisma.specialty.upsert({
       where: { slug },
+      // KHÔNG áp `...PUB` khi update (chỉ khi create): biên tập đã ẩn/hiện mục
+      // nào trong CMS thì lần chạy seed sau phải TÔN TRỌNG lựa chọn đó.
       update: {
         ...rest,
+        order: i,
         placeId: phanThiet.id,
         eateries: { set: connect },
-        ...PUB,
       },
       create: {
         slug,
         name,
         ...rest,
+        order: i,
         placeId: phanThiet.id,
         eateries: { connect },
         ...PUB,

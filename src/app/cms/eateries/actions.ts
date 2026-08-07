@@ -4,7 +4,13 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
-import { EateryCategory, Meal, PublishStatus } from "@/generated/prisma/enums";
+import {
+  EateryCategory,
+  Meal,
+  PublishStatus,
+  VenueKind,
+  ViewType,
+} from "@/generated/prisma/enums";
 import { slugify, RESERVED_SLUGS } from "@/lib/slug";
 import { normalizeUrl } from "@/lib/url";
 
@@ -15,6 +21,9 @@ export type EateryFormInput = {
   slug: string;
   description: string;
   category: string;
+  venueKind: string;
+  viewType: string;
+  bestTime: string;
   placeId: string;
   address: string;
   lat: string;
@@ -93,6 +102,14 @@ async function normalize(
       ? (input.category as EateryCategory)
       : null;
   const meals = input.meals.filter((m) => m in Meal) as Meal[];
+  const venueKind =
+    input.venueKind && input.venueKind in VenueKind
+      ? (input.venueKind as VenueKind)
+      : VenueKind.eat;
+  const viewType =
+    input.viewType && input.viewType in ViewType
+      ? (input.viewType as ViewType)
+      : null;
 
   const tags = input.tags
     .split(",")
@@ -105,6 +122,9 @@ async function normalize(
       slug,
       description: input.description.trim() || null,
       category,
+      venueKind,
+      viewType,
+      bestTime: input.bestTime.trim() || null,
       placeId: input.placeId,
       address: input.address.trim() || null,
       lat,

@@ -12,14 +12,12 @@ function refToken(r: {
   placeId: string | null;
   activityId: string | null;
   spotId: string | null;
-  specialtyId: string | null;
   eateryId: string | null;
   accommodationId: string | null;
 }): string | null {
   if (r.placeId) return `place:${r.placeId}`;
   if (r.activityId) return `activity:${r.activityId}`;
   if (r.spotId) return `spot:${r.spotId}`;
-  if (r.specialtyId) return `specialty:${r.specialtyId}`;
   if (r.eateryId) return `eatery:${r.eateryId}`;
   if (r.accommodationId) return `accommodation:${r.accommodationId}`;
   return null;
@@ -49,7 +47,6 @@ export default async function EditPostPage({
             placeId: true,
             activityId: true,
             spotId: true,
-            specialtyId: true,
             eateryId: true,
             accommodationId: true,
           },

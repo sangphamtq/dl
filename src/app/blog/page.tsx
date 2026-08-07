@@ -261,7 +261,7 @@ export default async function BlogPage({
                 Kinh nghiệm cho mọi hành trình
               </h1>
               <p className="mt-4 max-w-md text-base leading-relaxed text-[#2e2e2e]/70 dark:text-white/60">
-                Lịch trình gợi ý, review điểm đến, đặc sản và những mẹo hữu ích
+                Lịch trình gợi ý, review điểm đến, quán xá và những mẹo hữu ích
                 cho chuyến đi khắp Việt Nam.
               </p>
               <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-[#2e2e2e]/70 dark:text-white/60">

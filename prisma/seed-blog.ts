@@ -29,14 +29,10 @@ async function main() {
   }
 
   // Lấy id các đối tượng Phan Thiết để gắn PostRef.
-  const [phanThiet, eateries, specialties] = await Promise.all([
+  const [phanThiet, eateries] = await Promise.all([
     prisma.place.findUnique({ where: { slug: "phan-thiet" }, select: { id: true } }),
     prisma.eatery.findMany({
       where: { slug: { in: ["hai-san-bo-ke-24", "lau-tha-hong-ngoc", "banh-can-cay-phuong"] } },
-      select: { id: true },
-    }),
-    prisma.specialty.findMany({
-      where: { slug: { in: ["nuoc-mam-phan-thiet", "banh-can-phan-thiet", "lau-tha-phan-thiet"] } },
       select: { id: true },
     }),
   ]);
@@ -58,7 +54,6 @@ async function main() {
       cover: "phan-thiet-blog-camnang",
       refs: [
         { placeId: phanThiet.id },
-        ...specialties.map((s) => ({ specialtyId: s.id })),
       ],
     },
     {

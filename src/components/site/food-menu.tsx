@@ -1,20 +1,15 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, ArrowUpRight } from "@/components/icons";
+import { ArrowRight, ArrowUpRight, Eye, Sunrise } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { coverUrl } from "@/lib/place-image";
-import { EATERY_CATEGORY_LABELS, MEAL_LABELS, label } from "@/lib/listing-labels";
+import {
+  EATERY_CATEGORY_LABELS,
+  MEAL_LABELS,
+  VIEW_TYPE_LABELS,
+  label,
+} from "@/lib/listing-labels";
 import { SectionHeading } from "@/components/site/section-heading";
-
-export type FoodSpecialty = {
-  slug: string;
-  name: string;
-  tags: string[];
-  // Tên vài quán tiêu biểu + tổng số, để in tên quán thật ở dòng dưới mỗi món.
-  eateryNames: string[];
-  eateryCount: number;
-  images: { url: string; isCover: boolean }[];
-};
 
 export type FoodEatery = {
   slug: string;
@@ -23,159 +18,163 @@ export type FoodEatery = {
   meals: string[];
 };
 
+// Quán nước — khác `FoodEatery` ở chỗ thứ đáng nói là CẢNH và GIỜ, không phải
+// kiểu món với bữa ăn.
+export type FoodDrink = {
+  slug: string;
+  name: string;
+  viewType: string | null;
+  bestTime: string | null;
+  images: { url: string; isCover: boolean }[];
+};
+
 const MICRO = "text-[0.66rem] font-medium uppercase tracking-[0.16em]";
 
-// Section "Ẩm thực" của trang Place — THỰC ĐƠN CÓ ẢNH TỪNG MÓN.
+// Section "Ẩm thực" của trang Place — xem trước quán ăn + quán nước.
 //
-// Mỗi món một hàng: ảnh vuông 144px + tên + chấm dẫn + kiểu món, dòng dưới là
-// TÊN QUÁN bán món đó. Xếp hai cột nên sáu món chỉ cao ba hàng.
+// Khối "Món phải thử" (hàng menu có ảnh từng món) ĐÃ GỠ cùng lúc với việc tắt
+// hiển thị phần món ăn trên toàn trang công khai — dữ liệu `Specialty` vẫn còn
+// nguyên trong DB, chỉ là không render ở đâu nữa. Cần dựng lại thì lấy trong
+// lịch sử git, đừng viết lại từ đầu.
 //
-// Cỡ ảnh là chỗ hai bản menu trước sai về hai phía đối nghịch nhau: bản dùng
-// thumbnail 56px thì ảnh bé quá, nhìn không đói; bản dồn hết vào một tấm lớn
-// thì năm món còn lại chẳng có ảnh nào. 144px là mức vừa: nhận ra món trong
-// ảnh, mà vẫn là một HÀNG menu chứ không thành thẻ.
-//
-// Chấm dẫn kết thúc ở NHÃN KIỂU MÓN, đúng chỗ menu in đặt giá — ở đây không có
-// giá (schema Specialty không có), nên kiểu món là thứ hợp lý nhất đứng vào cột
-// bên phải đó.
-//
-// Dòng "Ăn ở …" in tên quán thật thay vì "2 quán": hàng menu rộng ~660px nên có
-// chỗ, và đó là câu trả lời khách cần ngay sau khi biết tên món. Đây cũng là chỗ
-// duy nhất trên trang cho thấy quan hệ món ↔ quán của mô hình dữ liệu.
+// Hai khối còn lại cố tình KHÁC hình thức nhau: quán ăn chỉ cần tên + kiểu nên
+// là danh sách chữ, tiết kiệm chiều cao; quán view bán CẢNH — một dòng chữ
+// "Rooftop Hoàng Hôn · Cà phê" không nói được gì, nên khối đó là dải ảnh.
 //
 // Là Server Component: tĩnh hoàn toàn, không carousel, không tốn byte JS nào.
 export function FoodMenu({
   placeName,
   href,
   count,
-  specialties,
   eateries,
+  drinks = [],
 }: {
   placeName: string;
   href: string;
   count?: number;
-  specialties: FoodSpecialty[];
   eateries: FoodEatery[];
+  drinks?: FoodDrink[];
 }) {
-  if (specialties.length === 0 && eateries.length === 0) return null;
+  if (eateries.length === 0 && drinks.length === 0) return null;
+
+  const eateriesBlock = eateries.length > 0 && (
+    <SubBlock key="quan-an" title="Ăn ở đâu" href={href}>
+      <ul className="mt-1 grid grid-cols-1 gap-x-12 sm:grid-cols-2 lg:grid-cols-3">
+        {eateries.map((e) => (
+          <li key={e.slug}>
+            <Link
+              href={`${href}#eatery-${e.slug}`}
+              className="group flex items-center gap-4 border-b border-border/50 py-4"
+            >
+              <span className="min-w-0 flex-1">
+                <span className="block truncate font-semibold tracking-tight transition-colors group-hover:text-primary">
+                  {e.name}
+                </span>
+                <span className="mt-1 block truncate text-xs text-muted-foreground">
+                  {eateryMeta(e)}
+                </span>
+              </span>
+              <ArrowUpRight
+                className="size-4 shrink-0 text-muted-foreground opacity-0 transition-all duration-200 group-hover:translate-x-0.5 group-hover:opacity-100"
+                aria-hidden
+              />
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </SubBlock>
+  );
+
+  const drinksBlock = drinks.length > 0 && (
+    <SubBlock key="quan-nuoc" title="Quán nước & cà phê" href={href}>
+      <ul className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {drinks.map((d) => (
+          <DrinkTile key={d.slug} d={d} href={`${href}#eatery-${d.slug}`} />
+        ))}
+      </ul>
+    </SubBlock>
+  );
 
   return (
     <div>
       <SectionHeading
         eyebrow="Ẩm thực"
-        title={`Ăn gì ở ${placeName}`}
+        title={`Ăn uống ở ${placeName}`}
         href={href}
         count={count}
-        unit="món & quán"
+        unit="quán"
       />
 
-      {specialties.length > 0 && (
-        // Hai cột từ lg: một cột dài suốt bề ngang trang thì dây chấm dẫn dài
-        // tới 600px, ra một dải chấm thưa thớt chứ không phải nét dẫn của menu.
-        // `grid-cols-1` viết rõ ở mức mặc định: thiếu nó thì cột ngầm là track
-        // `auto` co theo max-content — tên món + tên quán không xuống dòng được
-        // sẽ đẩy hàng rộng ra ~500px, làm CẢ TRANG cuộn ngang trên điện thoại.
-        <ul className="mt-6 grid grid-cols-1 gap-x-14 lg:grid-cols-2">
-          {specialties.map((s) => (
-            <Row key={s.slug} s={s} href={`${href}#specialty-${s.slug}`} />
-          ))}
-        </ul>
-      )}
-
-      {eateries.length > 0 && (
-        <div className="mt-12 border-t border-border/60 pt-6">
-          <div className="flex items-baseline justify-between gap-6">
-            <h3 className={cn(MICRO, "text-muted-foreground")}>Ăn ở đâu</h3>
-            <Link
-              href={href}
-              className="group inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-muted-foreground transition-colors hover:text-primary"
-            >
-              Xem tất cả
-              <ArrowRight
-                className="size-4 transition-transform group-hover:translate-x-0.5"
-                aria-hidden
-              />
-            </Link>
-          </div>
-
-          <ul className="mt-1 grid grid-cols-1 gap-x-12 sm:grid-cols-2 lg:grid-cols-3">
-            {eateries.map((e) => (
-              <li key={e.slug}>
-                <Link
-                  href={`${href}#eatery-${e.slug}`}
-                  className="group flex items-center gap-4 border-b border-border/50 py-4"
-                >
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate font-semibold tracking-tight transition-colors group-hover:text-primary">
-                      {e.name}
-                    </span>
-                    <span className="mt-1 block truncate text-xs text-muted-foreground">
-                      {eateryMeta(e)}
-                    </span>
-                  </span>
-                  <ArrowUpRight
-                    className="size-4 shrink-0 text-muted-foreground opacity-0 transition-all duration-200 group-hover:translate-x-0.5 group-hover:opacity-100"
-                    aria-hidden
-                  />
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      <div className="mt-6 space-y-10">
+        {eateriesBlock}
+        {drinksBlock}
+      </div>
     </div>
   );
 }
 
-// Một hàng menu: ảnh vuông → (kiểu món) tên + chấm dẫn → tên các quán bán món.
-function Row({ s, href }: { s: FoodSpecialty; href: string }) {
+// Khối con: nhãn micro bên trái + "Xem tất cả" bên phải.
+function SubBlock({
+  title,
+  href,
+  children,
+}: {
+  title: string;
+  href: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="border-t border-border/60 pt-6">
+      <div className="flex items-baseline justify-between gap-6">
+        <h3 className={cn(MICRO, "text-muted-foreground")}>{title}</h3>
+        <Link
+          href={href}
+          className="group inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-muted-foreground transition-colors hover:text-primary"
+        >
+          Xem tất cả
+          <ArrowRight
+            className="size-4 transition-transform group-hover:translate-x-0.5"
+            aria-hidden
+          />
+        </Link>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+// Ô quán nước: ảnh cảnh + huy hiệu hướng nhìn, tên và giờ vàng nằm dưới ảnh.
+// Giờ vàng để `text-primary` vì đó là thông tin quyết định có đi hay không —
+// tới sai giờ thì cảnh chẳng còn gì để xem.
+function DrinkTile({ d, href }: { d: FoodDrink; href: string }) {
+  const viewLabel = label(VIEW_TYPE_LABELS, d.viewType);
   return (
     <li>
-      <Link
-        href={href}
-        // Vùng bấm ăn ra hai bên (-mx-3 px-3) để nền hover không dính sát chữ.
-        className="group -mx-3 flex items-center gap-4 rounded-2xl px-3 py-3 transition-colors hover:bg-warm/[0.07] lg:gap-5"
-      >
-        <span className="relative size-28 shrink-0 overflow-hidden rounded-xl bg-muted lg:size-36">
+      <Link href={href} className="group block">
+        <span className="relative block aspect-[4/3] overflow-hidden rounded-2xl bg-muted">
           <Image
-            src={coverUrl(s.images, s.slug, 400, 400)}
+            src={coverUrl(d.images, d.slug, 600, 450)}
             alt=""
             fill
-            sizes="144px"
-            className="object-cover"
+            sizes="(min-width: 1024px) 22vw, (min-width: 640px) 45vw, 90vw"
+            className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
           />
-        </span>
-
-        <span className="min-w-0 flex-1">
-          {/* items-baseline: chấm dẫn phải nằm đúng đường chân chữ của tên món,
-              không phải giữa dòng — lệch một chút là nhìn ra ngay.
-              DƯỚI sm thì XẾP DỌC: cột chữ chỉ còn ~215px, nhồi cả tên + dây
-              chấm + nhãn vào một dòng thì tên món bị xén ngay giữa ("Gà đen (gà
-              H'M…") mà dây chấm chỉ còn vài chấm — mất luôn ý nghĩa "menu".
-              Bỏ dây chấm, hạ nhãn xuống dòng riêng: tên món được trọn bề ngang. */}
-          <span className="flex flex-col items-start sm:flex-row sm:items-baseline">
-            <span className="max-w-full truncate font-[family-name:var(--font-display)] text-lg font-bold tracking-tight transition-colors group-hover:text-primary lg:text-xl">
-              {s.name}
-            </span>
-            <span
-              aria-hidden
-              className="hidden h-0 min-w-4 flex-1 border-b border-dotted border-border sm:mx-3 sm:block"
-            />
-            {s.tags[0] && (
-              <span className={cn(MICRO, "mt-1 shrink-0 text-warm sm:mt-0")}>
-                {s.tags[0]}
-              </span>
-            )}
-          </span>
-
-          {s.eateryNames.length > 0 && (
-            <span className="mt-1.5 block truncate text-sm text-muted-foreground">
-              Ăn ở {s.eateryNames.join(" · ")}
-              {s.eateryCount > s.eateryNames.length &&
-                ` +${s.eateryCount - s.eateryNames.length}`}
+          {viewLabel && (
+            <span className="absolute left-2.5 top-2.5 inline-flex items-center gap-1 rounded-full bg-background/90 px-2.5 py-1 text-xs font-semibold shadow-sm backdrop-blur-sm">
+              <Eye className="size-3 shrink-0 text-primary" aria-hidden />
+              {viewLabel}
             </span>
           )}
         </span>
+        <span className="mt-2.5 block truncate font-semibold tracking-tight transition-colors group-hover:text-primary">
+          {d.name}
+        </span>
+        {d.bestTime && (
+          <span className="mt-0.5 flex items-center gap-1.5 text-xs font-medium text-primary">
+            <Sunrise className="size-3.5 shrink-0" aria-hidden />
+            <span className="truncate">{d.bestTime}</span>
+          </span>
+        )}
       </Link>
     </li>
   );

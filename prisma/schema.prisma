@@ -150,6 +150,28 @@ enum EateryCategory {
   other
 }
 
+// Đến để ĂN hay để UỐNG/NGỒI — trục VUÔNG GÓC với `category` (kiểu món).
+// Tách ra vì quán nước/cà phê view được tìm theo cảnh chứ không theo bữa ăn.
+enum VenueKind {
+  eat // quán ăn
+  drink // quán nước / cà phê / quán chè
+  both // vừa ăn vừa ngồi lâu
+}
+
+// Hướng nhìn của quán — trục lọc chính cho quán view (thay tag chữ tự do).
+enum ViewType {
+  sea // biển
+  valley // thung lũng
+  cloud // biển mây
+  mountain // núi
+  lake // hồ
+  river // sông
+  city // phố / thành phố
+  oldtown // phố cổ
+  rice // ruộng bậc thang / đồng lúa
+  garden // vườn / sân trong
+}
+
 // Bữa/khung giờ ăn — để khách lọc & xếp lịch ăn theo ngày.
 enum Meal {
   breakfast // sáng
@@ -618,6 +640,11 @@ model Eatery {
   name        String
   description String?
   category    EateryCategory?
+  venueKind   VenueKind       @default(eat) // ăn / uống / cả hai — quyết định section hiển thị
+
+  // Quán view: lý do đến là CẢNH, không phải món.
+  viewType ViewType? // hướng nhìn (null = không phải quán view)
+  bestTime String? // giờ/mùa đẹp nhất, vd "5:30–7:00 mùa mây", "hoàng hôn"
 
   // PlaceableFields
   address      String?
@@ -659,6 +686,7 @@ model Eatery {
 
   @@index([placeId])
   @@index([category])
+  @@index([venueKind])
   @@index([status])
 }
 

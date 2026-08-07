@@ -203,7 +203,6 @@ async function EateryList({ filters }: { filters: Filters }) {
         status: true,
         isFeatured: true,
         place: { select: { name: true } },
-        _count: { select: { specialties: true } },
         images: {
           where: { isCover: true },
           take: 1,
@@ -268,7 +267,6 @@ async function EateryList({ filters }: { filters: Filters }) {
                   <p className="truncate text-xs text-muted-foreground">
                     {e.place.name}
                     {e.category && ` · ${labelOf(EATERY_CATEGORIES, e.category)}`}
-                    {` · ${e._count.specialties} đặc sản`}
                   </p>
                 </div>
                 <Badge

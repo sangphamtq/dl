@@ -2,7 +2,6 @@ import {
   MapPin,
   Compass,
   Mountain,
-  Sparkles,
   UtensilsCrossed,
   BedDouble,
   Bus,
@@ -15,12 +14,11 @@ export const metadata = { title: "Xuất Excel" };
 
 // Xuất toàn bộ Điểm đến + Listing ra một file Excel nhiều sheet (mỗi loại 1 sheet).
 export default async function ExportPage() {
-  const [places, activities, spots, specialties, eateries, accommodations, transports] =
+  const [places, activities, spots, eateries, accommodations, transports] =
     await prisma.$transaction([
       prisma.place.count(),
       prisma.activity.count(),
       prisma.spot.count(),
-      prisma.specialty.count(),
       prisma.eatery.count(),
       prisma.accommodation.count(),
       prisma.transport.count(),
@@ -30,7 +28,6 @@ export default async function ExportPage() {
     { label: "Điểm đến", sub: "Tỉnh & điểm đến lớn", icon: MapPin, count: places },
     { label: "Hoạt động", sub: "Activity", icon: Compass, count: activities },
     { label: "Địa điểm", sub: "Spot", icon: Mountain, count: spots },
-    { label: "Đặc sản", sub: "Specialty", icon: Sparkles, count: specialties },
     { label: "Quán ăn", sub: "Eatery", icon: UtensilsCrossed, count: eateries },
     { label: "Lưu trú", sub: "Accommodation", icon: BedDouble, count: accommodations },
     { label: "Di chuyển", sub: "Transport", icon: Bus, count: transports },

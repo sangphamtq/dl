@@ -55,7 +55,8 @@ export default async function DiemDenPage() {
               children: { where: pub },
               spots: { where: pub },
               activities: { where: pub },
-              specialties: { where: pub },
+              // Đặc sản không đếm: phần món ăn đã tắt hiển thị, một nơi chỉ có
+              // đặc sản mà gắn cờ "có nội dung" thì bấm vào ra trang trắng.
               eateries: { where: pub },
               accommodations: { where: pub },
             },
@@ -111,7 +112,6 @@ export default async function DiemDenPage() {
         c.children +
           c.spots +
           c.activities +
-          c.specialties +
           c.eateries +
           c.accommodations >
         0,

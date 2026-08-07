@@ -9,15 +9,19 @@ import {
   MapPin,
   ImageOff,
   TriangleAlert,
-  ChevronRight,
 } from "@/components/icons";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
-import { coverUrl } from "@/lib/place-image";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EateryAdminControls } from "../admin-controls";
-import { EATERY_CATEGORIES, MEALS, labelOf } from "../constants";
+import {
+  EATERY_CATEGORIES,
+  MEALS,
+  VENUE_KINDS,
+  VIEW_TYPES,
+  labelOf,
+} from "../constants";
 
 const dateFmt = new Intl.DateTimeFormat("vi-VN", {
   day: "2-digit",
@@ -40,6 +44,9 @@ export default async function EateryDetailPage({
       slug: true,
       description: true,
       category: true,
+      venueKind: true,
+      viewType: true,
+      bestTime: true,
       status: true,
       isFeatured: true,
       order: true,
@@ -59,20 +66,6 @@ export default async function EateryDetailPage({
       createdAt: true,
       updatedAt: true,
       place: { select: { id: true, name: true, slug: true } },
-      specialties: {
-        orderBy: [{ isFeatured: "desc" }, { name: "asc" }],
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          status: true,
-          images: {
-            where: { isCover: true },
-            take: 1,
-            select: { url: true, isCover: true },
-          },
-        },
-      },
       images: {
         orderBy: [{ isCover: "desc" }, { order: "asc" }],
         select: { id: true, url: true, alt: true, isCover: true },
@@ -89,6 +82,9 @@ export default async function EateryDetailPage({
     .map((m) => labelOf(MEALS, m))
     .filter(Boolean) as string[];
   const facts = [
+    { label: "Đến để", value: labelOf(VENUE_KINDS, eatery.venueKind) },
+    { label: "Nhìn ra", value: labelOf(VIEW_TYPES, eatery.viewType) },
+    { label: "Giờ / mùa đẹp", value: eatery.bestTime },
     { label: "Giờ mở cửa", value: eatery.openingHours },
     { label: "Bữa", value: mealLabels.join(", ") || null },
     { label: "Địa chỉ", value: eatery.address },
@@ -237,53 +233,6 @@ export default async function EateryDetailPage({
             )}
           </section>
 
-          {/* Đặc sản tại đây (read-only) */}
-          <section>
-            <h2 className="text-lg font-semibold tracking-tight">
-              Đặc sản tại đây ({eatery.specialties.length})
-            </h2>
-            {eatery.specialties.length > 0 ? (
-              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                {eatery.specialties.map((s) => (
-                  <Link
-                    key={s.id}
-                    href={`/cms/specialties/${s.id}`}
-                    className="group flex items-center gap-3 rounded-xl border p-2 transition-colors hover:bg-muted/50"
-                  >
-                    <div className="relative size-16 shrink-0 overflow-hidden rounded-lg bg-muted">
-                      <Image
-                        src={coverUrl(s.images, s.slug, 128, 128)}
-                        alt={s.name}
-                        fill
-                        sizes="64px"
-                        className="object-cover"
-                      />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5">
-                        <span className="truncate font-medium">{s.name}</span>
-                        {s.status !== "published" && (
-                          <Badge variant="outline" className="shrink-0">
-                            Nháp
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    <ChevronRight className="size-4 shrink-0 text-muted-foreground/60 transition-transform group-hover:translate-x-0.5" />
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <div className="mt-3 rounded-xl border border-dashed px-4 py-8 text-center">
-                <p className="text-sm text-muted-foreground">
-                  Chưa có đặc sản nào liên kết.
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Liên kết được quản lý ở phần Đặc sản.
-                </p>
-              </div>
-            )}
-          </section>
         </div>
 
         {/* Sidebar meta */}

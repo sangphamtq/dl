@@ -170,7 +170,6 @@ async function PlacesList({ filters }: { filters: Filters }) {
             children: true,
             activities: true,
             spots: true,
-            specialties: true,
             eateries: true,
             accommodations: true,
             transports: true,
@@ -217,7 +216,6 @@ async function PlacesList({ filters }: { filters: Filters }) {
           const listingCount =
             p._count.activities +
             p._count.spots +
-            p._count.specialties +
             p._count.eateries +
             p._count.accommodations +
             p._count.transports;

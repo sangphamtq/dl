@@ -11,20 +11,27 @@ import {
   TriangleAlert,
   ExternalLink,
   ChevronDown,
+  Eye,
+  Sunrise,
 } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { coverUrl } from "@/lib/place-image";
 import { googleEmbedSrc } from "@/lib/map-url";
-import { EATERY_CATEGORY_LABELS, MEAL_LABELS, label } from "@/lib/listing-labels";
-import { FoodCrossLink } from "@/components/site/food-cross-link";
-
-type CoverImg = { url: string; isCover: boolean }[];
+import {
+  EATERY_CATEGORY_LABELS,
+  MEAL_LABELS,
+  VIEW_TYPE_LABELS,
+  label,
+} from "@/lib/listing-labels";
 
 export type EateryDetailData = {
   slug: string;
   name: string;
   description: string | null;
   category: string | null;
+  venueKind: string;
+  viewType: string | null;
+  bestTime: string | null;
   address: string | null;
   lat: number | null;
   lng: number | null;
@@ -39,17 +46,10 @@ export type EateryDetailData = {
   districtName: string | null;
   provinceName: string | null;
   images: { id: string; url: string; alt: string | null; isCover: boolean }[];
-  specialties: { slug: string; name: string; images: CoverImg }[];
 };
 
 // Nội dung chi tiết Quán ăn — render trong ngăn trượt (drawer), bố cục dọc tiết kiệm.
-export function EateryDetail({
-  data,
-  onOpenSpecialty,
-}: {
-  data: EateryDetailData;
-  onOpenSpecialty: (slug: string) => void;
-}) {
+export function EateryDetail({ data }: { data: EateryDetailData }) {
   const [mapOpen, setMapOpen] = useState(false);
 
   const strip =
@@ -80,6 +80,9 @@ export function EateryDetail({
       }, [])
       .join(", ") || null;
   const facts = [
+    // Quán view: hướng nhìn & giờ vàng đứng trước — đó là lý do khách tới.
+    { icon: Eye, label: "Nhìn ra", value: label(VIEW_TYPE_LABELS, data.viewType) },
+    { icon: Sunrise, label: "Giờ / mùa đẹp", value: data.bestTime },
     { icon: Clock, label: "Giờ mở cửa", value: data.openingHours },
     { icon: UtensilsCrossed, label: "Bữa", value: mealLabels.join(" · ") || null },
     { icon: MapPin, label: "Địa chỉ", value: fullAddress },
@@ -230,26 +233,6 @@ export function EateryDetail({
           </div>
         )}
       </div>
-
-      {data.specialties.length > 0 && (
-        <div className="mt-7 border-t pt-6">
-          <div className="flex items-center gap-2 px-5">
-            <UtensilsCrossed className="size-4 text-warm" aria-hidden />
-            <h3 className="text-sm font-semibold">Đặc sản nên thử ở đây</h3>
-          </div>
-          <div className="hide-scrollbar mt-3.5 flex snap-x gap-3 overflow-x-auto px-5">
-            {data.specialties.map((s) => (
-              <FoodCrossLink
-                key={s.slug}
-                name={s.name}
-                slug={s.slug}
-                images={s.images}
-                onClick={() => onOpenSpecialty(s.slug)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

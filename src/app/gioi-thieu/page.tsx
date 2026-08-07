@@ -44,7 +44,7 @@ const FEATURES: {
   {
     icon: Map,
     title: "Ăn, chơi, ở, đi lại",
-    desc: "Mỗi điểm đến có sẵn địa điểm tham quan, trải nghiệm, đặc sản, quán ăn, lưu trú và cách di chuyển.",
+    desc: "Mỗi điểm đến có sẵn địa điểm tham quan, trải nghiệm, quán ăn, quán nước, lưu trú và cách di chuyển.",
   },
   {
     icon: ShieldCheck,

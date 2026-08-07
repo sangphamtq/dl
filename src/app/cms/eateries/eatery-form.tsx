@@ -25,7 +25,7 @@ import { Combobox } from "@/components/ui/combobox";
 import { FormSection } from "@/components/cms/form-section";
 import { createEatery, updateEatery, type EateryFormInput } from "./actions";
 import type { Option as PlaceOption } from "./options";
-import { EATERY_CATEGORIES, MEALS } from "./constants";
+import { EATERY_CATEGORIES, MEALS, VENUE_KINDS, VIEW_TYPES } from "./constants";
 
 export type { PlaceOption };
 export type EateryFormValues = EateryFormInput;
@@ -35,6 +35,9 @@ const EMPTY: EateryFormValues = {
   slug: "",
   description: "",
   category: "",
+  venueKind: "eat",
+  viewType: "",
+  bestTime: "",
   placeId: "",
   address: "",
   lat: "",
@@ -243,6 +246,30 @@ export function EateryForm({
             </p>
           </div>
           <div className="space-y-2">
+            <Label>Đến để</Label>
+            <div className="flex flex-wrap gap-2">
+              {VENUE_KINDS.map((k) => (
+                <button
+                  key={k.value}
+                  type="button"
+                  onClick={() => set("venueKind", k.value)}
+                  className={cn(
+                    "rounded-full px-3 py-1 text-sm transition-colors",
+                    values.venueKind === k.value
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-muted/70",
+                  )}
+                >
+                  {k.label}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {VENUE_KINDS.find((k) => k.value === values.venueKind)?.hint ??
+                "Quyết định quán nằm ở mục nào ngoài trang Ẩm thực."}
+            </p>
+          </div>
+          <div className="space-y-2">
             <Label>Kiểu quán</Label>
             <Select
               value={values.category}
@@ -284,6 +311,61 @@ export function EateryForm({
             </div>
             <p className="text-xs text-muted-foreground">
               Khách lọc quán theo bữa — chọn các bữa quán phục vụ.
+            </p>
+          </div>
+        </FormSection>
+
+        {/* Quán view — lý do đến là cảnh, không phải món */}
+        <FormSection
+          title="Tầm nhìn"
+          description="Chỉ điền khi lý do khách đến là CẢNH (cà phê view thung lũng, quán hải sản sát biển…). Bỏ trống nếu quán không có view đáng kể."
+        >
+          <div className="space-y-2">
+            <Label>Nhìn ra</Label>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => set("viewType", "")}
+                className={cn(
+                  "rounded-full px-3 py-1 text-sm transition-colors",
+                  values.viewType === ""
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-muted/70",
+                )}
+              >
+                Không có view
+              </button>
+              {VIEW_TYPES.map((v) => (
+                <button
+                  key={v.value}
+                  type="button"
+                  onClick={() => set("viewType", v.value)}
+                  className={cn(
+                    "rounded-full px-3 py-1 text-sm transition-colors",
+                    values.viewType === v.value
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-muted/70",
+                  )}
+                >
+                  {v.label}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Khách lọc quán view theo hướng nhìn — chọn hướng chính, đừng chọn cho
+              có.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="bestTime">Giờ / mùa đẹp nhất</Label>
+            <Input
+              id="bestTime"
+              value={values.bestTime}
+              onChange={(e) => set("bestTime", e.target.value)}
+              placeholder="5:30 – 7:00 mùa mây · hoàng hôn · chiều muộn"
+            />
+            <p className="text-xs text-muted-foreground">
+              Khác giờ mở cửa: đây là lúc cảnh đẹp nhất, đáng để canh giờ tới.
             </p>
           </div>
         </FormSection>

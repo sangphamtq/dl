@@ -18,7 +18,10 @@ const OWNER_TYPES = [
   { key: "place", label: "Địa điểm", fk: "placeId" },
   { key: "activity", label: "Hoạt động", fk: "activityId" },
   { key: "spot", label: "Địa điểm nhỏ", fk: "spotId" },
-  { key: "specialty", label: "Đặc sản", fk: "specialtyId" },
+  // Đặc sản đang tắt → không hiện thành chip lọc (`hidden`), NHƯNG vẫn phải ở
+  // trong danh sách: `ALL_FK` dùng nó để nhận diện ảnh "đã gắn chủ". Bỏ hẳn thì
+  // 16 ảnh của đặc sản rơi vào nhóm "Chưa gắn" — sai, và dễ bị xoá nhầm.
+  { key: "specialty", label: "Đặc sản", fk: "specialtyId", hidden: true },
   { key: "eatery", label: "Quán ăn", fk: "eateryId" },
   { key: "accommodation", label: "Lưu trú", fk: "accommodationId" },
   { key: "transport", label: "Di chuyển", fk: "transportId" },
@@ -45,7 +48,10 @@ export default async function MediaPage({
 
   const filters = [
     { key: "all", label: "Tất cả" },
-    ...OWNER_TYPES.map((t) => ({ key: t.key, label: t.label })),
+    ...OWNER_TYPES.filter((t) => !("hidden" in t && t.hidden)).map((t) => ({
+      key: t.key,
+      label: t.label,
+    })),
     { key: "none", label: "Chưa gắn" },
   ];
 

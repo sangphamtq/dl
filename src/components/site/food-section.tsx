@@ -5,19 +5,24 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import {
-  UtensilsCrossed,
   Store,
   MapPin,
-  ArrowUpRight,
-  Utensils,
   ChefHat,
   Lightbulb,
   Clock,
   ChevronRight,
+  Coffee,
+  Eye,
+  Sunrise,
 } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { coverUrl } from "@/lib/place-image";
-import { EATERY_CATEGORY_LABELS, MEAL_LABELS, label } from "@/lib/listing-labels";
+import {
+  EATERY_CATEGORY_LABELS,
+  MEAL_LABELS,
+  VIEW_TYPE_LABELS,
+  label,
+} from "@/lib/listing-labels";
 import {
   Sheet,
   SheetContent,
@@ -26,28 +31,16 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import {
-  SpecialtyDetail,
-  type SpecialtyDetailData,
-} from "@/components/site/specialty-detail";
-import {
   EateryDetail,
   type EateryDetailData,
 } from "@/components/site/eatery-detail";
 
-const MEAL_CHIPS = [
-  "all",
-  "breakfast",
-  "lunch",
-  "dinner",
-  "latenight",
-  "cafe",
-  "snack",
-];
+// Bữa: trục lọc chính của phần ĂN. "cafe" cố tình KHÔNG có mặt — quán nước đã
+// có mục riêng bên dưới, để lại đây thì hai chỗ cùng nghĩa.
+const MEAL_CHIPS = ["all", "breakfast", "lunch", "dinner", "latenight", "snack"];
 
-type Selected =
-  | { type: "specialty"; slug: string }
-  | { type: "eatery"; slug: string }
-  | null;
+
+type Selected = { type: "eatery"; slug: string } | null;
 
 export type FoodExperience = {
   slug: string;
@@ -57,20 +50,22 @@ export type FoodExperience = {
   images: { url: string; isCover: boolean }[];
 };
 
-// Mục Ẩm thực — cẩm nang dish-first. Bản sắc → Món phải thử (gắn "ăn ở đâu") →
-// Ăn ở đâu (lọc bữa/kiểu/giá). Bấm card mở drawer; cross-link nhảy sang mục kia.
+// Mục Ẩm thực: bản sắc → Ăn ở đâu (lọc bữa/kiểu) → Quán nước & cà phê (lọc theo
+// hướng nhìn) → Trải nghiệm → Mẹo. Bấm card mở drawer chi tiết.
+//
+// Khối "Món phải thử" (Specialty) ĐÃ GỠ cùng lúc với việc tắt hiển thị phần món
+// ăn trên toàn trang công khai — dữ liệu vẫn nguyên trong DB. Cần dựng lại thì
+// lấy trong lịch sử git.
 export function FoodSection({
   placeName,
   intro,
   tips,
-  specialties,
   eateries,
   experiences,
 }: {
   placeName: string;
   intro: string | null;
   tips: string[];
-  specialties: SpecialtyDetailData[];
   eateries: EateryDetailData[];
   experiences: FoodExperience[];
 }) {
@@ -79,44 +74,55 @@ export function FoodSection({
   const searchParams = useSearchParams();
   const [meal, setMeal] = useState(() => searchParams.get("meal") ?? "all");
   const [cat, setCat] = useState("all");
+  const [view, setView] = useState("all");
   const [selected, setSelected] = useState<Selected>(null);
 
-  // Mọi section đang có dữ liệu → thanh nhảy dính (để không bị "chôn" khi list dài).
-  const sections = useMemo(
-    () =>
-      [
-        specialties.length > 0 && {
-          id: "dac-san",
-          label: "Món phải thử",
-          icon: UtensilsCrossed,
-          count: specialties.length,
-        },
-        eateries.length > 0 && {
-          id: "quan-an",
-          label: "Ăn ở đâu",
-          icon: Store,
-          count: eateries.length,
-        },
-        experiences.length > 0 && {
-          id: "trai-nghiem",
-          label: "Trải nghiệm",
-          icon: ChefHat,
-          count: experiences.length,
-        },
-        tips.length > 0 && {
-          id: "meo",
-          label: "Mẹo",
-          icon: Lightbulb,
-          count: tips.length,
-        },
-      ].filter(Boolean) as {
-        id: string;
-        label: string;
-        icon: React.ComponentType<{ className?: string }>;
-        count: number;
-      }[],
-    [specialties.length, eateries.length, experiences.length, tips.length],
+  // Một quán là chỗ ĂN hay chỗ NGỒI (hay cả hai) — quyết định nó nằm mục nào.
+  const eats = useMemo(
+    () => eateries.filter((e) => e.venueKind !== "drink"),
+    [eateries],
   );
+  const drinks = useMemo(
+    () => eateries.filter((e) => e.venueKind !== "eat"),
+    [eateries],
+  );
+
+  // Mọi section đang có dữ liệu → thanh nhảy dính (để không bị "chôn" khi list dài).
+  const sections = useMemo(() => {
+    const eat = eats.length > 0 && {
+      id: "quan-an",
+      label: "Ăn ở đâu",
+      icon: Store,
+      count: eats.length,
+    };
+    const drink = drinks.length > 0 && {
+      id: "quan-nuoc",
+      label: "Quán nước",
+      icon: Coffee,
+      count: drinks.length,
+    };
+    return [
+      eat,
+      drink,
+      experiences.length > 0 && {
+        id: "trai-nghiem",
+        label: "Trải nghiệm",
+        icon: ChefHat,
+        count: experiences.length,
+      },
+      tips.length > 0 && {
+        id: "meo",
+        label: "Mẹo",
+        icon: Lightbulb,
+        count: tips.length,
+      },
+    ].filter(Boolean) as {
+      id: string;
+      label: string;
+      icon: React.ComponentType<{ className?: string }>;
+      count: number;
+    }[];
+  }, [eats.length, drinks.length, experiences.length, tips.length]);
 
   // Lưu bữa đang lọc vào URL (?meal=) để giữ khi chia sẻ/quay lại.
   function chooseMeal(m: string) {
@@ -180,10 +186,6 @@ export function FoodSection({
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  const specBySlug = useMemo(
-    () => new Map(specialties.map((s) => [s.slug, s])),
-    [specialties],
-  );
   const eateryBySlug = useMemo(
     () => new Map(eateries.map((e) => [e.slug, e])),
     [eateries],
@@ -191,39 +193,140 @@ export function FoodSection({
 
   // Trục lọc phụ chỉ hiện giá trị thật sự có trong dữ liệu (không filter rỗng).
   const catOptions = useMemo(() => {
-    const present = new Set(eateries.map((e) => e.category).filter(Boolean));
+    const present = new Set(eats.map((e) => e.category).filter(Boolean));
     return Object.keys(EATERY_CATEGORY_LABELS).filter((c) => present.has(c));
-  }, [eateries]);
+  }, [eats]);
 
-  const filtered = eateries.filter(
+  // Quán nước lọc theo HƯỚNG NHÌN, không theo bữa — lý do đến là cảnh.
+  const viewOptions = useMemo(() => {
+    const present = new Set(drinks.map((e) => e.viewType).filter(Boolean));
+    return Object.keys(VIEW_TYPE_LABELS).filter((v) => present.has(v));
+  }, [drinks]);
+
+  const filtered = eats.filter(
     (e) =>
       (meal === "all" || e.meals.includes(meal)) &&
       (cat === "all" || e.category === cat),
   );
 
-  const openSpecialty = (slug: string) =>
-    specBySlug.has(slug) && setSelected({ type: "specialty", slug });
-  const openEatery = (slug: string) =>
-    eateryBySlug.has(slug) && setSelected({ type: "eatery", slug });
+  // Có view lên trước — trong cùng mục, quán ngắm cảnh là thứ đáng xem nhất.
+  const filteredDrinks = drinks
+    .filter((e) => view === "all" || e.viewType === view)
+    .slice()
+    .sort((a, b) => Number(Boolean(b.viewType)) - Number(Boolean(a.viewType)));
 
   // Deep-link từ trang khác (vd card "Quán ăn gần đây" ở /dia-diem):
-  // #eatery-<slug> / #specialty-<slug> → mở đúng drawer khi vào trang.
+  // #eatery-<slug> → mở đúng drawer khi vào trang.
   useEffect(() => {
-    const m = window.location.hash.match(/^#(eatery|specialty)-(.+)$/);
+    const m = window.location.hash.match(/^#eatery-(.+)$/);
     if (!m) return;
-    const slug = decodeURIComponent(m[2]);
-    if (m[1] === "eatery" && eateryBySlug.has(slug))
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSelected({ type: "eatery", slug });
-    else if (m[1] === "specialty" && specBySlug.has(slug))
-      setSelected({ type: "specialty", slug });
+    const slug = decodeURIComponent(m[1]);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (eateryBySlug.has(slug)) setSelected({ type: "eatery", slug });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // chỉ đọc hash lúc mount
 
-  const activeSpecialty =
-    selected?.type === "specialty" ? specBySlug.get(selected.slug) : undefined;
   const activeEatery =
     selected?.type === "eatery" ? eateryBySlug.get(selected.slug) : undefined;
+
+  // ── Ăn ở đâu: quán ăn thực dụng, lọc bữa / kiểu / giá ──
+  const eatsBlock = eats.length > 0 && (
+    <section key="quan-an" id="quan-an" className="scroll-mt-40">
+      <SectionHead icon={Store} title="Ăn ở đâu" count={eats.length} unit="quán" />
+
+      {/* Lọc chính: theo bữa */}
+      <div className="mt-5 flex flex-wrap gap-2">
+        {MEAL_CHIPS.map((m) => (
+          <FilterChip
+            key={m}
+            active={meal === m}
+            onClick={() => chooseMeal(m)}
+            primary
+          >
+            {m === "all" ? "Mọi bữa" : label(MEAL_LABELS, m)}
+          </FilterChip>
+        ))}
+      </div>
+
+      {/* Lọc phụ: kiểu */}
+      {catOptions.length > 0 && (
+        <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2.5">
+          <FilterGroup label="Kiểu">
+            <FilterChip active={cat === "all"} onClick={() => setCat("all")}>
+              Tất cả
+            </FilterChip>
+            {catOptions.map((c) => (
+              <FilterChip key={c} active={cat === c} onClick={() => setCat(c)}>
+                {label(EATERY_CATEGORY_LABELS, c)}
+              </FilterChip>
+            ))}
+          </FilterGroup>
+        </div>
+      )}
+
+      {filtered.length > 0 ? (
+        <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          {filtered.map((e) => (
+            <EateryCard
+              key={e.slug}
+              eatery={e}
+              onClick={() => setSelected({ type: "eatery", slug: e.slug })}
+            />
+          ))}
+        </div>
+      ) : (
+        <p className="mt-6 text-sm text-muted-foreground">
+          Không có quán khớp bộ lọc này.
+        </p>
+      )}
+    </section>
+  );
+
+  // ── Quán nước & cà phê: đến vì CẢNH — ảnh to, lọc theo hướng nhìn ──
+  const drinksBlock = drinks.length > 0 && (
+    <section key="quan-nuoc" id="quan-nuoc" className="scroll-mt-40">
+      <SectionHead
+        icon={Coffee}
+        title="Quán nước & cà phê"
+        count={drinks.length}
+        unit="quán"
+      />
+
+      {viewOptions.length > 0 && (
+        <div className="mt-5 flex flex-wrap gap-2">
+          <FilterChip active={view === "all"} onClick={() => setView("all")} primary>
+            Tất cả
+          </FilterChip>
+          {viewOptions.map((v) => (
+            <FilterChip
+              key={v}
+              active={view === v}
+              onClick={() => setView(v)}
+              primary
+            >
+              {label(VIEW_TYPE_LABELS, v)}
+            </FilterChip>
+          ))}
+        </div>
+      )}
+
+      {filteredDrinks.length > 0 ? (
+        <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {filteredDrinks.map((e) => (
+            <DrinkCard
+              key={e.slug}
+              eatery={e}
+              onClick={() => setSelected({ type: "eatery", slug: e.slug })}
+            />
+          ))}
+        </div>
+      ) : (
+        <p className="mt-6 text-sm text-muted-foreground">
+          Không có quán khớp bộ lọc này.
+        </p>
+      )}
+    </section>
+  );
 
   return (
     <div>
@@ -255,92 +358,10 @@ export function FoodSection({
         </nav>
       )}
 
-      {/* ── Món phải thử: đặc sản dish-first, gắn "ăn ở đâu" ── */}
-      {specialties.length > 0 && (
-        <section id="dac-san" className="mt-12 scroll-mt-40">
-          <SectionHead
-            icon={UtensilsCrossed}
-            title="Món đặc sản phải thử"
-            count={specialties.length}
-            unit="món"
-          />
-          <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
-            {specialties.map((s) => (
-              <SpecialtyCard
-                key={s.slug}
-                name={s.name}
-                slug={s.slug}
-                images={s.images}
-                tag={s.tags[0] ?? null}
-                eateryCount={s.eateries.length}
-                onClick={() => setSelected({ type: "specialty", slug: s.slug })}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* ── Ăn ở đâu: quán ăn thực dụng, lọc bữa / kiểu / giá ── */}
-      {eateries.length > 0 && (
-        <section id="quan-an" className="mt-14 scroll-mt-40">
-          <SectionHead
-            icon={Store}
-            title="Ăn ở đâu"
-            count={eateries.length}
-            unit="quán"
-          />
-
-          {/* Lọc chính: theo bữa */}
-          <div className="mt-5 flex flex-wrap gap-2">
-            {MEAL_CHIPS.map((m) => (
-              <FilterChip
-                key={m}
-                active={meal === m}
-                onClick={() => chooseMeal(m)}
-                primary
-              >
-                {m === "all" ? "Mọi bữa" : label(MEAL_LABELS, m)}
-              </FilterChip>
-            ))}
-          </div>
-
-          {/* Lọc phụ: kiểu */}
-          {catOptions.length > 0 && (
-            <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2.5">
-              <FilterGroup label="Kiểu">
-                <FilterChip active={cat === "all"} onClick={() => setCat("all")}>
-                  Tất cả
-                </FilterChip>
-                {catOptions.map((c) => (
-                  <FilterChip
-                    key={c}
-                    active={cat === c}
-                    onClick={() => setCat(c)}
-                  >
-                    {label(EATERY_CATEGORY_LABELS, c)}
-                  </FilterChip>
-                ))}
-              </FilterGroup>
-            </div>
-          )}
-
-          {filtered.length > 0 ? (
-            <div className="mt-6 grid gap-4 lg:grid-cols-2">
-              {filtered.map((e) => (
-                <EateryCard
-                  key={e.slug}
-                  eatery={e}
-                  onClick={() => setSelected({ type: "eatery", slug: e.slug })}
-                />
-              ))}
-            </div>
-          ) : (
-            <p className="mt-6 text-sm text-muted-foreground">
-              Không có quán khớp bộ lọc này.
-            </p>
-          )}
-        </section>
-      )}
+      <div className="mt-12 space-y-14">
+        {eatsBlock}
+        {drinksBlock}
+      </div>
 
       {/* ── Trải nghiệm ẩm thực: tour/lớp học — link sang trang chi tiết ── */}
       {experiences.length > 0 && (
@@ -397,83 +418,18 @@ export function FoodSection({
             "data-[state=open]:slide-in-from-right-8! data-[state=closed]:slide-out-to-right-8!",
           )}
         >
-          {activeSpecialty && (
-            <>
-              <SheetHeader className="sr-only">
-                <SheetTitle>{activeSpecialty.name}</SheetTitle>
-                <SheetDescription>Chi tiết đặc sản</SheetDescription>
-              </SheetHeader>
-              <SpecialtyDetail data={activeSpecialty} onOpenEatery={openEatery} />
-            </>
-          )}
           {activeEatery && (
             <>
               <SheetHeader className="sr-only">
                 <SheetTitle>{activeEatery.name}</SheetTitle>
                 <SheetDescription>Chi tiết quán ăn</SheetDescription>
               </SheetHeader>
-              <EateryDetail data={activeEatery} onOpenSpecialty={openSpecialty} />
+              <EateryDetail data={activeEatery} />
             </>
           )}
         </SheetContent>
       </Sheet>
     </div>
-  );
-}
-
-// Card đặc sản — ảnh vuông làm chủ, tên phủ trên gradient đáy ("ăn ảnh").
-function SpecialtyCard({
-  name,
-  slug,
-  images,
-  tag,
-  eateryCount,
-  onClick,
-}: {
-  name: string;
-  slug: string;
-  images: { url: string; isCover: boolean }[];
-  tag?: string | null;
-  eateryCount: number;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={`Xem chi tiết ${name}`}
-      className="group relative block aspect-square overflow-hidden rounded-2xl bg-muted text-left"
-    >
-      <Image
-        src={coverUrl(images, slug)}
-        alt={name}
-        fill
-        sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-        className="object-cover"
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
-      {tag && (
-        <span className="absolute left-2.5 top-2.5 rounded-full bg-warm/95 px-2.5 py-1 text-xs font-semibold text-warm-foreground shadow-sm">
-          {tag}
-        </span>
-      )}
-      <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-3.5">
-        <div className="min-w-0">
-          <h3 className="text-base font-semibold leading-tight tracking-tight text-white drop-shadow-sm">
-            {name}
-          </h3>
-          {eateryCount > 0 && (
-            <p className="mt-1 flex items-center gap-1 text-xs font-medium text-white/85">
-              <Utensils className="size-3 shrink-0" aria-hidden />
-              Ăn ở {eateryCount} quán
-            </p>
-          )}
-        </div>
-        <span className="mb-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-white/15 text-white opacity-0 backdrop-blur-md transition-all group-hover:opacity-100 group-hover:translate-x-0.5">
-          <ArrowUpRight className="size-3.5" aria-hidden />
-        </span>
-      </div>
-    </button>
   );
 }
 
@@ -539,6 +495,66 @@ function EateryCard({
               </span>
             ))}
           </div>
+        )}
+      </div>
+    </button>
+  );
+}
+
+// Card quán nước — ảnh TO vì view chính là thứ khách mua; badge hướng nhìn trên
+// ảnh, giờ vàng & giá ngay dưới tên.
+function DrinkCard({
+  eatery: e,
+  onClick,
+}: {
+  eatery: EateryDetailData;
+  onClick: () => void;
+}) {
+  const area = [e.wardName, e.districtName].filter(Boolean).join(", ") || null;
+  const viewLabel = label(VIEW_TYPE_LABELS, e.viewType);
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={`Xem chi tiết ${e.name}`}
+      className="group flex flex-col overflow-hidden rounded-2xl bg-card text-left shadow-sm shadow-black/5 transition-shadow hover:shadow-lg hover:shadow-black/5"
+    >
+      <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+        <Image
+          src={coverUrl(e.images, e.slug)}
+          alt={e.name}
+          fill
+          sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+          className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+        />
+        {viewLabel && (
+          <span className="absolute left-2.5 top-2.5 inline-flex items-center gap-1 rounded-full bg-background/90 px-2.5 py-1 text-xs font-semibold shadow-sm backdrop-blur-sm">
+            <Eye className="size-3 shrink-0 text-primary" aria-hidden />
+            {viewLabel}
+          </span>
+        )}
+      </div>
+      <div className="flex flex-1 flex-col p-4">
+        <h3 className="line-clamp-2 font-semibold tracking-tight transition-colors group-hover:text-primary">
+          {e.name}
+        </h3>
+        {area && (
+          <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+            <MapPin className="size-3 shrink-0" aria-hidden />
+            <span className="truncate">{area}</span>
+          </p>
+        )}
+        {e.description && (
+          <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+            {e.description}
+          </p>
+        )}
+        {e.bestTime && (
+          <p className="mt-3 inline-flex items-center gap-1.5 pt-1 text-xs font-medium text-primary">
+            <Sunrise className="size-3.5 shrink-0" aria-hidden />
+            {e.bestTime}
+          </p>
         )}
       </div>
     </button>

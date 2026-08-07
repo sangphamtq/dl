@@ -6,7 +6,6 @@ export const VIEW_ENTITIES = [
   "place",
   "activity",
   "spot",
-  "specialty",
   "eatery",
   "accommodation",
 ] as const;
@@ -93,7 +92,6 @@ const ENTITY_META: Record<ViewEntity, { label: string; cmsBase: string }> = {
   place: { label: "Điểm đến", cmsBase: "/cms/places" },
   activity: { label: "Hoạt động", cmsBase: "/cms/activities" },
   spot: { label: "Địa điểm nhỏ", cmsBase: "/cms/spots" },
-  specialty: { label: "Đặc sản", cmsBase: "/cms/specialties" },
   eatery: { label: "Quán ăn", cmsBase: "/cms/eateries" },
   accommodation: { label: "Lưu trú", cmsBase: "/cms/accommodations" },
 };

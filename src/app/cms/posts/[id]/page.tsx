@@ -56,7 +56,6 @@ export default async function PostDetailPage({
           place: { select: { id: true, name: true } },
           activity: { select: { id: true, name: true } },
           spot: { select: { id: true, name: true } },
-          specialty: { select: { id: true, name: true } },
           eatery: { select: { id: true, name: true } },
           accommodation: { select: { id: true, name: true } },
         },
@@ -75,8 +74,6 @@ export default async function PostDetailPage({
         return { label: "Hoạt động", name: r.activity.name, href: `/cms/activities/${r.activity.id}` };
       if (r.spot)
         return { label: "Địa điểm", name: r.spot.name, href: `/cms/spots/${r.spot.id}` };
-      if (r.specialty)
-        return { label: "Đặc sản", name: r.specialty.name, href: `/cms/specialties/${r.specialty.id}` };
       if (r.eatery)
         return { label: "Quán ăn", name: r.eatery.name, href: `/cms/eateries/${r.eatery.id}` };
       if (r.accommodation)

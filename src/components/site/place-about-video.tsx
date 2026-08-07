@@ -85,19 +85,48 @@ export function PlaceAboutVideo({
   const boxRef = useRef<HTMLDivElement | null>(null);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const [away, setAway] = useState(false); // hộp đã cuộn khỏi tầm nhìn
-  const [engaged, setEngaged] = useState(false); // người dùng đã bấm vào player
-  const [dismissed, setDismissed] = useState(false);
+  const [playing, setPlaying] = useState(false); // video ĐANG phát
+  // Ghi lại video NÀO vừa bị tắt player thu nhỏ, không phải một cờ true/false.
+  // Nhờ vậy "đã tắt" bám theo đúng clip đó cho tới khi đổi sang clip khác —
+  // cuộn lên cuộn xuống bao nhiêu lần cũng không mời lại.
+  const [dismissedId, setDismissedId] = useState<string | null>(null);
 
-  // Chỉ thu nhỏ khi người dùng ĐÃ bấm vào player. Không có cách nào hỏi iframe
-  // của TikTok "đang phát chưa" (khác origin), nên dùng dấu hiệu gần nhất: click
-  // vào iframe làm cửa sổ mất focus và `activeElement` chính là iframe đó.
-  // Thiếu điều kiện này thì ai chỉ lướt qua cũng bị một khung video bám theo.
+  // Trạng thái phát lấy TỪ CHÍNH PLAYER, không phải đoán. Player nhúng của
+  // TikTok (`/player/v1/...`) gửi sự kiện về cửa sổ cha qua `postMessage`, gói
+  // trong `{ "x-tiktok-player": true, type, value }`.
+  //
+  // Trước đây tôi đoán bằng mẹo "cửa sổ mất focus + activeElement là iframe" =
+  // người dùng đã BẤM vào player. Nhưng bấm ≠ đang phát: bấm để TẠM DỪNG cũng
+  // tính là đã bấm, nên video dừng rồi mà cuộn xuống vẫn bị thu nhỏ bám theo.
+  //
+  // Hai lớp lọc bắt buộc: đúng origin TikTok, và đúng iframe NÀY —
+  // trang điểm đến còn player khác (modal ở hero), không lọc thì trạng thái của
+  // clip này bị clip kia ghi đè.
   useEffect(() => {
-    const onBlur = () => {
-      if (document.activeElement === iframeRef.current) setEngaged(true);
+    const onMessage = (e: MessageEvent) => {
+      if (!e.origin.endsWith("tiktok.com")) return;
+      if (e.source !== iframeRef.current?.contentWindow) return;
+      const raw = e.data;
+      const msg: unknown =
+        typeof raw === "string"
+          ? (() => {
+              try {
+                return JSON.parse(raw);
+              } catch {
+                return null;
+              }
+            })()
+          : raw;
+      if (!msg || typeof msg !== "object") return;
+      const d = msg as { "x-tiktok-player"?: boolean; type?: string; value?: unknown };
+      if (d["x-tiktok-player"] !== true) return;
+      // Quy ước trạng thái giống YouTube: 1 = đang phát, còn lại (0 chưa chạy,
+      // 2 tạm dừng, 3 kết thúc) đều là KHÔNG phát.
+      if (d.type === "onStateChange") setPlaying(d.value === 1);
+      else if (d.type === "onPlayerReady") setPlaying(false);
     };
-    window.addEventListener("blur", onBlur);
-    return () => window.removeEventListener("blur", onBlur);
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
   }, []);
 
   useEffect(() => {
@@ -118,9 +147,6 @@ export function PlaceAboutVideo({
         // nhỏ. Đây chính là lỗi làm nó ngừng hoạt động.
         const top = e.rootBounds?.top ?? 0;
         setAway(!e.isIntersecting && e.boundingClientRect.bottom <= top + 1);
-        // Cuộn trở lại chỗ cũ thì xoá dấu "đã tắt" — lần cuộn qua sau lại mời
-        // thu nhỏ, thay vì tắt một lần là tắt vĩnh viễn.
-        if (e.isIntersecting) setDismissed(false);
       },
       // Rời hẳn khung nhìn mới tính, không phải vừa nhú lên mép trên.
       { threshold: 0, rootMargin: "-72px 0px -20% 0px" },
@@ -129,10 +155,12 @@ export function PlaceAboutVideo({
     return () => obs.disconnect();
   }, []);
 
-  const mini = away && engaged && !dismissed;
-
   const current = videos[active];
   if (!current) return null;
+
+  // Ba điều kiện, thiếu một là không thu nhỏ: đã cuộn qua · ĐANG PHÁT · chưa
+  // tắt player thu nhỏ của chính clip này.
+  const mini = away && playing && dismissedId !== current.id;
   const labelOf = (i: number) =>
     videos[i]?.caption ?? `${placeName} — video ${i + 1}`;
   const label = labelOf(active);
@@ -213,7 +241,7 @@ export function PlaceAboutVideo({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setDismissed(true)}
+                  onClick={() => setDismissedId(current.id)}
                   aria-label="Đóng video thu nhỏ"
                   title="Đóng"
                   className={MINI_BTN}

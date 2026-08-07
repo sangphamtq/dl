@@ -123,7 +123,6 @@ export async function getPlaceHero(placeSlug: string) {
 export type PlaceCounts = {
   activity: number;
   spot: number;
-  specialty: number;
   eatery: number;
   accommodation: number;
   transport: number;
@@ -154,16 +153,15 @@ export async function getPlaceHeader(placeSlug: string) {
 }
 
 export async function getPlaceCounts(placeId: string): Promise<PlaceCounts> {
-  const [activity, spot, specialty, eatery, accommodation, transport] =
+  const [activity, spot, eatery, accommodation, transport] =
     await Promise.all([
       prisma.activity.count({ where: { placeId, ...pub } }),
       prisma.spot.count({ where: { placeId, ...pub } }),
-      prisma.specialty.count({ where: { placeId, ...pub } }),
       prisma.eatery.count({ where: { placeId, ...pub } }),
       prisma.accommodation.count({ where: { placeId, ...pub } }),
       prisma.transport.count({ where: { placeId, ...pub } }),
     ]);
-  return { activity, spot, specialty, eatery, accommodation, transport };
+  return { activity, spot, eatery, accommodation, transport };
 }
 
 export type PlaceTab = {
@@ -175,7 +173,7 @@ export type PlaceTab = {
 };
 
 // Tabs sticky: "Tổng quan" về trang Place + mỗi loại listing có dữ liệu → trang "xem tất cả".
-// Đặc sản + Quán ăn gộp chung thành một tab "Ẩm thực" (trang /am-thuc hiển thị cả hai).
+// Tab "Ẩm thực" = Quán ăn + Quán nước (phần Đặc sản đang tắt).
 export function buildPlaceTabs(placeSlug: string, counts: PlaceCounts): PlaceTab[] {
   const base = `/diem-den/${placeSlug}`;
   // Mục đầu = "Tổng quan" dạng icon (gọn); chỉ hiện khi có ≥1 loại listing.
@@ -188,8 +186,7 @@ export function buildPlaceTabs(placeSlug: string, counts: PlaceCounts): PlaceTab
 
   if (counts.spot > 0) add("dia-diem", "Địa điểm", counts.spot);
   if (counts.activity > 0) add("hoat-dong", "Trải nghiệm", counts.activity);
-  if (counts.specialty + counts.eatery > 0)
-    add("am-thuc", "Ẩm thực", counts.specialty + counts.eatery);
+  if (counts.eatery > 0) add("am-thuc", "Ẩm thực", counts.eatery);
   if (counts.accommodation > 0)
     add("luu-tru", "Nơi lưu trú", counts.accommodation);
   // Di chuyển: màn hình riêng trong route động [loai] (không có trang chi tiết per-item).

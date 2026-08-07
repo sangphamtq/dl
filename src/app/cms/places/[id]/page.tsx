@@ -9,7 +9,6 @@ import {
   MapPin,
   Compass,
   Mountain,
-  Sparkles,
   UtensilsCrossed,
   BedDouble,
   Bus,
@@ -41,7 +40,6 @@ const dateFmt = new Intl.DateTimeFormat("vi-VN", {
 const LISTING_TYPES = [
   { key: "activities", label: "Hoạt động", icon: Compass },
   { key: "spots", label: "Địa điểm nhỏ", icon: Mountain },
-  { key: "specialties", label: "Đặc sản", icon: Sparkles },
   { key: "eateries", label: "Quán ăn", icon: UtensilsCrossed },
   { key: "accommodations", label: "Lưu trú", icon: BedDouble },
   { key: "transports", label: "Di chuyển", icon: Bus },
@@ -93,7 +91,6 @@ export default async function PlaceDetailPage({
           children: true,
           activities: true,
           spots: true,
-          specialties: true,
           eateries: true,
           accommodations: true,
           transports: true,

@@ -189,24 +189,13 @@ export default async function PlaceDetailPage({
           _count: { select: { checkIns: true } },
         },
       },
-      specialties: {
-        where: pub,
-        orderBy: [{ isFeatured: "desc" }, { order: "asc" }, { name: "asc" }],
-        // 6 = hai cột × ba hàng menu (xem FoodMenu); còn lại đi qua link "Xem
-        // tất cả" — trang tổng quan chỉ xem trước, danh mục là trang /am-thuc.
-        take: 6,
-        select: {
-          slug: true,
-          name: true,
-          tags: true,
-          images: listingImages,
-          // Hai quán tiêu biểu (in tên thật ở món mở đầu) + tổng số cho "+N".
-          eateries: { take: 2, orderBy: { name: "asc" }, select: { name: true } },
-          _count: { select: { eateries: true } },
-        },
-      },
+      // Đặc sản (Specialty) KHÔNG còn được lấy: phần món ăn đã tắt hiển thị
+      // công khai. Dữ liệu vẫn nguyên trong DB, chỉ là không render ở đâu.
+      // CHỈ quán ĂN. Quán nước lấy bằng truy vấn riêng bên dưới: nhét chung một
+      // `take: 3` thì quán nước gần như không bao giờ lọt (chúng đứng cuối theo
+      // `order`), mà đó lại là thứ đáng xem nhất ở những nơi đi vì cảnh.
       eateries: {
-        where: pub,
+        where: { ...pub, venueKind: { in: ["eat", "both"] as const } },
         orderBy: [{ isFeatured: "desc" }, { order: "asc" }, { name: "asc" }],
         // 3 = một hàng ba cột, cùng tinh thần "chỉ hiện nổi bật" với phần món.
         take: 3,
@@ -315,6 +304,38 @@ export default async function PlaceDetailPage({
           where: { placeId: place.id, ...pub, isVerified: true },
         })
       : 0;
+  // Quán nước cho section Ẩm thực — truy vấn riêng để có suất hiện riêng, không
+  // phải tranh 3 chỗ với quán ăn. Ưu tiên quán CÓ view (cảnh mới là thứ bán ở
+  // mục này), sau đó theo thứ tự biên tập.
+  const drinkVenues =
+    counts.eatery > 0
+      ? await prisma.eatery.findMany({
+          where: {
+            placeId: place.id,
+            ...pub,
+            venueKind: { in: ["drink", "both"] },
+          },
+          orderBy: [
+            { isFeatured: "desc" },
+            { order: "asc" },
+            { name: "asc" },
+          ],
+          take: 6,
+          select: {
+            slug: true,
+            name: true,
+            viewType: true,
+            bestTime: true,
+            images: listingImages,
+          },
+        })
+      : [];
+  // 3 = một hàng ba ô ảnh. Quán có view lên trước rồi mới cắt, nên nơi nào có
+  // đủ quán cảnh thì hàng này toàn quán cảnh.
+  const drinks = [...drinkVenues]
+    .sort((a, b) => Number(Boolean(b.viewType)) - Number(Boolean(a.viewType)))
+    .slice(0, 3);
+
   const stats = buildPlaceStats(place.viewCount);
   const tabs = buildPlaceTabs(place.slug, counts);
   const heroReviews =
@@ -364,7 +385,8 @@ export default async function PlaceDetailPage({
     place.children.length > 0 ||
     place.spots.length > 0 ||
     place.activities.length > 0 ||
-    place.specialties.length > 0 ||
+    place.eateries.length > 0 ||
+    drinks.length > 0 ||
     place.accommodations.length > 0 ||
     counts.transport > 0;
 
@@ -597,28 +619,21 @@ export default async function PlaceDetailPage({
           </Band>
         )}
 
-        {/* Ẩm thực — thực đơn có ảnh từng món (xem FoodMenu) + danh sách quán */}
-        {(place.specialties.length > 0 || place.eateries.length > 0) && (
+        {/* Ẩm thực — danh sách quán ăn + dải ô ảnh quán nước (xem FoodMenu) */}
+        {(place.eateries.length > 0 || drinks.length > 0) && (
           <Band tint={tinted()}>
             <section id="am-thuc" className="scroll-mt-32">
               <FoodMenu
                 placeName={place.name}
                 href={`/diem-den/${place.slug}/am-thuc`}
-                count={counts.specialty + counts.eatery}
-                specialties={place.specialties.map((sp) => ({
-                  slug: sp.slug,
-                  name: sp.name,
-                  tags: sp.tags,
-                  eateryNames: sp.eateries.map((e) => e.name),
-                  eateryCount: sp._count.eateries,
-                  images: sp.images,
-                }))}
+                count={counts.eatery}
                 eateries={place.eateries.map((e) => ({
                   slug: e.slug,
                   name: e.name,
                   category: e.category,
                   meals: e.meals,
                 }))}
+                drinks={drinks}
               />
             </section>
           </Band>
