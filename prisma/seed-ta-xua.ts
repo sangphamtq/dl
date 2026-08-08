@@ -148,10 +148,6 @@ async function main() {
     "Cũng vì thế mà một ngày ở đây chia làm hai nhịp rõ rệt: buổi sáng dành cho mây, phần còn lại trôi rất chậm. Người ta ngủ bù, ngồi ở hiên homestay nhìn sương kéo qua thung lũng, rồi chiều muộn chạy xe lang thang qua mấy bản chè.",
     "Nhưng nơi này không chỉ có mây: rừng nguyên sinh phủ rêu trên đường lên đỉnh 2.865m, những gốc chè Shan tuyết vài trăm tuổi phải trèo mới hái được búp, và nhịp sống người Mông còn gần như nguyên vẹn. Đổi lại, đừng chờ đợi dịch vụ chỉn chu: quán xá thưa, đường lên là mười ba cây số đèo dốc liên tục. Hai ngày một đêm là vừa đủ.",
   ].join("\n\n");
-  const taXuaGetToIntro =
-    "Tà Xùa cách Hà Nội khoảng 240km. Phổ biến nhất là bắt xe khách đêm Hà Nội – Bắc Yên (~6–7 giờ), rồi từ thị trấn Bắc Yên đi tiếp 13km đường đèo dốc lên xã Tà Xùa bằng xe ôm hoặc xe máy thuê. Dân phượt thường chạy xe máy cả cung Hà Nội – Thu Cúc – Phù Yên – Bắc Yên; ô tô gầm cao đi được nhưng đoạn cuối nhiều cua gấp, sương mù dày, nên tính giờ để không lên núi lúc trời tối.";
-  const taXuaGetAroundIntro =
-    "Các điểm ở Tà Xùa nằm rải dọc một con đường độc đạo trên sống núi, cách nhau vài km nên xe máy là phương tiện gần như bắt buộc. Đường bê tông nhưng dốc đứng, nhiều đoạn sạt và trơn khi có sương — người chưa quen đi đường núi nên thuê xe ôm bản địa. Từ điểm gửi xe tới các mỏm ngắm mây vẫn phải cuốc bộ thêm 15–40 phút.";
   // "Thông tin chung" — vài fact nổi bật nhận diện nơi này, KHÔNG phải
   // checklist chuẩn bị. Giữ mỗi dòng ngắn gọn một ý.
   const taXuaQuickInfo = [
@@ -172,8 +168,6 @@ async function main() {
       districtName: "Huyện Bắc Yên",
       wardName: "Xã Tà Xùa",
       description: taXuaDesc,
-      getToIntro: taXuaGetToIntro,
-      getAroundIntro: taXuaGetAroundIntro,
       tags: [], // xóa tag cũ còn sót trong DB từ lần seed trước
     },
     create: {
@@ -183,8 +177,6 @@ async function main() {
       parentId: sonLa.id,
       tagline: "Thiên đường săn mây Tây Bắc — nơi bạn đứng trên mây, không phải nhìn lên mây.",
       description: taXuaDesc,
-      getToIntro: taXuaGetToIntro,
-      getAroundIntro: taXuaGetAroundIntro,
       provinceName: "Sơn La",
       districtName: "Huyện Bắc Yên",
       wardName: "Xã Tà Xùa",

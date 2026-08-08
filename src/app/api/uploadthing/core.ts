@@ -68,6 +68,8 @@ export const ourFileRouter = {
           "post",
         ]),
         ownerId: z.string().min(1),
+        // Ảnh trưng bày hay ảnh tấm thực đơn (hiện chỉ Quán ăn dùng "menu").
+        kind: z.enum(["gallery", "menu"]).default("gallery"),
       }),
     )
     .middleware(async ({ input }) => {
@@ -86,11 +88,17 @@ export const ourFileRouter = {
       });
       if (!exists) throw new UploadThingError("Đối tượng không tồn tại.");
 
-      return { ownerType: input.ownerType, ownerId: input.ownerId };
+      return {
+        ownerType: input.ownerType,
+        ownerId: input.ownerId,
+        kind: input.kind,
+      };
     })
     .onUploadComplete(async ({ metadata, file }) => {
       const fk = OWNER_FK[metadata.ownerType];
-      const where = { [fk]: metadata.ownerId };
+      // Thứ tự và "ảnh đầu tiên" tính TRONG TỪNG NHÓM: tải ảnh thực đơn lên
+      // trước không được biến nó thành ảnh bìa của quán.
+      const where = { [fk]: metadata.ownerId, kind: metadata.kind };
       const [agg, count] = await Promise.all([
         prisma.image.aggregate({ where, _max: { order: true } }),
         prisma.image.count({ where }),
@@ -101,7 +109,9 @@ export const ourFileRouter = {
           url: file.ufsUrl,
           alt: file.name,
           order: (agg._max.order ?? -1) + 1,
-          isCover: count === 0,
+          // BẤT BIẾN: ảnh thực đơn không bao giờ là ảnh bìa.
+          isCover: metadata.kind === "gallery" && count === 0,
+          kind: metadata.kind,
           [fk]: metadata.ownerId,
         } as Prisma.ImageUncheckedCreateInput,
       });

@@ -53,9 +53,10 @@ export async function deleteImage(
 
   await prisma.image.delete({ where: { id: imageId } });
 
-  // Nếu vừa xóa ảnh bìa → chọn ảnh order nhỏ nhất còn lại làm bìa.
+  // Nếu vừa xóa ảnh bìa → chọn ảnh order nhỏ nhất còn lại làm bìa. Chỉ xét ảnh
+  // trưng bày: ảnh thực đơn không bao giờ được lên làm bìa.
   if (img.isCover) {
-    const where = { [OWNER_FK[ownerType]]: ownerId };
+    const where = { [OWNER_FK[ownerType]]: ownerId, kind: "gallery" as const };
     const next = await prisma.image.findFirst({
       where,
       orderBy: { order: "asc" },
@@ -79,6 +80,14 @@ export async function setCoverImage(
 ): Promise<Result> {
   await requireStaff();
   const where = { [OWNER_FK[ownerType]]: ownerId };
+  // Chặn ở tầng dữ liệu, không chỉ trông vào việc UI ẩn nút: ảnh thực đơn mà
+  // thành ảnh bìa thì mọi thẻ ngoài lưới sẽ hiện một tấm menu.
+  const img = await prisma.image.findUnique({
+    where: { id: imageId },
+    select: { kind: true },
+  });
+  if (img?.kind !== "gallery")
+    return { ok: false, error: "Ảnh thực đơn không thể làm ảnh bìa." };
   await prisma.$transaction([
     prisma.image.updateMany({ where: { ...where, isCover: true }, data: { isCover: false } }),
     prisma.image.update({ where: { id: imageId }, data: { isCover: true } }),

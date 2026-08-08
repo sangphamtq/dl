@@ -37,9 +37,17 @@ import { parseTicketTiers, formatVnd } from "@/lib/tickets";
 // Map token [loai] đơn loại → model + tiêu đề. Quán ăn KHÔNG có ở đây: nó hiển
 // thị chi tiết inline trên tab gộp "am-thuc" (xem dưới).
 const LOAI = {
-  "hoat-dong": { title: "Hoạt động & trải nghiệm", model: "activity" },
-  "dia-diem": { title: "Địa điểm tham quan", model: "spot" },
-  "luu-tru": { title: "Nơi lưu trú", model: "accommodation" },
+  "hoat-dong": {
+    title: "Hoạt động & trải nghiệm",
+    model: "activity",
+    unit: "hoạt động",
+  },
+  "dia-diem": { title: "Địa điểm tham quan", model: "spot", unit: "địa điểm" },
+  "luu-tru": {
+    title: "Nơi lưu trú",
+    model: "accommodation",
+    unit: "nơi lưu trú",
+  },
 } as const;
 
 type Loai = keyof typeof LOAI;
@@ -63,6 +71,7 @@ type ListingItem = {
   review: { stars: number; total: number } | null; // đánh giá (chỉ spot)
   price: string | null; // giá vé / giá tham gia (nổi bật)
   highlights: string[]; // điểm nhấn / đặc trưng (chỉ spot)
+  category: string | null; // giá trị enum của loại — khóa lọc & tham số ?cat=
   tag: string | null; // loại (category) — hiển thị làm kicker
   tags: string[];
   meta: string[]; // fact ngắn theo loại (thời lượng, giá, giờ…)
@@ -231,6 +240,7 @@ async function fetchListing(
     review: reviews?.get(r.id) ?? null,
     price: buildPrice(model, r),
     highlights: r.highlights?.map((h) => h.title) ?? [],
+    category: r.category ?? null,
     tag: buildTag(model, r),
     tags: r.tags,
     images: r.images,
@@ -247,14 +257,21 @@ const FOOD_ORDER = [
   { popularity: "desc" as const },
   { name: "asc" as const },
 ];
+// Ảnh trưng bày. Phải lọc `kind` ở đây vì select này KHÔNG lọc `isCover` —
+// không lọc thì ảnh tấm thực đơn lọt vào dải ảnh của quán.
 const gallerySelect = {
+  where: { kind: "gallery" as const },
   orderBy: [{ isCover: "desc" as const }, { order: "asc" as const }],
   select: { id: true, url: true, alt: true, isCover: true },
 };
 
 // Chi tiết đầy đủ Quán ăn của một place — render khối trên tab Ẩm thực.
+//
+// Ảnh trưng bày và ảnh tấm thực đơn nằm CHUNG một quan hệ `images`, mà Prisma
+// không cho select cùng một quan hệ hai lần dưới hai tên. Nên lấy cả kèm `kind`
+// rồi tách ở đây — vẫn một truy vấn, và nơi dùng nhận đúng hai danh sách rời.
 async function fetchEateryDetails(placeId: string): Promise<EateryDetailData[]> {
-  return prisma.eatery.findMany({
+  const rows = await prisma.eatery.findMany({
     where: { placeId, status: "published" },
     orderBy: FOOD_ORDER,
     select: {
@@ -278,9 +295,17 @@ async function fetchEateryDetails(placeId: string): Promise<EateryDetailData[]> 
       wardName: true,
       districtName: true,
       provinceName: true,
-      images: gallerySelect,
+      images: {
+        orderBy: [{ isCover: "desc" as const }, { order: "asc" as const }],
+        select: { id: true, url: true, alt: true, isCover: true, kind: true },
+      },
     },
   });
+  return rows.map(({ images, ...rest }) => ({
+    ...rest,
+    images: images.filter((i) => i.kind === "gallery"),
+    menuImages: images.filter((i) => i.kind === "menu"),
+  }));
 }
 
 // Trải nghiệm ẩm thực (Activity category=food) — cross-link sang trang chi tiết.
@@ -428,17 +453,9 @@ export default async function PlaceListingPage({
       ? await getReviewSummary("place", place.id)
       : null;
 
-  // Ẩm thực: bản sắc + món phải thử + ăn ở đâu + trải nghiệm + mẹo.
-  const foodMeta = isFood
-    ? await prisma.place.findUnique({
-        where: { id: place.id },
-        select: { foodIntro: true, foodTips: true },
-      })
-    : null;
+  // Ẩm thực: ăn ở đâu + quán nước + trải nghiệm.
   const food = isFood
     ? {
-        intro: foodMeta?.foodIntro ?? null,
-        tips: foodMeta?.foodTips ?? [],
         eateries: await fetchEateryDetails(place.id),
         experiences: await fetchFoodExperiences(place.id),
       }
@@ -450,12 +467,6 @@ export default async function PlaceListingPage({
 
   // Di chuyển: màn hình riêng, render inline theo direction (đến nơi / tại chỗ).
   const transports = isTransport ? await fetchTransports(place.id) : null;
-  const transportMeta = isTransport
-    ? await prisma.place.findUnique({
-        where: { id: place.id },
-        select: { getToIntro: true, getAroundIntro: true },
-      })
-    : null;
 
   // Các loại khác (hoạt động, địa điểm): lưới card link tới trang chi tiết riêng.
   const groups =
@@ -464,6 +475,7 @@ export default async function PlaceListingPage({
           {
             title: cfg.title,
             prefix: loai,
+            unit: cfg.unit,
             items: await fetchListing(cfg.model, place.id),
           },
         ]
@@ -503,8 +515,6 @@ export default async function PlaceListingPage({
             ) : (
               <FoodSection
                 placeName={place.name}
-                intro={food.intro}
-                tips={food.tips}
                 eateries={food.eateries}
                 experiences={food.experiences}
               />
@@ -513,7 +523,11 @@ export default async function PlaceListingPage({
             stays.length === 0 ? (
               <p className="text-muted-foreground">Chưa có nơi lưu trú.</p>
             ) : (
-              <AccommodationSection accommodations={stays} openSlug={openSlug} />
+              <AccommodationSection
+                accommodations={stays}
+                placeName={place.name}
+                openSlug={openSlug}
+              />
             )
           ) : transports ? (
             transports.length === 0 ? (
@@ -527,8 +541,6 @@ export default async function PlaceListingPage({
                   <TransportSection
                     transports={transports}
                     placeName={place.name}
-                    getToIntro={transportMeta?.getToIntro}
-                    getAroundIntro={transportMeta?.getAroundIntro}
                   />
                 </div>
               </section>

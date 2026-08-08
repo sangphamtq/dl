@@ -34,14 +34,20 @@ export type OwnerImage = {
 };
 
 // Quản lý ảnh dùng chung cho mọi Listing (upload + đặt bìa + sửa alt + xóa).
+//
+// `kind="menu"` dùng cho ảnh TẤM THỰC ĐƠN của Quán ăn: cùng bộ upload, nhưng
+// KHÔNG có nút đặt ảnh bìa — ảnh thực đơn mà thành bìa thì thẻ ngoài lưới sẽ
+// hiện một tấm menu. (Server cũng chặn, đây chỉ là lớp giao diện.)
 export function ListingImages({
   ownerType,
   ownerId,
   images,
+  kind = "gallery",
 }: {
   ownerType: OwnerType;
   ownerId: string;
   images: OwnerImage[];
+  kind?: "gallery" | "menu";
 }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -59,7 +65,7 @@ export function ListingImages({
   function onFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
     setError(null);
-    void startUpload(Array.from(files), { ownerType, ownerId });
+    void startUpload(Array.from(files), { ownerType, ownerId, kind });
   }
 
   return (
@@ -117,7 +123,9 @@ export function ListingImages({
       </div>
 
       {images.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Chưa có ảnh nào.</p>
+        <p className="text-sm text-muted-foreground">
+          {kind === "menu" ? "Chưa có ảnh thực đơn nào." : "Chưa có ảnh nào."}
+        </p>
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           {images.map((img) => (
@@ -126,6 +134,7 @@ export function ListingImages({
               ownerType={ownerType}
               ownerId={ownerId}
               img={img}
+              canSetCover={kind === "gallery"}
             />
           ))}
         </div>
@@ -138,10 +147,12 @@ function ImageCard({
   ownerType,
   ownerId,
   img,
+  canSetCover,
 }: {
   ownerType: OwnerType;
   ownerId: string;
   img: OwnerImage;
+  canSetCover: boolean;
 }) {
   const [pending, startTransition] = useTransition();
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -200,20 +211,24 @@ function ImageCard({
           className="h-8 text-xs"
         />
         <div className="flex items-center justify-between">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="h-7 px-2 text-xs"
-            disabled={pending || img.isCover}
-            onClick={onSetCover}
-          >
-            <Star
-              className={cn("size-3.5", img.isCover && "fill-current")}
-              aria-hidden
-            />
-            {img.isCover ? "Bìa" : "Đặt bìa"}
-          </Button>
+          {canSetCover ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-xs"
+              disabled={pending || img.isCover}
+              onClick={onSetCover}
+            >
+              <Star
+                className={cn("size-3.5", img.isCover && "fill-current")}
+                aria-hidden
+              />
+              {img.isCover ? "Bìa" : "Đặt bìa"}
+            </Button>
+          ) : (
+            <span />
+          )}
           <Button
             type="button"
             variant="ghost"

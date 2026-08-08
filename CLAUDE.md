@@ -215,9 +215,79 @@ loại hình & ngân sách, đủ thông tin vị trí/giá/liên hệ **đã ki
 > cảnh báo → chặn phần lớn kịch bản lừa cọc mà không ôm rủi ro dữ liệu tài chính.
 
 **Hiển thị (drawer + trang chi tiết cùng tồn tại):**
-- **Card lưới** `/diem-den/[placeSlug]/luu-tru` (ảnh + tên + loại hình + giá + huy hiệu xác
-  minh) → bấm mở **drawer xem nhanh** (tại chỗ, không rời trang).
-- **Drawer** = xem nhanh; có nút **"Xem trang đầy đủ →"** dẫn tới trang chi tiết.
+- **Màn hình `/diem-den/[placeSlug]/luu-tru`** (`AccommodationSection`) lấy **trạng thái xác
+  minh làm xương sống**, không phải một huy hiệu góc ảnh:
+
+```
+Nơi lưu trú · Chỗ ở đã xác minh chính chủ ở X
+[12 chỗ ở] · [9 đã xác minh] · [12 có Zalo trực tiếp]   ← dữ kiện TÍNH TỪ DATA
+┌ Dải an toàn: "Đây là danh bạ thông tin, không phải nơi đặt phòng" + quy tắc chuyển khoản ┐
+Lọc theo loại hình
+── Đã xác minh chính chủ (9) ── + câu giải thích xác minh NGHĨA LÀ GÌ
+   lưới thẻ 1/2/3 cột
+── Chưa xác minh (3) ── + câu cảnh báo tự kiểm tra trước khi cọc
+   cùng khuôn thẻ, ảnh giảm bão hoà + huy hiệu xám
+```
+
+- **TÁCH HAI NHÓM theo `isVerified`**, mỗi nhóm có một câu nói rõ trạng thái đó nghĩa là gì.
+  Trộn chung rồi phân biệt bằng badge thì người lướt không thấy sự khác nhau — mà sự khác
+  nhau đó **chính là sản phẩm** (thứ group Facebook không làm được). Vì đã tách nhóm nên
+  **bỏ nút lọc "chỉ chỗ đã xác minh"** — thành thừa.
+- **MỘT khuôn thẻ duy nhất.** Bản cũ có thêm thẻ "Đề xuất" lớn cho phần tử đầu: nó chỉ to hơn
+  chứ không mang thêm thông tin, và vì `lead = filtered[0]` nên "đề xuất" **đổi theo bộ lọc**
+  — một nhãn hứa hẹn sự tuyển chọn biên tập vốn không tồn tại.
+- **Thẻ có HAI đích, tách bằng VỊ TRÍ** để khỏi giẫm nhau:
+  - Bấm bất kỳ đâu trong thẻ → **trang chi tiết** `/luu-tru/[slug]`. Link thật gắn ở **tên
+    quán** rồi `after:absolute after:inset-0` trải vùng bấm ra cả thẻ — trình đọc màn hình đọc
+    đúng tên chứ không phải một "link" trống. (Đừng bọc cả thẻ trong `<a>` rồi nhét `<button>`
+    vào trong: HTML không cho lồng như vậy.)
+  - **"Xem nhanh" có HAI bản, tách bằng `@media (pointer: …)`** — không phải breakpoint bề
+    ngang: thứ quyết định là **có chuột hay không**, không phải màn to hay nhỏ (máy tính bảng
+    cảm ứng vẫn màn rộng).
+    - **Máy có chuột** (`pointer:fine`): lúc nghỉ thẻ **sạch trơn, không nút nào**. Rê vào ảnh
+      thì ảnh tối nhẹ + mờ nhẹ và nhãn "Xem nhanh" hiện **giữa khung** (chính lớp phủ đó là
+      nút). Cũng hiện khi tab tới bằng bàn phím (`focus-visible`).
+    - **Máy cảm ứng** (`pointer:coarse`): không có hover nên một **viên nhỏ luôn hiện** ở góc
+      dưới phải ảnh.
+    - Ẩn bằng **`display`** (`hidden` / `grid`) chứ KHÔNG bằng `opacity`, nhờ vậy bản bị ẩn
+      cũng biến khỏi cây trợ năng — trình đọc màn hình chỉ gặp một nút, không phải hai.
+    > **Đã thử và bỏ NĂM bản luôn-hiện** — đừng quay lại: viên chữ *trắng mờ góc trên phải*
+    > (trùng hàng/cỡ/vật liệu với huy hiệu xác minh → thành cặp nhãn sinh đôi); *đĩa tròn
+    > trắng đặc* (vệt trắng lửng lơ, đọc ra "nút mặc định của framework"); *viên kính tối*
+    > (đọc rõ nhưng vẫn là miếng dán đè lên ảnh); *góc khoét vào khung ảnh*; *nút viền ở đáy
+    > vùng nội dung*. Vấn đề chung: một nút **luôn hiện** trên thẻ ảnh-làm-chủ thì kiểu gì
+    > cũng thành vật thừa. Hiện-khi-rê giải quyết tận gốc — lúc nghỉ nó không tồn tại.
+  - Mũi tên "đi tiếp" nằm **cạnh TÊN** (hiện khi hover), nhờ vậy khỏi cần một hàng CTA riêng
+    ở đáy thẻ.
+- **Thẻ giữ TỐI THIỂU**: ảnh + huy hiệu xác minh · loại hình · khu vực · tên · mô tả. Đã lần
+  lượt gỡ khỏi thẻ **hàng icon kênh liên hệ** (12/12 chỗ đều có Zalo → không phân biệt được
+  thẻ nào với thẻ nào), **hàng tag** (mô tả đã nói cùng ý bằng câu văn đọc được) và **dòng
+  chính sách cọc**. Cả ba vẫn còn nguyên ở **popup / trang chi tiết** — tức là đúng lúc khách
+  đã chọn một chỗ cụ thể để cân nhắc, chứ không phải khi còn đang lướt so sánh cả chục thẻ.
+- **Khu vực trên thẻ** = đuôi địa chỉ sau khi bỏ đoạn trùng tên điểm đến (`areaOf`). Lấy
+  thẳng `address.split(",").pop()` như bản cũ thì 8/12 thẻ đều ghi "TP. Phan Thiết" — vô
+  nghĩa vì cả trang đã là Phan Thiết; bỏ đi mới ra "Mũi Né".
+- **`tags` KHÔNG lên thẻ, và cũng KHÔNG làm trục lọc.** Dữ liệu quá tạp để làm bộ lọc: 48 tag
+  khác nhau cho 12 chỗ ở, đa số xuất hiện đúng một lần, nhiều tag trùng luôn tên loại hình
+  ("homestay", "resort"), có cặp gần đồng nghĩa ("sát biển" / "gần biển"). Trên thẻ thì mô tả
+  đã nói cùng ý bằng câu văn đọc được, nên hàng tag chỉ là chữ thừa. Tag vẫn hiện ở **popup /
+  trang chi tiết**.
+- ⚠️ `Accommodation` **KHÔNG có `priceRange`** trong schema (khác mô tả cũ ở mục Phạm vi trên)
+  → hiện **không có trục ngân sách**. Cần lọc theo giá thì phải thêm trường trước.
+- **Chi tiết mở bằng POPUP** (`Dialog`), **cùng khuôn với popup Quán ăn** — hai tab anh em
+  phải nói cùng một ngôn ngữ overlay: từ `lg` là hai cột (trái ảnh phủ kín cột + carousel
+  embla + dải ảnh nhỏ, phải là phần đọc cuộn riêng), dưới `sm` popup dán đáy màn hình và
+  trượt lên; nút đóng tự dựng vì chữ X mặc định chìm trên ảnh.
+- Khác Quán ăn ở **CHỖ NÀO ĐỨNG ĐẦU**: quán ăn hỏi "còn mở không, đường tới đâu"; chỗ ở hỏi
+  **"tin được không, liên hệ ai, cọc thế nào"**. Nên cột phải xếp: **xác minh → cọc → cảnh
+  báo** → mô tả → địa chỉ/bản đồ → tag → lối sang trang đầy đủ. Huy hiệu xác minh nằm **trên
+  ảnh**, không phải một dòng chữ lẫn giữa cột.
+- **Thanh ghim đáy là LIÊN HỆ, không phải chỉ đường**: nút chính **"Nhắn Zalo chính chủ"**
+  (Zalo là kênh chốt phòng ở VN, và cả mục này tồn tại để dẫn khách tới đúng kênh chính chủ);
+  gọi/Facebook/đặt phòng/website thu thành nút tròn để thanh luôn một hàng.
+- Popup = xem nhanh; **"Xem trang đầy đủ →"** ở cuối phần đọc dẫn tới trang chi tiết.
+- ⚠️ Component này **KHÔNG dùng màu cứng**. Bản cũ có `emerald-600`/`amber-500` — theme đã có
+  `primary` (xanh lá) và `warm` (cam), dùng token thì dark mode mới đúng.
 - **Trang chi tiết** `/luu-tru/[slug]` = **canonical, ĐÍCH ĐỂ CHIA SẺ** (chủ homestay gửi/in
   link cho khách): hero gallery, breadcrumb về Place cha, khối liên hệ chính chủ + huy hiệu
   xác minh nổi bật, bản đồ + chỉ đường, chính sách cọc, cảnh báo an toàn, **nút chia sẻ kèm
@@ -402,24 +472,155 @@ trùng tên, **gắn địa danh** để phân biệt (vd hai "Quán Cô Ba" →
 > **Tiền tố là từ khoá dành riêng:** `diem-den`, `hoat-dong`, `dia-diem`, `dac-san`,
 > `quan-an`, `luu-tru`, `di-chuyen`, `blog`, `login`, `api` — không được trùng với slug.
 
-**Màn hình Ẩm thực** (`/diem-den/[placeSlug]/am-thuc`, `FoodSection`) — thứ tự khối **co giãn
-theo dữ liệu từng nơi**, không cố định:
+**Màn hình Ẩm thực** (`/diem-den/[placeSlug]/am-thuc`, `FoodSection`) — **MỘT danh sách quán,
+MỘT bộ điều khiển**, bám đúng ba câu hỏi của người mở tab, theo thứ tự hay gặp:
 
 ```
-Mở đầu (bản sắc) → Ăn ở đâu → Quán nước & cà phê → Trải nghiệm ẩm thực → Mẹo
-   ❶ Ăn ở đâu           venueKind ∈ eat|both · lọc: bữa → kiểu
-   ❷ Quán nước & cà phê venueKind ∈ drink|both · ảnh TO hơn (view là hàng hoá)
-                        badge hướng nhìn + giờ vàng · lọc theo viewType
+Mở đầu (tên + 3 dữ kiện TÍNH TỪ DATA)
+Thanh lọc dính  ❶ [⏱ Đang mở n] │ Mọi bữa · Sáng · Trưa · Tối · Ăn đêm · Cà phê · Ăn vặt
+                ❷ Kiểu: …  │  [👁 Có view n]
+Lưới thẻ 1/2/3 cột (một khuôn thẻ duy nhất) → POPUP chi tiết
+Trải nghiệm ẩm thực (Activity category=food) — khối riêng cuối trang, link sang /hoat-dong
 ```
 
-- Khối **"Món phải thử"** từng đứng đầu, cùng cơ chế **đảo thứ tự tự động** giữa món và
-  quán nước (`shouldLeadWithDrinks` trong `src/lib/food-layout.ts`): đã gỡ cả hai khi tắt
-  phần món ăn — còn hai khối thì không có gì để đảo. Bật lại món thì lấy lại từ git.
-- Quán `venueKind = both` cố ý xuất hiện ở **cả hai** khối.
-- Chip lọc bữa của ❷ **không có "Cà phê"** — đã có mục riêng, để lại thì hai chỗ cùng nghĩa.
-- Tỉ trọng đổi theo điểm đến giống hệt cặp Activity/Spot: nơi *dish-led* (biển, đô thị cổ)
-  có 10–20 món; nơi *view-led* (núi) thực chất chỉ 3–4 món nhưng nhiều quán cảnh. **Đừng ép
-  hai khối cân nhau.**
+- **Chi tiết quán mở bằng POPUP** (`Dialog`), không phải ngăn trượt. Từ `lg` là **hai cột**:
+  trái là **nửa hình ảnh**, phải là phần đọc cuộn riêng + **thanh hành động ghim đáy** với
+  **"Chỉ đường"** làm nút chính (đây là trang thông tin, không phải nơi đặt bàn — việc kế
+  tiếp sau khi xem gần như luôn là tới đó). Dưới `sm` popup **dán đáy màn hình và trượt lên**,
+  ảnh 4/3 lên đầu. Khoá `lg:h-[min(88vh,44rem)]` cho cả popup — để cao tự do thì hàng lưới
+  lấy chiều cao cột chữ, ảnh hụt lại và hở mảng trắng. Nút đóng tự dựng (nền mờ) vì chữ X
+  trần của `DialogContent` chìm nghỉm trên ảnh.
+- **MỘT carousel cho CẢ HAI tab.** Dùng `@/components/ui/carousel` (shadcn trên embla), cùng
+  component với `hero-lightbox`/`rail`, **không tự viết bộ chuyển ảnh**. Ảnh quán và ảnh thực
+  đơn đều là ảnh nên dùng chung bộ điều khiển (vuốt · mũi tên · đếm `1/3` · dải ảnh nhỏ) —
+  học một lần dùng cho cả hai. Khác nhau **chỉ ở cách vừa khung**: `object-cover` cho ảnh
+  quán, `object-contain` cho tấm menu. `key={tab}` để embla khởi tạo lại đúng danh sách slide,
+  và đổi tab thì `shot` về 0 (index cũ trỏ ra ngoài danh sách mới).
+  - Dải ảnh nhỏ đồng bộ hai chiều: `api.scrollTo(i)` ↔ `api.on("select")`.
+  - Mũi tên phải **tự dựng đè lên ảnh**: `CarouselPrevious/Next` mặc định neo `-left-12`, tức
+    NGOÀI khung — trong popup thì rơi mất ra ngoài mép. **Ẩn dưới `sm`** (ở đó vuốt là thao
+    tác tự nhiên, mũi tên chỉ che ảnh).
+  - Dải ảnh nhỏ phải có **`-m-1 p-1`**: vòng `ring` của ảnh đang chọn vẽ RA NGOÀI khung phần
+    tử, không chừa chỗ thì `overflow-x-auto` cắt cụt viền trên; margin âm bù lại để khối
+    không xê dịch.
+- **Chuyển ảnh quán ↔ thực đơn bằng MỘT thẻ có ảnh xem trước** (`MediaSwitch`), chỉ ra **nơi
+  sẽ tới** chứ không đánh dấu nơi đang đứng — nó tự đảo chiều nên luôn có đường về. Chỉ hiện
+  khi quán CÓ ảnh thực đơn. **Không dùng segmented hai nút**: segmented là ẩn dụ của lọc/sắp
+  xếp CÙNG một tập, đây là hai tập ảnh khác hẳn; và mời gọi bằng một chữ trong khi thứ đằng
+  sau là ẢNH thì không ai buồn bấm.
+- **Trạng thái đang xem nằm ở chip góc trên phải**: `Thực đơn 1/2` — gộp hai con số từng ở
+  hai nơi (số trên nhãn tab + bộ đếm carousel). Chip này **luôn hiện ở tab Thực đơn** kể cả
+  khi chỉ có một ảnh, nếu không sẽ mất hẳn dấu hiệu "bạn đang xem thực đơn".
+- Overlay đáy **XẾP CHỒNG hai dòng**: thẻ chuyển một dòng, dải ảnh nhỏ một dòng riêng chiếm
+  **hết bề ngang**. Đừng gộp thành một hàng `justify-between` — dải ảnh sẽ bị bóp và ảnh cuối
+  bị cắt cụt. Ở tab Thực đơn, ảnh phải chừa `padding-bottom` **đúng bằng chiều cao overlay**
+  (`pb-[9.5rem]` khi có dải ảnh, `pb-[5.5rem]` khi không) — ảnh `contain` chạm sát mép khung
+  nên thiếu chỗ là bị thẻ chuyển đè lên.
+- Cột chữ có thêm thẻ **"Xem thực đơn"** dẫn sang (nút chuyển nằm ở nửa ảnh, người đang đọc
+  dễ bỏ sót) — và **ẩn khi đã ở tab đó**, không mời đi tới nơi mình đang đứng.
+
+**Cột phải xếp theo THỨ TỰ QUYẾT ĐỊNH**, không phải theo thứ tự trường trong schema:
+
+```
+Loại · Tên · Khu vực
+┌ Tin thực địa ────────────────┐  ← ngay dưới tên
+│ ● Đang mở · đến 22:30        │     trạng thái (màu theo tone)
+│ 🕐 16:00 – 23:00             │     giờ mở cửa
+│ 🌅 Đẹp nhất: chập tối…       │     bestTime
+└──────────────────────────────┘
+⚠ notice (nền cam nhạt, KHÔNG viền)
+mô tả
+[thẻ Xem thực đơn]
+Địa chỉ (+ Xem trên bản đồ) · Hợp bữa · Nhìn ra · Điện thoại   ← hàng gạch chân, không bọc thẻ
+tags
+──────────────────────────────
+[ Chỉ đường ]  ☎  🌐            ← ghim đáy
+```
+
+- **Giờ mở cửa phải ở TRÊN mô tả.** Bản cũ chôn nó xuống hàng đầu của một bảng ở tận đáy cột,
+  sau cả đoạn văn — trong khi cả màn hình Ẩm thực được dựng quanh đúng câu hỏi "giờ này còn
+  mở không".
+- `statusView()` dùng chung cho huy hiệu trên ảnh và dòng trạng thái ở cột phải. Huy hiệu
+  chật chỗ nên chỉ kèm giờ khi đó là tin gấp (sắp đóng / mở lại lúc mấy giờ); cột phải rộng
+  hơn thì hiện đủ.
+- **Địa chỉ trong bảng chỉ lấy phần đường/mốc** (`data.address`), KHÔNG dùng `fullAddress` —
+  phường & thành phố đã nằm ngay dưới tên quán, in lại là đọc hai lần cùng một chỗ.
+- Cột này vốn đã nhiều khung: chỉ thẻ **bấm được** mới có viền (thẻ Xem thực đơn). Tin thực
+  địa dùng nền `muted/50`, cảnh báo dùng nền `warm/10`, bảng thông tin chỉ có hairline ngăn
+  dòng — không bọc thẻ.
+- **Tab Thực đơn**: nền **tối** (`bg-foreground/90`) để tấm menu (thường là giấy sáng) nổi
+  lên như tài liệu đặt trên bàn; ảnh giữ **nguyên tỉ lệ gốc** (`<img>` + `max-h-full
+  max-w-full`, KHÔNG `fill`) nên dọc hay ngang đều không bị cắt và luôn to hết mức khung cho
+  phép. Không có huy hiệu trạng thái/hướng nhìn ở tab này, nên gợi ý **"Bấm để phóng to"** đặt
+  góc trên trái — để ở đáy thì trên điện thoại nó đụng cụm tab.
+
+**Thực đơn = ẢNH, không phải bảng món.** `Image.kind` ∈ `gallery | menu` (enum `ImageKind`),
+**không có bảng `MenuItem`**, không có tên món / giá dạng dữ liệu. Cân nhắc đã chốt: giá món
+sẽ **sai một cách vô hình** đúng như `foodIntro`/`priceRange` từng sai, còn ảnh tấm menu là
+một lát cắt thời điểm, trung thực hơn.
+
+> **BẤT BIẾN — ảnh `menu` KHÔNG BAO GIỜ `isCover = true`.** Nhờ vậy mọi truy vấn ảnh bìa sẵn
+> có (`where: { isCover: true }`, rải khắp `geo.ts`, các trang Place/Spot…) tự loại ảnh menu
+> ra, khỏi phải đi sửa từng chỗ. Giữ ở ba nơi: route upload (`isCover` chỉ đặt cho `gallery`,
+> `order` đếm trong từng nhóm), `setCoverImage` (từ chối ảnh `menu`), `deleteImage` (chọn bìa
+> thay thế chỉ trong nhóm `gallery`). **Chỗ nào lấy cả gallery mà KHÔNG lọc `isCover` thì
+> phải tự lọc `kind: "gallery"`** — hiện là `gallerySelect` ở `[loai]/page.tsx` và trang sửa
+> quán trong CMS.
+>
+> Prisma **không cho select cùng một quan hệ hai lần dưới hai tên**, nên `fetchEateryDetails`
+> lấy cả `images` kèm `kind` rồi tách thành `images` / `menuImages` trong JS — vẫn một truy vấn.
+
+- Ảnh thực đơn **không bao giờ bị cắt** (`contain`, tỉ lệ gốc): giá trị của tấm menu nằm ở
+  CHỮ, cắt cho vừa khung là cắt mất giá. Bấm vào mở **lớp xem phóng to** (`MenuZoom`) — dùng
+  **`Dialog` LỒNG** chứ không phải lớp phủ tự chế, để Radix xếp lớp và Esc đóng đúng lớp trên
+  cùng (ảnh) rồi mới tới popup quán.
+- **Thẻ ngoài lưới**: quán có ảnh thực đơn thì rê chuột / focus bàn phím vào thẻ sẽ đổi ảnh
+  bìa sang **tấm thực đơn** (nền tối + `contain`, cùng ngôn ngữ với tab Thực đơn trong popup).
+  Ba điều bắt buộc đi kèm:
+  - **Huy hiệu "Thực đơn" luôn hiện** (góc dưới trái), không chỉ khi hover — điện thoại không
+    có hover mà đó mới là phần lớn khách; đổi ảnh chỉ là phần thưởng cho chuột.
+  - Đổi ảnh bằng **CSS thuần** (`group-hover`), KHÔNG state React → chuột lướt ngang qua lưới
+    không gây nháy.
+  - Bấm trong lúc đang xem thực đơn thì popup mở **thẳng tab Thực đơn** (`initialTab`). Rê ra
+    menu rồi bấm lại thấy ảnh quán thì hoá ra lừa. Trạng thái hover giữ trong `useRef` — chỉ
+    đọc lúc bấm nên không gây render lại.
+
+- **"Giờ này còn mở không" là thông tin đắt nhất của trang.** `src/lib/opening-hours.ts` đọc
+  `Eatery.openingHours` ("16:00 – 23:00", "5:30 – 10:00, 15:00 – 19:00", cả ca qua nửa đêm)
+  → mỗi thẻ một huy hiệu **Đang mở / Sắp đóng · HH:MM / Mở lúc HH:MM / Đã đóng cửa**, cộng
+  chip lọc "Đang mở". Tính theo **giờ Việt Nam** (`Asia/Ho_Chi_Minh`), KHÔNG theo đồng hồ
+  máy — khách ở múi giờ khác lên lịch vẫn cần giờ bản địa. Chỉ chạy **ở client** (`useEffect`
+  + tick 60s): server không biết "bây giờ" của người xem và trang thì được cache. Chuỗi giờ
+  đọc không được → **không hiện huy hiệu**, tuyệt đối không đoán.
+- **KHÔNG chia khối theo `venueKind`.** Bản cũ tách "Ăn ở đâu" / "Quán nước & cà phê"; trục
+  đó không sạch trong dữ liệu thật: quán `eat` vẫn có `viewType` (Hải sản Bờ Kè 24, Ốc nướng
+  Bờ Kè) nên bị nhốt ngoài mục quán view, còn quán `drink` không view (Chè Thái) thì mọi chip
+  hướng nhìn đều loại ra; quán `both` bị đếm hai lần (13 + 4 = 17 cho 15 quán). Việc "đến để
+  ăn hay để ngồi" đã do **trục BỮA** diễn đạt chính xác hơn (`cafe` là một bữa), còn cảnh đẹp
+  thành **một bộ lọc "Có view" + huy hiệu trên thẻ**.
+- **Bữa vẫn là trục lọc chính** và giờ **có cả "Cà phê"** (trước đây cố ý bỏ vì đã có mục
+  quán nước riêng — nay không còn mục đó; bỏ đi thì quán chỉ có `meals=[cafe]` sẽ không rơi
+  vào chip nào). Đổi lại, chip **Kiểu** tự ẩn giá trị nào trùng NHÃN với một chip bữa
+  (`cafe` → "Cà phê" ở cả hai bảng nhãn) — hai viên chữ giống hệt nhau thì không ai đoán
+  được chúng khác gì.
+- **Mở đầu không còn đoạn văn.** Ba dữ kiện tính từ chính dữ liệu ("15 quán · 6 chỗ ngồi có
+  view · mở từ 5:30 đến 23:30") thay cho `Place.foodIntro` — luôn đúng, không phải bảo trì.
+  Hai trường `foodIntro`/`foodTips` (và khối "Biết trước khi ăn") **đã xoá khỏi schema**,
+  cùng đợt với `getToIntro`/`getAroundIntro`. Lý do: CMS không bao giờ có ô nhập nên chỉ seed
+  ghi được, nội dung đóng băng theo lần seed và chỉ một điểm đến có. **Đừng thêm lại kiểu
+  trường văn xuôi tự do trên `Place`** — thông tin thực địa (giờ vàng, hết sớm, nghỉ thứ 2,
+  mẹo chặng đường) sống ở trường có cấu trúc của chính mục đó: `Eatery.bestTime`/`notice`,
+  `Spot.bestTime`/`notice`, `Transport.description`/`notice`; dài hơn nữa thì là một bài blog.
+- **`notice` và `bestTime` lên THẲNG thẻ** (dòng cam cảnh báo / dòng xanh giờ vàng, đẩy xuống
+  đáy thẻ cho thẳng hàng). "Thường hết hàng trước trưa" là thứ đổi kế hoạch — chôn trong
+  drawer thì phải mở từng quán mới thấy.
+- **Đã bỏ thanh nhảy dính 3 chip + scroll-spy**: một danh sách thì không có gì để nhảy giữa,
+  và ~15 mục không đáng ba tầng điều khiển. Thanh lọc ghim ở `top-12 lg:top-28` — **đúng
+  chiều cao `PlaceTabs` (3rem) cộng header (4rem từ `lg`)**; bản cũ để `top-28` ở mọi khổ nên
+  trên điện thoại nó lửng lơ, hở một dải nội dung chạy phía sau.
+- Tỉ trọng đổi theo điểm đến giống cặp Activity/Spot: nơi *dish-led* (biển, đô thị cổ) nhiều
+  quán ăn; nơi *view-led* (núi) ít quán nhưng phần lớn có `viewType`. Một lưới + bộ lọc **tự
+  co giãn** theo cả hai, không phải ép hai khối cân nhau.
 
 **Ẩm thực ở tab tổng quan** (`/diem-den/[placeSlug]`, `FoodMenu`) — **MỘT HÀNG BỐN Ô**, cùng
 khuôn thẻ với `StayDirectory`/`SpotSpotlight`: ảnh 4/3 lồng trong thẻ → nhãn loại → tên →

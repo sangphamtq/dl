@@ -174,28 +174,13 @@ function groupByOrigin(items: TransportItem[]): [string, TransportItem[]][] {
   return [...map.entries()];
 }
 
-function GroupHead({
-  icon: Icon,
-  title,
-  intro,
-}: {
-  icon: typeof Bus;
-  title: string;
-  intro: string | null;
-}) {
+function GroupHead({ icon: Icon, title }: { icon: typeof Bus; title: string }) {
   return (
-    <div>
-      <div className="flex items-center gap-3">
-        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
-          <Icon className="size-5" aria-hidden />
-        </span>
-        <h3 className="text-2xl font-bold tracking-tight sm:text-3xl">{title}</h3>
-      </div>
-      {intro && (
-        <p className="mt-3 max-w-3xl text-lg leading-relaxed text-muted-foreground">
-          {intro}
-        </p>
-      )}
+    <div className="flex items-center gap-3">
+      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+        <Icon className="size-5" aria-hidden />
+      </span>
+      <h3 className="text-2xl font-bold tracking-tight sm:text-3xl">{title}</h3>
     </div>
   );
 }
@@ -205,13 +190,9 @@ function GroupHead({
 export function TransportSection({
   transports,
   placeName,
-  getToIntro,
-  getAroundIntro,
 }: {
   transports: TransportItem[];
   placeName: string;
-  getToIntro?: string | null;
-  getAroundIntro?: string | null;
 }) {
   const getTo = transports.filter((t) => t.direction === "getTo");
   const getAround = transports.filter((t) => t.direction === "getAround");
@@ -308,11 +289,7 @@ export function TransportSection({
       <div className="space-y-16 pt-8">
         {getTo.length > 0 && (
           <section id="den-noi" className="scroll-mt-40">
-            <GroupHead
-              icon={PlaneLanding}
-              title={`Đến ${placeName}`}
-              intro={getToIntro ?? null}
-            />
+            <GroupHead icon={PlaneLanding} title={`Đến ${placeName}`} />
             <div className="mt-8 space-y-10">
               {groupByOrigin(getTo).map(([origin, items]) => (
                 <div key={origin}>
@@ -335,11 +312,7 @@ export function TransportSection({
 
         {getAround.length > 0 && (
           <section id="tai-cho" className="scroll-mt-40">
-            <GroupHead
-              icon={Navigation}
-              title={`Đi lại tại ${placeName}`}
-              intro={getAroundIntro ?? null}
-            />
+            <GroupHead icon={Navigation} title={`Đi lại tại ${placeName}`} />
             <div className="mt-6 divide-y divide-border/60">
               {getAround.map((t) => (
                 <Option key={t.id} t={t} />

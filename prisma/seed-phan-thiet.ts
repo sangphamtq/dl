@@ -302,30 +302,12 @@ async function main() {
   // Câu đầu là lede (đoạn dẫn) — trang sẽ tách & phóng to.
   const phanThietDesc =
     "Nắng vàng, biển xanh và những đồi cát đổi màu — Phan Thiết là thành phố biển quyến rũ bậc nhất duyên hải Nam Trung Bộ. Từ những ngày nghỉ dưỡng thư thái bên biển Mũi Né đến hành trình khám phá làng chài, văn hóa địa phương và các thắng cảnh thiên nhiên, Phan Thiết mang đến nhiều trải nghiệm phù hợp cho mọi du khách. Với khí hậu nắng ấm quanh năm và vị trí thuận tiện từ TP.HCM, đây là một trong những điểm đến biển hấp dẫn hàng đầu Việt Nam.";
-  const phanThietFoodIntro =
-    "Phan Thiết là một làng chài lớn — ẩm thực dựng trên mẻ hải sản tươi trong ngày và danh xưng \"thủ phủ nước mắm\". Đặc trưng là những món bình dân đậm vị biển: lẩu thả bày như đóa hoa, bánh căn đổ khuôn đất nung, mực một nắng, cùng hải sản nướng ngay bên bờ kè. Ăn ngon ở đây thường là ngồi ghế nhựa, ăn theo mùa cá — và nhớ đi sớm trước khi quán hết hàng.";
-  const phanThietGetToIntro =
-    "Phan Thiết cách TP.HCM khoảng 200km. Phổ biến nhất là đi xe limousine/khách từ Sài Gòn (~4–5 giờ); ai ở xa thường bay tới Cam Ranh hoặc Tân Sơn Nhất rồi đi xe về. Từ bến xe / ga vào khu Mũi Né còn đi tiếp taxi ~20–30 phút — nhớ tính cả chặng cuối này khi lên lịch.";
-  const phanThietGetAroundIntro =
-    "Phan Thiết – Mũi Né trải dài ~15km ven biển, các điểm cách nhau vài km nên tiện nhất là thuê xe máy để chủ động. Taxi và Grab đều có nhưng ít xe hơn thành phố lớn; chặng dài (ra đồi cát Bàu Trắng) nên chốt giá trước.";
-  const phanThietFoodTips = [
-    "Nhiều quán ngon bán theo mẻ và hết sớm — món sáng (bánh căn, bánh canh chả cá) nên đi trước 9–10 giờ.",
-    "Hải sản ở bờ kè tính theo ký và theo giá thị trường: hỏi giá, cân tận mắt trước khi gọi chế biến.",
-    "Khu bờ kè rất đông cuối tuần — đến sớm để có bàn sát biển, hoặc đi ngày thường cho thong thả.",
-    "Ăn theo mùa cá: đồ biển ngon nhất khi biển êm; sau bão hoặc biển động, hải sản ít tươi và đắt hơn.",
-    "Quán cà phê hướng biển kín chỗ mép ngoài từ khoảng 16h30 những ngày trời trong — muốn ngồi ngắm hoàng hôn thì tới sớm hoặc gọi giữ bàn.",
-    "Muốn mua mang về thì nước mắm nhĩ, mực một nắng và thanh long là ba thứ đặc trưng nhất — chọn nơi bán uy tín, có nguồn gốc rõ.",
-  ];
   const phanThiet = await prisma.place.upsert({
     where: { slug: "phan-thiet" },
     update: {
       parentId: binhThuan.id,
       provinceName: "Bình Thuận",
       description: phanThietDesc,
-      foodIntro: phanThietFoodIntro,
-      foodTips: phanThietFoodTips,
-      getToIntro: phanThietGetToIntro,
-      getAroundIntro: phanThietGetAroundIntro,
     },
     create: {
       slug: "phan-thiet",
@@ -334,10 +316,6 @@ async function main() {
       parentId: binhThuan.id,
       tagline: "Tạm rời xa nhịp sống vội vã để tận hưởng những ngày bình yên bên biển xanh, nắng vàng và làn gió mát lành.",
       description: phanThietDesc,
-      foodIntro: phanThietFoodIntro,
-      foodTips: phanThietFoodTips,
-      getToIntro: phanThietGetToIntro,
-      getAroundIntro: phanThietGetAroundIntro,
       provinceName: "Bình Thuận",
       tags: ["biển", "đồi cát", "resort", "hải sản"],
       isFeatured: true,
@@ -1215,8 +1193,8 @@ async function main() {
   // **chỉ được ít nhất một quán** (xem CLAUDE.md). Vì vậy ba bản ghi của lần
   // seed đầu đã bị bỏ, có bước dọn bên dưới:
   //   · nước mắm, thanh long → thuần QUÀ, không ăn tại quán. Dự án không làm
-  //     phần quà; bản sắc này sống ở `foodIntro` ("thủ phủ nước mắm") và mẹo
-  //     cuối trang, đúng chỗ hơn là một card trong lưới "Món phải thử".
+  //     phần quà, nên chúng không có chỗ nào cả. (Trước đây bản sắc này sống ở
+  //     `Place.foodIntro` + mẹo cuối trang; hai trường đó đã bị xoá khỏi schema.)
   //   · cơm gà → món phổ thông cả nước, không có gì riêng của Phan Thiết;
   //     nội dung đã nằm đủ trong mô tả quán `com-ga-ta-vi`.
   // ──────────────────────────────────────────────────────────────────────

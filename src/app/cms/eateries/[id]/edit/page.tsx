@@ -15,7 +15,7 @@ export default async function EditEateryPage({
 }) {
   const { id } = await params;
 
-  const [eatery, places, adminProvinces, images] = await Promise.all([
+  const [eatery, places, adminProvinces, images, menuImages] = await Promise.all([
     prisma.eatery.findUnique({
       where: { id },
       select: {
@@ -50,8 +50,14 @@ export default async function EditEateryPage({
     getPlaceOptions(),
     getProvinces(),
     prisma.image.findMany({
-      where: { eateryId: id },
+      where: { eateryId: id, kind: "gallery" },
       orderBy: [{ isCover: "desc" }, { order: "asc" }],
+      select: { id: true, url: true, alt: true, isCover: true },
+    }),
+    // Ảnh tấm thực đơn — nhóm riêng, không lẫn vào ảnh trưng bày.
+    prisma.image.findMany({
+      where: { eateryId: id, kind: "menu" },
+      orderBy: { order: "asc" },
       select: { id: true, url: true, alt: true, isCover: true },
     }),
   ]);
@@ -115,6 +121,20 @@ export default async function EditEateryPage({
           description="Tải ảnh cho quán. Ảnh bìa hiển thị ở danh sách & trang."
         >
           <ListingImages ownerType="eatery" ownerId={eatery.id} images={images} />
+        </FormSection>
+      </div>
+
+      <div className="border-t">
+        <FormSection
+          title="Ảnh thực đơn"
+          description="Ảnh chụp tấm thực đơn / bảng giá. Hiện thành tab riêng trong popup chi tiết quán, bấm vào phóng to đọc được. Không bao giờ dùng làm ảnh bìa."
+        >
+          <ListingImages
+            ownerType="eatery"
+            ownerId={eatery.id}
+            images={menuImages}
+            kind="menu"
+          />
         </FormSection>
       </div>
     </div>

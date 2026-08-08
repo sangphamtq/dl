@@ -329,10 +329,6 @@ model Place {
   kind        PlaceKind
   tagline     String? // câu slogan ngắn hiển thị dưới tên (khác description)
   description String?
-  foodIntro   String? // bản sắc ẩm thực — đoạn mở đầu tab Ẩm thực
-  foodTips    String[] @default([]) // mẹo "biết trước khi ăn" (mỗi phần tử 1 mẹo)
-  getToIntro     String? // định hướng "đến nơi" (vị trí, cách phổ biến, chặng cuối)
-  getAroundIntro String? // đặc tính "đi lại tại chỗ" (gọn/trải dài/đảo…)
 
   // Vị trí hành chính (provinces.open-api.vn v1 — địa chính cũ, 3 cấp:
   // tỉnh → quận/huyện → phường/xã). Lưu cả code (để truy vấn/relink lại) và
@@ -787,14 +783,26 @@ model Transport {
 // đúng một trong các FK dưới đây được set). Cascade theo chủ.
 // ============================================================
 
+// Ảnh trưng bày (gallery) hay ảnh TẤM THỰC ĐƠN (menu). Tách bằng một trường
+// thay vì một bảng riêng: menu ở đây chỉ là ảnh, không có tên món / giá.
+// BẤT BIẾN: ảnh `menu` KHÔNG BAO GIỜ được `isCover = true` — nhờ vậy mọi truy
+// vấn ảnh bìa sẵn có (`where: { isCover: true }`) tự loại nó ra, không phải đi
+// sửa từng chỗ. Chỗ nào lấy cả gallery (không lọc isCover) thì phải tự lọc
+// `kind: gallery`.
+enum ImageKind {
+  gallery
+  menu
+}
+
 model Image {
-  id      String  @id @default(cuid())
+  id      String    @id @default(cuid())
   url     String
   alt     String?
   caption String?
   credit  String?
-  order   Int     @default(0)
-  isCover Boolean @default(false)
+  order   Int       @default(0)
+  isCover Boolean   @default(false)
+  kind    ImageKind @default(gallery)
 
   placeId         String?
   place           Place?         @relation(fields: [placeId], references: [id], onDelete: Cascade)
@@ -822,6 +830,7 @@ model Image {
   @@index([spotId])
   @@index([specialtyId])
   @@index([eateryId])
+  @@index([eateryId, kind]) // lấy riêng ảnh thực đơn của một quán
   @@index([accommodationId])
   @@index([transportId])
   @@index([postId])

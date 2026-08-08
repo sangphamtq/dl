@@ -1,10 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { LayoutGrid, List } from "@/components/icons";
+import {
+  ArrowDownWideNarrow,
+  ChevronDown,
+  LayoutGrid,
+  List,
+  X,
+} from "@/components/icons";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { coverUrl } from "@/lib/place-image";
 import { cn } from "@/lib/utils";
 import { StarRating } from "@/components/site/star-rating";
@@ -18,7 +31,8 @@ type Item = {
   review: { stars: number; total: number } | null;
   price: string | null;
   highlights: string[];
-  tag: string | null;
+  category: string | null; // giá trị enum — dùng cho ?cat= (bền, không đổi theo nhãn)
+  tag: string | null; // nhãn hiển thị của category
   tags: string[];
   meta: string[];
   facts: Fact[];
@@ -26,32 +40,48 @@ type Item = {
   images: { url: string; isCover: boolean }[];
   isFeatured: boolean;
 };
-type Group = { title: string; prefix: string; items: Item[] };
+type Group = {
+  title: string;
+  prefix: string;
+  unit: string; // đơn vị đếm ("địa điểm", "hoạt động") — thay cho "mục" chung chung
+  items: Item[];
+};
 
 export type ListingViewMode = "grid" | "list";
 type SortMode = "featured" | "rating" | "name";
 
-const SORT_OPTIONS: { value: SortMode; label: string }[] = [
-  { value: "featured", label: "Nổi bật" },
-  { value: "rating", label: "Đánh giá cao" },
-  { value: "name", label: "Tên A–Z" },
-];
+const SORT_LABELS: Record<SortMode, string> = {
+  featured: "Nổi bật",
+  rating: "Đánh giá cao",
+  name: "Tên A–Z",
+};
 
 // Sắp xếp client-side (dữ liệu đã tải sẵn). "featured" = giữ thứ tự từ DB
 // (nổi bật → order → phổ biến → tên).
 function sortItems(items: Item[], sort: SortMode): Item[] {
   if (sort === "featured") return items;
+  const byName = (a: Item, b: Item) => a.name.localeCompare(b.name, "vi");
   const arr = [...items];
   if (sort === "rating") {
-    arr.sort((a, b) => (b.review?.stars ?? -1) - (a.review?.stars ?? -1));
+    // Chưa có đánh giá xuống cuối; cùng điểm thì nhiều lượt đánh giá hơn đứng
+    // trước (10 người chấm 4.5 đáng tin hơn 1 người chấm 4.5).
+    arr.sort(
+      (a, b) =>
+        (b.review?.stars ?? -1) - (a.review?.stars ?? -1) ||
+        (b.review?.total ?? 0) - (a.review?.total ?? 0) ||
+        byName(a, b),
+    );
   } else if (sort === "name") {
-    arr.sort((a, b) => a.name.localeCompare(b.name, "vi"));
+    arr.sort(byName);
   }
   return arr;
 }
 
-// Trang danh sách listing: chuyển Lưới ↔ Danh sách. Lựa chọn lưu vào cookie
-// (server đọc & render đúng view ngay từ đầu → không nhảy khi load lại).
+// Trang danh sách listing (tab Địa điểm / Hoạt động của một điểm đến).
+//
+// Kiểu hiển thị Lưới ↔ Danh sách là SỞ THÍCH của người dùng nên giữ ở đây và lưu
+// vào cookie (server đọc & render đúng view ngay từ đầu → không nhảy khi tải lại);
+// còn lọc loại + sắp xếp thuộc về từng section nên nằm trong `ListingGroup`.
 export function ListingView({
   groups,
   initialView = "grid",
@@ -59,154 +89,263 @@ export function ListingView({
   groups: Group[];
   initialView?: ListingViewMode;
 }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
   const [view, setView] = useState<ListingViewMode>(initialView);
-  const [filter, setFilter] = useState<string>(
-    () => searchParams.get("cat") ?? "all",
-  );
-  const [sort, setSort] = useState<SortMode>("featured");
 
   const choose = (v: ListingViewMode) => {
     setView(v);
     document.cookie = `listingView=${v};path=/;max-age=31536000;samesite=lax`;
   };
 
-  // Lưu loại đang lọc vào URL (?cat=) để giữ khi chia sẻ/quay lại.
-  const chooseFilter = (f: string) => {
-    setFilter(f);
+  return (
+    <div className="space-y-14">
+      {groups.map((g) => (
+        <ListingGroup
+          key={g.prefix}
+          group={g}
+          view={view}
+          onView={choose}
+          // Nhiều section trên cùng trang thì mỗi section một tham số riêng.
+          param={groups.length > 1 ? `cat-${g.prefix}` : "cat"}
+        />
+      ))}
+    </div>
+  );
+}
+
+// Một section: tiêu đề + công cụ (sắp xếp · kiểu hiển thị) + hàng chip lọc loại
+// + kết quả.
+//
+// PHÂN CẤP là điểm chính của bố cục này: lọc loại là thứ người ta chạm nhiều
+// nhất và số lựa chọn thay đổi theo dữ liệu (Địa điểm có tới 11 loại) → hàng
+// CHIP tràn được, kèm số đếm để biết bấm vào có gì. Sắp xếp & kiểu hiển thị chỉ
+// là công cụ phụ → nép về mép phải hàng tiêu đề, sắp xếp thu thành một menu thả
+// xuống. (Bản cũ để cả ba trong ba khối segmented xám cạnh nhau: ba việc khác
+// hẳn cấp bậc mà cùng một trọng lượng, và danh sách loại thì bị nhốt trong hộp
+// cuộn ngang không thấy hết.)
+//
+// Chip lọc dùng đúng ngôn ngữ của hai tab anh em (Ẩm thực, Lưu trú): viên tròn,
+// đang chọn thì nền `foreground`.
+function ListingGroup({
+  group,
+  view,
+  onView,
+  param,
+}: {
+  group: Group;
+  view: ListingViewMode;
+  onView: (v: ListingViewMode) => void;
+  param: string;
+}) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [cat, setCat] = useState<string>(
+    () => searchParams.get(param) ?? "all",
+  );
+  const [sort, setSort] = useState<SortMode>("featured");
+
+  // Các loại có thật trong dữ liệu + số mục mỗi loại; nhiều mục nhất lên trước.
+  const cats = useMemo(() => {
+    const map = new Map<string, { label: string; count: number }>();
+    for (const it of group.items) {
+      if (!it.category || !it.tag) continue;
+      const cur = map.get(it.category);
+      if (cur) cur.count += 1;
+      else map.set(it.category, { label: it.tag, count: 1 });
+    }
+    return [...map.entries()]
+      .map(([value, v]) => ({ value, ...v }))
+      .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, "vi"));
+  }, [group.items]);
+
+  // Chỉ mời sắp xếp theo đánh giá khi có đánh giá thật (Hoạt động không có).
+  const sorts = useMemo<SortMode[]>(
+    () =>
+      group.items.some((it) => it.review)
+        ? ["featured", "rating", "name"]
+        : ["featured", "name"],
+    [group.items],
+  );
+
+  const activeCat = cats.find((c) => c.value === cat);
+  const items = useMemo(
+    () =>
+      sortItems(
+        cat === "all"
+          ? group.items
+          : group.items.filter((it) => it.category === cat),
+        sort,
+      ),
+    [group.items, cat, sort],
+  );
+
+  // Lưu loại đang lọc vào URL để giữ khi chia sẻ/quay lại. Dùng GIÁ TRỊ enum
+  // (beach, temple…) chứ không phải nhãn tiếng Việt: URL sạch và không vỡ khi
+  // đổi chữ hiển thị.
+  const chooseCat = (v: string) => {
+    setCat(v);
     const params = new URLSearchParams(searchParams.toString());
-    if (f === "all") params.delete("cat");
-    else params.set("cat", f);
+    if (v === "all") params.delete(param);
+    else params.set(param, v);
     const qs = params.toString();
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   };
 
-  // Các loại (tag) có trong dữ liệu — để dựng bộ lọc.
-  const allTags = Array.from(
-    new Set(groups.flatMap((g) => g.items.map((it) => it.tag).filter(Boolean))),
-  ) as string[];
-
   return (
-    <div className="space-y-8">
-      {/* Toolbar: lọc loại · sắp xếp · Lưới/Danh sách — segmented như trang danh sách điểm đến */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        {allTags.length > 1 ? (
-          <div className="max-w-full overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <Segmented label="Lọc loại">
-              <SegButton
-                active={filter === "all"}
-                onClick={() => chooseFilter("all")}
+    <section>
+      {/* Tiêu đề + số kết quả | công cụ phụ */}
+      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
+        <div className="min-w-0">
+          <h2 className="text-2xl font-bold tracking-tight">{group.title}</h2>
+          <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+            <span>
+              <span className="font-semibold tabular-nums text-foreground">
+                {items.length}
+              </span>{" "}
+              {group.unit}
+            </span>
+            {activeCat && (
+              <button
+                type="button"
+                onClick={() => chooseCat("all")}
+                className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-foreground transition-colors hover:bg-muted/70"
               >
-                Tất cả
-              </SegButton>
-              {allTags.map((t) => (
-                <SegButton
-                  key={t}
-                  active={filter === t}
-                  onClick={() => chooseFilter(t)}
-                >
-                  {t}
-                </SegButton>
-              ))}
-            </Segmented>
+                {activeCat.label}
+                <X className="size-3 opacity-60" aria-hidden />
+                <span className="sr-only">— bỏ lọc</span>
+              </button>
+            )}
+          </p>
+        </div>
+
+        <div className="flex shrink-0 items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label={`Sắp xếp: ${SORT_LABELS[sort]}`}
+                className="inline-flex h-10 items-center gap-1.5 rounded-full px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+              >
+                <ArrowDownWideNarrow
+                  className="size-4 text-muted-foreground"
+                  aria-hidden
+                />
+                {SORT_LABELS[sort]}
+                <ChevronDown
+                  className="size-3.5 text-muted-foreground"
+                  aria-hidden
+                />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuRadioGroup
+                value={sort}
+                onValueChange={(v) => setSort(v as SortMode)}
+              >
+                {sorts.map((s) => (
+                  <DropdownMenuRadioItem key={s} value={s}>
+                    {SORT_LABELS[s]}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Chỉ icon: đây là sở thích xem, không phải nội dung — đừng để chữ
+              của nó nặng ngang tên section. */}
+          <div
+            role="group"
+            aria-label="Kiểu hiển thị"
+            className="flex h-10 shrink-0 items-center rounded-full bg-muted p-1"
+          >
+            <ViewBtn
+              icon={LayoutGrid}
+              active={view === "grid"}
+              onClick={() => onView("grid")}
+              label="Lưới"
+            />
+            <ViewBtn
+              icon={List}
+              active={view === "list"}
+              onClick={() => onView("list")}
+              label="Danh sách"
+            />
           </div>
-        ) : (
-          <span />
-        )}
-        <div className="flex shrink-0 items-center gap-3 self-end sm:self-auto">
-          <Segmented label="Sắp xếp">
-            {SORT_OPTIONS.map((o) => (
-              <SegButton
-                key={o.value}
-                active={sort === o.value}
-                onClick={() => setSort(o.value)}
-              >
-                {o.label}
-              </SegButton>
-            ))}
-          </Segmented>
-          <Segmented label="Kiểu hiển thị">
-            <SegButton active={view === "grid"} onClick={() => choose("grid")}>
-              <LayoutGrid className="size-4" aria-hidden />
-              <span className="hidden sm:inline">Lưới</span>
-            </SegButton>
-            <SegButton active={view === "list"} onClick={() => choose("list")}>
-              <List className="size-4" aria-hidden />
-              <span className="hidden sm:inline">Danh sách</span>
-            </SegButton>
-          </Segmented>
         </div>
       </div>
 
-      {groups.map((g) => {
-        const filtered =
-          filter === "all" ? g.items : g.items.filter((it) => it.tag === filter);
-        if (filter !== "all" && filtered.length === 0) return null;
-        const items = sortItems(filtered, sort);
-        return (
-          <section key={g.prefix}>
-            <div className="flex items-end justify-between gap-4">
-              <h2 className="text-2xl font-bold tracking-tight">{g.title}</h2>
-              <p className="shrink-0 text-sm text-muted-foreground">
-                {items.length} mục
-              </p>
-            </div>
+      {/* Lọc theo loại — tràn thì cuộn ngang ở khổ điện thoại, xuống dòng ở khổ rộng */}
+      {cats.length > 1 && (
+        <div className="-mx-4 mt-5 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex items-center gap-2 sm:flex-wrap">
+            <CatChip
+              active={cat === "all"}
+              onClick={() => chooseCat("all")}
+              count={group.items.length}
+            >
+              Tất cả
+            </CatChip>
+            {cats.map((c) => (
+              <CatChip
+                key={c.value}
+                active={cat === c.value}
+                onClick={() => chooseCat(c.value)}
+                count={c.count}
+              >
+                {c.label}
+              </CatChip>
+            ))}
+          </div>
+        </div>
+      )}
 
-            {items.length === 0 ? (
-              <p className="py-16 text-center text-muted-foreground">
-                Chưa có nội dung trong mục này.
-              </p>
-            ) : view === "grid" ? (
-              <div className="mt-7 grid grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-3 lg:grid-cols-4">
-                {items.map((it) => (
-                  <GridCard key={it.slug} item={it} prefix={g.prefix} />
-                ))}
-              </div>
-            ) : (
-              <ul className="mt-7 border-t border-border/60">
-                {items.map((it) => (
-                  <li key={it.slug} className="border-b border-border/60">
-                    <ListRow item={it} prefix={g.prefix} />
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        );
-      })}
-    </div>
+      {items.length === 0 ? (
+        <div className="py-16 text-center">
+          <p className="text-muted-foreground">
+            {activeCat
+              ? `Chưa có ${group.unit} nào thuộc loại “${activeCat.label}”.`
+              : "Chưa có nội dung trong mục này."}
+          </p>
+          {activeCat && (
+            <button
+              type="button"
+              onClick={() => chooseCat("all")}
+              className="mt-3 text-sm font-medium text-primary hover:underline"
+            >
+              Xem tất cả {group.unit}
+            </button>
+          )}
+        </div>
+      ) : view === "grid" ? (
+        <div className="mt-7 grid grid-cols-2 gap-x-5 gap-y-7 sm:grid-cols-3 lg:grid-cols-4">
+          {items.map((it) => (
+            <GridCard key={it.slug} item={it} prefix={group.prefix} />
+          ))}
+        </div>
+      ) : (
+        <ul className="mt-7 border-t border-border/60">
+          {items.map((it) => (
+            <li key={it.slug} className="border-b border-border/60">
+              <ListRow item={it} prefix={group.prefix} />
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
 
-// Segmented control dùng chung (Lọc loại · Sắp xếp · Kiểu hiển thị) — giống
-// trang danh sách điểm đến: track bo góc nền muted, nút active nền nổi + bóng.
-function Segmented({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div
-      role="group"
-      aria-label={label}
-      className="flex h-10 w-fit shrink-0 items-center rounded-lg bg-muted p-1"
-    >
-      {children}
-    </div>
-  );
-}
-
-function SegButton({
+// Chip lọc loại: nhãn + số mục. Con số là lý do dùng chip thay vì segmented —
+// biết trước bấm vào còn bao nhiêu thì không ai phải thử từng loại.
+function CatChip({
   active,
   onClick,
+  count,
   children,
 }: {
   active: boolean;
   onClick: () => void;
+  count: number;
   children: React.ReactNode;
 }) {
   return (
@@ -215,13 +354,51 @@ function SegButton({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "inline-flex h-full items-center gap-1.5 whitespace-nowrap rounded-md px-3.5 text-sm font-medium transition-colors",
+        "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-medium transition-colors",
+        active
+          ? "bg-foreground text-background"
+          : "bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground",
+      )}
+    >
+      {children}
+      <span
+        className={cn(
+          "tabular-nums",
+          active ? "text-background/60" : "text-muted-foreground/60",
+        )}
+      >
+        {count}
+      </span>
+    </button>
+  );
+}
+
+function ViewBtn({
+  icon: Icon,
+  active,
+  onClick,
+  label,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  active: boolean;
+  onClick: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      aria-label={label}
+      title={label}
+      className={cn(
+        "grid h-full w-10 place-items-center rounded-full transition-colors",
         active
           ? "bg-background text-foreground shadow-sm"
           : "text-muted-foreground hover:text-foreground",
       )}
     >
-      {children}
+      <Icon className="size-4" />
     </button>
   );
 }
@@ -345,4 +522,3 @@ function ListRow({ item: it, prefix }: { item: Item; prefix: string }) {
     </Link>
   );
 }
-
