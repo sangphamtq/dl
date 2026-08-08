@@ -546,7 +546,7 @@ export default async function PlaceDetailPage({
           {/* Điểm đến con (chỉ tỉnh) — lưới (là Place, cấp khác) */}
           {showChildren && (
             <section id="diem-den-con" className="scroll-mt-32">
-              <SectionHeading eyebrow="Khám phá" title={`Điểm đến tại ${place.name}`} />
+              <SectionHeading title={`Điểm đến tại ${place.name}`} />
               <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
                 {place.children.map((c) => (
                   <PlaceCard key={c.slug} place={c} />
@@ -564,7 +564,6 @@ export default async function PlaceDetailPage({
           <section id="tham-quan" className="scroll-mt-32">
             <SpotSpotlight
               title="Địa điểm đáng ghé"
-              eyebrow="Tham quan"
               count={counts.spot}
               allHref={`/diem-den/${place.slug}/dia-diem`}
               spots={place.spots.map((s) => ({
@@ -598,7 +597,6 @@ export default async function PlaceDetailPage({
           <Band tint={tinted()}>
             <section id="trai-nghiem" className="scroll-mt-32">
               <ExperienceGrid
-                eyebrow="Trải nghiệm"
                 title="Trải nghiệm nổi bật"
                 href={`/diem-den/${place.slug}/hoat-dong`}
                 count={counts.activity}
@@ -674,7 +672,6 @@ export default async function PlaceDetailPage({
           <Band tint={tinted()}>
             <section id="hoi-dap" className="scroll-mt-32">
               <SectionHeading
-                eyebrow="Cộng đồng"
                 title="Hỏi đáp cộng đồng"
                 href={`/diem-den/${place.slug}/cong-dong`}
                 count={community.total}

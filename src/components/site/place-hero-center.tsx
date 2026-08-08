@@ -126,12 +126,12 @@ export function PlaceHeroCenter({
           {place.parent ? (
             <Link
               href={`/diem-den/${place.parent.slug}`}
-              className="font-[family-name:var(--font-script)] text-4xl font-bold leading-none text-warm-bright drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)] transition-opacity hover:opacity-80 sm:text-5xl"
+              className="font-[family-name:var(--font-display)] text-xl font-bold leading-tight tracking-tight text-warm-bright drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)] transition-opacity hover:opacity-80 sm:text-2xl"
             >
               {place.parent.name}
             </Link>
           ) : (
-            <span className="font-[family-name:var(--font-script)] text-4xl font-bold leading-none text-warm-bright drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)] sm:text-5xl">
+            <span className="font-[family-name:var(--font-display)] text-xl font-bold leading-tight tracking-tight text-warm-bright drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)] sm:text-2xl">
               {place.kind === "province" ? "Tỉnh · Thành phố" : "Điểm đến"}
             </span>
           )}

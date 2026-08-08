@@ -78,7 +78,7 @@ export default function HeroPreviewPage() {
 
           {/* Nội dung hero */}
           <div className="mt-auto max-w-3xl pt-24">
-            <p className="font-[family-name:var(--font-script)] text-3xl text-warm sm:text-4xl">
+            <p className="font-[family-name:var(--font-display)] text-lg font-bold tracking-tight text-warm sm:text-xl">
               Sự kiện
             </p>
             <h1 className="mt-1 text-4xl font-extrabold leading-[1.05] tracking-tight text-primary sm:text-6xl">

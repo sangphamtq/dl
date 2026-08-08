@@ -6,7 +6,6 @@ import { coverUrl } from "@/lib/place-image";
 import { POST_CATEGORY_LABELS } from "@/lib/listing-labels";
 import { PostStats } from "@/components/blog/post-stats";
 import { SectionHeading } from "@/components/site/section-heading";
-import { cn } from "@/lib/utils";
 
 // Đặc sản/Quán ăn không có trang chi tiết riêng (hiển thị drawer) nên không
 // render "Bài viết liên quan". Lưu trú CÓ trang chi tiết (/luu-tru/[slug]) → giữ.
@@ -91,9 +90,8 @@ export async function RelatedPosts({ type, id }: { type: RefType; id: string }) 
     // khối trước là một dải có NỀN, nên đệm của nó là 80px màu nhạt — nền dừng
     // ngay sát chữ "Cẩm nang", đọc ra như nền đè lên tiêu đề. Có đệm riêng thì
     // giữa hai mục là 80px nhạt + 80px trắng, đúng nhịp như mọi cặp dải khác.
-    <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16">
+    <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20">
       <SectionHeading
-        eyebrow="Cẩm nang"
         title="Bài viết liên quan"
         href="/blog"
         count={total}
@@ -104,7 +102,7 @@ export async function RelatedPosts({ type, id }: { type: RefType; id: string }) 
           thẻ đầu vẫn thẳng hàng với tiêu đề mục. Từ lg bỏ cuộn, thành lưới.
           `py-1.5`: `overflow-x-auto` cắt cả chiều DỌC, thiếu đệm này thì lúc rê
           thẻ nhấc lên và bóng của nó bị xén ngang. */}
-      <ul className="-mx-4 mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 py-1.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:-mx-6 sm:px-6 lg:mx-0 lg:grid lg:grid-cols-3 lg:gap-5 lg:overflow-visible lg:px-0 [&::-webkit-scrollbar]:hidden">
+      <ul className="-mx-4 mt-6 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 py-1.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:-mx-6 sm:px-6 lg:mx-0 lg:grid lg:grid-cols-3 lg:gap-5 lg:overflow-visible lg:px-0 [&::-webkit-scrollbar]:hidden">
         {posts.map((p) => (
           <Card key={p.slug} p={p} />
         ))}
@@ -117,9 +115,9 @@ export async function RelatedPosts({ type, id }: { type: RefType; id: string }) 
 // bóng đi thì bức ảnh là vật thể duy nhất, mắt đi thẳng vào nó; thêm một khung
 // nữa quanh ảnh vốn đã bo góc chỉ tạo hai đường bo lồng nhau.
 //
-// Đổi lại, nhãn phân loại rời khỏi ảnh xuống làm EYEBROW trên tiêu đề: bố cục
-// trần thì viên kính trên ảnh là thứ duy nhất còn "đặc", nhìn lạc lõng; chữ nhỏ
-// giãn ký tự + chấm cam hợp giọng biên tập của các mục khác trên trang.
+// Nhãn phân loại KHÔNG nằm trên ảnh (bố cục trần thì viên kính trên ảnh là thứ
+// duy nhất còn "đặc", nhìn lạc lõng) và cũng KHÔNG làm eyebrow trên tiêu đề —
+// nó là dữ kiện ngang hàng ngày đăng, nên xuống hàng meta ở đáy thẻ.
 function Card({ p }: { p: Post }) {
   const cat = p.category ? POST_CATEGORY_LABELS[p.category] : null;
   return (
@@ -143,19 +141,11 @@ function Card({ p }: { p: Post }) {
           />
         </span>
 
-        {cat && (
-          <span className="mt-3 inline-flex items-center gap-1.5 text-[0.625rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-            <span aria-hidden className="size-1 rounded-full bg-warm" />
-            {cat}
-          </span>
-        )}
-
-        <span
-          className={cn(
-            "line-clamp-2 block text-[0.95rem] font-semibold leading-snug tracking-tight transition-colors group-hover:text-primary",
-            cat ? "mt-1" : "mt-3",
-          )}
-        >
+        {/* Loại bài KHÔNG còn là eyebrow trên tiêu đề. Nó là DỮ KIỆN, ngang
+            hàng ngày đăng và lượt thích, nên đã chuyển xuống hàng meta ở đáy —
+            xem chú thích ở đó. Nhờ vậy tiêu đề nằm ngay dưới ảnh, không bị một
+            dòng chữ hoa 10px chen vào giữa hai thứ quan trọng nhất của thẻ. */}
+        <span className="mt-3 line-clamp-2 block text-[0.95rem] font-semibold leading-snug tracking-tight transition-colors group-hover:text-primary">
           {p.title}
         </span>
 
@@ -167,13 +157,19 @@ function Card({ p }: { p: Post }) {
             tiêu đề đổi màu + ảnh phóng nhẹ khi rê.
             `mt-auto` đẩy dòng meta xuống đáy → ba thẻ cạnh nhau có ngày tháng
             thẳng hàng dù tiêu đề một dòng hay hai dòng. */}
-        <span className="mt-auto flex items-center gap-x-2.5 pt-2 text-xs text-muted-foreground">
-          {p.publishedAt && <span>{dateFmt.format(p.publishedAt)}</span>}
-          {p.publishedAt && (p._count.likes > 0 || p._count.comments > 0) && (
-            <span aria-hidden className="opacity-40">
-              ·
+        {/* Hàng meta ở đáy: loại bài (chip) → ngày → lượt thích/bình luận.
+            Chip mượn đúng khuôn "loại bài" của bảng tin Cộng đồng — cùng một
+            thứ thì cùng một hình. Nó cũng tự tách khỏi phần chữ trần bên cạnh
+            nên KHÔNG cần dấu ngăn giữa chip và ngày.
+            `mt-auto` đẩy hàng này xuống đáy → ba thẻ cạnh nhau có ngày tháng
+            thẳng hàng dù tiêu đề một dòng hay hai dòng. */}
+        <span className="mt-auto flex flex-wrap items-center gap-x-2.5 gap-y-1.5 pt-2.5 text-xs text-muted-foreground">
+          {cat && (
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary">
+              {cat}
             </span>
           )}
+          {p.publishedAt && <span>{dateFmt.format(p.publishedAt)}</span>}
           <PostStats likes={p._count.likes} comments={p._count.comments} />
         </span>
       </Link>

@@ -31,12 +31,13 @@ export function SiteNav({
   const pathname = usePathname();
 
   return (
-    // font-heading (Plus Jakarta Sans) thay vì font thân (Cabin): nav là chữ
+    // font-heading (Be Vietnam Pro) thay vì font thân (Cabin): nav là chữ
     // cấu trúc, cùng họ với tiêu đề thì header đọc như một khối riêng tách khỏi
     // nội dung. Font đã nạp sẵn cho h1–h6 nên không tốn thêm request.
-    // Đổi font menu = đổi đúng class này. Utility có sẵn: font-sans, font-heading,
-    // font-rounded, font-script, font-mono (`--font-display` KHÔNG khai trong
-    // @theme nên không có class tương ứng).
+    // Đổi font menu = đổi đúng class này. Utility có sẵn: font-sans (Cabin),
+    // font-heading (= font display), font-rounded (Mali), font-mono (chồng chữ
+    // mono hệ thống, không tải font). `--font-display` KHÔNG khai trong @theme
+    // nên không có class tương ứng — gọi qua font-[family-name:var(...)].
     <nav className={cn("h-full items-center gap-1 font-heading", className)}>
       {entries.map((e) => {
         if ("items" in e || "columns" in e)

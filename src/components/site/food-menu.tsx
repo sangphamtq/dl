@@ -72,7 +72,6 @@ export function FoodMenu({
   return (
     <div>
       <SectionHeading
-        eyebrow="Ẩm thực"
         title={`Ăn uống ở ${placeName}`}
         href={href}
         count={count}
@@ -178,7 +177,7 @@ function VenueTile({
           <span className={cn(MICRO, "text-warm")}>{kicker}</span>
 
           <span className="mt-1 flex items-start gap-2">
-            <span className="line-clamp-2 min-w-0 flex-1 font-[family-name:var(--font-display)] text-base font-bold leading-snug tracking-tight transition-colors group-hover:text-primary sm:text-lg">
+            <span className="line-clamp-2 min-w-0 flex-1 font-[family-name:var(--font-display)] text-base font-semibold leading-snug tracking-tight transition-colors group-hover:text-primary sm:text-lg">
               {v.name}
             </span>
             <ArrowUpRight

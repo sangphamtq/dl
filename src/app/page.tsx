@@ -306,9 +306,9 @@ export default async function Home() {
                   className="object-cover"
                 />
               </div>
-              {/* Badge tròn calligraphy */}
+              {/* Badge tròn: con số nhấn bằng font display */}
               <div className="absolute -left-3 top-4 flex size-28 flex-col items-center justify-center rounded-full bg-primary text-center text-primary-foreground shadow-lg shadow-primary/30 sm:size-32">
-                <span className="font-script text-3xl leading-none sm:text-4xl">
+                <span className="font-[family-name:var(--font-display)] text-2xl font-extrabold leading-none tracking-tight sm:text-3xl">
                   100%
                 </span>
                 <span className="mt-1 px-3 text-[0.65rem] font-medium leading-tight">
@@ -393,7 +393,9 @@ export default async function Home() {
               </div>
               <div className="flex items-center gap-4 text-primary-foreground">
                 <div className="flex size-24 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-primary-foreground/50 text-center sm:size-28">
-                  <span className="font-script text-xl leading-tight sm:text-2xl">
+                  {/* Sans rộng ngang hơn chữ viết tay nhiều: dòng "một hành" ở
+                      18px đã chạm mép vòng tròn 96px, nên hạ xuống 14→16px. */}
+                  <span className="font-[family-name:var(--font-display)] text-sm font-bold leading-snug tracking-tight sm:text-base">
                     Mỗi bước
                     <br />
                     một hành
@@ -720,7 +722,7 @@ function OfferCard({ place }: { place: PlaceRow }) {
           />
         </div>
       </div>
-      <h3 className="mt-6 font-script text-4xl font-bold leading-none text-background">
+      <h3 className="mt-6 font-[family-name:var(--font-display)] text-3xl font-extrabold leading-tight tracking-tight text-background">
         {place.name}
       </h3>
       {(place.tagline || place.description) && (

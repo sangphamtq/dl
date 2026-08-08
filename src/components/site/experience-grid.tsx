@@ -41,14 +41,12 @@ const MICRO = "text-[0.66rem] font-medium uppercase tracking-[0.16em]";
 // Là Server Component: tĩnh hoàn toàn, không tốn byte JS nào ở client.
 export function ExperienceGrid({
   title,
-  eyebrow,
   href,
   count,
   unit,
   items,
 }: {
   title: string;
-  eyebrow?: string;
   href?: string;
   count?: number;
   unit?: string;
@@ -59,14 +57,13 @@ export function ExperienceGrid({
   return (
     <div>
       <SectionHeading
-        eyebrow={eyebrow}
         title={title}
         href={href}
         count={count}
         unit={unit}
       />
 
-      <ul className="mt-7 grid grid-cols-2 gap-x-5 gap-y-9 sm:gap-x-6 lg:grid-cols-4">
+      <ul className="mt-6 grid grid-cols-2 gap-x-5 gap-y-9 sm:gap-x-6 lg:grid-cols-4">
         {items.map((it) => (
           <Card key={it.slug} it={it} />
         ))}
@@ -101,7 +98,7 @@ function Card({ it }: { it: ExperienceItem }) {
         {/* Chiều cao tối thiểu cho khối tên: tên một dòng và tên hai dòng nằm
             cạnh nhau thì các hàng fact bên dưới vẫn thẳng hàng. */}
         <span className="mt-1.5 flex min-h-[3.5rem] items-start">
-          <span className="line-clamp-2 font-[family-name:var(--font-display)] text-lg font-bold leading-snug tracking-tight transition-colors group-hover:text-primary">
+          <span className="line-clamp-2 font-[family-name:var(--font-display)] text-lg font-semibold leading-snug tracking-tight transition-colors group-hover:text-primary">
             {it.name}
           </span>
         </span>

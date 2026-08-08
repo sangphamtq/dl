@@ -220,7 +220,6 @@ export function ReviewsSection({
           tự ý dùng biến thể khác. Không truyền `href`: đánh giá không có trang
           danh mục riêng, chỗ đó dành cho nút viết đánh giá. */}
       <SectionHeading
-        eyebrow="Đánh giá"
         title={`Vivu-er nói gì về ${target.name}`}
         count={hasReviews ? summary.total : undefined}
         unit="đánh giá"

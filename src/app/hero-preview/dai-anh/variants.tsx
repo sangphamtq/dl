@@ -80,7 +80,7 @@ function Stage({
         className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/20"
       />
       <div className="pointer-events-none absolute inset-x-0 top-[34%] -translate-y-1/2 px-6 text-center">
-        <p className="font-[family-name:var(--font-script)] text-3xl leading-none text-warm-bright">
+        <p className="font-[family-name:var(--font-display)] text-lg font-bold leading-tight tracking-tight text-warm-bright">
           Quảng Ninh
         </p>
         <h3 className="mt-2 font-[family-name:var(--font-display)] text-5xl font-extrabold leading-none tracking-[-0.04em] text-white sm:text-6xl">

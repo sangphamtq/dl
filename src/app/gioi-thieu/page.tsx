@@ -215,7 +215,7 @@ export default async function GioiThieuPage() {
             <div className="mt-12 grid gap-6 sm:grid-cols-3">
               {STEPS.map((s, i) => (
                 <div key={s.title} className="relative">
-                  <span className="font-script text-5xl font-bold text-primary/30">
+                  <span className="font-[family-name:var(--font-display)] text-5xl font-extrabold tabular-nums tracking-tight text-primary/30">
                     {String(i + 1).padStart(2, "0")}
                   </span>
                   <h3 className="mt-2 text-lg font-bold tracking-tight">

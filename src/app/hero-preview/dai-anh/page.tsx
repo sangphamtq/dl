@@ -63,7 +63,7 @@ export default function DaiAnhPreviewPage() {
     <div className="min-h-dvh bg-background px-4 py-10 sm:px-6 lg:py-14">
       <div className="mx-auto max-w-[110rem]">
         <header className="mx-auto max-w-2xl text-center">
-          <p className="font-[family-name:var(--font-script)] text-3xl text-warm">
+          <p className="font-[family-name:var(--font-display)] text-lg font-bold tracking-tight text-warm">
             Nháp
           </p>
           <h1 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">

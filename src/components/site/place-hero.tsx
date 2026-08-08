@@ -77,17 +77,20 @@ export function PlaceHero({
               </div>
             </div>
 
-            {/* Eyebrow chữ viết tay (cam): tỉnh cha / ngữ cảnh */}
+            {/* Eyebrow (cam): tỉnh cha / ngữ cảnh. Cùng font display với tên
+                điểm đến ngay dưới, nhỏ hơn một bậc rõ rệt (20px vs 36–48px) —
+                trước đây là chữ viết tay nên cỡ 30–36px mới cân, sans ở cỡ đó
+                thành dòng tiêu đề thứ hai tranh chỗ với chính tên điểm đến. */}
             <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
               {place.parent ? (
                 <Link
                   href={`/diem-den/${place.parent.slug}`}
-                  className="font-[family-name:var(--font-script)] text-3xl leading-none text-warm transition-opacity hover:opacity-90 sm:text-4xl"
+                  className="font-[family-name:var(--font-display)] text-lg font-bold leading-tight tracking-tight text-warm transition-opacity hover:opacity-90 sm:text-xl"
                 >
                   {place.parent.name}
                 </Link>
               ) : (
-                <span className="font-[family-name:var(--font-script)] text-3xl leading-none text-warm sm:text-4xl">
+                <span className="font-[family-name:var(--font-display)] text-lg font-bold leading-tight tracking-tight text-warm sm:text-xl">
                   {place.kind === "province" ? "Tỉnh · Thành phố" : "Điểm đến"}
                 </span>
               )}

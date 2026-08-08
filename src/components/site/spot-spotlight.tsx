@@ -103,7 +103,7 @@ function SpotRow({
         <span
           aria-hidden
           className={cn(
-            "hidden w-7 shrink-0 self-start pt-0.5 font-[family-name:var(--font-display)] text-xl font-extrabold tabular-nums leading-none tracking-tight transition-colors lg:block",
+            "hidden w-7 shrink-0 self-start pt-0.5 font-[family-name:var(--font-display)] text-xl font-bold tabular-nums leading-none tracking-tight transition-colors lg:block",
             on ? "text-warm" : "text-muted-foreground/40",
           )}
         >
@@ -131,8 +131,14 @@ function SpotRow({
               xuống lớp phủ chọn ảnh bên dưới. */}
           <Link
             href={`/dia-diem/${s.slug}`}
+            // Font display (Be Vietnam Pro) như tên thẻ ở Lưu trú/Ẩm thực — tên
+            // riêng của một nơi thì ở đâu cũng phải cùng một bộ chữ.
+            // `font-semibold` (600) — cùng bậc với tên thẻ ở Lưu trú/Ẩm thực.
+            // Bộ nạp tĩnh 600/700/800 (xem layout.tsx) nên 600 là nét THẬT, không
+            // phải trình duyệt bóp chữ; đừng dùng `font-normal`/`font-medium` với
+            // họ này vì hai bậc đó không có trong bộ.
             className={cn(
-              "pointer-events-auto block truncate font-semibold tracking-tight underline-offset-4 transition-colors hover:text-primary hover:underline lg:text-lg",
+              "pointer-events-auto block truncate font-[family-name:var(--font-display)] font-semibold tracking-tight underline-offset-4 transition-colors hover:text-primary hover:underline lg:text-lg",
               on ? "text-foreground" : "text-foreground/90",
             )}
           >
@@ -213,7 +219,7 @@ function SpotPanel({
           Bậc chữ: nhãn nhỏ → tên rất lớn → câu chốt → (vạch) → mô tả → nút.
           Vạch ngắn tách phần "giới thiệu" khỏi phần "đọc thêm", nên khối không
           thành một đống chữ dài liền mạch. */}
-      <p className="text-sm font-semibold uppercase tracking-[0.14em] text-warm-bright [text-shadow:0_1px_8px_rgba(0,0,0,0.75)]">
+      <p className="text-sm font-medium uppercase tracking-[0.14em] text-warm-bright [text-shadow:0_1px_8px_rgba(0,0,0,0.75)]">
         {s.category ?? "Địa điểm"}
       </p>
 
@@ -221,7 +227,7 @@ function SpotPanel({
           leading 1.16 — hero để 0.88 được vì gần như luôn một dòng; tên địa
           điểm hay xuống 2 dòng, siết chặt thì dấu của dòng dưới chạm chân chữ
           dòng trên. Tiếng Việt cần chỗ cho cả dấu thanh lẫn dấu mũ. */}
-      <h3 className="mt-2.5 max-w-lg text-balance font-[family-name:var(--font-display)] text-[clamp(2rem,4vw,3.25rem)] font-extrabold leading-[1.16] tracking-[-0.03em] text-white drop-shadow-[0_2px_14px_rgba(0,0,0,0.65)]">
+      <h3 className="mt-2.5 max-w-lg text-balance font-[family-name:var(--font-display)] text-[clamp(2rem,4vw,3.25rem)] font-bold leading-[1.16] tracking-[-0.03em] text-white drop-shadow-[0_2px_14px_rgba(0,0,0,0.65)]">
         {/* Kẹp 2 dòng: tên dài mà thả tự do thì khối chữ dâng lên, đẩy nút
             "Khám phá" xuống quá đáy khung ảnh và bị cắt. */}
         <Link
@@ -256,7 +262,7 @@ function SpotPanel({
 
       <Link
         href={`/dia-diem/${s.slug}`}
-        className="group mt-7 inline-flex h-12 w-fit items-center gap-2.5 rounded-full border border-white/35 px-6 text-base font-semibold text-white transition-colors hover:border-white hover:bg-white/10"
+        className="group mt-7 inline-flex h-12 w-fit items-center gap-2.5 rounded-full border border-white/35 px-6 text-base font-medium text-white transition-colors hover:border-white hover:bg-white/10"
       >
         Khám phá địa điểm
         <ArrowUpRight
@@ -284,13 +290,11 @@ function SpotPanel({
 // đếm bắt đầu lại từ mục vừa bấm.
 export function SpotSpotlight({
   title,
-  eyebrow,
   count,
   allHref,
   spots,
 }: {
   title: string;
-  eyebrow?: string;
   count?: number;
   allHref: string;
   spots: SpotSpotlightItem[];
@@ -372,12 +376,11 @@ export function SpotSpotlight({
           danh sách nuốt hết (`lg:items-stretch` + hàng `lg:flex-1`), còn khung
           ảnh bên trái cũng cao theo cột. Nâng con số này là cách duy nhất để
           dải cao lên mà không phải độn padding rỗng. */}
-      <div className="relative mx-auto flex w-full max-w-7xl flex-col px-4 py-10 sm:px-6 sm:py-12 lg:min-h-[46rem] lg:px-8 lg:py-12">
+      <div className="relative mx-auto flex w-full max-w-7xl flex-col px-4 py-14 sm:px-6 sm:py-20 lg:min-h-[46rem]">
         {/* Heading dùng chung `SectionHeading` — chính khuôn "nhãn viết tay +
             đường bay" này đã được đưa vào component để mọi section trên trang
             cùng một giọng. */}
         <SectionHeading
-          eyebrow={eyebrow}
           title={title}
           href={allHref}
           count={count}
@@ -389,7 +392,7 @@ export function SpotSpotlight({
             nghìn px, chữ tràn ra ngoài màn hình rồi bị `overflow-hidden` xén.
             `grid-cols-1` của Tailwind = `minmax(0,1fr)` nên track không bao giờ
             vượt bề ngang cha. Áp dụng cho mọi lưới chỉ khai báo cột ở lg. */}
-        <div className="mt-8 grid flex-1 grid-cols-1 gap-8 lg:mt-10 lg:grid-cols-12 lg:items-stretch lg:gap-12">
+        <div className="mt-6 grid flex-1 grid-cols-1 gap-8 lg:grid-cols-12 lg:items-stretch lg:gap-12">
           <div
             id={panelId}
             className="relative isolate flex min-w-0 flex-col pb-6 lg:col-span-7 lg:pb-14 lg:pr-12 xl:pr-20"
@@ -487,7 +490,7 @@ export function SpotSpotlight({
                 ngay là một vệt xám bị xén. */}
             <div
               aria-hidden
-              className="absolute inset-y-0 right-0 hidden overflow-hidden rounded-r-3xl bg-background p-3.5 pb-7 shadow-[0_6px_18px_-10px_rgba(0,0,0,0.35)] ring-1 ring-border lg:block lg:-left-[calc((100vw-min(100vw,80rem))/2+2rem)]"
+              className="absolute inset-y-0 right-0 hidden overflow-hidden rounded-r-3xl bg-background p-3.5 pb-7 shadow-[0_6px_18px_-10px_rgba(0,0,0,0.35)] ring-1 ring-border lg:block lg:-left-[calc((100vw-min(100vw,80rem))/2+1.5rem)]"
             >
               {/* Ghi chú trong dải mat đáy: số thứ tự + loại địa điểm, cỡ rất
                   nhỏ, màu nhạt — đúng chỗ và đúng cách người ta ghi chú dưới một

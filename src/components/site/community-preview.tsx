@@ -44,7 +44,7 @@ export function CommunityPreview({
 
   return (
     <>
-      <div className="mt-5 flex flex-wrap items-center gap-2">
+      <div className="mt-6 flex flex-wrap items-center gap-2">
         {stats.map((s) => (
           <span
             key={s}
