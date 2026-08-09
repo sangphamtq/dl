@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Be_Vietnam_Pro, Cabin, Mali } from "next/font/google";
+import { Be_Vietnam_Pro, Cabin, Dancing_Script, Mali } from "next/font/google";
 import { Toaster } from "sonner";
 import { getSettings } from "@/lib/settings";
 import { BackToTop } from "@/components/site/back-to-top";
@@ -67,12 +67,33 @@ const mali = Mali({
   display: "swap",
 });
 
+// Chữ bút lông — DÙNG ĐÚNG MỘT CHỖ: tên nước ở hero trang chủ.
+//
+// Vâng, đây chính là Dancing Script từng bị gỡ (xem ghi chú ở Mali). Lần đó nó
+// bị rải làm nhãn eyebrow khắp các section, tức là 40 KB cho một thứ trang trí
+// lặp lại. Lần này khác ở hai điểm, và phải giữ cả hai thì việc đưa nó về mới
+// đứng vững:
+//   · CHỈ một phần tử duy nhất trong cả site dùng nó — chữ "Việt Nam" ở hero.
+//     Thêm chỗ thứ hai là quay lại đúng vết xe cũ;
+//   · `preload: false` — không nằm trong đám font preload của MỌI trang. Chỉ ai
+//     mở trang chủ mới tải, và tải sau khi trang đã hiện (`display: "swap"` lo
+//     phần chữ tạm).
+// Mali không thay được: nó là chữ tròn thân thiện, không phải chữ viết tay có
+// nét thanh nét đậm — đặt ở cỡ 100px thì ra một font sans bo góc.
+const script = Dancing_Script({
+  variable: "--font-script",
+  subsets: ["latin", "vietnamese"],
+  weight: ["700"],
+  display: "swap",
+  preload: false,
+});
+
 // PWA: màu thanh trạng thái khi chạy dạng app (Android/Chrome đọc từ đây).
 // Cố ý KHÔNG đặt `viewportFit: "cover"` — nội dung sẽ tràn vào vùng tai thỏ và
 // thanh home của iPhone, mà các phần tử fixed hiện có (nút lên đầu trang)
 // chưa chừa `safe-area-inset`. Muốn tràn viền thì làm cùng lúc với việc đó.
 export const viewport: Viewport = {
-  themeColor: THEME_COLOR,
+  themeColor: '#ffffff',
 };
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -106,7 +127,7 @@ export default async function RootLayout({
   return (
     <html
       lang="vi"
-      className={`${cabin.variable} ${display.variable} ${mali.variable} h-full antialiased`}
+      className={`${cabin.variable} ${display.variable} ${mali.variable} ${script.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         {children}

@@ -1,64 +1,100 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Ic } from "@/components/icon";
+import { ArrowRight } from "@/components/icons";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
 import { coverUrl } from "@/lib/place-image";
 import { POST_CATEGORY_LABELS, label } from "@/lib/listing-labels";
-import { buttonVariants } from "@/components/ui/button";
-import { HeroSearch } from "@/components/site/hero-search";
+import { SectionHeading } from "@/components/site/section-heading";
+import {
+  HeroSlideshow,
+  type HeroShot,
+} from "@/components/site/hero-slideshow";
 
 const pub = { status: "published" as const };
 
-const placeSelect = {
-  slug: true,
-  name: true,
-  kind: true,
-  tagline: true,
-  description: true,
-  provinceName: true,
-  images: { where: { isCover: true }, take: 1, select: { url: true, isCover: true } },
-  _count: {
-    select: {
-      spots: true,
-      eateries: true,
-      activities: true,
-      accommodations: true,
-    },
-  },
+const cover = {
+  where: { isCover: true },
+  take: 1,
+  select: { url: true, isCover: true },
 } as const;
 
 const dateFmt = new Intl.DateTimeFormat("vi-VN", {
   day: "2-digit",
-  month: "short",
+  month: "2-digit",
+  year: "numeric",
 });
 
-// Chủ đề khám phá — ánh xạ sang màn hình [loai] của một Place; ảnh minh hoạ lấy
-// từ ảnh điểm đến thật (gán runtime) để "ảnh làm chủ", không dùng ảnh chế.
-const THEMES = [
-  { key: "dia-diem", name: "Địa điểm", icon: "signpost" },
-  { key: "hoat-dong", name: "Trải nghiệm", icon: "compass" },
-  { key: "am-thuc", name: "Ẩm thực", icon: "utensils" },
-  { key: "luu-tru", name: "Lưu trú", icon: "bed-double" },
-  { key: "di-chuyen", name: "Di chuyển", icon: "bus" },
-  { key: "", name: "Tất cả", icon: "sparkles" },
-] as const;
+// Nhãn nhỏ dùng chung — cùng khuôn với thẻ ở Điểm đến / Lưu trú / Ẩm thực.
+const MICRO = "text-[0.6rem] font-semibold uppercase tracking-[0.14em]";
 
-function total(p: PlaceRow) {
-  const c = p._count;
-  return c.spots + c.eateries + c.activities + c.accommodations;
-}
+// Góc nghiêng của từng tấm ảnh in. Viết NGUYÊN CHUỖI class: Tailwind quét mã
+// nguồn theo văn bản, tên class ghép lúc chạy thì nó không sinh CSS.
+const PRINTS = [
+  { tilt: "-rotate-2" },
+  { tilt: "rotate-2" },
+  { tilt: "rotate-1" },
+  { tilt: "-rotate-3" },
+];
+
+// Lớp phủ hero — ĐẬM Ở ĐỈNH, ngược hẳn lớp phủ của thẻ.
+// Khối chữ nằm ở PHẦN TRÊN bức ảnh (như tấm banner tham chiếu), mà phần trên
+// của ảnh phong cảnh gần như luôn là trời sáng. Công thức đậm-ở-đáy của thẻ đặt
+// vào đây thì dằn đúng chỗ không có chữ nào. Vẫn để đáy tối nhẹ trở lại để
+// khung hình không bị hẫng một đầu.
+const HERO_SCRIM =
+  "absolute inset-0 -z-10 bg-[linear-gradient(to_bottom,rgba(0,0,0,0.5)_0%,rgba(0,0,0,0.42)_22%,rgba(0,0,0,0.26)_48%,rgba(0,0,0,0.18)_70%,rgba(0,0,0,0.34)_100%)]";
+
+// Năm mục của một trang điểm đến — đúng năm thứ đang có thật (xem CLAUDE.md).
+//
+// Thay cho dải "Khám phá theo chủ đề" cũ: sáu ô ảnh dẫn tới
+// `/diem-den/<một nơi bất kỳ>/<loại>`, nơi đó chỉ là phần tử thứ i của danh
+// sách nổi bật. Bấm "Ẩm thực" mà nhảy vào trang ăn uống của một điểm đến ngẫu
+// nhiên thì đó là một lời hứa sai, và không ô nào trong sáu ô ấy nói được rằng
+// mọi điểm đến đều có đủ cả năm mục.
+const PARTS: { label: string; desc: string }[] = [
+  {
+    label: "Địa điểm",
+    desc: "Chỗ đáng ghé, kèm giờ mở cửa, vé vào và mùa đẹp nhất.",
+  },
+  {
+    label: "Trải nghiệm",
+    desc: "Việc nên làm, kèm đơn vị tổ chức và giá nếu có.",
+  },
+  {
+    label: "Ăn uống",
+    desc: "Quán ăn và quán cà phê, lọc theo bữa và theo hướng nhìn.",
+  },
+  {
+    label: "Nơi lưu trú",
+    desc: "Danh bạ chỗ ở kèm kênh liên hệ đã đối chiếu với chủ nhà.",
+  },
+  {
+    label: "Di chuyển",
+    desc: "Cách đến nơi từ các thành phố lớn, và cách đi lại khi đã tới.",
+  },
+];
 
 export default async function Home() {
-  const [session, featured, posts, provinceOpts, counts, galleryImgs] =
-    await Promise.all([
+  const [session, featured, posts, destParents, counts] = await Promise.all([
       auth(),
       prisma.place.findMany({
-        where: { ...pub, isFeatured: true },
-        orderBy: [{ order: "asc" }, { popularity: "desc" }, { name: "asc" }],
-        take: 12,
-        select: placeSelect,
+        where: { ...pub, kind: "destination" },
+        orderBy: [
+          { isFeatured: "desc" },
+          { order: "asc" },
+          { popularity: "desc" },
+          { name: "asc" },
+        ],
+        take: 9,
+        select: {
+          slug: true,
+          name: true,
+          tagline: true,
+          images: cover,
+          parent: { select: { name: true } },
+        },
       }),
       prisma.post.findMany({
         where: pub,
@@ -71,874 +107,370 @@ export default async function Home() {
           category: true,
           publishedAt: true,
           createdAt: true,
-          author: { select: { name: true } },
-          images: {
-            where: { isCover: true },
-            take: 1,
-            select: { url: true, isCover: true },
-          },
-          _count: { select: { likes: true, comments: true } },
+          images: cover,
         },
       }),
       prisma.place.findMany({
-        where: { ...pub, kind: "province" },
-        orderBy: { name: "asc" },
-        select: { slug: true, name: true },
+        where: { ...pub, kind: "destination" },
+        select: { parentId: true },
       }),
       Promise.all([
-        prisma.place.count({ where: { ...pub, kind: "province" } }),
         prisma.place.count({ where: { ...pub, kind: "destination" } }),
         prisma.spot.count({ where: pub }),
-        prisma.post.count({ where: pub }),
+        prisma.eatery.count({ where: pub }),
       ]),
-      prisma.image.findMany({
-        where: { placeId: { not: null }, place: pub },
-        orderBy: { id: "desc" },
-        take: 8,
-        select: { url: true, alt: true, place: { select: { slug: true } } },
-      }),
     ]);
 
   const user = session?.user;
+  const [destCount, spotCount, eateryCount] = counts;
+  // Tỉnh THẬT SỰ có điểm đến, không phải tổng số tỉnh đã xuất bản.
+  const provinceCount = new Set(destParents.map((d) => d.parentId)).size;
 
-  const places =
-    featured.length > 0
-      ? featured
-      : await prisma.place.findMany({
-          where: pub,
-          orderBy: { createdAt: "desc" },
-          take: 12,
-          select: placeSelect,
-        });
-
-  const [provinceCount, destCount, spotCount, postCount] = counts;
-
-  const heroBg = places[0]
-    ? coverUrl(places[0].images, places[0].slug, 1920, 1080)
-    : "https://picsum.photos/seed/vietnam-hero/1920/1080";
-
-  const popular = places.slice(0, 3);
-  const themePlaces = places.slice(0, THEMES.length);
-  // Chip điều hướng nhanh trên hero — điểm đến thật (khác nơi trong ảnh nền).
-  const quickPlaces = places.slice(1, 5);
-
-  const stats = [
-    { icon: "map-pin", value: provinceCount, label: "Tỉnh / Thành phố" },
-    { icon: "compass", value: destCount, label: "Điểm đến lớn" },
-    { icon: "signpost", value: spotCount, label: "Địa điểm tham quan" },
-    { icon: "book-open", value: postCount, label: "Bài cẩm nang" },
-  ];
+  // Hai nhóm KHÔNG GIAO NHAU cắt từ cùng một danh sách: năm ảnh nền hero thay
+  // nhau, và bốn tấm ảnh in ở section ngay dưới. Trùng nhau thì một nơi vừa lướt
+  // qua làm ảnh nền lại hiện ngay bên dưới thành thẻ.
+  const shots: HeroShot[] = featured.slice(0, 5).map((p) => ({
+    slug: p.slug,
+    name: p.name,
+    province: p.parent?.name ?? null,
+    url: coverUrl(p.images, p.slug, 1920, 1280),
+    thumb: coverUrl(p.images, p.slug, 160, 120),
+  }));
+  const prints = featured.slice(5, 9);
 
   return (
-    <div className="flex flex-1 flex-col">
+    <main className="flex-1">
+      {/* ── HERO — BANNER ĐIỆN ẢNH, ẢNH NỀN THAY NHAU ─────────────────────
+          Năm ảnh điểm đến crossfade 7 giây một lượt (xem HeroSlideshow — kèm
+          chấm chuyển, nút tạm dừng và cách tải ảnh dần).
+          Ảnh tràn viền, khối chữ canh giữa ở PHẦN TRÊN ảnh, xếp ba tầng:
+            · tên nước bằng CHỮ VIẾT TAY cỡ lớn,
+            · một dòng chữ hoa giãn ký tự,
+            · một dòng mảnh liệt kê bằng dấu chấm giữa.
+          Không thẻ, không ảnh in, không lưới — hero lần này là một tấm banner
+          đúng nghĩa, còn các lối đi tiếp nằm ở section ngay dưới.
 
-      <main className="flex-1">
-        {/* ─── HERO — thẻ kính nổi trên ảnh ─────────────────────── */}
-        <section className="relative isolate flex min-h-[40rem] items-center justify-center overflow-hidden px-4 sm:min-h-svh sm:px-6">
-          <Image
-            src={heroBg}
-            alt={
-              places[0]
-                ? `${places[0].name} — điểm đến Việt Nam`
-                : "Phong cảnh Việt Nam"
-            }
-            fill
-            priority
-            sizes="100vw"
-            className="hero-kb -z-10 object-cover object-center"
-          />
-          <div className="absolute inset-0 -z-10 bg-black/45" />
-          <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black/70 via-black/25 to-black/40" />
+          Chữ bút lông là `--font-script` (Dancing Script) và ĐÂY LÀ CHỖ DUY
+          NHẤT trong cả site dùng nó — xem ghi chú ở layout.tsx về lý do nó được
+          đưa trở lại kèm `preload: false`. Thêm chỗ thứ hai là hỏng giao kèo đó.
+          `leading-[1.05]` chứ không siết chặt hơn: chữ script có nét thò lên
+          thò xuống, mà "Việt" còn thêm dấu nặng dưới đáy. */}
+      <section className="relative isolate flex min-h-[48rem] items-start justify-center overflow-hidden pb-28 pt-36 lg:min-h-svh lg:pt-48">
+        <HeroSlideshow shots={shots} />
+        <span aria-hidden className={HERO_SCRIM} />
 
-          {/* Tên nơi thật trong ảnh nền */}
-          {places[0] && (
-            <div className="absolute inset-x-0 top-24 sm:top-28">
-              <div className="mx-auto max-w-6xl px-4 sm:px-6">
-                <span className="hero-rise inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-xs font-medium text-white/85 ring-1 ring-white/15 backdrop-blur">
-                  <Ic icon="map-pin" className="size-3.5" aria-hidden />
-                  {places[0].name}
-                </span>
-              </div>
-            </div>
+        <div className="mx-auto w-full max-w-4xl px-4 text-center sm:px-6">
+          {user?.name && (
+            <p className="mb-2 text-sm font-medium text-white/75">
+              Chào {user.name}
+            </p>
           )}
 
-          {/* Thẻ kính (glass) */}
-          <div className="hero-rise relative w-full max-w-2xl overflow-hidden rounded-[2rem] border border-white/15 bg-white/10 p-7 shadow-[0_25px_70px_-20px_rgba(0,0,0,0.65)] ring-1 ring-white/10 backdrop-blur-2xl sm:p-10">
-            {/* Vệt sáng mảnh trên mép — cảm giác thủy tinh */}
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/45 to-transparent"
-            />
+          {/* Cả hai tầng nằm TRONG h1: tách tên nước ra một thẻ riêng thì trang
+              còn lại một tiêu đề cụt ngủn là "Việt Nam", không nói được trang
+              này làm gì. */}
+          <h1 className="text-white [text-shadow:0_2px_24px_rgba(0,0,0,0.55)]">
+            <span className="block font-[family-name:var(--font-script)] text-[clamp(3.5rem,10vw,7.5rem)] font-bold leading-[1.05] tracking-[-0.005em]">
+              Việt Nam
+            </span>
+            {/* `max-w-4xl` cho khối chữ + `text-balance` ở dòng này: ở
+                `max-w-3xl` (768px) câu hoa giãn 0.22em rộng ~817px nên rớt hai
+                chữ cuối xuống dòng hai, thành một dòng dài và một dòng cụt. */}
+            <span className="mt-3 block text-balance font-[family-name:var(--font-display)] text-[clamp(0.95rem,2.1vw,1.6rem)] font-semibold uppercase leading-tight tracking-[0.14em] text-white/90 sm:tracking-[0.22em]">
+              Mỗi nơi một trang, đủ cho cả chuyến đi
+            </span>
+          </h1>
 
-            <p className="flex items-center gap-2 font-rounded text-xl font-medium text-white/85">
-              <Ic icon="map-pin" className="size-5" aria-hidden />
-              {user?.name ? `Chào ${user.name}` : "Việt Nam đang chờ bạn"}
-            </p>
+          {/* Dòng này liệt kê đúng NĂM MỤC có thật của một trang điểm đến, thay
+              cho bản cũ nhắc lại bốn câu hỏi vốn đã là tiêu đề trang Giới thiệu.
+              Người đọc đối chiếu được ngay khi bấm vào một nơi bất kỳ. */}
+          <p className="mx-auto mt-6 max-w-xl text-balance text-sm leading-relaxed text-white/80 [text-shadow:0_1px_12px_rgba(0,0,0,0.7)] sm:text-base">
+            Địa điểm · Trải nghiệm · Ăn uống · Lưu trú · Di chuyển
+          </p>
 
-            <h1 className="mt-3 text-balance text-4xl font-extrabold leading-[1.06] tracking-tight text-white sm:text-5xl">
-              Khám phá Việt Nam,{" "}
-              <span className="font-light text-white/80">
-                mỗi chuyến một hành trình
-              </span>
-            </h1>
+          <CtaButton href="/diem-den" tone="photo" className="mt-10">
+            Khám phá {destCount} điểm đến
+          </CtaButton>
+        </div>
+      </section>
 
-            <p className="mt-4 max-w-md text-sm leading-relaxed text-white/75 sm:text-base">
-              Ăn gì, chơi gì, ở đâu, đi lại thế nào — gom gọn cho từng điểm đến,
-              để bạn chỉ việc xách balo lên và đi.
-            </p>
-
-            <div className="mt-6">
-              <HeroSearch places={provinceOpts} />
-            </div>
-
-            {quickPlaces.length > 0 && (
-              <div className="mt-4 flex flex-wrap items-center gap-2 text-sm">
-                <span className="text-white/55">Gợi ý</span>
-                {quickPlaces.map((p) => (
-                  <Link
-                    key={p.slug}
-                    href={`/diem-den/${p.slug}`}
-                    className="rounded-full bg-white/10 px-3 py-1 font-medium text-white/90 ring-1 ring-white/15 backdrop-blur transition-colors hover:bg-white/20"
-                  >
-                    {p.name}
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* ─── CHỦ ĐỀ KHÁM PHÁ ──────────────────────────────────── */}
-        {themePlaces.length > 0 && (
-          <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
-            <SectionTitle
-              eyebrow="Muôn nơi chờ bạn"
-              title="Khám phá theo chủ đề"
-            />
-            <div className="mt-12 grid grid-cols-3 gap-x-4 gap-y-8 sm:grid-cols-6">
-              {THEMES.map((theme, i) => {
-                const p = themePlaces[i] ?? themePlaces[0];
-                const href = `/diem-den/${p.slug}${theme.key ? `/${theme.key}` : ""}`;
-                return (
-                  <Link
-                    key={theme.name}
-                    href={href}
-                    className={cn(
-                      "group text-center",
-                      i % 2 === 1 && "sm:translate-y-6",
-                    )}
-                  >
-                    <div className="relative mx-auto aspect-[3/4] w-full overflow-hidden rounded-[1.75rem] bg-muted shadow-lg shadow-black/5 transition-transform duration-300 group-hover:-translate-y-1.5">
-                      <Image
-                        src={coverUrl(p.images, p.slug, 320, 420)}
-                        alt={theme.name}
-                        fill
-                        sizes="(min-width: 640px) 16vw, 33vw"
-                        className="object-cover"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/5 to-transparent" />
-                      <span className="absolute left-1/2 top-3 flex size-9 -translate-x-1/2 items-center justify-center rounded-full bg-background/90 text-primary shadow backdrop-blur">
-                        <Ic icon={theme.icon} className="size-4" aria-hidden />
-                      </span>
-                    </div>
-                    <span className="mt-3 block text-sm font-semibold tracking-tight transition-colors group-hover:text-primary">
-                      {theme.name}
-                    </span>
-                  </Link>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
-        {/* ─── ĐIỂM ĐẾN PHỔ BIẾN (3 card, giữa nổi) ─────────────── */}
-        {popular.length > 0 && (
-          <section className="bg-accent/50">
-            <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
-              <SectionTitle
-                eyebrow="Được yêu thích"
-                title="Điểm đến phổ biến"
-              />
-              <div className="mt-12 grid grid-cols-1 items-start gap-6 sm:grid-cols-3">
-                {popular.map((p, i) => (
-                  <PopularCard key={p.slug} place={p} featured={i === 1} />
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* ─── VỀ CHÚNG TÔI ─────────────────────────────────────── */}
-        <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
-          <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
-            {/* Ảnh chồng lớp + badge tròn */}
-            <div className="relative pb-10 pr-10">
-              <div className="relative aspect-[4/5] w-4/5 overflow-hidden rounded-[2rem] bg-muted shadow-xl shadow-black/10">
-                <Image
-                  src={coverUrl(
-                    places[1]?.images ?? [],
-                    places[1]?.slug ?? "about-1",
-                    600,
-                    750,
-                  )}
-                  alt=""
-                  fill
-                  sizes="(min-width: 1024px) 40vw, 80vw"
-                  className="object-cover"
-                />
-              </div>
-              <div className="absolute bottom-0 right-0 aspect-square w-1/2 overflow-hidden rounded-[2rem] border-[6px] border-background bg-muted shadow-xl shadow-black/10">
-                <Image
-                  src={coverUrl(
-                    places[2]?.images ?? [],
-                    places[2]?.slug ?? "about-2",
-                    400,
-                    400,
-                  )}
-                  alt=""
-                  fill
-                  sizes="(min-width: 1024px) 20vw, 40vw"
-                  className="object-cover"
-                />
-              </div>
-              {/* Badge tròn: con số nhấn bằng font display */}
-              <div className="absolute -left-3 top-4 flex size-28 flex-col items-center justify-center rounded-full bg-primary text-center text-primary-foreground shadow-lg shadow-primary/30 sm:size-32">
-                <span className="font-[family-name:var(--font-display)] text-2xl font-extrabold leading-none tracking-tight sm:text-3xl">
-                  100%
-                </span>
-                <span className="mt-1 px-3 text-[0.65rem] font-medium leading-tight">
-                  Miễn phí & minh bạch
-                </span>
-              </div>
-            </div>
-
-            {/* Nội dung */}
-            <div>
-              <ScriptEyebrow>Về chúng tôi</ScriptEyebrow>
-              <h2 className="mt-2 text-3xl font-bold leading-[1.1] tracking-tight sm:text-4xl">
-                Thông tin du lịch đáng tin, cho người Việt
-              </h2>
-              <p className="mt-4 max-w-md leading-relaxed text-muted-foreground">
-                Không phải sàn đặt phòng, không chạy theo hoa hồng. Chúng tôi tổng
-                hợp và kiểm chứng thông tin để bạn tự tin lên đường — và tránh
-                được những cú lừa cọc quen thuộc.
-              </p>
-
-              <div className="mt-8 grid gap-4 sm:grid-cols-2">
-                <TrustItem
-                  icon="shield-check"
-                  title="Xác minh chính chủ"
-                  desc="Kênh liên hệ đã kiểm chứng, chống lừa cọc."
-                />
-                <TrustItem
-                  icon="compass"
-                  title="Cẩm nang tận nơi"
-                  desc="Ăn, chơi, ở, đi lại — theo từng điểm đến."
-                />
-              </div>
-
-              <Link
-                href="/diem-den"
-                className={cn(
-                  buttonVariants({ size: "lg" }),
-                  "mt-8 rounded-full",
-                )}
+      {/* ── ĐIỂM ĐẾN NỔI BẬT ───────────────────────────────────────────────
+          Hero nay là banner thuần, không còn lối đi nào trong đó ngoài một nút,
+          nên bốn nơi đầu tiên phải có mặt ngay dưới. Vẫn là ảnh in nghiêng —
+          giữ lại chất liệu ấy ở đúng một chỗ, không rải khắp trang. */}
+      {prints.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20">
+          <SectionHeading
+            title="Điểm đến nổi bật"
+            href="/diem-den"
+            count={destCount}
+            unit="điểm đến"
+          />
+          <ul className="mt-10 grid grid-cols-2 gap-5 sm:grid-cols-4 sm:gap-6">
+            {prints.map((p, i) => (
+              <li
+                key={p.slug}
+                className={cn("relative", PRINTS[i % PRINTS.length].tilt)}
               >
-                Khám phá ngay
-                <Ic icon="arrow-right" className="size-4" aria-hidden />
-              </Link>
-            </div>
-          </div>
+                <PhotoPrint p={p} taped={i === 0 || i === 3} />
+              </li>
+            ))}
+          </ul>
         </section>
+      )}
 
-        {/* ─── DẢI THỐNG KÊ ─────────────────────────────────────── */}
-        <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 sm:pb-24">
-          <div className="relative isolate overflow-hidden rounded-[2rem]">
-            <Image
-              src={
-                places[3]
-                  ? coverUrl(places[3].images, places[3].slug, 1600, 700)
-                  : heroBg
-              }
-              alt=""
-              fill
-              sizes="(min-width: 1152px) 1152px, 100vw"
-              className="-z-10 object-cover"
-            />
-            <div className="absolute inset-0 -z-10 bg-primary/75" />
-            <div className="grid gap-8 p-6 sm:p-10 lg:grid-cols-[1fr_auto] lg:items-center">
-              <div className="grid grid-cols-2 gap-2 rounded-[1.75rem] bg-background/95 p-4 shadow-xl shadow-black/10 backdrop-blur sm:grid-cols-4 sm:p-6">
-                {stats.map((s) => (
-                  <div
-                    key={s.label}
-                    className="flex flex-col items-center gap-1.5 px-2 py-3 text-center"
-                  >
-                    <span className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-                      <Ic icon={s.icon} className="size-5" aria-hidden />
-                    </span>
-                    <div className="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
-                      {s.value.toLocaleString("vi-VN")}
-                      <span className="text-primary">+</span>
-                    </div>
-                    <div className="text-xs font-medium text-muted-foreground">
-                      {s.label}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="flex items-center gap-4 text-primary-foreground">
-                <div className="flex size-24 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-primary-foreground/50 text-center sm:size-28">
-                  {/* Sans rộng ngang hơn chữ viết tay nhiều: dòng "một hành" ở
-                      18px đã chạm mép vòng tròn 96px, nên hạ xuống 14→16px. */}
-                  <span className="font-[family-name:var(--font-display)] text-sm font-bold leading-snug tracking-tight sm:text-base">
-                    Mỗi bước
-                    <br />
-                    một hành
-                    <br />
-                    trình
-                  </span>
-                </div>
-                <p className="max-w-[10rem] text-sm leading-relaxed text-primary-foreground/90">
-                  Dữ liệu cập nhật, kiểm duyệt liên tục, phủ khắp vùng miền.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ─── GỢI Ý ĐIỂM ĐẾN (dải card tối) ────────────────────── */}
-        {places.length >= 6 && (
-          <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
-            <SectionTitle
-              eyebrow="Gợi ý cho bạn"
-              title="Nguồn cảm hứng cho chuyến đi"
-            />
-            <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-3">
-              {places.slice(3, 6).map((p) => (
-                <OfferCard key={p.slug} place={p} />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* ─── CẢM NHẬN NGƯỜI DÙNG ──────────────────────────────── */}
-        <section className="bg-accent/50">
-          <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 sm:px-6 sm:py-24 lg:grid-cols-[minmax(0,0.85fr)_1fr] lg:gap-16">
-            {/* Ảnh trái + badge nổi */}
-            <div className="relative mx-auto w-full max-w-sm">
-              <div className="relative aspect-[4/5] overflow-hidden rounded-[2rem] bg-primary/15">
-                <Image
-                  src={coverUrl(
-                    places[0]?.images ?? [],
-                    "testimonial",
-                    560,
-                    700,
-                  )}
-                  alt=""
-                  fill
-                  sizes="(min-width: 1024px) 30vw, 90vw"
-                  className="object-cover"
-                />
-              </div>
-              <div className="absolute -bottom-4 left-4 flex items-center gap-3 rounded-2xl bg-background px-4 py-3 shadow-lg shadow-black/10">
-                <span className="flex size-10 items-center justify-center rounded-full bg-warm/15 text-warm">
-                  <Ic icon="star" className="size-5 fill-warm text-warm" aria-hidden />
-                </span>
-                <div>
-                  <div className="text-lg font-bold leading-none">4.9/5</div>
-                  <div className="text-xs text-muted-foreground">
-                    từ cộng đồng
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Nội dung */}
-            <div>
-              <ScriptEyebrow>Người đi trước nói gì</ScriptEyebrow>
-              <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
-                Được cộng đồng tin dùng
-              </h2>
-              <div className="mt-8 space-y-4">
-                {TESTIMONIALS.map((t) => (
-                  <TestimonialCard key={t.name} t={t} />
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ─── CẨM NANG MỚI ─────────────────────────────────────── */}
-        {posts.length > 0 && (
-          <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
-            <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-end sm:justify-between">
-              <div className="text-center sm:text-left">
-                <ScriptEyebrow align="left">Cẩm nang</ScriptEyebrow>
-                <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
-                  Bài viết mới nhất
-                </h2>
-              </div>
-              <Link
-                href="/blog"
-                className={cn(
-                  buttonVariants({ variant: "outline" }),
-                  "rounded-full",
-                )}
-              >
-                Xem tất cả
-                <Ic icon="arrow-right" className="size-4" aria-hidden />
-              </Link>
-            </div>
-            <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {posts.map((p) => (
-                <PostCard key={p.slug} post={p} />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* ─── THƯ VIỆN ẢNH ─────────────────────────────────────── */}
-        {galleryImgs.length >= 4 && (
-          <section className="bg-accent/50">
-            <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
-              <SectionTitle
-                eyebrow="Muôn màu Việt Nam"
-                title="Thư viện ảnh"
+      {/* ── MỘT TRANG ĐIỂM ĐẾN CÓ GÌ ───────────────────────────────────────
+          Thay cho hai section cũ: "Khám phá theo chủ đề" (6 ô ảnh dẫn tới một
+          nơi ngẫu nhiên) và "Về chúng tôi" (hai ảnh chồng lớp + huy hiệu tròn
+          "100% Miễn phí & minh bạch" + hai ô icon). Cả hai đều nói về sản phẩm
+          mà không nói được điều gì kiểm chứng nổi.
+          Ở đây là danh sách năm mục THẬT, cộng một câu về phần khác biệt duy
+          nhất — chỗ ở đã xác minh chính chủ. */}
+      <section className="border-y border-border/60 bg-accent/30">
+        <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16">
+          <div>
+            <h2 className="text-balance font-[family-name:var(--font-display)] text-[clamp(1.6rem,3.2vw,2.5rem)] font-bold leading-[1.1] tracking-[-0.035em]">
+              Mở một điểm đến là có sẵn cả chuyến đi
+            </h2>
+            <p className="mt-4 max-w-md leading-relaxed text-muted-foreground">
+              Không phải sàn đặt phòng, cũng không phải blog cá nhân. Mỗi nơi có
+              một trang riêng, và chỗ ở thì kèm kênh liên hệ đã đối chiếu với chủ
+              nhà — phần khiến bạn không phải dò page thật giả trước khi chuyển
+              cọc.
+            </p>
+            <Link
+              href="/gioi-thieu"
+              className="group mt-6 inline-flex items-center gap-2 font-medium text-primary underline decoration-primary/30 underline-offset-4 transition-colors hover:decoration-primary"
+            >
+              Vì sao làm trang này
+              <ArrowRight
+                className="size-4 transition-transform group-hover:translate-x-0.5"
+                aria-hidden
               />
-              <div className="mt-12 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {galleryImgs.slice(0, 8).map((img, i) => (
-                  <Link
-                    key={img.url + i}
-                    href={
-                      img.place ? `/diem-den/${img.place.slug}` : "/diem-den"
-                    }
-                    className={cn(
-                      "group relative overflow-hidden rounded-2xl bg-muted",
-                      i === 0 || i === 5
-                        ? "col-span-2 aspect-[2/1]"
-                        : "aspect-square",
-                    )}
-                  >
-                    <Image
-                      src={img.url}
-                      alt={img.alt ?? ""}
-                      fill
-                      sizes="(min-width: 640px) 25vw, 50vw"
-                      className="object-cover"
-                    />
-                    <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/25" />
-                    <Ic icon="camera"
-                      className="absolute right-3 top-3 size-5 text-white opacity-0 drop-shadow transition-opacity group-hover:opacity-100"
-                      aria-hidden
-                    />
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
+            </Link>
+          </div>
 
-        {/* ─── DẢI CTA ──────────────────────────────────────────── */}
-        <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
-          <CtaBanner places={places} />
+          <ol className="grid gap-x-10 gap-y-7 sm:grid-cols-2">
+            {PARTS.map((p, i) => (
+              <li key={p.label} className="flex gap-4">
+                <span
+                  aria-hidden
+                  className="shrink-0 pt-1 font-[family-name:var(--font-display)] text-sm font-bold tabular-nums text-warm"
+                >
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <div className="min-w-0">
+                  <h3 className="font-[family-name:var(--font-display)] font-semibold tracking-tight">
+                    {p.label}
+                  </h3>
+                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                    {p.desc}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      {/* ── CẨM NANG ───────────────────────────────────────────────────── */}
+      {posts.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24">
+          <SectionHeading title="Mới trong Cẩm nang" href="/blog" />
+          <ul className="mt-8 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+            {posts.map((p) => (
+              <li key={p.slug}>
+                <PostTile p={p} />
+              </li>
+            ))}
+          </ul>
         </section>
-      </main>
+      )}
 
-    </div>
+      {/* ── ĐÓNG LẠI ───────────────────────────────────────────────────────
+          Bản cũ đóng bằng BỐN section liên tiếp: dải thống kê (số kèm dấu "+"
+          — 63 tỉnh không phải "63+"), lời chứng thực của hai người KHÔNG CÓ
+          THẬT kèm điểm "4.9/5 từ cộng đồng" không dựa trên dữ liệu nào, thư
+          viện ảnh, rồi một banner CTA có vòng tròn đồng tâm, đường bay nét đứt,
+          máy bay và bóng skyline.
+          Còn lại đúng một câu số đếm được và một lối đi tiếp. */}
+      <section className="border-t border-border/60">
+        <div className="mx-auto flex max-w-7xl flex-col gap-8 px-4 py-16 sm:px-6 sm:py-20 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h2 className="max-w-lg text-balance font-[family-name:var(--font-display)] text-[clamp(1.5rem,3vw,2.25rem)] font-bold leading-[1.15] tracking-[-0.035em]">
+              Chọn một nơi, phần còn lại đã nằm sẵn ở đó
+            </h2>
+            <p className="mt-3 max-w-lg leading-relaxed text-muted-foreground">
+              Hiện có <Num>{destCount}</Num> điểm đến ở{" "}
+              <Num>{provinceCount}</Num> tỉnh thành, với <Num>{spotCount}</Num>{" "}
+              địa điểm và <Num>{eateryCount}</Num> quán ăn – quán nước đã được
+              biên tập.
+            </p>
+          </div>
+
+          <CtaButton href="/diem-den" className="shrink-0 self-start lg:self-auto">
+            Xem tất cả điểm đến
+          </CtaButton>
+        </div>
+      </section>
+    </main>
   );
 }
 
 /* ─── Sub-components ─────────────────────────────────────────── */
 
-function ScriptEyebrow({
-  children,
-  align = "center",
-}: {
-  children: React.ReactNode;
-  align?: "center" | "left";
-}) {
-  return (
-    <p
-      className={cn(
-        "flex items-center gap-2 font-rounded text-2xl font-medium text-primary",
-        align === "center" && "justify-center",
-      )}
-    >
-      <Ic icon="backpack" className="size-4 text-primary/80" aria-hidden />
-      {children}
-    </p>
-  );
-}
-
-function SectionTitle({ eyebrow, title }: { eyebrow: string; title: string }) {
-  return (
-    <div className="mx-auto max-w-xl text-center">
-      <ScriptEyebrow>{eyebrow}</ScriptEyebrow>
-      <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
-        {title}
-      </h2>
-    </div>
-  );
-}
-
-type PlaceRow = {
+type Tile = {
   slug: string;
   name: string;
-  kind: "province" | "destination";
   tagline: string | null;
-  description: string | null;
-  provinceName: string | null;
   images: { url: string; isCover: boolean }[];
-  _count: {
-    spots: number;
-    eateries: number;
-    activities: number;
-    accommodations: number;
-  };
+  parent: { name: string } | null;
 };
 
-function PopularCard({
-  place,
-  featured,
-}: {
-  place: PlaceRow;
-  featured?: boolean;
-}) {
-  const n = total(place);
+// Một tấm ẢNH IN: khung giấy trắng bao quanh, mép dưới dày hơn để ghi tên —
+// đúng cách một tấm ảnh rửa ra trông như thế. Không bo góc lớn (giấy ảnh cắt
+// vuông), bóng đổ ngắn và lệch nhẹ như vật thật đặt trên tường.
+//
+// Rê chuột thì tấm ảnh NHẤC LÊN VÀ THẲNG LẠI (`rotate-0`) — không phóng to ảnh.
+// Cả tấm nghiêng sẵn nên việc nó tự chỉnh ngay ngắn khi được chú ý đọc ra rất
+// tự nhiên, mà lại không đụng gì tới khuôn hình.
+function PhotoPrint({ p, taped }: { p: Tile; taped?: boolean }) {
   return (
     <Link
-      href={`/diem-den/${place.slug}`}
-      className={cn(
-        "group flex flex-col rounded-[1.75rem] bg-card p-3 shadow-lg shadow-black/5 ring-1 ring-border/60 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-black/10",
-        featured && "sm:-translate-y-5 sm:shadow-xl",
-      )}
+      href={`/diem-den/${p.slug}`}
+      className="group relative block rounded-[3px] bg-card p-2 pb-1 shadow-[0_12px_28px_-14px_rgba(0,0,0,0.5)] ring-1 ring-black/5 transition-transform duration-200 hover:-translate-y-1.5 hover:rotate-0 motion-reduce:transition-none"
     >
-      <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-muted">
+      {/* Băng dính — chỉ dán vài tấm, không dán hết: dán đều thì nó thành một
+          hoạ tiết lặp chứ không còn ra vẻ ai đó vừa dán lên tường. */}
+      {taped && (
+        <span
+          aria-hidden
+          className="absolute -top-2.5 left-1/2 h-5 w-14 -translate-x-1/2 -rotate-6 rounded-[2px] bg-foreground/10"
+        />
+      )}
+
+      <span className="relative block aspect-[4/5] overflow-hidden bg-muted">
         <Image
-          src={coverUrl(place.images, place.slug, 640, 480)}
-          alt={place.name}
+          src={coverUrl(p.images, p.slug, 400, 500)}
+          alt=""
           fill
-          sizes="(min-width: 640px) 33vw, 100vw"
+          sizes="(min-width: 1024px) 17vw, (min-width: 640px) 30vw, 45vw"
           className="object-cover"
         />
-        <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-background/90 px-2.5 py-1 text-xs font-semibold text-foreground backdrop-blur">
-          {place.kind === "province" ? "Tỉnh / Thành" : "Điểm đến"}
+      </span>
+
+      <span className="block px-0.5 pb-2 pt-2.5 text-center">
+        <span className="block truncate font-[family-name:var(--font-display)] text-sm font-semibold tracking-tight transition-colors group-hover:text-primary">
+          {p.name}
         </span>
-      </div>
-      <div className="flex flex-1 flex-col px-2 pb-1 pt-4">
-        <h3 className="text-lg font-bold tracking-tight transition-colors group-hover:text-primary">
-          {place.name}
-        </h3>
-        {(place.tagline || place.description) && (
-          <p className="mt-1.5 line-clamp-2 flex-1 text-sm leading-relaxed text-muted-foreground">
-            {place.tagline ?? place.description}
-          </p>
+        {p.parent?.name && (
+          <span className={cn(MICRO, "mt-0.5 block truncate text-warm")}>
+            {p.parent.name}
+          </span>
         )}
-        <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
-          <span className="inline-flex items-center gap-1.5">
-            <Ic icon="map-pin" className="size-3.5 text-primary" aria-hidden />
-            {place.provinceName ?? "Việt Nam"}
-          </span>
-          {n > 0 && (
-            <span className="inline-flex items-center gap-1.5">
-              <Ic icon="compass" className="size-3.5 text-primary" aria-hidden />
-              {n} mục
-            </span>
-          )}
-        </div>
-        <div className="mt-4 flex items-center justify-between border-t border-border/60 pt-4">
-          <span className="font-rounded text-2xl font-medium text-primary">
-            Khám phá
-          </span>
-          <span
-            className={cn(
-              "inline-flex items-center gap-1 rounded-full px-4 py-2 text-sm font-semibold transition-colors",
-              featured
-                ? "bg-primary text-primary-foreground"
-                : "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground",
-            )}
-          >
-            Chi tiết
-            <Ic icon="arrow-right" className="size-3.5" aria-hidden />
-          </span>
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-function TrustItem({
-  icon,
-  title,
-  desc,
-}: {
-  icon: string;
-  title: string;
-  desc: string;
-}) {
-  return (
-    <div className="flex gap-3 rounded-2xl border border-border/60 bg-card p-4 shadow-sm shadow-black/5">
-      <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-        <Ic icon={icon} className="size-5" aria-hidden />
-      </span>
-      <div>
-        <h3 className="font-semibold tracking-tight">{title}</h3>
-        <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">
-          {desc}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function OfferCard({ place }: { place: PlaceRow }) {
-  return (
-    <Link
-      href={`/diem-den/${place.slug}`}
-      className="group relative flex flex-col overflow-hidden rounded-[1.75rem] bg-foreground p-6 text-background shadow-lg shadow-black/10 transition-transform hover:-translate-y-1"
-    >
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -right-8 -top-8 size-40 rounded-full bg-primary/20 blur-2xl"
-      />
-      <div className="relative flex items-center justify-between">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
-          <Ic icon="sparkles" className="size-3" aria-hidden />
-          Gợi ý
-        </span>
-        <div className="relative size-16 overflow-hidden rounded-2xl ring-2 ring-background/20">
-          <Image
-            src={coverUrl(place.images, place.slug, 160, 160)}
-            alt={place.name}
-            fill
-            sizes="64px"
-            className="object-cover"
-          />
-        </div>
-      </div>
-      <h3 className="mt-6 font-[family-name:var(--font-display)] text-3xl font-extrabold leading-tight tracking-tight text-background">
-        {place.name}
-      </h3>
-      {(place.tagline || place.description) && (
-        <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-background/70">
-          {place.tagline ?? place.description}
-        </p>
-      )}
-      <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-primary">
-        Khám phá điểm đến
-        <Ic icon="arrow-right"
-          className="size-4 transition-transform group-hover:translate-x-0.5"
-          aria-hidden
-        />
       </span>
     </Link>
   );
 }
 
-type Testimonial = { name: string; role: string; quote: string; seed: string };
-
-const TESTIMONIALS: Testimonial[] = [
-  {
-    name: "Minh Anh",
-    role: "Du khách · Hà Nội",
-    quote:
-      "Lên lịch cho chuyến Hà Giang chưa bao giờ nhẹ đầu đến thế. Ăn gì, ở đâu, đi lại ra sao đều có sẵn — khỏi lục tung mấy group Facebook.",
-    seed: "avatar-minhanh",
-  },
-  {
-    name: "Quốc Bảo",
-    role: "Phượt thủ · Đà Nẵng",
-    quote:
-      "Phần lưu trú xác minh chính chủ cứu tôi một bàn thua trông thấy. Liên hệ đúng người, không dính cọc lừa như lần trước.",
-    seed: "avatar-quocbao",
-  },
-];
-
-function TestimonialCard({ t }: { t: Testimonial }) {
-  return (
-    <figure className="relative rounded-3xl bg-card p-6 shadow-lg shadow-black/5 ring-1 ring-border/60">
-      <Ic icon="quote"
-        className="absolute right-6 top-6 size-8 text-primary/15"
-        aria-hidden
-      />
-      <div className="flex items-center gap-3">
-        <Image
-          src={`https://picsum.photos/seed/${t.seed}/80/80`}
-          alt=""
-          width={48}
-          height={48}
-          className="size-12 rounded-full object-cover"
-        />
-        <div>
-          <div className="text-sm font-semibold tracking-tight">{t.name}</div>
-          <div className="text-xs text-muted-foreground">{t.role}</div>
-        </div>
-      </div>
-      <div className="mt-3 flex gap-0.5" aria-label="5 trên 5 sao">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <Ic icon="star" key={i} className="size-4 fill-warm text-warm" aria-hidden />
-        ))}
-      </div>
-      <blockquote className="mt-3 text-sm leading-relaxed text-foreground/90">
-        “{t.quote}”
-      </blockquote>
-    </figure>
-  );
-}
-
-type PostData = {
+type PostRow = {
   slug: string;
   title: string;
   excerpt: string | null;
   category: string | null;
   publishedAt: Date | null;
   createdAt: Date;
-  author: { name: string | null } | null;
   images: { url: string; isCover: boolean }[];
-  _count: { likes: number; comments: number };
 };
 
-function PostCard({ post }: { post: PostData }) {
-  const date = post.publishedAt ?? post.createdAt;
-  const [day, month] = dateFmt.format(date).split(" ");
+// Thẻ bài viết — cùng khuôn với lưới ở trang Cẩm nang: ảnh 16/10 bo góc, nhãn
+// chuyên mục cam, tên bằng font display, không thẻ bọc.
+function PostTile({ p }: { p: PostRow }) {
   return (
-    <Link href={`/blog/${post.slug}`} className="group block">
-      <div className="relative aspect-[16/10] overflow-hidden rounded-[1.5rem] bg-muted shadow-sm shadow-black/5">
+    <Link href={`/blog/${p.slug}`} className="group flex flex-col">
+      <span className="relative block aspect-[16/10] overflow-hidden rounded-2xl bg-muted">
         <Image
-          src={coverUrl(post.images, post.slug, 640, 400)}
-          alt={post.title}
+          src={coverUrl(p.images, p.slug, 640, 400)}
+          alt=""
           fill
-          sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+          sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 100vw"
           className="object-cover"
         />
-        <div className="absolute left-4 top-4 flex flex-col items-center rounded-2xl bg-primary px-3 py-2 text-center text-primary-foreground shadow-lg shadow-primary/25">
-          <span className="text-lg font-extrabold leading-none">{day}</span>
-          <span className="text-[0.65rem] font-medium uppercase">{month}</span>
-        </div>
-      </div>
-      <div className="mt-4">
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-          <span className="inline-flex items-center gap-1">
-            <Ic icon="badge-check" className="size-3.5 text-primary" aria-hidden />
-            {post.author?.name ?? "Ban biên tập"}
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <Ic icon="message-circle" className="size-3.5" aria-hidden />
-            {post._count.comments} bình luận
-          </span>
-        </div>
-        {post.category && (
-          <span className="mt-2 inline-block text-xs font-semibold uppercase tracking-wide text-primary">
-            {label(POST_CATEGORY_LABELS, post.category)}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-black/10"
+        />
+      </span>
+      <span className="mt-4 flex min-w-0 flex-col">
+        {p.category && (
+          <span className={cn(MICRO, "mb-2 text-warm")}>
+            {label(POST_CATEGORY_LABELS, p.category)}
           </span>
         )}
-        <h3 className="mt-1 text-lg font-bold tracking-tight line-clamp-2 transition-colors group-hover:text-primary">
-          {post.title}
-        </h3>
-        {post.excerpt && (
-          <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
-            {post.excerpt}
-          </p>
-        )}
-        <span className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-primary">
-          Đọc thêm
-          <Ic icon="arrow-right"
-            className="size-4 transition-transform group-hover:translate-x-0.5"
-            aria-hidden
-          />
+        <span className="line-clamp-2 font-[family-name:var(--font-display)] text-lg font-semibold leading-snug tracking-tight transition-colors group-hover:text-primary">
+          {p.title}
         </span>
-      </div>
+        {p.excerpt && (
+          <span className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+            {p.excerpt}
+          </span>
+        )}
+        <span className="mt-3 text-xs text-muted-foreground">
+          {dateFmt.format(p.publishedAt ?? p.createdAt)}
+        </span>
+      </span>
     </Link>
   );
 }
 
-function CtaBanner({ places }: { places: PlaceRow[] }) {
-  const shots = places.slice(0, 3);
+// Nút hành động chính. MỘT khuôn cho cả hero lẫn khối kết, chỉ đổi tông màu
+// theo thứ nằm sau lưng nó.
+//
+// Bản trước có: đĩa trắng lọt trong viên nút, hai mũi tên chạy qua nhau, một
+// vệt sáng quét chéo, nút nhấc lên 2px và bóng màu nở ra khi rê chuột. Năm hiệu
+// ứng cho một cái nút — mỗi thứ riêng lẻ đều "hiện đại", cộng lại thì nó là thứ
+// duy nhất trên trang đòi được chú ý, và đòi to hơn cả tấm ảnh lẫn tiêu đề.
+//
+// Ở đây chỉ còn hình viên thuốc, một màu nền và MỘT chuyển động: mũi tên nhích
+// 2px. Đúng cử chỉ mà `SectionHeading` và mọi link "Xem tất cả" trong site đang
+// dùng — nút chính không cần một ngôn ngữ chuyển động riêng, nó chỉ cần đậm hơn.
+function CtaButton({
+  href,
+  children,
+  className,
+  /** `photo`: nút nằm trên ảnh → nền trắng, chữ mực, có bóng để tách khỏi ảnh.
+   *  Mặc định nằm trên nền trang → nền `primary`. */
+  tone = "surface",
+}: {
+  href: string;
+  children: React.ReactNode;
+  className?: string;
+  tone?: "photo" | "surface";
+}) {
   return (
-    <div className="relative isolate overflow-hidden rounded-[2.5rem] bg-primary px-6 py-14 text-primary-foreground sm:px-14 sm:py-20">
-      {/* Vòng tròn đồng tâm */}
-      <div
+    <Link
+      href={href}
+      className={cn(
+        "group inline-flex h-12 items-center gap-2.5 rounded-full px-6 font-[family-name:var(--font-display)] text-[0.95rem] font-semibold transition-colors",
+        tone === "photo"
+          ? "bg-white text-foreground shadow-md shadow-black/20 hover:bg-white/90"
+          : "bg-primary text-primary-foreground hover:bg-primary/90",
+        className,
+      )}
+    >
+      {children}
+      <ArrowRight
+        className="size-4 shrink-0 transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none"
         aria-hidden
-        className="pointer-events-none absolute -right-24 -top-28 size-96 rounded-full border border-primary-foreground/15"
       />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -bottom-32 -left-20 size-[28rem] rounded-full border border-primary-foreground/10"
-      />
-      {/* Đường bay nét đứt + máy bay */}
-      <svg
-        aria-hidden
-        viewBox="0 0 400 120"
-        className="pointer-events-none absolute inset-x-0 top-6 mx-auto hidden h-24 w-full max-w-2xl text-primary-foreground/40 sm:block"
-      >
-        <path
-          d="M20 90 Q 200 -10 380 70"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeDasharray="6 8"
-        />
-      </svg>
-      {/* Skyline silhouette */}
-      <svg
-        aria-hidden
-        viewBox="0 0 1200 120"
-        preserveAspectRatio="none"
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-20 w-full text-primary-foreground/10"
-      >
-        <path
-          fill="currentColor"
-          d="M0 120 V70 h40 v-20 h30 v20 h25 v-35 h20 v35 h35 v-50 h15 v50 h40 v-25 h30 v25 h45 v-40 h18 v40 h38 v-60 h14 v60 h42 v-30 h28 v30 h40 v-45 h16 v45 h44 v-22 h26 v22 h48 v-55 h14 v55 h40 v-30 h30 v30 h40 v-40 h18 v40 h40 v-24 h28 v24 h44 V120 Z"
-        />
-      </svg>
+    </Link>
+  );
+}
 
-      <div className="relative grid items-center gap-8 lg:grid-cols-[1fr_auto]">
-        <div className="max-w-xl">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-foreground/15 px-3 py-1 text-xs font-semibold backdrop-blur">
-            <Ic icon="sparkles" className="size-3" aria-hidden />
-            100% miễn phí
-          </span>
-          <h2 className="mt-4 text-3xl font-bold leading-tight tracking-tight sm:text-4xl lg:text-[2.75rem]">
-            Bắt đầu hành trình chỉ với một cú nhấp
-          </h2>
-          <p className="mt-4 text-primary-foreground/85">
-            Chọn một điểm đến và để chúng tôi lo phần còn lại — từ ăn chơi đến
-            lưu trú, đi lại.
-          </p>
-          <Link
-            href="/diem-den"
-            className="mt-7 inline-flex items-center gap-2 rounded-full bg-background px-7 py-3.5 text-sm font-semibold text-foreground transition-transform hover:-translate-y-0.5"
-          >
-            Khám phá điểm đến
-            <Ic icon="arrow-right" className="size-4" aria-hidden />
-          </Link>
-        </div>
-
-        {/* Cụm ảnh tròn chồng lớp */}
-        {shots.length > 0 && (
-          <div className="relative hidden h-44 w-44 shrink-0 lg:block">
-            {shots.map((p, i) => (
-              <div
-                key={p.slug}
-                className={cn(
-                  "absolute overflow-hidden rounded-full border-4 border-primary shadow-xl",
-                  i === 0 && "left-0 top-4 size-28",
-                  i === 1 && "right-0 top-0 size-20",
-                  i === 2 && "bottom-0 right-6 size-24",
-                )}
-              >
-                <Image
-                  src={coverUrl(p.images, p.slug, 160, 160)}
-                  alt={p.name}
-                  fill
-                  sizes="112px"
-                  className="object-cover"
-                />
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
+function Num({ children }: { children: React.ReactNode }) {
+  return (
+    <strong className="font-semibold tabular-nums text-foreground">
+      {children}
+    </strong>
   );
 }
