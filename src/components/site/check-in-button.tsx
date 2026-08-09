@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { LoginDrawer } from "@/components/site/login-drawer";
-import { toggleCheckIn } from "@/app/diem-den/check-in-actions";
+import { toggleCheckIn } from "@/app/(site)/diem-den/check-in-actions";
 import { ReviewForm } from "@/components/site/place-reviews";
 
 type TargetKind = "place" | "spot";

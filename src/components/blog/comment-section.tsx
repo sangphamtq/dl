@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Reply, Trash2 } from "@/components/icons";
 import { cn } from "@/lib/utils";
-import { addComment, deleteComment } from "@/app/blog/actions";
+import { addComment, deleteComment } from "@/app/(site)/blog/actions";
 
 type Author = { name: string | null };
 export type CommentNode = {

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Lock, Send } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { initials, timeAgo } from "@/lib/format";
-import { addReply, deleteReply, fetchReplies } from "@/app/cong-dong/actions";
+import { addReply, deleteReply, fetchReplies } from "@/app/(site)/cong-dong/actions";
 import { ThreadLikeButton } from "./thread-like-button";
 import { ReportButton } from "./report-button";
 

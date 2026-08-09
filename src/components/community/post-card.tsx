@@ -16,7 +16,7 @@ import {
 import { cn } from "@/lib/utils";
 import { initials, timeAgo } from "@/lib/format";
 import { renderPostBody } from "@/lib/post-format";
-import { toggleThreadLike } from "@/app/cong-dong/actions";
+import { toggleThreadLike } from "@/app/(site)/cong-dong/actions";
 import { ThreadTypeBadge } from "./thread-type-badge";
 import { PostMenu } from "./post-menu";
 import { PhotoGrid, type PostImage } from "./photo-grid";

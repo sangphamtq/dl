@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { reportContent } from "@/app/cong-dong/actions";
+import { reportContent } from "@/app/(site)/cong-dong/actions";
 
 const REASONS = [
   { value: "spam", label: "Spam / quảng cáo" },

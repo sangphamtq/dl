@@ -57,7 +57,7 @@ export function SiteNav({
             key={e.href}
             href={e.href}
             aria-current={active ? "page" : undefined}
-            className="group/nav relative flex h-full items-center px-3 text-base font-medium text-foreground"
+            className="group/nav relative flex h-full items-center px-3 text-base font-light text-foreground"
           >
             <NavLabel active={active}>{e.label}</NavLabel>
             {e.badge && (

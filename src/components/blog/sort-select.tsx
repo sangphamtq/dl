@@ -25,12 +25,12 @@ export function SortSelect({ value }: { value: string }) {
 
   return (
     <label className="inline-flex items-center gap-2 text-sm">
-      <span className="text-[#2e2e2e]/60 dark:text-white/50">Sắp xếp</span>
+      <span className="text-muted-foreground">Sắp xếp</span>
       <span className="relative">
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="appearance-none rounded-md border border-[#e8e6e1] bg-white py-1.5 pl-3.5 pr-8 text-sm font-medium text-[#1f2226] outline-none transition-colors focus:border-[#348320] focus:ring-2 focus:ring-[#348320]/15 dark:border-white/15 dark:bg-white/5 dark:text-white"
+          className="appearance-none rounded-md border border-border bg-card py-1.5 pl-3.5 pr-8 text-sm font-medium text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
         >
           {OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>
@@ -39,7 +39,7 @@ export function SortSelect({ value }: { value: string }) {
           ))}
         </select>
         <ChevronDown
-          className="pointer-events-none absolute right-2.5 top-1/2 size-4 -translate-y-1/2 text-[#2e2e2e]/50 dark:text-white/50"
+          className="pointer-events-none absolute right-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
           aria-hidden
         />
       </span>

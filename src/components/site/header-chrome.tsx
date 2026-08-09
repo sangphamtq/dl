@@ -1,6 +1,9 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { usePathname } from "next/navigation";
+import type { HeroLayout } from "@/generated/prisma/enums";
+import { chromeFor } from "@/lib/site-chrome";
 import { cn } from "@/lib/utils";
 
 // Theo dõi vị trí cuộn qua useSyncExternalStore thay vì useEffect + setState:
@@ -72,13 +75,14 @@ const getServerScrolled = () => false;
 // nào), và gạch chân nav dùng `bg-current`.
 export type HeaderTone = "dark" | "light";
 
+// `overlay`/`tone` KHÔNG còn là prop từ trang: header nay nằm ở layout dùng
+// chung nên không ai truyền xuống được nữa. Tra theo đường dẫn — xem bảng và
+// phần đánh đổi trong `@/lib/site-chrome`.
 export function HeaderChrome({
-  overlay,
-  tone = "dark",
+  heroLayout,
   children,
 }: {
-  overlay: boolean;
-  tone?: HeaderTone;
+  heroLayout: HeroLayout;
   children: React.ReactNode;
 }) {
   const scrolled = useSyncExternalStore(
@@ -86,12 +90,17 @@ export function HeaderChrome({
     getScrolled,
     getServerScrolled,
   );
+  const { tone, overlay } = chromeFor(usePathname(), heroLayout);
   const deep = !overlay || scrolled;
   const light = tone === "light";
 
   return (
     <header
       data-deep={deep}
+      // Con của header đọc bản màu qua thuộc tính này (`group-data-*`) thay vì
+      // nhận prop: chúng nằm trong SiteHeader — một Server Component — nên
+      // không thể nhận giá trị tính ở client.
+      data-tone={tone}
       className={cn(
         // CHỈ từ lg. Ở mobile không có header: điều hướng dồn hết xuống thanh
         // tab dưới (Trang chủ · Khám phá · Tìm kiếm · Cộng đồng · Menu) — ngón

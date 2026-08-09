@@ -20,7 +20,7 @@ import {
 import {
   markAllNotificationsRead,
   markNotificationRead,
-} from "@/app/thong-bao/actions";
+} from "@/app/(site)/thong-bao/actions";
 
 type Item = {
   id: string;

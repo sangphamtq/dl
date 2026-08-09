@@ -10,7 +10,7 @@ import { initials } from "@/lib/format";
 import { useUploadThing } from "@/lib/uploadthing";
 import { COMPOSER_THREAD_TYPES, type ThreadTypeValue } from "@/lib/community";
 import { threadTypeIcon } from "./thread-type-badge";
-import { createThread } from "@/app/cong-dong/actions";
+import { createThread } from "@/app/(site)/cong-dong/actions";
 
 export type PlaceOption = { id: string; name: string };
 

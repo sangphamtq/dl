@@ -75,16 +75,16 @@ export function BlogFilters({
   const shownDest = showAllDest ? filteredDest : filteredDest.slice(0, 5);
 
   return (
-    <div className="border-t border-[#e8e6e1] pt-6 dark:border-white/10">
+    <div className="border-t border-border pt-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-[0.8rem] font-semibold uppercase tracking-[0.12em] text-[#1f2226] dark:text-white">
+        <h2 className="text-[0.8rem] font-semibold uppercase tracking-[0.12em] text-foreground">
           Bộ lọc
         </h2>
         {hasActive && (
           <button
             type="button"
             onClick={clearAll}
-            className="inline-flex items-center gap-1 text-xs font-medium text-[#2e2e2e]/55 transition-colors hover:text-[#348320] dark:text-white/55"
+            className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-primary"
           >
             <RotateCcw className="size-3" aria-hidden />
             Xóa lọc
@@ -101,14 +101,14 @@ export function BlogFilters({
         >
           <div className="relative mb-2">
             <Search
-              className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-[#2e2e2e]/40"
+              className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground/70"
               aria-hidden
             />
             <input
               value={destQuery}
               onChange={(e) => setDestQuery(e.target.value)}
               placeholder="Tìm điểm đến"
-              className="h-8 w-full rounded-md border border-[#e8e6e1] bg-white pl-8 pr-2 text-sm text-[#1f2226] outline-none transition-colors placeholder:text-[#2e2e2e]/40 focus:border-[#348320] dark:border-white/15 dark:bg-white/5 dark:text-white"
+              className="h-8 w-full rounded-md border border-border bg-card pl-8 pr-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-primary"
             />
           </div>
           <ul className="flex flex-col">
@@ -126,7 +126,7 @@ export function BlogFilters({
             <button
               type="button"
               onClick={() => setShowAllDest((v) => !v)}
-              className="mt-2 text-xs font-medium text-[#348320] hover:underline"
+              className="mt-2 text-xs font-medium text-primary hover:underline"
             >
               {showAllDest ? "Thu gọn" : "Xem thêm"}
             </button>
@@ -175,17 +175,17 @@ export function BlogFilters({
                     className={cn(
                       "grid size-4 shrink-0 place-items-center rounded-full border",
                       active
-                        ? "border-[#348320]"
-                        : "border-[#c9c6bf] dark:border-white/25",
+                        ? "border-primary"
+                        : "border-muted-foreground/40",
                     )}
                   >
-                    {active && <span className="size-2 rounded-full bg-[#348320]" />}
+                    {active && <span className="size-2 rounded-full bg-primary" />}
                   </span>
                   <span
                     className={cn(
                       active
-                        ? "font-medium text-[#1f2226] dark:text-white"
-                        : "text-[#2e2e2e]/65 dark:text-white/55",
+                        ? "font-medium text-foreground"
+                        : "text-muted-foreground",
                     )}
                   >
                     {t.label}
@@ -212,16 +212,16 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="mt-5 border-t border-[#e8e6e1] pt-4 dark:border-white/10">
+    <div className="mt-5 border-t border-border pt-4">
       <button
         type="button"
         onClick={onToggle}
-        className="flex w-full items-center justify-between text-sm font-semibold text-[#1f2226] dark:text-white"
+        className="flex w-full items-center justify-between text-sm font-semibold text-foreground"
       >
         {title}
         <ChevronDown
           className={cn(
-            "size-4 text-[#2e2e2e]/50 transition-transform dark:text-white/50",
+            "size-4 text-muted-foreground transition-transform",
             !open && "-rotate-90",
           )}
           aria-hidden
@@ -254,8 +254,8 @@ function CheckRow({
           className={cn(
             "grid size-4 shrink-0 place-items-center rounded-[3px] border transition-colors",
             checked
-              ? "border-[#348320] bg-[#348320] text-white"
-              : "border-[#c9c6bf] dark:border-white/25",
+              ? "border-primary bg-primary text-white"
+              : "border-muted-foreground/40",
           )}
         >
           {checked && <Check className="size-3" aria-hidden />}
@@ -264,13 +264,13 @@ function CheckRow({
           className={cn(
             "min-w-0 flex-1 truncate",
             checked
-              ? "font-medium text-[#1f2226] dark:text-white"
-              : "text-[#2e2e2e]/65 dark:text-white/55",
+              ? "font-medium text-foreground"
+              : "text-muted-foreground",
           )}
         >
           {label}
         </span>
-        <span className="shrink-0 text-xs tabular-nums text-[#2e2e2e]/35 dark:text-white/30">
+        <span className="shrink-0 text-xs tabular-nums text-muted-foreground/60">
           {count}
         </span>
       </button>

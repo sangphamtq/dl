@@ -13,9 +13,9 @@ import { DaDenNavLink } from "./da-den-nav-link";
 import { LichTrinhNavLink } from "./lich-trinh-nav-link";
 import { HeaderSearch } from "./header-search";
 import { SiteNav, type NavEntry, type NavLink } from "./site-nav";
-import { HeaderChrome, type HeaderTone } from "./header-chrome";
+import { HeaderChrome } from "./header-chrome";
+import type { HeroLayout } from "@/generated/prisma/enums";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
 
 // Nav: 1 nhóm dropdown (click nhãn → `href`) + 2 link phẳng.
 //
@@ -53,20 +53,17 @@ const MOBILE_LINKS: NavLink[] = NAV.flatMap((e) => {
   return [e as NavLink];
 });
 
+// Header giờ được render MỘT LẦN ở `src/app/(site)/layout.tsx`, không phải ở
+// từng trang. Vì vậy nó không nhận `overlay`/`tone` nữa — `HeaderChrome` tự tra
+// theo đường dẫn (xem `@/lib/site-chrome`) rồi công bố kết quả qua `data-tone`
+// trên thẻ <header>. Mọi thứ trong này cần biết bản màu thì đọc qua biến thể
+// `group-data-[tone=light]/header:` — không thể nhận prop, vì giá trị đó tính ở
+// client còn đây là Server Component.
 export async function SiteHeader({
-  /** Chìm trên hero: header `fixed` (hero bắt đầu từ y=0 và chạy dưới nó) và
-   *  tint gần như trong veo cho tới khi cuộn. Chỉ bật ở trang có hero ảnh tràn
-   *  viền; trang thường dùng `sticky` + tint đậm sẵn. */
-  overlay = false,
-  /** Bản màu của băng kính — chọn theo thứ nằm SAU LƯNG header ở đầu trang:
-   *  `dark` khi trang mở bằng ảnh/dải tối, `light` khi trang mở bằng nền sáng
-   *  (danh sách, tra cứu). Xem HeaderTone trong header-chrome.tsx. */
-  tone = "dark",
+  heroLayout,
 }: {
-  overlay?: boolean;
-  tone?: HeaderTone;
-} = {}) {
-  const light = tone === "light";
+  heroLayout: HeroLayout;
+}) {
   const [session, settings, provinces] = await Promise.all([
     auth(),
     getSettings(),
@@ -80,7 +77,7 @@ export async function SiteHeader({
   const provinceNames = provinces.map((p) => p.name);
 
   return (
-    <HeaderChrome overlay={overlay} tone={tone}>
+    <HeaderChrome heroLayout={heroLayout}>
       {/* Băng nền tràn viền do HeaderChrome vẽ; ở đây chỉ bó NỘI DUNG vào
           `max-w-7xl` — trùng container của hero và các section bên dưới nên
           logo/nav thẳng hàng với nội dung trang.
@@ -88,12 +85,7 @@ export async function SiteHeader({
           không tan vào nội dung trôi phía sau. Cố ý giữ nhẹ, đậm hơn là nhoè.
           Bản `light` KHÔNG có bóng chữ: mực trên nền sáng thì bóng tối chỉ làm
           chữ bẩn, và ở đây cũng không có ảnh nào trôi phía sau để mà tách. */}
-      <div
-        className={cn(
-          "mx-auto flex h-16 w-full max-w-7xl items-center gap-1 px-4 sm:gap-2 sm:px-6",
-          !light && "[text-shadow:0_1px_2px_rgb(0_0_0/0.28)]",
-        )}
-      >
+      <div className="mx-auto flex h-16 w-full max-w-7xl items-center gap-1 px-4 [text-shadow:0_1px_2px_rgb(0_0_0/0.28)] group-data-[tone=light]/header:[text-shadow:none] sm:gap-2 sm:px-6">
         {/* Cụm trái — điều hướng mobile + logo */}
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           <MobileNav
@@ -113,10 +105,7 @@ export async function SiteHeader({
               width={31}
               height={36}
               priority
-              className={cn(
-                "h-8 w-auto sm:h-11",
-                !light && "drop-shadow-[0_1px_6px_rgba(0,0,0,0.55)]",
-              )}
+              className="h-8 w-auto drop-shadow-[0_1px_6px_rgba(0,0,0,0.55)] group-data-[tone=light]/header:drop-shadow-none sm:h-11"
             />
             {/* Wordmark là chữ MỘT MÀU PHẲNG #0E3E27 (xanh rất tối) → trên băng
                 kính tối là chìm, nên đảo thành trắng bằng `brightness-0 invert`.
@@ -129,11 +118,7 @@ export async function SiteHeader({
               width={77}
               height={16}
               priority
-              className={cn(
-                "h-3.5 w-auto sm:h-4.5",
-                !light &&
-                  "brightness-0 invert drop-shadow-[0_1px_6px_rgba(0,0,0,0.5)]",
-              )}
+              className="h-3.5 w-auto brightness-0 invert drop-shadow-[0_1px_6px_rgba(0,0,0,0.5)] group-data-[tone=light]/header:brightness-100 group-data-[tone=light]/header:invert-0 group-data-[tone=light]/header:drop-shadow-none sm:h-4.5"
             />
           </Link>
         </div>

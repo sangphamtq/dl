@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { Heart } from "@/components/icons";
 import { cn } from "@/lib/utils";
-import { toggleThreadLike, toggleReplyLike } from "@/app/cong-dong/actions";
+import { toggleThreadLike, toggleReplyLike } from "@/app/(site)/cong-dong/actions";
 
 export function ThreadLikeButton({
   kind,

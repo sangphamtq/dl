@@ -8,7 +8,7 @@ import { PROVINCE_COUNT, PROVINCE_NAME_BY_SLUG } from "@/lib/provinces";
 import { REGIONS } from "@/lib/regions";
 import { VietnamMap } from "@/components/account/vietnam-map";
 import { ShareMapButton } from "@/components/account/share-map-button";
-import { toggleCheckIn } from "@/app/diem-den/check-in-actions";
+import { toggleCheckIn } from "@/app/(site)/diem-den/check-in-actions";
 
 // Checklist nhóm theo miền; mỗi miền tỉnh sắp theo bảng chữ cái tiếng Việt.
 const REGION_GROUPS = REGIONS.map((r) => ({

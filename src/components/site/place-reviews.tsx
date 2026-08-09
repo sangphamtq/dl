@@ -47,7 +47,7 @@ import {
 import { LoginDrawer } from "@/components/site/login-drawer";
 import { StarRating } from "@/components/site/star-rating";
 import { SectionHeading } from "@/components/site/section-heading";
-import { submitReview, deleteReview } from "@/app/diem-den/review-actions";
+import { submitReview, deleteReview } from "@/app/(site)/diem-den/review-actions";
 import {
   REVIEW_STANCES,
   REVIEW_HIGHLIGHTS,

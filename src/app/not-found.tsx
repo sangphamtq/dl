@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
+import { getSettings } from "@/lib/settings";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
 
@@ -9,10 +10,15 @@ export const metadata = {
   title: "Không tìm thấy trang · Halivivu",
 };
 
-export default function NotFound() {
+// `not-found.tsx` ở gốc bắt cả những đường dẫn KHÔNG thuộc route group `(site)`
+// nên nó không dùng được layout chung — phải tự render vỏ, và tự lấy cấu hình
+// hero để chuyền cho header.
+export default async function NotFound() {
+  const { heroLayout } = await getSettings();
+
   return (
     <div className="flex flex-1 flex-col">
-      <SiteHeader />
+      <SiteHeader heroLayout={heroLayout} />
 
       <main className="flex flex-1 items-center px-4 py-20 sm:px-6 sm:py-28">
         <div className="mx-auto w-full max-w-3xl">

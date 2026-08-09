@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { deleteThread } from "@/app/cong-dong/actions";
+import { deleteThread } from "@/app/(site)/cong-dong/actions";
 import { ReportDialog } from "./report-button";
 
 // Nút ••• ở góc bài — gộp Báo cáo (người khác) + Xóa (chính chủ/staff).

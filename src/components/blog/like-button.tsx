@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { Heart } from "@/components/icons";
 import { cn } from "@/lib/utils";
-import { toggleLike } from "@/app/blog/actions";
+import { toggleLike } from "@/app/(site)/blog/actions";
 
 export function LikeButton({
   postId,
