@@ -38,7 +38,7 @@ export function HeaderSearch() {
         aria-label="Tìm kiếm"
         // Ô VIỀN MẢNH trong suốt — cùng ngôn ngữ với hairline đóng khung thanh,
         // không đắp thêm một mảng đặc lên nội dung phía sau.
-        className="hidden h-10 w-36 items-center gap-1.5 rounded-full border border-white/25 bg-white/5 pl-3.5 pr-4 text-sm text-white transition-colors hover:bg-white/15 lg:flex xl:w-44"
+        className="hidden h-10 w-36 items-center gap-1.5 rounded-full border border-foreground/25 bg-foreground/5 pl-3.5 pr-4 text-sm text-foreground transition-colors hover:bg-foreground/15 lg:flex xl:w-44"
       >
         <Search className="size-4 shrink-0" aria-hidden />
         <span className="flex-1 text-left">Tìm kiếm</span>
@@ -51,7 +51,7 @@ export function HeaderSearch() {
             type="button"
             aria-label="Tìm kiếm"
             onClick={() => setOpen(true)}
-            className="grid size-10 place-items-center rounded-full text-white transition-colors hover:bg-white/15 lg:hidden"
+            className="grid size-10 place-items-center rounded-full text-foreground transition-colors hover:bg-foreground/15 lg:hidden"
           >
             <Search className="size-4" aria-hidden />
           </button>

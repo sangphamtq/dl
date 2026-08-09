@@ -13,8 +13,9 @@ import { DaDenNavLink } from "./da-den-nav-link";
 import { LichTrinhNavLink } from "./lich-trinh-nav-link";
 import { HeaderSearch } from "./header-search";
 import { SiteNav, type NavEntry, type NavLink } from "./site-nav";
-import { HeaderChrome } from "./header-chrome";
+import { HeaderChrome, type HeaderTone } from "./header-chrome";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 // Nav: 1 nhóm dropdown (click nhãn → `href`) + 2 link phẳng.
 //
@@ -55,12 +56,17 @@ const MOBILE_LINKS: NavLink[] = NAV.flatMap((e) => {
 export async function SiteHeader({
   /** Chìm trên hero: header `fixed` (hero bắt đầu từ y=0 và chạy dưới nó) và
    *  tint gần như trong veo cho tới khi cuộn. Chỉ bật ở trang có hero ảnh tràn
-   *  viền; trang thường dùng `sticky` + tint đậm sẵn. Cả hai chế độ đều là băng
-   *  kính chữ trắng — header không bao giờ đặc lại. */
+   *  viền; trang thường dùng `sticky` + tint đậm sẵn. */
   overlay = false,
+  /** Bản màu của băng kính — chọn theo thứ nằm SAU LƯNG header ở đầu trang:
+   *  `dark` khi trang mở bằng ảnh/dải tối, `light` khi trang mở bằng nền sáng
+   *  (danh sách, tra cứu). Xem HeaderTone trong header-chrome.tsx. */
+  tone = "dark",
 }: {
   overlay?: boolean;
+  tone?: HeaderTone;
 } = {}) {
+  const light = tone === "light";
   const [session, settings, provinces] = await Promise.all([
     auth(),
     getSettings(),
@@ -74,13 +80,20 @@ export async function SiteHeader({
   const provinceNames = provinces.map((p) => p.name);
 
   return (
-    <HeaderChrome overlay={overlay}>
+    <HeaderChrome overlay={overlay} tone={tone}>
       {/* Băng nền tràn viền do HeaderChrome vẽ; ở đây chỉ bó NỘI DUNG vào
           `max-w-7xl` — trùng container của hero và các section bên dưới nên
           logo/nav thẳng hàng với nội dung trang.
           text-shadow mảnh vì kính rất nhạt: chữ trắng cần một chút viền tối để
-          không tan vào nội dung trôi phía sau. Cố ý giữ nhẹ, đậm hơn là nhoè. */}
-      <div className="mx-auto flex h-16 w-full max-w-7xl items-center gap-1 px-4 [text-shadow:0_1px_2px_rgb(0_0_0/0.28)] sm:gap-2 sm:px-6">
+          không tan vào nội dung trôi phía sau. Cố ý giữ nhẹ, đậm hơn là nhoè.
+          Bản `light` KHÔNG có bóng chữ: mực trên nền sáng thì bóng tối chỉ làm
+          chữ bẩn, và ở đây cũng không có ảnh nào trôi phía sau để mà tách. */}
+      <div
+        className={cn(
+          "mx-auto flex h-16 w-full max-w-7xl items-center gap-1 px-4 sm:gap-2 sm:px-6",
+          !light && "[text-shadow:0_1px_2px_rgb(0_0_0/0.28)]",
+        )}
+      >
         {/* Cụm trái — điều hướng mobile + logo */}
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           <MobileNav
@@ -100,18 +113,27 @@ export async function SiteHeader({
               width={31}
               height={36}
               priority
-              className="h-8 w-auto drop-shadow-[0_1px_6px_rgba(0,0,0,0.55)] sm:h-11"
+              className={cn(
+                "h-8 w-auto sm:h-11",
+                !light && "drop-shadow-[0_1px_6px_rgba(0,0,0,0.55)]",
+              )}
             />
             {/* Wordmark là chữ MỘT MÀU PHẲNG #0E3E27 (xanh rất tối) → trên băng
                 kính tối là chìm, nên đảo thành trắng bằng `brightness-0 invert`.
-                Mascot bên trái KHÔNG đụng tới nên logo vẫn giữ màu. */}
+                Mascot bên trái KHÔNG đụng tới nên logo vẫn giữ màu.
+                Bản `light` giữ NGUYÊN màu gốc — đó mới là màu thương hiệu, đảo
+                trắng trên nền sáng thì mất hẳn chữ. */}
             <Image
               src="/logo_wordmark.png"
               alt={settings.siteName}
               width={77}
               height={16}
               priority
-              className="h-3.5 w-auto brightness-0 invert drop-shadow-[0_1px_6px_rgba(0,0,0,0.5)] sm:h-4.5"
+              className={cn(
+                "h-3.5 w-auto sm:h-4.5",
+                !light &&
+                  "brightness-0 invert drop-shadow-[0_1px_6px_rgba(0,0,0,0.5)]",
+              )}
             />
           </Link>
         </div>
@@ -146,7 +168,7 @@ export async function SiteHeader({
               {/* Hairline ngăn "hành động" (tiện ích) với "tài khoản" */}
               <span
                 aria-hidden
-                className="mx-1.5 h-6 w-px bg-white/25"
+                className="mx-1.5 h-6 w-px bg-foreground/25"
               />
               <UserMenu
                 user={{
@@ -163,7 +185,7 @@ export async function SiteHeader({
             <div className="ml-1 flex items-center gap-2">
               <Link
                 href="/login"
-                className="hidden h-10 items-center rounded-full border border-white/30 px-4 text-sm font-semibold text-white transition-colors hover:bg-white/10 sm:inline-flex"
+                className="hidden h-10 items-center rounded-full border border-foreground/30 px-4 text-sm font-semibold text-foreground transition-colors hover:bg-foreground/10 sm:inline-flex"
               >
                 Đăng ký
               </Link>

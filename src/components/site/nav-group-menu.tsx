@@ -29,7 +29,7 @@ export function NavLabel({
       className={cn(
         // Gạch mảnh 1px và thụt vào 6px mỗi bên — cố ý NGẮN HƠN chữ một chút để
         // nó đọc như một dấu nhấn, không phải cái gạch chân của link.
-        "relative py-1 after:absolute after:inset-x-1.5 after:-bottom-px after:h-px after:bg-white after:transition-opacity after:duration-200 after:content-['']",
+        "relative py-1 after:absolute after:inset-x-1.5 after:-bottom-px after:h-px after:bg-current after:transition-opacity after:duration-200 after:content-['']",
         // Chữ nav LUÔN trắng hẳn (không hạ opacity để phân biệt trạng thái) —
         // trên băng kính nhạt, chữ mờ là mất hút. Phản hồi hover chuyển hết sang
         // gạch chân: hiện mờ khi rê, đặc khi đang ở trang đó.
@@ -79,7 +79,7 @@ export function NavGroupMenu({
         aria-current={active ? "page" : undefined}
         aria-expanded={open}
         onClick={() => setOpen(false)}
-        className="group/nav relative flex h-full items-center gap-1 pl-3 pr-2 text-base font-medium text-white"
+        className="group/nav relative flex h-full items-center gap-1 pl-3 pr-2 text-base font-medium text-foreground"
       >
         <NavLabel active={active}>{label}</NavLabel>
         <ChevronDown

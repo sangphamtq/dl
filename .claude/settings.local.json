@@ -16,7 +16,9 @@
       "Bash(pkill -f \"next-server\")",
       "Bash(curl -s http://localhost:3000/login)",
       "Bash(curl -s http://localhost:3000/api/auth/providers)",
-      "Bash(pnpm lint *)"
+      "Bash(pnpm lint *)",
+      "Bash(curl -s -o /dev/null http://localhost:3000/diem-den)",
+      "Bash('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' --headless --disable-gpu --hide-scrollbars --screenshot=narrow3.png --window-size=760,780 --virtual-time-budget=9000 file://__TRACKED_VAR__/f320.html)"
     ]
   }
 }

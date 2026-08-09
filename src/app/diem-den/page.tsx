@@ -7,11 +7,7 @@ import {
   type DestItem,
   type ProvinceItem,
 } from "@/components/site/destination-filter";
-import {
-  PlaceIndexHero,
-  type HeroDest,
-} from "@/components/site/place-index-hero";
-import { coverUrl } from "@/lib/place-image";
+import Link from "next/link";
 import { REGION_LABELS, regionOf } from "@/lib/regions";
 
 export const metadata = {
@@ -28,67 +24,51 @@ const cover = {
 } as const;
 
 export default async function DiemDenPage() {
-  const [destinations, provinces, spotCount, eateryCount, activityCount] =
-    await Promise.all([
-      prisma.place.findMany({
-        where: { kind: "destination", ...pub },
-        orderBy: [{ isFeatured: "desc" }, { popularity: "desc" }, { name: "asc" }],
-        select: {
-          slug: true,
-          name: true,
-          tagline: true,
-          isFeatured: true,
-          viewCount: true,
-          images: cover,
-          parent: { select: { name: true, slug: true } },
-        },
-      }),
-      prisma.place.findMany({
-        where: { kind: "province", ...pub },
-        orderBy: [{ name: "asc" }],
-        select: {
-          slug: true,
-          name: true,
-          isFeatured: true,
-          _count: {
-            select: {
-              children: { where: pub },
-              spots: { where: pub },
-              activities: { where: pub },
-              // Đặc sản không đếm: phần món ăn đã tắt hiển thị, một nơi chỉ có
-              // đặc sản mà gắn cờ "có nội dung" thì bấm vào ra trang trắng.
-              eateries: { where: pub },
-              accommodations: { where: pub },
-            },
+  const [destinations, provinces] = await Promise.all([
+    prisma.place.findMany({
+      where: { kind: "destination", ...pub },
+      orderBy: [{ isFeatured: "desc" }, { popularity: "desc" }, { name: "asc" }],
+      select: {
+        slug: true,
+        name: true,
+        tagline: true,
+        isFeatured: true,
+        viewCount: true,
+        images: cover,
+        parent: { select: { name: true, slug: true } },
+      },
+    }),
+    prisma.place.findMany({
+      where: { kind: "province", ...pub },
+      orderBy: [{ name: "asc" }],
+      select: {
+        slug: true,
+        name: true,
+        isFeatured: true,
+        _count: {
+          select: {
+            children: { where: pub },
+            spots: { where: pub },
+            activities: { where: pub },
+            // Đặc sản không đếm: phần món ăn đã tắt hiển thị, một nơi chỉ có
+            // đặc sản mà gắn cờ "có nội dung" thì bấm vào ra trang trắng.
+            eateries: { where: pub },
+            accommodations: { where: pub },
           },
         },
-      }),
-      prisma.spot.count({ where: pub }),
-      prisma.eatery.count({ where: pub }),
-      prisma.activity.count({ where: pub }),
-    ]);
+      },
+    }),
+  ]);
 
   const isEmpty = provinces.length === 0 && destinations.length === 0;
 
-  const stats = [
-    { icon: "compass", value: destinations.length, label: "điểm đến" },
-    { icon: "map-pin", value: provinces.length, label: "tỉnh thành" },
-    spotCount > 0 && { icon: "signpost", value: spotCount, label: "địa điểm" },
-    eateryCount + activityCount > 0 && {
-      icon: "sparkles",
-      value: eateryCount + activityCount,
-      label: "trải nghiệm",
-    },
-  ].filter(Boolean) as { icon: string; value: number; label: string }[];
-
-  // Điểm đến nổi bật (đã sắp featured → popular): [0] làm ảnh nền hero điện ảnh,
-  // các mục sau làm chip gợi ý.
-  const heroDests: HeroDest[] = destinations.slice(0, 5).map((d, i) => ({
-    slug: d.slug,
-    name: d.name,
-    parentName: d.parent?.name ?? null,
-    url: coverUrl(d.images, d.slug, i === 0 ? 1920 : 640, i === 0 ? 1080 : 640),
-  }));
+  // Chỉ MỘT con số kèm theo, và nó nói về đúng thứ trang này liệt kê: số tỉnh
+  // THẬT SỰ có điểm đến, lấy ngay từ danh sách vừa truy vấn.
+  // KHÔNG dùng `provinces.length` (63): phần lớn trong số đó đang là chip "Đang
+  // cập nhật", nói "khắp 63 tỉnh thành" là hứa nhiều hơn thứ đang có.
+  const provinceCount = new Set(
+    destinations.map((d) => d.parent?.slug).filter(Boolean),
+  ).size;
 
   const destItems: DestItem[] = destinations.map((d) => ({
     slug: d.slug,
@@ -126,11 +106,15 @@ export default async function DiemDenPage() {
 
   return (
     <div className="flex flex-1 flex-col">
-      <SiteHeader />
+      {/* `tone="light"`: đỉnh trang này là nền TRẮNG (không hero, không dải
+          màu), nên băng kính tối mặc định ra một vệt xám vắt ngang và chữ trắng
+          trên đó chỉ còn ~1.7:1. Bản sáng là kính trắng đục + chữ mực + hairline
+          `border` — cùng vạch ngăn với thanh lọc dính ngay bên dưới.
+          KHÔNG `overlay`: chế độ đó chỉ đúng khi có một dải hero để header chạy
+          đè lên. */}
+      <SiteHeader tone="light" />
 
       <main className="flex-1">
-        <PlaceIndexHero dests={heroDests} stats={isEmpty ? [] : stats} />
-
         {isEmpty ? (
           <div className="mx-auto max-w-7xl px-4 py-24 text-center sm:px-6">
             <Ic
@@ -144,6 +128,39 @@ export default async function DiemDenPage() {
           </div>
         ) : (
           <div className="mx-auto max-w-7xl px-4 pb-16 pt-8 sm:px-6 sm:pb-24 sm:pt-10">
+            {/* Đầu trang: tên trang + MỘT CÂU. Không phải hero.
+                Bản trước ở đây là hai mảnh rời nhau và cả hai đều đọc ra như
+                khuôn mẫu dựng sẵn:
+                  · một dãy bốn con số ngăn bằng dấu chấm giữa ("31 điểm đến ·
+                    63 tỉnh thành · 18 địa điểm · 34 trải nghiệm"). Hai con số
+                    cuối còn chẳng phải thứ trang này liệt kê, và mọi con số ở
+                    đó đều không giúp ai quyết định gì — mỗi miền bên dưới đã
+                    tự khai số của mình rồi;
+                  · một viên nút viền treo lơ lửng ở góc đối diện tiêu đề. Mà
+                    `/ban-do` đã nằm sẵn trong menu "Khám phá" trên desktop VÀ
+                    là một tab của thanh dưới trên mobile — dựng thêm một nút
+                    thứ ba cho cùng một chỗ chỉ là chiếm chỗ.
+                Gộp cả hai vào một câu đọc được: con số nằm trong ngữ pháp thay
+                vì xếp thành hàng, và bản đồ được nhắc đúng lúc nói tới lý do
+                dùng nó (chọn theo vị trí) chứ không phải một nút không đầu
+                không đuôi ở góc. */}
+            <header className="mb-7 max-w-2xl">
+              <h1 className="font-[family-name:var(--font-display)] text-[clamp(1.75rem,3.4vw,2.5rem)] font-extrabold leading-[1.1] tracking-[-0.035em]">
+                Điểm đến Việt Nam
+              </h1>
+              <p className="mt-2.5 text-sm leading-relaxed text-muted-foreground sm:text-base">
+                <Num>{destinations.length}</Num> điểm đến ở{" "}
+                <Num>{provinceCount}</Num> tỉnh thành — hoặc{" "}
+                <Link
+                  href="/ban-do"
+                  className="font-medium text-primary underline decoration-primary/30 underline-offset-4 transition-colors hover:decoration-primary"
+                >
+                  mở bản đồ
+                </Link>{" "}
+                để chọn theo vị trí.
+              </p>
+            </header>
+
             <DestinationFilter
               items={destItems}
               provinces={provinceItems}
@@ -158,4 +175,13 @@ export default async function DiemDenPage() {
   );
 }
 
-
+// Con số trong câu: đậm hơn chữ xung quanh một bậc và về màu chữ chính, đủ để
+// mắt bắt được mà vẫn nằm trong dòng văn. `tabular-nums` cho hai con số cùng
+// bề ngang chữ số.
+function Num({ children }: { children: React.ReactNode }) {
+  return (
+    <strong className="font-semibold tabular-nums text-foreground">
+      {children}
+    </strong>
+  );
+}

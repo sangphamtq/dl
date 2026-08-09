@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Ic } from "@/components/icon";
+import { ArrowUpRight, MapPin, Search, Star, X } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { coverUrl } from "@/lib/place-image";
 import { Rail } from "@/components/site/rail";
@@ -36,6 +36,14 @@ const SORTS: { key: SortKey; label: string }[] = [
   { key: "az", label: "A → Z" },
 ];
 
+// Cùng khuôn chữ "micro" với StayDirectory/FoodMenu: nhãn trên thẻ và nhãn đầu
+// khối đều là chữ hoa nhỏ giãn ký tự, để mọi lưới thẻ trong site đọc ra cùng
+// một giọng.
+const MICRO = "text-[0.6rem] font-semibold uppercase tracking-[0.14em]";
+
+// Kính mờ trên ảnh — cùng chất liệu với huy hiệu xác minh ở Lưu trú.
+const GLASS = "rounded-full bg-black/35 text-white backdrop-blur-md";
+
 // Bỏ dấu để tìm kiếm không phân biệt dấu/hoa thường.
 function norm(s: string): string {
   return s
@@ -66,8 +74,9 @@ function sortItems(items: DestItem[], key: SortKey): DestItem[] {
   });
 }
 
-// Điểm đến trình bày theo MIỀN, mỗi miền một rail cuộn ngang (kiểu app du lịch).
-// region đã tính sẵn ở server; còn tìm kiếm + sắp xếp.
+// Điểm đến trình bày theo MIỀN, mỗi miền một rail cuộn ngang (kiểu app du lịch)
+// rồi tới danh sách tỉnh của miền đó. region đã tính sẵn ở server; còn tìm kiếm
+// + sắp xếp.
 export function DestinationFilter({
   items,
   provinces,
@@ -86,6 +95,14 @@ export function DestinationFilter({
   // vào miền đích để nav không nhấp nháy qua miền trung gian.
   const lockedRegion = useRef<number | null>(null);
 
+  // Viên sáng trượt của nav miền: đo từ chính nút đang chọn thay vì ép mọi nút
+  // bằng bề rộng nhau. `null` khi chưa đo được (lần render đầu, hoặc chưa xác
+  // định miền) — lúc đó không vẽ viên nào, nên nó không bao giờ trượt từ mép
+  // trái vào chỗ đúng khi mới tải trang.
+  const navRef = useRef<HTMLElement>(null);
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [pill, setPill] = useState<{ x: number; w: number } | null>(null);
+
   const q = norm(query);
   const matches = (d: DestItem) =>
     !q ||
@@ -93,16 +110,25 @@ export function DestinationFilter({
     (d.parentName ? norm(d.parentName).includes(q) : false);
 
   // Mỗi miền: rail điểm đến + danh sách tỉnh (ẩn tỉnh khi đang tìm kiếm).
+  // Tỉnh tách làm hai: đã có nội dung (chip bấm được) và đang cập nhật. Trước
+  // đây hai loại trộn chung theo bảng chữ cái, nên trong một dải 25 chip thì
+  // chip bấm được và chip xám nằm xen kẽ ngẫu nhiên — người lướt không đọc ra
+  // được cái nào đi tới đâu. Tách ra thì phần bấm được đứng thành một khối.
   const sections = regions
-    .map((r) => ({
-      label: r,
-      dests: sortItems(
-        items.filter((d) => d.region === r && matches(d)),
-        sort,
-      ),
-      provs: q ? [] : provinces.filter((p) => p.region === r),
-    }))
-    .filter((g) => g.dests.length > 0 || g.provs.length > 0);
+    .map((r) => {
+      const provs = q ? [] : provinces.filter((p) => p.region === r);
+      return {
+        label: r,
+        dests: sortItems(
+          items.filter((d) => d.region === r && matches(d)),
+          sort,
+        ),
+        provsOpen: provs.filter((p) => p.hasContent),
+        provsSoon: provs.filter((p) => !p.hasContent),
+        provCount: provs.length,
+      };
+    })
+    .filter((g) => g.dests.length > 0 || g.provCount > 0);
 
   // Scroll-spy: tô đậm miền đang xem trên nav.
   useEffect(() => {
@@ -163,16 +189,49 @@ export function DestinationFilter({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, sort, sections.length]);
 
+  // Đo lại viên sáng mỗi khi đổi miền đang xem, đổi số miền (lọc/tìm kiếm), hay
+  // nav đổi bề rộng (xoay máy, đổi khổ cửa sổ). `offsetLeft` tính theo `nav` vì
+  // nav là `relative` — tức là offsetParent của các nút.
+  useEffect(() => {
+    const nav = navRef.current;
+    const el = tabRefs.current[activeRegion];
+    if (!nav || !el || activeRegion < 0) {
+      setPill(null);
+      return;
+    }
+    const measure = () => setPill({ x: el.offsetLeft, w: el.offsetWidth });
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(nav);
+    return () => ro.disconnect();
+  }, [activeRegion, sections.length]);
+
   return (
     <div>
-      {/* Toolbar sticky: tìm kiếm + nav miền + sắp xếp — cùng một hàng */}
-      <div className="sticky top-0 lg:top-16 z-30 -mx-4 border-b border-border/60 bg-background/85 backdrop-blur sm:-mx-6">
-        <div className="flex items-center gap-3 overflow-x-auto px-4 py-3 sm:px-6 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {/* Thanh điều khiển dính: tìm kiếm · chuyển miền · sắp xếp.
+          BA nhóm, HAI hình dạng — cố ý. Bản cũ để miền và sắp xếp trong hai
+          track viên thuốc giống hệt nhau, cạnh nhau, nên không đọc ra được cái
+          nào đang lọc và cái nào đang nhảy chỗ. Nay:
+          · chuyển miền = TAB có gạch chân — nó chỉ "bạn đang ở đâu", đúng việc
+            của scroll-spy;
+          · sắp xếp = segmented viên nổi kiểu iOS — nó là một lựa chọn của người
+            dùng, giữ nguyên tới khi đổi.
+          Cũng bỏ luôn viên nền xanh đặc: hai khối xanh cạnh nhau trong một
+          thanh mảnh là hai vệt màu tranh nhau, trong khi cả trang lấy ẢNH làm
+          chủ. */}
+      <div className="sticky top-0 z-30 -mx-4 border-b border-border/60 bg-background/85 backdrop-blur sm:-mx-6 lg:top-16">
+        {/* HAI HÀNG dưới sm, MỘT hàng từ sm. Nhồi cả ba nhóm vào một hàng ở khổ
+            320–390px thì nhóm sắp xếp bị đẩy hẳn ra ngoài mép phải — có mặt
+            nhưng không ai thấy để mà bấm. Ô tìm kiếm lên hàng riêng (rộng hết
+            khổ, dễ chạm), hai nhóm nút còn lại đứng chung hàng dưới.
+            `sm:contents`: từ sm bọc ngoài biến mất khỏi layout nên nav và nhóm
+            sắp xếp thành con trực tiếp của hàng — `ml-auto` mới đẩy được nhóm
+            sắp xếp về mép phải như cũ. */}
+        <div className="flex flex-col gap-2 px-4 py-2.5 sm:flex-row sm:items-center sm:gap-4 sm:px-6">
           {/* Tìm kiếm */}
-          <div className="relative w-44 shrink-0 sm:w-60">
-            <Ic
-              icon="search"
-              className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+          <div className="relative sm:w-56 sm:shrink-0">
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
               aria-hidden
             />
             <input
@@ -181,78 +240,171 @@ export function DestinationFilter({
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Tìm điểm đến…"
               aria-label="Tìm điểm đến"
-              className="h-10 w-full rounded-full border border-transparent bg-muted pl-10 pr-9 text-sm outline-none transition-colors focus:border-primary/40 focus:bg-background focus:ring-2 focus:ring-primary/20 [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none"
+              className="h-9 w-full rounded-full border border-border bg-card pl-9 pr-8 text-sm outline-none transition-colors placeholder:text-muted-foreground/80 focus:border-primary/50 focus:ring-2 focus:ring-primary/15 [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none"
             />
             {query && (
               <button
                 type="button"
                 onClick={() => setQuery("")}
                 aria-label="Xóa tìm kiếm"
-                className="absolute right-2.5 top-1/2 grid size-6 -translate-y-1/2 place-items-center rounded-full text-muted-foreground hover:text-foreground"
+                className="absolute right-2 top-1/2 grid size-6 -translate-y-1/2 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               >
-                <Ic icon="x" className="size-4" aria-hidden />
+                <X className="size-3.5" aria-hidden />
               </button>
             )}
           </div>
 
-          {/* Nav miền */}
-          {sections.length > 1 && (
-            <Segmented label="Chuyển nhanh theo miền">
-              {sections.map((g, i) => (
-                <SegButton
-                  key={g.label}
-                  active={activeRegion === i}
-                  onClick={() => {
-                    setActiveRegion(i);
-                    lockedRegion.current = i;
-                    document
-                      .getElementById(`mien-${i}`)
-                      ?.scrollIntoView({ behavior: "smooth" });
-                  }}
-                >
-                  {shortRegion(g.label)}
-                </SegButton>
-              ))}
-            </Segmented>
-          )}
-
-          {/* Sắp xếp */}
-          <Segmented label="Sắp xếp" className="ml-auto">
-            {SORTS.map((s) => (
-              <SegButton
-                key={s.key}
-                active={sort === s.key}
-                onClick={() => setSort(s.key)}
+          {/* `md:contents` chứ không phải `sm:contents`: ở đúng dải 640–767px
+              ba nhóm cộng lại vẫn rộng hơn cột nội dung, mà `contents` thì bọc
+              ngoài biến mất nên không còn ai cuộn được — nhóm sắp xếp lại lòi
+              ra ngoài mép. Giữ bọc ngoài (cuộn ngang được) tới khi đủ chỗ. */}
+          <div className="flex items-center gap-1.5 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] sm:min-w-0 sm:flex-1 md:contents [&::-webkit-scrollbar]:hidden">
+            {/* Chuyển nhanh theo miền — VIÊN SÁNG TRƯỢT.
+                Bản trước là gạch chân 2px dưới nhãn đang xem: đúng nghĩa nhưng
+                đứng cạnh nhóm sắp xếp thì nó là thứ mảnh nhất trong thanh, gần
+                như biến mất.
+                Ở đây viên nền `primary/10` bám lấy đúng nhãn đang xem và TRƯỢT
+                sang nhãn kế khi người dùng cuộn qua miền khác — chuyển động
+                không phải trang trí, nó là chính scroll-spy hiện hình. Kích
+                thước viên đo từ nút thật (`offsetLeft/offsetWidth`) nên nhãn cứ
+                giữ bề rộng tự nhiên: ba nhãn dài ngắn khác nhau mà ép bằng nhau
+                thì thanh phình thêm cả trăm pixel ở khổ hẹp.
+                Vẫn KHÁC hẳn nhóm sắp xếp bên phải (rãnh xám + viên trắng nổi):
+                bên này không có rãnh, chỉ một vệt màu — hai điều khiển cạnh
+                nhau không bị đọc nhầm thành một cặp sinh đôi. */}
+            {sections.length > 1 && (
+              <nav
+                ref={navRef}
+                aria-label="Chuyển nhanh theo miền"
+                className="relative flex shrink-0 items-center"
               >
-                {s.label}
-              </SegButton>
-            ))}
-          </Segmented>
+                {pill && (
+                  <span
+                    aria-hidden
+                    style={{
+                      width: pill.w,
+                      transform: `translateX(${pill.x}px)`,
+                    }}
+                    className="pointer-events-none absolute inset-y-1 left-0 rounded-full bg-primary/10 transition-all duration-300 ease-out motion-reduce:transition-none"
+                  />
+                )}
+                {sections.map((g, i) => (
+                  <button
+                    key={g.label}
+                    type="button"
+                    ref={(el) => {
+                      tabRefs.current[i] = el;
+                    }}
+                    aria-current={activeRegion === i ? "true" : undefined}
+                    onClick={() => {
+                      setActiveRegion(i);
+                      lockedRegion.current = i;
+                      document
+                        .getElementById(`mien-${i}`)
+                        ?.scrollIntoView({ behavior: "smooth" });
+                    }}
+                    className={cn(
+                      // Đệm hẹp ở khổ base: 320px chỉ vừa đúng cho cả ba nhóm
+                      // của thanh, rộng thêm một chút là nhóm sắp xếp lòi khỏi
+                      // mép. Từ sm mới nới ra cho viên sáng có chỗ thở.
+                      "relative h-9 shrink-0 whitespace-nowrap rounded-full px-1.5 text-sm font-medium transition-colors sm:px-3.5",
+                      activeRegion === i
+                        ? "text-primary"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {shortRegion(g.label)}
+                  </button>
+                ))}
+              </nav>
+            )}
+
+            {/* Sắp xếp */}
+            <div
+              role="group"
+              aria-label="Sắp xếp"
+              className="ml-auto flex h-9 w-fit shrink-0 items-center rounded-full bg-muted p-0.5 sm:gap-0.5 sm:p-1"
+            >
+              {SORTS.map((s) => (
+                <button
+                  key={s.key}
+                  type="button"
+                  onClick={() => setSort(s.key)}
+                  aria-pressed={sort === s.key}
+                  className={cn(
+                    "inline-flex h-full items-center whitespace-nowrap rounded-full px-1.5 text-[0.8125rem] font-medium transition-colors sm:px-3",
+                    sort === s.key
+                      ? "bg-card text-foreground shadow-sm ring-1 ring-border/60"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
       {sections.length === 0 ? (
-        <p className="mt-10 text-sm text-muted-foreground">
-          Không tìm thấy điểm đến phù hợp.
-        </p>
+        <div className="mt-16 flex flex-col items-center text-center">
+          <span
+            aria-hidden
+            className="grid size-12 place-items-center rounded-full bg-muted text-muted-foreground"
+          >
+            <Search className="size-5" />
+          </span>
+          <p className="mt-4 font-[family-name:var(--font-display)] text-lg font-semibold tracking-tight">
+            Không tìm thấy điểm đến nào
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Thử một tên khác, hoặc tên tỉnh chứa điểm đến đó.
+          </p>
+          <button
+            type="button"
+            onClick={() => setQuery("")}
+            className="mt-5 inline-flex h-9 items-center rounded-full border border-border px-4 text-sm font-medium transition-colors hover:border-primary/40 hover:text-primary"
+          >
+            Xóa tìm kiếm
+          </button>
+        </div>
       ) : (
-        <div className="mt-8 space-y-14">
+        <div className="mt-10 space-y-16 sm:space-y-20">
           {sections.map((g, i) => (
-            <section key={g.label} id={`mien-${i}`} className="scroll-mt-36">
-              <div className="mb-5 flex items-baseline gap-3">
-                <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+            <section
+              key={g.label}
+              id={`mien-${i}`}
+              // scroll-mt = chiều cao thanh dính (2 hàng dưới sm, 1 hàng từ sm)
+              // cộng header 4rem từ lg — thiếu thì tiêu đề miền chui xuống dưới
+              // thanh khi bấm chuyển nhanh.
+              className="scroll-mt-28 sm:scroll-mt-20 lg:scroll-mt-32"
+            >
+              {/* Tiêu đề miền: tên cỡ lớn, con số đứng NGAY CẠNH trên cùng
+                  đường chân chữ — đọc liền thành một câu ("Miền Bắc, 12 điểm
+                  đến ở 25 tỉnh thành").
+                  Đã bỏ vạch kẻ ngang từng nối tên miền tới con số dồn ở mép
+                  phải: trang này vốn đã có hai đường ngang bắt buộc (đáy header
+                  và đáy thanh lọc dính), thêm một vạch cho MỖI miền nữa là cứ
+                  vài trăm pixel lại một nét cắt ngang. Bỏ vạch thì cũng không
+                  còn lý do đẩy con số ra mép phải — mà đẩy ra đó ở màn 1440px
+                  là để nó đứng một mình cách tên miền cả nghìn pixel. */}
+              <header className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+                <h2 className="min-w-0 font-[family-name:var(--font-display)] text-[clamp(1.75rem,3.4vw,2.75rem)] font-bold leading-[1.1] tracking-[-0.035em]">
                   {g.label}
                 </h2>
-                {g.dests.length > 0 && (
-                  <span className="text-sm tabular-nums text-muted-foreground">
-                    {g.dests.length} điểm đến
-                  </span>
-                )}
-              </div>
+                <p className="text-sm text-muted-foreground tabular-nums">
+                  {g.dests.length > 0 && `${g.dests.length} điểm đến`}
+                  {g.dests.length > 0 && g.provCount > 0 && " · "}
+                  {g.provCount > 0 && `${g.provCount} tỉnh thành`}
+                </p>
+              </header>
 
               {g.dests.length > 0 && (
                 <Rail
-                  itemClassName="basis-[68%] sm:basis-[42%] lg:basis-[29%] xl:basis-[23%]"
+                  itemClassName="basis-[78%] sm:basis-[46%] lg:basis-[32%] xl:basis-[24%]"
+                  // Mặc định của Rail là `top-[36%]` — canh cho thẻ có chữ nằm
+                  // NGOÀI khung ảnh (ảnh chiếm phần trên, 36% rơi đúng giữa
+                  // ảnh). Thẻ ở đây là một khối ảnh đặc, tâm của nó là 50%.
                   arrowClassName="top-1/2 -translate-y-1/2"
                 >
                   {g.dests.map((d) => (
@@ -261,16 +413,34 @@ export function DestinationFilter({
                 </Rail>
               )}
 
-              {g.provs.length > 0 && (
-                <div className="mt-5">
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {g.provCount > 0 && (
+                <div className="mt-8">
+                  <p className={cn(MICRO, "text-muted-foreground")}>
                     Tỉnh thành
                   </p>
-                  <div className="mt-2.5 flex flex-wrap gap-2">
-                    {g.provs.map((p) => (
-                      <ProvinceChip key={p.slug} p={p} />
-                    ))}
-                  </div>
+
+                  {g.provsOpen.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {g.provsOpen.map((p) => (
+                        <ProvinceChip key={p.slug} p={p} />
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Tỉnh chưa có nội dung KHÔNG còn là chip. Chip là hình của
+                      một thứ bấm được; 14 viên gạch nét đứt không bấm được thì
+                      chỉ làm nặng khối mà không dẫn đi đâu. Ở đây chúng về đúng
+                      vai trò: một dòng ghi chú, đọc được, không mời bấm. */}
+                  {g.provsSoon.length > 0 && (
+                    <p className="mt-3.5 text-xs leading-relaxed text-muted-foreground/70">
+                      <span
+                        className={cn(MICRO, "mr-2 text-muted-foreground/60")}
+                      >
+                        Đang cập nhật
+                      </span>
+                      {g.provsSoon.map((p) => p.name).join(" · ")}
+                    </p>
+                  )}
                 </div>
               )}
             </section>
@@ -281,133 +451,121 @@ export function DestinationFilter({
   );
 }
 
-// Track segmented dùng chung cho Sắp xếp & Miền.
-function Segmented({
-  label,
-  className,
-  children,
-}: {
-  label: string;
-  className?: string;
-  children: ReactNode;
-}) {
-  return (
-    <div
-      role="group"
-      aria-label={label}
-      className={cn(
-        "flex h-10 w-fit shrink-0 items-center rounded-full bg-muted p-1",
-        className,
-      )}
-    >
-      {children}
-    </div>
-  );
-}
-
-function SegButton({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={cn(
-        "inline-flex h-full items-center whitespace-nowrap rounded-full px-3.5 text-sm font-medium transition-colors",
-        active
-          ? "bg-primary text-primary-foreground shadow-sm"
-          : "text-muted-foreground hover:text-foreground",
-      )}
-    >
-      {children}
-    </button>
-  );
-}
-
 function ProvinceChip({ p }: { p: ProvinceItem }) {
-  if (!p.hasContent) {
-    return (
-      <span
-        aria-disabled="true"
-        title="Đang cập nhật"
-        className="inline-flex cursor-not-allowed items-center rounded-full border border-dashed border-border/50 px-3.5 py-1.5 text-sm text-muted-foreground/50"
-      >
-        {p.name}
-      </span>
-    );
-  }
   return (
     <Link
       href={`/diem-den/${p.slug}`}
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-full bg-muted px-3.5 py-1.5 text-sm transition-colors hover:bg-primary/10 hover:text-primary",
-        p.isFeatured && "font-medium",
-      )}
+      className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card py-1.5 pl-3.5 pr-3 text-sm font-medium text-foreground/85 transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
     >
       {p.isFeatured && (
-        <Ic icon="star" className="size-3.5 text-warm" aria-hidden />
+        <Star className="size-3.5 shrink-0 text-warm" aria-hidden />
       )}
       {p.name}
-      {p.childCount >= 2 && (
+      {p.childCount >= 2 ? (
         <span
-          title={`${p.childCount} điểm đến`}
           aria-label={`${p.childCount} điểm đến`}
-          className="grid h-4 min-w-4 place-items-center rounded-full bg-primary/15 px-1 text-[10px] font-semibold tabular-nums text-primary"
+          className="grid h-4 min-w-4 place-items-center rounded-full bg-primary/10 px-1 text-[10px] font-semibold tabular-nums text-primary"
         >
           {p.childCount}
         </span>
+      ) : (
+        // Giữ lề phải bằng nhau giữa chip có số và chip không — không có ô này
+        // thì hai loại chip lệch nhau 4px, nhìn ra ngay khi chúng đứng cạnh.
+        <span aria-hidden className="w-0.5" />
       )}
     </Link>
   );
 }
 
+// Thẻ điểm đến — MỘT KHUÔN ẢNH DỌC, mọi thứ nằm trong đó.
+//
+// Ảnh 4/5 bo góc lớn, chữ đặt đè ở đáy khung. Dải thẻ đọc ra là một dãy poster
+// điểm đến chứ không phải một danh sách có hình minh hoạ — đúng thứ trang này
+// cần: người mở nó đang CHỌN NƠI, và nơi thì nhìn mới chọn được.
+//
+// Cả thẻ cao đúng một tỉ lệ nên mọi mục bằng nhau tuyệt đối, không phụ thuộc
+// tagline dài ngắn — thứ mà bản chữ-nằm-ngoài không làm được (mục nào mô tả dài
+// là kéo cao cả hàng, hoặc chừa một mảng trống ở đáy).
+//
+// ĐỌC ĐƯỢC CHỮ TRÊN ẢNH SÁNG — chỗ dễ hỏng nhất của kiểu này. Ba lớp, mỗi lớp
+// một việc, cộng lại vẫn nhẹ hơn một lớp `from-black/85` phủ nửa khung như bản
+// đầu tiên:
+//   1. lớp phủ có ĐIỂM DỪNG: đậm ở đáy rồi TẮT HẲN ở 72% chiều cao — hai phần
+//      ba trên của bức ảnh không bị đụng tới, kể cả chỗ đặt huy hiệu;
+//   2. bóng chữ mảnh cho tên và tagline — cứu những tấm mà ngay đáy khung cũng
+//      là trời trắng (biển, mây), thay vì phải đổ tối thêm cho cả tấm;
+//   3. vành 1px trắng mờ bên trong mép, giữ khối ảnh không rò ra nền trang.
 function DestCard({ d }: { d: DestItem }) {
   return (
     <Link
       href={`/diem-den/${d.slug}`}
-      className="group relative block aspect-[4/5] overflow-hidden rounded-2xl bg-muted ring-1 ring-inset ring-white/10"
+      className="group relative block aspect-[4/5] overflow-hidden rounded-[1.75rem] bg-muted"
     >
       <Image
-        src={coverUrl(d.images, d.slug, 640, 800)}
-        alt={d.name}
+        src={coverUrl(d.images, d.slug, 720, 900)}
+        alt=""
         fill
-        sizes="(min-width: 1024px) 25vw, (min-width: 640px) 42vw, 68vw"
+        sizes="(min-width: 1280px) 24vw, (min-width: 1024px) 32vw, (min-width: 640px) 46vw, 78vw"
         className="object-cover"
       />
-      {/* Scrim: đậm ở đáy để chữ đọc rõ, thoáng ở trên (giữ ảnh sáng) */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
-      <div className="absolute inset-0 bg-black/0 transition-colors duration-300 group-hover:bg-black/10" />
+
+      <span
+        aria-hidden
+        className="absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,0.88)_0%,rgba(0,0,0,0.74)_16%,rgba(0,0,0,0.42)_36%,rgba(0,0,0,0.14)_55%,rgba(0,0,0,0)_72%)]"
+      />
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-0 rounded-[1.75rem] ring-1 ring-inset ring-white/15"
+      />
 
       {d.isFeatured && (
-        <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-[0.7rem] font-semibold text-white backdrop-blur">
-          <Ic icon="star" className="size-3" aria-hidden />
+        // Chỉ ~1/3 số điểm đến có, nên nó còn phân biệt được thẻ này với thẻ
+        // kia. Đặt góc TRÊN–TRÁI một mình: thêm nhãn nào ở góc đối diện là
+        // thành một cặp nhãn sinh đôi cùng chất liệu, mắt phải đọc cả hai mới
+        // biết cái nào mang tin.
+        <span
+          className={cn(
+            GLASS,
+            "absolute left-3 top-3 inline-flex items-center gap-1 py-0.5 pl-1.5 pr-2.5 text-[0.65rem] font-semibold",
+          )}
+        >
+          <Star className="size-3 shrink-0" aria-hidden />
           Nổi bật
         </span>
       )}
 
-      <div className="absolute inset-x-0 bottom-0 p-4">
+      <span className="absolute inset-x-0 bottom-0 flex flex-col p-4 sm:p-5">
+        {/* Tỉnh cha đứng TRÊN tên — mắt đọc "ở đâu → nơi nào", đúng thứ tự
+            người ta hỏi. Màu `warm-bright` chứ không phải `warm`: đây là chữ
+            nằm trên ảnh tối, và đó chính là việc của biến này (xem globals.css). */}
         {d.parentName && (
-          <p className="flex items-center gap-1 truncate text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-white/75">
-            <Ic icon="map-pin" className="size-3 shrink-0" aria-hidden />
-            {d.parentName}
-          </p>
+          <span
+            className={cn(
+              MICRO,
+              "flex items-center gap-1 text-warm-bright [text-shadow:0_1px_6px_rgba(0,0,0,0.7)]",
+            )}
+          >
+            <MapPin className="size-3 shrink-0" aria-hidden />
+            <span className="truncate">{d.parentName}</span>
+          </span>
         )}
-        <h3 className="mt-1 text-balance text-lg font-bold leading-snug tracking-tight text-white drop-shadow-sm">
-          {d.name}
-        </h3>
+
+        <span className="mt-1.5 flex items-start gap-1.5">
+          <span className="line-clamp-2 min-w-0 font-[family-name:var(--font-display)] text-lg font-bold leading-snug tracking-tight text-white [text-shadow:0_1px_10px_rgba(0,0,0,0.6)] sm:text-xl">
+            {d.name}
+          </span>
+          <ArrowUpRight
+            className="mt-1 size-4 shrink-0 -translate-x-1 text-white opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100 motion-reduce:transition-none"
+            aria-hidden
+          />
+        </span>
+
         {d.tagline && (
-          <p className="mt-1 line-clamp-1 text-[13px] leading-relaxed text-white/65">
+          <span className="mt-1 line-clamp-2 text-sm leading-relaxed text-white/80 [text-shadow:0_1px_8px_rgba(0,0,0,0.7)]">
             {d.tagline}
-          </p>
+          </span>
         )}
-      </div>
+      </span>
     </Link>
   );
 }
