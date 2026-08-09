@@ -36,6 +36,10 @@ function stancePill(stance: ReviewStance) {
 }
 
 const FACES = 5;
+// Ở chế độ `dense` (hàng số liệu hero phải vừa màn 320px) chỉ hiện 3 mặt.
+// Không thể cắt bằng CSS rồi giữ nguyên bong bóng "+N": số đó phải đổi theo,
+// nên render CẢ HAI bong bóng và để `display` chọn cái đúng theo bề ngang.
+const DENSE_FACES = 3;
 const initial = (name: string | null) =>
   (name?.trim().charAt(0) || "?").toUpperCase();
 
@@ -45,6 +49,7 @@ export function CheckInFaces({
   total,
   label = "Vivu-er đã đến",
   tone = "default",
+  dense = false,
 }: {
   people: CheckInPerson[];
   total: number;
@@ -52,12 +57,20 @@ export function CheckInFaces({
   label?: string;
   /** "onDark": stack nằm thẳng trên ảnh → nhãn chữ trắng. */
   tone?: "default" | "onDark";
+  /**
+   * Dùng khi cụm này phải nằm CHUNG MỘT HÀNG với các số liệu khác ở hero:
+   * dưới `sm` thì avatar co từ 32px xuống 24px và bỏ nhãn chữ. Nguyên cụm
+   * 5 avatar + nhãn "Vivu-er đã đến" rộng ~270px — một mình nó đã chiếm gần
+   * hết bề ngang khả dụng của màn 320px.
+   */
+  dense?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   if (total <= 0 || people.length === 0) return null;
 
   const faces = people.slice(0, FACES);
   const overflow = total - faces.length;
+  const denseOverflow = total - Math.min(faces.length, DENSE_FACES);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -65,19 +78,35 @@ export function CheckInFaces({
         <button
           type="button"
           aria-label={`Xem ${total} Vivu-er đã đến`}
-          className="group inline-flex items-center gap-3 rounded-full text-left transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          className={cn(
+            "group inline-flex items-center rounded-full text-left transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+            dense ? "gap-2 sm:gap-3" : "gap-3",
+          )}
         >
           <AvatarGroup>
-            {faces.map((p) => (
-              <Avatar key={p.id}>
+            {faces.map((p, i) => (
+              <Avatar
+                key={p.id}
+                className={cn(
+                  dense && "size-6 sm:size-8",
+                  dense && i >= DENSE_FACES && "hidden sm:flex",
+                )}
+              >
                 {p.image && (
                   <AvatarImage src={p.image} alt={p.name ?? "Vivu-er"} />
                 )}
                 <AvatarFallback>{initial(p.name)}</AvatarFallback>
               </Avatar>
             ))}
+            {dense && denseOverflow > 0 && (
+              <AvatarGroupCount className="size-6 text-xs sm:hidden">
+                +{denseOverflow > 99 ? "99" : denseOverflow}
+              </AvatarGroupCount>
+            )}
             {overflow > 0 && (
-              <AvatarGroupCount>
+              <AvatarGroupCount
+                className={cn(dense && "hidden sm:flex sm:size-8 sm:text-sm")}
+              >
                 +{overflow > 99 ? "99" : overflow}
               </AvatarGroupCount>
             )}
@@ -85,6 +114,7 @@ export function CheckInFaces({
           <span
             className={cn(
               "text-sm transition-colors",
+              dense && "hidden sm:inline",
               tone === "onDark"
                 ? "text-white/70 group-hover:text-white"
                 : "text-muted-foreground group-hover:text-foreground",

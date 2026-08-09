@@ -14,7 +14,6 @@ import {
   MapPinCheck,
   Route,
   Search,
-  ShieldCheck,
 } from "@/components/icons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -44,19 +43,13 @@ type NavData = {
 // Cố ý không lặp lại 4 mục đã nằm trên thanh tab (Trang chủ · Khám phá · Bản đồ
 // · Cộng đồng): thấy hai lối vào cùng một chỗ trong một màn hình chỉ làm người
 // dùng phân vân.
+//
+// TẠM BỎ (khớp với nav desktop — trang vẫn còn, chỉ không có lối vào từ menu):
+// mục "Kiểm tra uy tín" (/kiem-tra) và bốn trang phụ của nhóm Thông tin
+// (/cau-hoi-thuong-gap, /lien-he, /dieu-khoan, /bao-mat — cả bốn đang "Sắp có").
 const NAV = [
   { href: "/blog", label: "Cẩm nang", Icon: BookOpen },
-  { href: "/kiem-tra", label: "Kiểm tra uy tín", Icon: ShieldCheck },
   { href: "/gioi-thieu", label: "Giới thiệu", Icon: Info },
-];
-
-// Trang phụ, hiếm vào — để dạng chữ nhỏ cuối bảng, không chiếm một hàng đầy đủ
-// như mục điều hướng thật.
-const FOOTER_LINKS = [
-  { href: "/cau-hoi-thuong-gap", label: "Câu hỏi thường gặp" },
-  { href: "/lien-he", label: "Liên hệ" },
-  { href: "/dieu-khoan", label: "Điều khoản" },
-  { href: "/bao-mat", label: "Bảo mật" },
 ];
 
 // Tiện ích của riêng người dùng — nhóm PHỤ, nằm dưới điều hướng.
@@ -273,18 +266,8 @@ export function MobileMenuSheet({
             </div>
           )}
 
-          {/* Trang phụ + đăng xuất: chữ nhỏ, cuối bảng. */}
+          {/* Đăng xuất: chữ nhỏ, cuối bảng. */}
           <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 px-3 text-xs text-muted-foreground">
-            {FOOTER_LINKS.map((l) => (
-              <Link
-                key={l.href}
-                href={l.href}
-                onClick={close}
-                className="transition-colors hover:text-foreground"
-              >
-                {l.label}
-              </Link>
-            ))}
             {user && (
               <button
                 type="button"

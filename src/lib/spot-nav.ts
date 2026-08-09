@@ -36,12 +36,14 @@ export function buildSpotNavItems(
     flags.hasNearby && anchor("quanh-day", "Quanh đây"),
     anchor("danh-gia", "Đánh giá"),
     // Nhóm bên phải (có icon):
-    {
-      id: "cong-dong",
-      label: "Cộng đồng",
-      href: `${base}/cong-dong`,
-      icon: "community",
-    },
+    // Cộng đồng TẠM ẨN (route `/dia-diem/[slug]/cong-dong` vẫn còn, vẫn vào
+    // được bằng URL). Bật lại thì bỏ comment khối dưới.
+    // {
+    //   id: "cong-dong",
+    //   label: "Cộng đồng",
+    //   href: `${base}/cong-dong`,
+    //   icon: "community",
+    // },
     {
       id: "ban-do",
       label: "Bản đồ",

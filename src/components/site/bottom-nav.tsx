@@ -73,11 +73,12 @@ const ITEMS: Item[] = [
     label: "Bản đồ",
     icon: "map",
   },
-  {
-    href: "/cong-dong",
-    label: "Cộng đồng",
-    icon: "community",
-  },
+  // Cộng đồng: TẠM ẨN (route /cong-dong vẫn còn). Bật lại thì bỏ comment.
+  // {
+  //   href: "/cong-dong",
+  //   label: "Cộng đồng",
+  //   icon: "community",
+  // },
   { action: "menu", label: "Menu", icon: "menu" },
 ];
 

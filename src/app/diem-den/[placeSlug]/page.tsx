@@ -101,6 +101,12 @@ export async function generateMetadata({
   };
 }
 
+// Cờ TẠM ẨN phần Cộng đồng trên trang điểm đến (cùng đợt gỡ khỏi header và
+// thanh tab). Khai báo kiểu `boolean` chứ KHÔNG để TS suy ra literal `false`:
+// literal khiến TS coi nhánh JSX bên trong là không chạm tới được, và mọi thu
+// hẹp kiểu (vd `place` đã qua `notFound()`) không còn hiệu lực trong đó.
+const COMMUNITY_ENABLED: boolean = false;
+
 export default async function PlaceDetailPage({
   params,
 }: {
@@ -352,7 +358,12 @@ export default async function PlaceDetailPage({
       : undefined;
 
   // Tóm tắt cộng đồng của điểm đến: mấy con số "có người" + vài bài mới.
-  const community = await getPlaceCommunityDigest(place.id);
+  // TẠM ẨN: không truy vấn nữa cho khỏi tốn một vòng DB mỗi lần mở trang.
+  // Bật lại: đặt COMMUNITY_ENABLED = true và bỏ comment dòng dưới.
+  // const community = await getPlaceCommunityDigest(place.id);
+  const community = { total: 0 } as Awaited<
+    ReturnType<typeof getPlaceCommunityDigest>
+  >;
 
   // Thanh chuyển nhanh: mọi điểm đến lớn gom theo miền (làm nổi cái đang xem).
   const peerGroups = await getDestinationPeerGroups();
@@ -667,8 +678,10 @@ export default async function PlaceDetailPage({
           </Band>
         )}
 
-        {/* Hỏi đáp cộng đồng — xem trước vài thảo luận */}
-        {community.total > 0 && (
+        {/* Hỏi đáp cộng đồng — TẠM ẨN cùng đợt gỡ Cộng đồng khỏi header và
+            thanh tab điểm đến. Bật lại: đổi `false &&` thành `community.total > 0 &&`
+            rồi bỏ comment lời gọi `getPlaceCommunityDigest` ở trên. */}
+        {COMMUNITY_ENABLED && community.total > 0 && (
           <Band tint={tinted()}>
             <section id="hoi-dap" className="scroll-mt-32">
               <SectionHeading

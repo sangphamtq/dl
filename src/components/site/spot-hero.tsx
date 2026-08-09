@@ -138,11 +138,17 @@ export function SpotHero({
               </dl>
             )}
 
-            {/* Vivu-er đã đến + tổng quan đánh giá */}
+            {/* Vivu-er đã đến + tổng quan đánh giá — giữ MỘT HÀNG xuống tới màn
+                320px bằng cách bỏ chữ chứ không bỏ số, giống hàng số liệu ở
+                hero điểm đến (xem `dense` trong CheckInFaces). */}
             {(visitors.total > 0 || reviewSummary.total > 0) && (
-              <div className="mt-6 flex flex-wrap items-center gap-x-7 gap-y-3 text-sm">
+              <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-3 text-sm sm:gap-x-7">
                 {visitors.total > 0 && (
-                  <CheckInFaces people={visitors.people} total={visitors.total} />
+                  <CheckInFaces
+                    people={visitors.people}
+                    total={visitors.total}
+                    dense
+                  />
                 )}
                 {reviewSummary.total > 0 && (
                   <a
@@ -156,11 +162,12 @@ export function SpotHero({
                     <span className="font-semibold tabular-nums">
                       {reviewSummary.stars.toFixed(1).replace(".", ",")}
                     </span>
-                    <span className="text-muted-foreground transition-colors group-hover:text-foreground">
-                      · {reviewSummary.total} đánh giá
+                    <span className="whitespace-nowrap text-muted-foreground transition-colors group-hover:text-foreground">
+                      · {reviewSummary.total}
+                      <span className="hidden sm:inline"> đánh giá</span>
                     </span>
                     <ChevronDown
-                      className="size-4 text-muted-foreground transition-transform group-hover:translate-y-0.5"
+                      className="hidden size-4 text-muted-foreground transition-transform group-hover:translate-y-0.5 sm:block"
                       aria-hidden
                     />
                   </a>

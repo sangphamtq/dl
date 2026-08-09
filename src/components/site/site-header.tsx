@@ -16,7 +16,15 @@ import { SiteNav, type NavEntry, type NavLink } from "./site-nav";
 import { HeaderChrome } from "./header-chrome";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
-// Nav: 2 nhóm dropdown (click nhãn → `href`) + 2 link phẳng ở giữa.
+// Nav: 1 nhóm dropdown (click nhãn → `href`) + 2 link phẳng.
+//
+// TẠM BỎ khỏi header (trang vẫn còn, chỉ không có lối vào từ nav):
+//  · Nhóm "Uy tín" → /sale (Cộng tác viên) và /kiem-tra (Kiểm tra uy tín).
+//  · "Cộng đồng" → /cong-dong.
+//  · Danh sách con của nhóm thông tin → /cau-hoi-thuong-gap, /lien-he,
+//    /dieu-khoan, /bao-mat (cả bốn đều đang "Sắp có") — nay còn một link phẳng
+//    "Giới thiệu" đi thẳng tới /gioi-thieu, trang duy nhất có nội dung thật.
+// Bật lại thì thêm `items` trở lại là xong; `NavEntry` nhận cả link phẳng lẫn nhóm.
 const NAV: NavEntry[] = [
   {
     label: "Khám phá",
@@ -29,26 +37,7 @@ const NAV: NavEntry[] = [
     ],
   },
   { href: "/blog", label: "Cẩm nang" },
-  { href: "/cong-dong", label: "Cộng đồng" },
-  {
-    label: "Uy tín",
-    href: "/kiem-tra",
-    items: [
-      { href: "/sale", label: "Cộng tác viên" },
-      { href: "/kiem-tra", label: "Kiểm tra uy tín" },
-    ],
-  },
-  {
-    label: "Thông tin",
-    href: "/gioi-thieu",
-    items: [
-      { href: "/gioi-thieu", label: "Giới thiệu" },
-      { href: "/cau-hoi-thuong-gap", label: "Câu hỏi thường gặp", badge: "Sắp có" },
-      { href: "/lien-he", label: "Liên hệ", badge: "Sắp có" },
-      { href: "/dieu-khoan", label: "Điều khoản", badge: "Sắp có" },
-      { href: "/bao-mat", label: "Bảo mật", badge: "Sắp có" },
-    ],
-  },
+  { href: "/gioi-thieu", label: "Giới thiệu" },
 ];
 
 // Mobile: sheet liệt kê phẳng toàn bộ (nhóm dropdown trải thành các mục con).

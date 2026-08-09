@@ -105,15 +105,24 @@ export function PlaceHero({
               </p>
             )}
 
-            {/* Dải thống kê + Vivu-er đã đến + tổng quan đánh giá (cùng hàng) */}
+            {/* Dải thống kê + Vivu-er đã đến + tổng quan đánh giá (CÙNG HÀNG).
+                Giữ được một hàng xuống tới màn 320px bằng cách bỏ CHỮ chứ không
+                bỏ số: dưới `sm` chỉ còn icon + con số ("👁 70", "★ 3,8 · 8"),
+                avatar co xuống 24px và bỏ nhãn "Vivu-er đã đến" (xem `dense`
+                trong CheckInFaces). Đủ ba dữ kiện, chỉ mất phần chú thích mà
+                icon đã nói thay. Nguyên bản đủ chữ rộng ~490px — quá gấp rưỡi
+                bề ngang khả dụng của màn 320px, nên chắc chắn rớt dòng. */}
             {(stats.length > 0 ||
               (visitors && visitors.total > 0) ||
               (reviews && reviews.total > 0)) && (
-              <div className="mt-8 flex flex-wrap items-center gap-x-7 gap-y-3 text-sm">
+              <div className="mt-8 flex flex-wrap items-center gap-x-3 gap-y-3 text-sm sm:gap-x-7">
                 {stats.length > 0 && (
-                  <dl className="flex flex-wrap items-center gap-x-7 gap-y-3">
+                  <dl className="flex flex-wrap items-center gap-x-3 gap-y-3 sm:gap-x-7">
                     {stats.map((s) => (
-                      <div key={s.label} className="flex items-center gap-2">
+                      <div
+                        key={s.label}
+                        className="flex items-center gap-1.5 sm:gap-2"
+                      >
                         <s.icon
                           className="size-4 shrink-0 text-muted-foreground"
                           aria-hidden
@@ -121,7 +130,9 @@ export function PlaceHero({
                         <dd className="font-semibold tabular-nums">
                           {s.value.toLocaleString("vi-VN")}
                         </dd>
-                        <dt className="text-muted-foreground">{s.label}</dt>
+                        <dt className="hidden text-muted-foreground sm:block">
+                          {s.label}
+                        </dt>
                       </div>
                     ))}
                   </dl>
@@ -139,17 +150,22 @@ export function PlaceHero({
                     <span className="font-semibold tabular-nums">
                       {reviews.stars.toFixed(1).replace(".", ",")}
                     </span>
-                    <span className="text-muted-foreground transition-colors group-hover:text-foreground">
-                      · {reviews.total} đánh giá
+                    <span className="whitespace-nowrap text-muted-foreground transition-colors group-hover:text-foreground">
+                      · {reviews.total}
+                      <span className="hidden sm:inline"> đánh giá</span>
                     </span>
                     <ChevronDown
-                      className="size-4 text-muted-foreground transition-transform group-hover:translate-y-0.5"
+                      className="hidden size-4 text-muted-foreground transition-transform group-hover:translate-y-0.5 sm:block"
                       aria-hidden
                     />
                   </Link>
                 )}
                 {visitors && visitors.total > 0 && (
-                  <CheckInFaces people={visitors.people} total={visitors.total} />
+                  <CheckInFaces
+                    people={visitors.people}
+                    total={visitors.total}
+                    dense
+                  />
                 )}
               </div>
             )}

@@ -192,8 +192,9 @@ export function buildPlaceTabs(placeSlug: string, counts: PlaceCounts): PlaceTab
   // Di chuyển: màn hình riêng trong route động [loai] (không có trang chi tiết per-item).
   if (counts.transport > 0) add("di-chuyen", "Di chuyển", counts.transport);
 
-  // Cộng đồng: luôn hiện, render riêng bên phải thanh tab (như Bản đồ).
-  tabs.push({ href: `${base}/cong-dong`, label: "Cộng đồng", icon: "community" });
+  // Cộng đồng: TẠM ẨN khỏi thanh tab (route `/diem-den/[slug]/cong-dong` vẫn
+  // còn và vẫn vào được bằng URL). Bật lại: bỏ comment dòng dưới.
+  // tabs.push({ href: `${base}/cong-dong`, label: "Cộng đồng", icon: "community" });
 
   // Bản đồ: dạng icon, hiện khi có loại có toạ độ (Spot/Eatery/Accommodation).
   if (counts.spot + counts.eatery + counts.accommodation > 0)

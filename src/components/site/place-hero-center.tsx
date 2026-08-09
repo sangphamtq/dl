@@ -34,8 +34,10 @@ const CIRCLE =
 
 // Ô số liệu: vạch DỌC mảnh ngăn cách (thay hairline ngang của bản canh trái).
 // Mobile bỏ vạch — các ô xuống dòng thì vạch đầu dòng sẽ thành lạc lõng.
+// Đệm ngang ở mobile phải RẤT hẹp: ba ô này buộc phải nằm chung một hàng xuống
+// tới màn 320px, mà `px-6` thôi đã ăn 144px trong tổng số ~288px khả dụng.
 const ITEM =
-  "px-6 text-center sm:border-l sm:border-white/25 sm:px-8 sm:first:border-l-0";
+  "px-2 text-center sm:border-l sm:border-white/25 sm:px-8 sm:first:border-l-0";
 
 // Hero full-bleed CANH GIỮA — cùng khung ảnh với bản editorial, khác cách xếp.
 // Bố cục đối xứng cần vài thứ khác hẳn bản canh trái:
@@ -205,11 +207,14 @@ export function PlaceHeroCenter({
                     <span className="tabular-nums">
                       {reviews.stars.toFixed(1).replace(".", ",")}
                     </span>
-                    <span className="text-sm font-normal text-white/75 transition-colors group-hover:text-white">
+                    {/* Dưới `sm` chỉ còn điểm sao: nhãn "ĐÁNH GIÁ" ngay trên đã
+                        nói đây là gì, còn số lượt nhận xét là chi tiết phụ —
+                        giữ nó thì cả hàng ba ô không thể vừa màn 320px. */}
+                    <span className="hidden text-sm font-normal text-white/75 transition-colors group-hover:text-white sm:inline">
                       {reviews.total} nhận xét
                     </span>
                     <ChevronDown
-                      className="size-4 shrink-0 translate-y-0.5 text-white/70 transition-transform group-hover:translate-y-1"
+                      className="hidden size-4 shrink-0 translate-y-0.5 text-white/70 transition-transform group-hover:translate-y-1 sm:block"
                       aria-hidden
                     />
                   </Link>
@@ -226,6 +231,7 @@ export function PlaceHeroCenter({
                     total={visitors.total}
                     tone="onDark"
                     label={`${visitors.total.toLocaleString("vi-VN")} Vivu-er`}
+                    dense
                   />
                 </dd>
               </div>

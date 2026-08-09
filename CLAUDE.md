@@ -803,6 +803,17 @@ components.json                  # cấu hình shadcn (style, alias, base color)
   `<SidebarMenuButton asChild><Link/>`). Gộp class bằng `cn()` từ `@/lib/utils`. Icon lấy từ
   `lucide-react`. Màu/spacing dùng biến theme trong `globals.css` (vd `bg-primary`,
   `text-muted-foreground`) thay vì màu cứng.
+- **Khổ nhỏ nhất phải chạy được là 320px.** Hàng số liệu ở hero (lượt xem · đánh giá · đã
+  đến) **giữ MỘT HÀNG xuống tới 320px** — cách làm: bỏ CHỮ chứ không bỏ SỐ. Dưới `sm` chỉ còn
+  icon + con số, và `CheckInFaces` nhận prop **`dense`**: avatar co 32→24px, chỉ hiện 3 mặt
+  thay vì 5, bỏ nhãn "Vivu-er đã đến". Vì số mặt đổi nên **bong bóng "+N" phải render hai
+  bản** (mobile/desktop) rồi để `display` chọn — cắt bằng CSS mà giữ nguyên một con số thì nó
+  sai. Áp dụng ở cả ba hero: `place-hero`, `place-hero-center`, `spot-hero`.
+- **Kiểm layout hẹp KHÔNG chụp bằng `--window-size` được.** Chrome headless trên macOS có bề
+  rộng cửa sổ tối thiểu (~500px), nên `--window-size=320,…` chỉ **cắt** ảnh chứ không đặt
+  viewport 320 — layout vẫn render rộng và ta tưởng nó vỡ/không vỡ một cách sai lệch. Cách
+  đúng: viết một file HTML tạm nhúng `<iframe src="http://localhost:3000/…" width="320">` rồi
+  chụp file đó; iframe cho viewport CSS đúng bằng bề rộng đặt ra.
 - Trước khi báo "đã xong", chạy `pnpm exec tsc --noEmit` và `pnpm lint` để chắc không lỗi.
 
 ## PWA (cài được lên màn hình chính + dùng khi mất sóng)
@@ -836,11 +847,42 @@ Lưu ý khi sửa:
   (`BackToTop`) chưa chừa `safe-area-inset`. Làm tràn viền thì làm cùng lúc.
   (`BottomNav` đã dùng `max(0.75rem, env(safe-area-inset-bottom))` nên sẵn sàng.)
 
+## Điều hướng header
+
+`src/components/site/site-header.tsx` giữ mảng `NAV` (nav ngang từ `lg`); menu hamburger ở
+mobile là `mobile-menu-sheet.tsx` với danh sách **riêng**, phải sửa cả hai chỗ mới đồng bộ.
+
+Nav hiện tại: **Khám phá ⌄ · Cẩm nang · Giới thiệu**.
+
+> ⚠️ **ĐANG TẠM ẨN** (route vẫn còn, vẫn vào được bằng URL — chỉ gỡ lối vào):
+> - Nhóm **"Uy tín"** (`/kiem-tra`, `/sale`) — khỏi nav desktop **và** menu hamburger.
+> - **"Cộng đồng"** (`/cong-dong`) — khỏi nav desktop.
+> - Bốn trang con của nhóm thông tin (`/cau-hoi-thuong-gap`, `/lien-he`, `/dieu-khoan`,
+>   `/bao-mat` — đều "Sắp có"); mục còn lại đổi nhãn thành **"Giới thiệu"** → `/gioi-thieu`.
+> - Ở **trang điểm đến**: tab **Cộng đồng** trong `buildPlaceTabs` (`place-meta.ts`) và khối
+>   **"Hỏi đáp cộng đồng"** trên trang tổng quan (cờ `COMMUNITY_ENABLED` trong
+>   `diem-den/[placeSlug]/page.tsx`; lời gọi `getPlaceCommunityDigest` cũng đã comment để
+>   khỏi tốn một vòng DB mỗi lần mở trang).
+>
+> - Ở **thanh tab dưới mobile** (`bottom-nav.tsx`) và **trang Địa điểm** (mục `cong-dong`
+>   trong `src/lib/spot-nav.ts`).
+>
+> **Lối vào Cộng đồng duy nhất còn lại là link ở `site-footer.tsx`** — cố ý giữ.
+>
+> Bật lại: thêm `items`/mục trở lại `NAV` trong `site-header.tsx` và `mobile-menu-sheet.tsx`;
+> bỏ comment dòng `tabs.push` trong `place-meta.ts`, khối tab trong `bottom-nav.tsx` và mục
+> `cong-dong` trong `spot-nav.ts`; đặt `COMMUNITY_ENABLED = true`.
+>
+> Cờ `COMMUNITY_ENABLED` khai báo kiểu **`boolean`** chứ không để TS suy ra literal `false` —
+> literal khiến TS coi nhánh JSX bên trong là không chạm tới được và mọi thu hẹp kiểu trong
+> đó mất hiệu lực (vd `place` đã qua `notFound()` lại thành "possibly null").
+
 ## Thanh tab dưới trên mobile (`BottomNav`)
 
 `src/components/site/bottom-nav.tsx` — dựng theo khuôn **UITabBar của iOS**, chỉ hiện dưới
-`lg` (từ `lg` đã có nav ngang trong header). 5 mục: Trang chủ · Khám phá · Bản đồ · Cộng
-đồng · Tài khoản; các mục còn lại (Cẩm nang, Uy tín, Thông tin) vẫn ở menu hamburger.
+`lg` (từ `lg` đã có nav ngang trong header). Hiện **4 mục**: Trang chủ · Khám phá · Bản đồ ·
+Menu (mục **Cộng đồng đang tạm ẩn** — xem "Điều hướng header"); Cẩm nang & Giới thiệu ở menu
+hamburger.
 
 - **Hình khối iOS, đừng "cải tiến" thành Material:** tràn hết bề ngang, dán sát đáy, KHÔNG
   bo góc/đổ bóng; phân cách bằng hairline 1px ở mép trên; nền trong mờ + `backdrop-blur` +
