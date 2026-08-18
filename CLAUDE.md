@@ -708,8 +708,22 @@ PostRef {
   `src/components/ui/`, dựng trên **Radix UI** (package hợp nhất `radix-ui`); icon dùng **lucide-react**
 - **Prisma 7 + PostgreSQL** — ORM; client mới sinh ra `src/generated/prisma` (đã gitignore),
   kết nối qua driver adapter `@prisma/adapter-pg`. `DATABASE_URL` trong `.env`.
-- **Auth.js (NextAuth v5)** — đăng nhập Google OAuth (adapter Prisma sẽ gắn khi có DB chạy)
+- **Auth.js (NextAuth v5)** — đăng nhập Google OAuth (**đã gắn** Prisma adapter, xem `auth.ts`)
 - **pnpm** là package manager **bắt buộc** (môi trường KHÔNG có npm/npx)
+
+Thư viện lớn khác đang dùng (đừng thêm thư viện trùng vai trò):
+
+| Mảng | Gói | Ghi chú |
+|---|---|---|
+| Bản đồ | `leaflet` + `react-leaflet` + `leaflet.markercluster` | luôn nạp động (`ssr: false`) — xem `components/map/*-inner.tsx` |
+| Upload ảnh | `uploadthing` + `@uploadthing/react` | route `/api/uploadthing`, `/api/editor-upload`; helper `lib/uploadthing.ts` |
+| Rich text | `@tiptap/*` | soạn thân bài `Post` → lưu **chuỗi HTML**; đọc lại phải qua `lib/sanitize.ts` |
+| Realtime | `ably` | server giữ `ABLY_API_KEY`, browser lấy token qua `/api/ably/token`. **Không có key → tự rơi về polling**, không vỡ |
+| Analytics | `posthog-js` | chỉ bật khi có `NEXT_PUBLIC_POSTHOG_KEY`; không có → mọi hàm no-op |
+| Biểu đồ | `recharts` | dashboard `/cms/analytics` |
+| Carousel | `embla-carousel-react` (+ `fade`, `wheel-gestures`) | **bộ carousel DUY NHẤT** — xem quy ước ở mục "Màn hình Ẩm thực" |
+| UI phụ | `sonner` (toast) · `vaul` (drawer) · `cmdk` (command palette) · `qrcode.react` (QR chia sẻ) | |
+| Kiểm dữ liệu | `zod` | validate form/server action |
 
 ## Lệnh thường dùng
 
@@ -918,10 +932,66 @@ hamburger.
 - Không đọc session (root layout **không** được gọi `auth()` — sẽ phá `force-static` của
   `/offline`). Mục Tài khoản trỏ `/tai-khoan/da-den`, trang đó tự redirect về `/login`.
 
+## Tài liệu thiết kế riêng (`docs/`)
+
+Tính năng lớn chưa làm được phân tích trước và ghi ra file riêng — **đọc file đó trước khi
+động vào tính năng tương ứng**, đừng phân tích lại từ đầu.
+
+| File | Nội dung | Trạng thái |
+|---|---|---|
+| [`docs/lich-trinh.md`](docs/lich-trinh.md) | **Lịch trình chuyến đi** (`/lich-trinh`): schema `Trip`/`TripDay`/`TripItem`, máy tính giờ ước tính + cảnh báo giờ mở cửa, lịch trình mẫu, chia sẻ | Phân tích xong, **chưa code** — còn 6 mục phải chốt ở §9 |
+
 ## Phạm vi hiện tại
 
-Đã có: scaffold + đăng nhập Google + shadcn/ui + **Prisma đã migrate lên Postgres (Neon)**
-+ **Auth.js Prisma adapter đã gắn** (login persist `User`/`Account`, role trong JWT) +
-**CMS `/cms`** gate theo role + script `pnpm set-role`. **Chưa có**: seed dữ liệu mẫu;
-các trang nội dung (Place/Listing/blog) công khai + CRUD trong CMS. Bước kế tiếp: seed vài
-tỉnh/điểm đến + dựng trang danh sách Place, rồi CRUD trong `/cms`.
+> Cập nhật 2026-08-18. Dự án **đã vượt xa giai đoạn scaffold** — phần lớn nội dung công
+> khai và CMS đã chạy thật trên Postgres (Neon). Mục này liệt kê cái ĐÃ CÓ để khỏi dựng
+> lại, và cái CHƯA CÓ để biết chỗ nào còn trống.
+
+### Đã chạy — nội dung công khai
+
+| Mảng | Route | Ghi chú |
+|---|---|---|
+| Trang chủ | `/` | hero (`HeroLayout` đổi được trong CMS), điểm đến nổi bật, blog, CTA |
+| Cây điểm đến | `/diem-den` · `/diem-den/[placeSlug]` · `/diem-den/[placeSlug]/[loai]` | `[loai]` = `hoat-dong` · `dia-diem` · `am-thuc` · `luu-tru` · `di-chuyen` |
+| Bản đồ | `/ban-do` (toàn quốc) · `/diem-den/[placeSlug]/ban-do` | Leaflet + cluster; có chế độ **Lộ trình / Khoảng cách** (`map-explorer.tsx`) |
+| Trang chi tiết | `/dia-diem/[slug]` · `/hoat-dong/[slug]` · `/luu-tru/[slug]` | Quán ăn & Đặc sản **cố ý không có** trang chi tiết (popup) |
+| Danh sách phẳng | `/dia-diem` | |
+| Blog | `/blog` · `/blog/[slug]` | TipTap HTML + `PostRef` + tim/bình luận |
+| Tìm kiếm | `/tim-kiem` | `lib/search.ts`; header có `header-search.tsx` |
+| Cộng đồng | `/cong-dong` · `/cong-dong/[slug]` · `/diem-den/[placeSlug]/cong-dong` · `/dia-diem/[slug]/cong-dong` | `Thread`/`ThreadReply`/`ThreadLike` + báo cáo. **Lối vào đang tạm ẩn** — xem "Điều hướng header" |
+| Uy tín & chống lừa | `/kiem-tra` (tra SĐT/FB/web/STK) · `/sale` · `/sale/[slug]` · `/sale/dang-ky` | `SaleProfile`, `ScamReport`, `lib/trust.ts`. **Lối vào đang tạm ẩn** |
+| Cá nhân | `/tai-khoan/da-den` (bản đồ tỉnh đã đến) · `/thong-bao` | `CheckIn`, `Notification` |
+| Khác | `/gioi-thieu` · `/offline` · `/login` | |
+
+Kèm theo: **PWA đầy đủ** (SW, manifest, offline, mời cài) · `BottomNav` mobile · đếm lượt
+xem (`ViewStat` + `/api/views/*`) · review điểm đến (`Review`) · realtime qua Ably (tùy
+chọn) · PostHog (tùy chọn).
+
+### Đã chạy — CMS `/cms` (gate `admin`/`editor`)
+
+CRUD **đầy đủ** (list · new · edit · detail) cho: `places`, `activities`, `spots`,
+`eateries`, `accommodations`, `transport`, `specialties` (đang khoá), `posts`.
+Cộng thêm: `analytics` (traffic, Recharts) · `community` + `community/reports` (kiểm duyệt)
+· `reviews` · `sales` · `scam-reports` · `media` · `users` · `export` (xuất Excel) ·
+`settings` (`SiteSetting`).
+
+### Đã chạy — dữ liệu mẫu
+
+**11 script seed** trong `prisma/` (chạy qua `pnpm seed:*`): `places`, `phan-thiet`,
+`ta-xua`, `blog`, `blog-phan-thiet`, `community`, `sales`, `reviews-phan-thiet`,
+`homestay-phan-thiet`, `homestay-ta-xua`. Hai điểm đến có dữ liệu dày nhất để thử giao
+diện: **Phan Thiết** (dish-led, nhiều quán) và **Tà Xùa** (view-led, nhiều quán view).
+
+### Chưa có — trang mới chỉ là `ComingSoon`
+
+`/lich-trinh` · `/dich-vu` · `/thue-xe` · `/trai-nghiem` · `/luu-tru` (trang index — lưu ý
+`/luu-tru/[slug]` thì **đã chạy**) · `/lien-he` · `/cau-hoi-thuong-gap` · `/dieu-khoan` ·
+`/bao-mat`.
+
+Ngoài ra: **`Specialty` đang tắt** (dữ liệu còn nguyên — xem mục "Đặc sản vs Quán ăn"), và
+một số lối vào nav đang tạm ẩn (xem "Điều hướng header").
+
+### Bước kế tiếp
+
+**Lịch trình chuyến đi** — đã phân tích thiết kế xong, xem [`docs/lich-trinh.md`](docs/lich-trinh.md);
+còn 6 mục phải chốt ở §9 trước khi viết code.
