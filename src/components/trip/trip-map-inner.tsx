@@ -19,6 +19,21 @@ export type TripMapPoint = {
   lng: number;
 };
 
+// Pin RỖNG cho mục chưa xếp ngày: cùng hình tròn nhưng viền đứt, nền trắng,
+// không số. Đọc ra là "đã lưu, chưa đưa vào lịch" — và cho thấy nó nằm ở đâu so
+// với tuyến của ngày đang xem, thứ mà một danh sách không nói được.
+let ghostIcon: L.DivIcon | null = null;
+function makeGhostIcon(): L.DivIcon {
+  ghostIcon ??= L.divIcon({
+    html: '<div class="dl-trip-ghost"></div>',
+    className: "dl-marker",
+    iconSize: [18, 18],
+    iconAnchor: [9, 9],
+    popupAnchor: [0, -12],
+  });
+  return ghostIcon;
+}
+
 // Pin tròn số thứ tự. Cache theo số để khỏi dựng lại DOM mỗi lần render.
 const iconCache = new Map<number, L.DivIcon>();
 function numberIcon(n: number): L.DivIcon {
@@ -67,9 +82,12 @@ function useIsDark(): boolean {
 export default function TripMapInner({
   points,
   route,
+  ghosts = [],
 }: {
   points: TripMapPoint[];
   route: [number, number][] | null;
+  /** Mục CHƯA xếp ngày (có toạ độ) — chấm rỗng, không tính vào khung nhìn. */
+  ghosts?: { id: string; name: string; lat: number; lng: number }[];
 }) {
   const dark = useIsDark();
   const style = dark ? "dark_all" : "voyager";
@@ -104,6 +122,17 @@ export default function TripMapInner({
           pathOptions={{ color: "var(--primary)", weight: 3, opacity: 0.5, dashArray: "6 8" }}
         />
       ) : null}
+
+      {/* Vẽ TRƯỚC các pin đánh số để chúng luôn nằm dưới — chấm mờ là nền, không
+          phải nội dung chính của bản đồ. */}
+      {ghosts.map((g) => (
+        <Marker key={`ghost-${g.id}`} position={[g.lat, g.lng]} icon={makeGhostIcon()}>
+          <Popup>
+            <span className="text-sm font-medium">{g.name}</span>
+            <span className="block text-xs opacity-70">Chưa xếp ngày</span>
+          </Popup>
+        </Marker>
+      ))}
 
       {points.map((p) => (
         <Marker key={p.id} position={[p.lat, p.lng]} icon={numberIcon(p.order)}>

@@ -30,13 +30,17 @@ export default async function LichTrinhPage() {
         startDate: true,
         updatedAt: true,
         _count: { select: { items: true, days: true } },
+        // Ảnh bìa thẻ: mượn ảnh của địa điểm đầu tiên trong chuyến.
         items: {
           take: 1,
-          where: { OR: [{ spotId: { not: null } }, { placeId: { not: null } }] },
+          where: { spotId: { not: null } },
           select: {
             spot: { select: { images: { where: { isCover: true }, take: 1, select: { url: true } } } },
-            place: { select: { images: { where: { isCover: true }, take: 1, select: { url: true } } } },
           },
+        },
+        // Nơi bấm "Lên lịch trình đi X" — dùng làm ảnh bìa dự phòng.
+        place: {
+          select: { images: { where: { isCover: true }, take: 1, select: { url: true } } },
         },
       },
     }),
@@ -77,7 +81,7 @@ export default async function LichTrinhPage() {
                 Lịch trình
               </h1>
               <p className="mt-2 max-w-prose leading-relaxed text-muted-foreground">
-                Gom nơi muốn đến vào Túi đồ, xếp vào từng ngày — chúng tôi tính giúp
+                Gom nơi muốn đến, xếp vào từng ngày — chúng tôi tính giúp
                 giờ ước tính và báo trước chỗ nào chưa mở lúc bạn tới.
               </p>
             </div>
@@ -90,7 +94,7 @@ export default async function LichTrinhPage() {
               {trips.map((trip) => {
                 const cover =
                   trip.items[0]?.spot?.images[0]?.url ??
-                  trip.items[0]?.place?.images[0]?.url ??
+                  trip.place?.images[0]?.url ??
                   null;
                 return (
                   <li key={trip.id} className="group relative">
@@ -135,11 +139,11 @@ export default async function LichTrinhPage() {
                             <CalendarDays className="size-3.5" aria-hidden />
                             {trip._count.days} ngày
                           </span>
-                          <span aria-hidden>·</span>
+                          <span aria-hidden className="h-3 w-px bg-border" />
                           <span>{trip._count.items} mục</span>
                           {trip.startDate && (
                             <>
-                              <span aria-hidden>·</span>
+                              <span aria-hidden className="h-3 w-px bg-border" />
                               <span>
                                 {trip.startDate.toLocaleDateString("vi-VN", {
                                   day: "numeric",
@@ -226,7 +230,7 @@ export default async function LichTrinhPage() {
                           </span>
                           {t.place && (
                             <>
-                              <span aria-hidden>·</span>
+                              <span aria-hidden className="h-3 w-px bg-border" />
                               <span className="inline-flex items-center gap-1">
                                 <MapPin className="size-3.5" aria-hidden />
                                 {t.place.name}

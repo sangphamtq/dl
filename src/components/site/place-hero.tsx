@@ -4,7 +4,7 @@ import { HeroFrame } from "@/components/site/hero-frame";
 import { PlaceHeroStack, type HeroImage } from "@/components/site/place-hero-stack";
 import { ShareButton } from "@/components/site/share-button";
 import { CheckInButton } from "@/components/site/check-in-button";
-import { AddToTripButton } from "@/components/site/add-to-trip-button";
+import { PlanTripButton } from "@/components/site/plan-trip-button";
 import { CheckInFaces, type CheckInPerson } from "@/components/site/check-in-faces";
 import type { PlaceStat } from "@/lib/place-meta";
 
@@ -63,15 +63,6 @@ export function PlaceHero({
               )}
               <div className="flex items-center gap-2">
                 {checkIn && (
-                  <AddToTripButton
-                    target={{ kind: "place", id: place.id }}
-                    name={place.name}
-                    redirectTo={`/diem-den/${place.slug}`}
-                    isAuthed={checkIn.isAuthed}
-                    variant="bare"
-                  />
-                )}
-                {checkIn && (
                   <CheckInButton
                     targetKind="place"
                     targetId={place.id}
@@ -113,6 +104,18 @@ export function PlaceHero({
               <p className="mt-4 max-w-lg text-lg leading-relaxed text-muted-foreground">
                 {place.tagline}
               </p>
+            )}
+
+            {/* Hành động chính của trang — xem ghi chú ở bản hero canh giữa. */}
+            {checkIn && (
+              <div className="mt-6">
+                <PlanTripButton
+                  placeId={place.id}
+                  placeName={place.name}
+                  isAuthed={checkIn.isAuthed}
+                  className="h-11 px-6 text-base"
+                />
+              </div>
             )}
 
             {/* Dải thống kê + Vivu-er đã đến + tổng quan đánh giá (CÙNG HÀNG).

@@ -48,8 +48,10 @@ export default async function TripTemplatePage({
         placeName: trip.place?.name ?? null,
         placeSlug: trip.place?.slug ?? null,
         isTemplate: true,
+        coverImage: trip.coverImage,
       }}
       days={days}
+      backlog={trip.backlog}
     />
   );
 }

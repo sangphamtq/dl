@@ -18,8 +18,10 @@ const MAX_NOTE = 500;
 const MAX_DAYS = 30;
 
 // Đích của một mục — đúng 1 loại (exclusive arc ở tầng dữ liệu).
+// KHÔNG có "place": điểm đến là nơi CHỨA các mục, không phải một mục. Trang
+// điểm đến dùng nút "Lên lịch trình đi X" (startTripForPlace) thay cho nút này.
 export type ItemTarget =
-  | { kind: "place" | "spot" | "eatery" | "accommodation" | "activity"; id: string }
+  | { kind: "spot" | "eatery" | "accommodation" | "activity"; id: string }
   | { kind: "custom"; title: string };
 
 async function requireUserId(): Promise<string> {
@@ -240,7 +242,7 @@ export async function removeDay(dayId: string): Promise<ActionResult> {
   }
 
   await prisma.$transaction(async (tx) => {
-    // Mục trong ngày bị xoá KHÔNG mất — rơi về Túi đồ (dayId = null qua SetNull).
+    // Mục trong ngày bị xoá KHÔNG mất — về mục Chưa xếp ngày (dayId = null qua SetNull).
     await tx.tripItem.updateMany({ where: { dayId }, data: { dayId: null } });
     await tx.tripDay.delete({ where: { id: dayId } });
     // Dồn lại index cho liền mạch.
@@ -288,7 +290,6 @@ export async function updateDay(
 
 function targetData(target: ItemTarget): Record<string, unknown> {
   switch (target.kind) {
-    case "place": return { placeId: target.id };
     case "spot": return { spotId: target.id };
     case "eatery": return { eateryId: target.id };
     case "accommodation": return { accommodationId: target.id };
@@ -298,7 +299,7 @@ function targetData(target: ItemTarget): Record<string, unknown> {
 }
 
 /**
- * Thêm một mục vào Túi đồ. `tripId` bỏ trống → dùng chuyến đang lên lịch (tạo mới nếu
+ * Thêm một mục vào danh sách chưa xếp ngày. `tripId` bỏ trống → dùng chuyến đang lên lịch (tạo mới nếu
  * chưa có chuyến nào) — nhờ vậy nút ở trang chi tiết chỉ cần một cú bấm.
  */
 export async function addItem(
@@ -423,7 +424,7 @@ export async function moveItemToTrip(
 
   await prisma.tripItem.update({
     where: { id: itemId },
-    // Về Túi đồ của chuyến đích — ngày của chuyến cũ không có ý nghĩa ở đây.
+    // Về danh sách chưa xếp ngày của chuyến đích — ngày của chuyến cũ không có ý nghĩa ở đây.
     data: { tripId, dayId: null, order: (last?.order ?? -1) + 1 },
   });
 
@@ -477,7 +478,7 @@ export async function updateItem(
 }
 
 /**
- * Chuyển một mục sang ngày khác (hoặc về Túi đồ khi `dayId` = null) và đặt vào
+ * Chuyển một mục sang ngày khác (hoặc về danh sách chưa xếp khi `dayId` = null) và đặt vào
  * vị trí `toIndex`. Đánh số lại cả hai bên để `order` luôn liền mạch 0..n-1.
  */
 export async function moveItem(
@@ -601,7 +602,7 @@ export async function cloneTrip(
         orderBy: { order: "asc" },
         select: {
           dayId: true, order: true, stayMin: true, note: true,
-          placeId: true, spotId: true, eateryId: true, accommodationId: true, activityId: true,
+          spotId: true, eateryId: true, accommodationId: true, activityId: true,
           customTitle: true, customLat: true, customLng: true,
         },
       },
@@ -628,7 +629,16 @@ export async function cloneTrip(
     const dayIdMap = new Map<string, string>();
     for (const d of source.days) {
       const day = await tx.tripDay.create({
-        data: { tripId: trip.id, index: d.index, startMin: d.startMin, title: d.title, note: d.note },
+        data: {
+          tripId: trip.id,
+          index: d.index,
+          startMin: d.startMin,
+          // KHÔNG chép `title`/`note` của ngày: đó là giọng biên tập của lịch
+          // trình mẫu, mà chuyến cá nhân KHÔNG có ô sửa hai trường này (xem
+          // DayBlock). Chép sang thì thành chữ người dùng không thấy, không sửa
+          // được, không xoá được — nhưng vẫn hiện ra khi họ chia sẻ chuyến. Tệ
+          // hơn nữa là nó mô tả một ngày mà họ vừa xếp lại hoàn toàn.
+        },
         select: { id: true },
       });
       dayIdMap.set(d.id, day.id);
@@ -640,7 +650,7 @@ export async function cloneTrip(
           tripId: trip.id,
           dayId: it.dayId ? (dayIdMap.get(it.dayId) ?? null) : null,
           order: it.order, stayMin: it.stayMin, note: it.note,
-          placeId: it.placeId, spotId: it.spotId, eateryId: it.eateryId,
+          spotId: it.spotId, eateryId: it.eateryId,
           accommodationId: it.accommodationId, activityId: it.activityId,
           customTitle: it.customTitle, customLat: it.customLat, customLng: it.customLng,
         },
@@ -674,4 +684,116 @@ export async function listMyTrips(): Promise<
     ok: true,
     data: { trips: rows.map((r) => ({ id: r.id, title: r.title, count: r._count.items })) },
   };
+}
+
+// ── Lên lịch trình cho một ĐIỂM ĐẾN ──────────────────────────────────────
+// Trang điểm đến KHÔNG có nút "Thêm vào lịch trình": một Place là nơi CHỨA các
+// điểm dừng, không phải một điểm dừng (xem docs/lich-trinh.md §6b). Thay vào đó
+// là "Lên lịch trình đi X" — vừa đúng ngữ nghĩa, vừa biến trang điểm đến thành
+// CỬA TRƯỚC của cả tính năng: nó đặt "chuyến đang lên lịch trình" TRƯỚC khi
+// người dùng đi gom, thay vì đoán SAU khi đã gom.
+
+export type PlanOptions = {
+  placeName: string;
+  /** Chuyến đang có của tôi CÓ liên quan tới nơi này (để khỏi đẻ chuyến trùng). */
+  trips: { id: string; title: string; count: number }[];
+  templates: { id: string; slug: string | null; title: string; days: number }[];
+};
+
+// Nơi này + các điểm đến con: đứng ở trang tỉnh Bình Thuận mà đã có chuyến
+// Phan Thiết thì phải nhận ra, đừng mời tạo chuyến mới.
+async function placeScope(placeId: string) {
+  const place = await prisma.place.findUnique({
+    where: { id: placeId },
+    select: { id: true, name: true, children: { select: { id: true } } },
+  });
+  if (!place) return null;
+  return { name: place.name, ids: [place.id, ...place.children.map((c) => c.id)] };
+}
+
+export async function getPlanOptions(placeId: string): Promise<ActionResult<PlanOptions>> {
+  let userId: string;
+  try {
+    userId = await requireUserId();
+  } catch {
+    return { ok: false, error: "Bạn cần đăng nhập để lên lịch trình." };
+  }
+
+  const scope = await placeScope(placeId);
+  if (!scope) return { ok: false, error: "Không tìm thấy điểm đến." };
+  const inScope = { in: scope.ids };
+
+  const [trips, templates] = await Promise.all([
+    prisma.trip.findMany({
+      where: {
+        ownerId: userId,
+        isTemplate: false,
+        // "Chuyến về nơi này" suy từ NỘI DUNG chứ không chỉ từ Trip.placeId:
+        // chuyến vẫn là chuyến Phan Thiết chừng nào còn mục ở Phan Thiết, kể cả
+        // khi nó được tạo từ chỗ khác.
+        OR: [
+          { placeId: inScope },
+          { items: { some: { spot: { placeId: inScope } } } },
+          { items: { some: { eatery: { placeId: inScope } } } },
+          { items: { some: { accommodation: { placeId: inScope } } } },
+          { items: { some: { activity: { placeId: inScope } } } },
+        ],
+      },
+      orderBy: { updatedAt: "desc" },
+      take: 8,
+      select: { id: true, title: true, _count: { select: { items: true } } },
+    }),
+    prisma.trip.findMany({
+      where: { isTemplate: true, status: "published", placeId: inScope },
+      orderBy: [{ isFeatured: "desc" }, { order: "asc" }],
+      take: 4,
+      select: { id: true, slug: true, title: true, _count: { select: { days: true } } },
+    }),
+  ]);
+
+  return {
+    ok: true,
+    data: {
+      placeName: scope.name,
+      trips: trips.map((t) => ({ id: t.id, title: t.title, count: t._count.items })),
+      templates: templates.map((t) => ({
+        id: t.id,
+        slug: t.slug,
+        title: t.title,
+        days: t._count.days,
+      })),
+    },
+  };
+}
+
+/** Tạo chuyến trống cho một điểm đến và đặt làm chuyến đang lên lịch trình. */
+export async function startTripForPlace(
+  placeId: string,
+): Promise<ActionResult<{ id: string }>> {
+  let userId: string;
+  try {
+    userId = await requireUserId();
+  } catch {
+    return { ok: false, error: "Bạn cần đăng nhập để lên lịch trình." };
+  }
+
+  const place = await prisma.place.findUnique({
+    where: { id: placeId },
+    select: { id: true, name: true },
+  });
+  if (!place) return { ok: false, error: "Không tìm thấy điểm đến." };
+
+  const trip = await prisma.trip.create({
+    data: {
+      ownerId: userId,
+      placeId: place.id,
+      title: `Đi ${place.name}`,
+      days: { create: [{ index: 0 }] },
+    },
+    select: { id: true },
+  });
+
+  await rememberPlanning(trip.id);
+  revalidatePath("/lich-trinh");
+  return { ok: true, data: { id: trip.id } };
 }

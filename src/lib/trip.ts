@@ -64,12 +64,11 @@ export type TripData = {
   place: { slug: string; name: string } | null;
   coverImage: string | null;
   days: TripDayData[];
-  backlog: ResolvedItem[]; // Túi đồ — mục chưa xếp ngày (dayId = null)
+  backlog: ResolvedItem[]; // mục CHƯA XẾP NGÀY (dayId = null)
   updatedAt: Date;
 };
 
 export const TYPE_LABELS: Record<TripItemKind, string> = {
-  place: "Điểm đến",
   spot: "Địa điểm",
   eatery: "Quán ăn",
   accommodation: "Nơi ở",
@@ -87,9 +86,6 @@ const tripInclude = {
   items: {
     orderBy: { order: "asc" },
     include: {
-      place: {
-        select: { slug: true, name: true, kind: true, lat: true, lng: true, images: imgSelect },
-      },
       spot: {
         select: {
           slug: true, name: true, address: true, lat: true, lng: true,
@@ -209,18 +205,6 @@ function resolveItem(item: RawItem): ResolvedItem {
       bestTime: ac.seasonText, notice: null,
     };
   }
-  if (item.place) {
-    const p = item.place;
-    return {
-      ...base, kind: "place", name: p.name, href: `/diem-den/${p.slug}`,
-      image: coverUrl(p.images, p.slug, 200, 200),
-      typeLabel: p.kind === "province" ? "Tỉnh" : TYPE_LABELS.place,
-      categoryLabel: null, areaLabel: null,
-      lat: p.lat, lng: p.lng, openingHours: null,
-      durationText: null, bestTime: null, notice: null,
-    };
-  }
-
   // Mục tự nhập.
   return {
     ...base, kind: "custom", name: item.customTitle ?? "Mục tự thêm", href: null,

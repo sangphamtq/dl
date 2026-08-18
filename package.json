@@ -10,6 +10,7 @@
     "lint": "eslint",
     "set-role": "tsx scripts/set-role.ts",
     "backfill:place-coords": "tsx scripts/backfill-place-coords.ts",
+    "check:trip-dnd": "tsx scripts/check-trip-dnd.ts",
     "export:excel": "tsx scripts/export-excel.ts",
     "seed:places": "tsx prisma/seed-places.ts",
     "seed:phan-thiet": "tsx prisma/seed-phan-thiet.ts",
@@ -25,6 +26,9 @@
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "@tiptap/extension-image": "^3.27.1",

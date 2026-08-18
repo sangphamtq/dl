@@ -359,16 +359,15 @@ model Place {
   accommodations Accommodation[]
   transports     Transport[]
 
-  images        Image[]
-  videos        PlaceVideo[] // video TikTok giới thiệu (hiển thị ở hero + modal)
-  postRefs      PostRef[]
-  threads       Thread[] // chủ đề cộng đồng gắn điểm đến này
-  saleProfiles  SaleProfile[] @relation("SaleAreas") // CTV phục vụ nơi này (M:N)
+  images       Image[]
+  videos       PlaceVideo[] // video TikTok giới thiệu (hiển thị ở hero + modal)
+  postRefs     PostRef[]
+  threads      Thread[] // chủ đề cộng đồng gắn điểm đến này
+  saleProfiles SaleProfile[] @relation("SaleAreas") // CTV phục vụ nơi này (M:N)
   // lượt xem theo ngày: xem model ViewStat (polymorphic, entityType='place')
-  checkIns      CheckIn[] // người dùng đã đánh dấu "đã đến" nơi này
-  reviews       Review[] // đánh giá của Vivu-er (chỉ điểm đến lớn)
-  tripTemplates Trip[]        @relation("TripPlace") // lịch trình mẫu gắn nơi này
-  tripItems     TripItem[] // mục lịch trình trỏ tới nơi này
+  checkIns     CheckIn[] // người dùng đã đánh dấu "đã đến" nơi này
+  reviews      Review[] // đánh giá của Vivu-er (chỉ điểm đến lớn)
+  trips        Trip[]        @relation("TripPlace") // lịch trình gắn nơi này (mẫu + chuyến tạo từ trang này)
 
   tags String[] @default([])
 
@@ -1216,7 +1215,11 @@ model Trip {
   // Lịch trình mẫu do biên tập soạn — dùng CHUNG bảng này, chỉ khác cờ.
   isTemplate Boolean @default(false)
   slug       String? @unique // CHỈ template — /lich-trinh/mau/[slug]
-  placeId    String? // template gắn 1 Place để hiện ở trang điểm đến
+  // Điểm đến chính của chuyến. Với TEMPLATE: nơi nó được gắn để hiện ở trang
+  // điểm đến. Với chuyến của người dùng: nơi bấm "Lên lịch trình đi X" — đặt
+  // lúc tạo và KHÔNG bảo trì về sau (chuyến mở rộng sang tỉnh khác vẫn giữ
+  // nguyên), nên chỉ dùng làm gợi ý và đường quay lại, đừng coi là chân lý.
+  placeId    String?
   place      Place?  @relation("TripPlace", fields: [placeId], references: [id], onDelete: SetNull)
 
   days   TripDay[]
@@ -1269,10 +1272,14 @@ model TripItem {
   note    String?
 
   // Exclusive arc — đúng 1 FK được set (convention của Image/PostRef).
-  // KHÔNG có specialtyId (Specialty đang tắt) và KHÔNG có transportId
-  // (Transport là nội dung hướng dẫn, không phải điểm dừng có toạ độ).
-  placeId         String?
-  place           Place?         @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  //
+  // KHÔNG có: specialtyId (Specialty đang tắt) · transportId (Transport là nội
+  // dung hướng dẫn) · và KHÔNG có placeId — một Place là NƠI CHỨA các điểm
+  // dừng, không phải một điểm dừng: nó không có giờ mở cửa để cảnh báo, toạ độ
+  // chỉ là trọng tâm các listing, và "ở lại Phan Thiết 2 tiếng" thì vô nghĩa.
+  // Trang điểm đến vì vậy có nút "Lên lịch trình đi X" thay cho "Thêm vào lịch
+  // trình" (xem docs/lich-trinh.md §6b). Cần đánh dấu ngày nào thuộc điểm đến
+  // nào thì chỗ đúng là TripDay.placeId, không phải ở đây.
   spotId          String?
   spot            Spot?          @relation(fields: [spotId], references: [id], onDelete: Cascade)
   eateryId        String?

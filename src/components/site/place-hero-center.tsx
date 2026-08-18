@@ -4,7 +4,7 @@ import { PlaceHeroCanvas } from "@/components/site/place-hero-canvas";
 import type { HeroImage } from "@/components/site/place-hero-stack";
 import { ShareButton } from "@/components/site/share-button";
 import { CheckInButton } from "@/components/site/check-in-button";
-import { AddToTripButton } from "@/components/site/add-to-trip-button";
+import { PlanTripButton } from "@/components/site/plan-trip-button";
 import { CheckInFaces, type CheckInPerson } from "@/components/site/check-in-faces";
 import type { PlaceStat } from "@/lib/place-meta";
 
@@ -100,16 +100,6 @@ export function PlaceHeroCenter({
               góc là nó hút mắt hơn cả tên điểm đến. */}
           <div className="flex items-center gap-2">
             {checkIn && (
-              <AddToTripButton
-                target={{ kind: "place", id: place.id }}
-                name={place.name}
-                redirectTo={`/diem-den/${place.slug}`}
-                isAuthed={checkIn.isAuthed}
-                variant="bare"
-                className="h-9 rounded-full border border-white/30 px-4 text-white/85 hover:border-white/70 hover:text-white"
-              />
-            )}
-            {checkIn && (
               <CheckInButton
                 targetKind="place"
                 targetId={place.id}
@@ -186,6 +176,22 @@ export function PlaceHeroCenter({
           </>
         )}
 
+
+        {/* Hành động chính của trang: "Lên lịch trình đi X".
+            Đặt ở THÂN hero chứ không phải thanh trên — thanh đó cố ý chỉ có
+            đường 1px và chữ, nhét một nút nền đặc vào góc là nó hút mắt hơn cả
+            tên điểm đến (xem ghi chú ở topBar). Ở đây thì ngược lại: nằm dưới
+            deck, canh giữa, nó là bước tiếp theo tự nhiên sau khi đọc xong. */}
+        {checkIn && (
+          <div className="mt-7 flex justify-center sm:mt-9">
+            <PlanTripButton
+              placeId={place.id}
+              placeName={place.name}
+              isAuthed={checkIn.isAuthed}
+              className="h-11 px-6 text-base shadow-lg shadow-black/20"
+            />
+          </div>
+        )}
 
         {/* Bóng chữ mềm cho CẢ cụm meta. Tên điểm đến cỡ lớn thì scrim là đủ,
             nhưng chữ micro ở đây rơi vào quãng scrim mỏng nhất và vắt qua đủ

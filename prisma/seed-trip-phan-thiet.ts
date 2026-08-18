@@ -8,11 +8,15 @@ import { prisma } from "@/lib/prisma";
 // điểm — ví dụ đồi cát đi lúc tinh mơ, bánh mì thịt nướng chỉ bán 5:30–10:00,
 // hải sản Bờ Kè mở từ 16:00. Trang mẫu KHÔNG còn cảnh báo ĐỎ nào.
 //
-// Hai mốc giờ dưới đây do CHÍNH máy tính giờ bắt lỗi rồi mới sửa (bản viết tay
-// đầu tiên tới Rooftop lúc 14:46 và Lẩu thả lúc 9:41 — cả hai đều chưa mở):
-//   · Ngày 2 nghỉ trưa 180 phút, không phải 150
+// Các mốc thời lượng dưới đây do CHÍNH máy tính giờ bắt lỗi rồi mới chỉnh (bản
+// viết tay đầu tiên tới Rooftop lúc 14:38 và Ốc nướng 16:24 — cả hai chưa mở):
+//   · Ngày 2: Bàu Trắng 90′, cà phê 60′, nghỉ trưa 195′
 //   · Ngày 3 bắt đầu 7:30, không phải 7:00
-// Đổi thời lượng ở đây thì nhớ chạy lại và soi giờ, đừng sửa mò.
+//
+// ⚠ KIỂM BẰNG TRANG THẬT, ĐỪNG KIỂM BẰNG SCRIPT. Script chạy ngoài Next không
+// gọi được ORS (unstable_cache cần runtime của Next) nên rơi về ước lượng chim
+// bay — mà chim bay ở đây CHẬM HƠN đường thật, khiến mọi mốc dôi ra ~45 phút và
+// tưởng là an toàn. Mở /lich-trinh/mau/phan-thiet-3n2d rồi soi giờ trên đó.
 //
 // Hai cảnh báo CAM còn lại là ĐÚNG, cố ý giữ: Bàu Trắng cách thành phố ~1,5 giờ
 // lái thật, và ngày 2 dậy 4:30 rồi ăn tối thì đúng là một ngày dài.
@@ -55,10 +59,10 @@ const PLAN: {
     items: [
       { kind: "spot", slug: "doi-cat-bay-mui-ne", stayMin: 75, note: "Đi sớm để kịp mặt trời lên và tránh nắng." },
       { kind: "activity", slug: "truot-cat-mui-ne", stayMin: 45 },
-      { kind: "spot", slug: "bau-trang", stayMin: 75 },
-      { kind: "eatery", slug: "ca-phe-bau-trang", stayMin: 45 },
+      { kind: "spot", slug: "bau-trang", stayMin: 90 },
+      { kind: "eatery", slug: "ca-phe-bau-trang", stayMin: 60 },
       { kind: "eatery", slug: "banh-canh-cha-ca-ba-ly", stayMin: 45, note: "Ăn muộn cũng được — bán tới trưa." },
-      { kind: "accommodation", slug: "sunny-house-homestay-mui-ne", stayMin: 180, note: "Nghỉ trưa, tránh nắng gắt — dậy 4:30 rồi thì nghỉ hẳn 3 tiếng." },
+      { kind: "accommodation", slug: "sunny-house-homestay-mui-ne", stayMin: 195, note: "Nghỉ trưa, tránh nắng gắt — dậy 4:30 rồi thì nghỉ hẳn hơn 3 tiếng." },
       { kind: "eatery", slug: "rooftop-hoang-hon-mui-ne", stayMin: 90 },
       { kind: "eatery", slug: "oc-nuong-bo-ke", stayMin: 75 },
     ],

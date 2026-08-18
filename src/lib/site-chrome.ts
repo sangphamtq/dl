@@ -22,6 +22,17 @@ const MAP_ROUTES = /^\/ban-do$|^\/diem-den\/[^/]+\/ban-do$/;
 /** Trang chi tiết một điểm đến: `/diem-den/<slug>`, KHÔNG gồm các màn con. */
 const PLACE_DETAIL = /^\/diem-den\/[^/]+$/;
 
+/**
+ * Trang lịch trình cụ thể (soạn · bản chia sẻ · lịch trình mẫu) — KHÔNG gồm
+ * `/lich-trinh` (danh sách chuyến, vẫn là trang nội dung bình thường).
+ *
+ * Ở đây header KHÔNG dính: ba trang này là bố cục ba cột cao đúng một màn hình,
+ * hai cột ngoài tự dính lấy. Giữ thêm một thanh dính nữa ở trên cùng thì vừa ăn
+ * mất 64px vĩnh viễn của vùng làm việc, vừa chồng lên dải chọn ngày (vốn cũng
+ * dính `top-0`). Cuộn qua là nó đi luôn, trả cả màn hình cho lịch trình.
+ */
+const TRIP_DETAIL = /^\/lich-trinh\/.+/;
+
 export function isMapRoute(pathname: string): boolean {
   return MAP_ROUTES.test(pathname);
 }
@@ -29,15 +40,23 @@ export function isMapRoute(pathname: string): boolean {
 export function chromeFor(
   pathname: string,
   heroLayout: HeroLayout,
-): { tone: "dark" | "light"; overlay: boolean } {
+): { tone: "dark" | "light"; overlay: boolean; pinned: boolean } {
+  // `pinned = false` ⇒ header nằm trong luồng và CUỘN ĐI cùng nội dung.
+  const pinned = !TRIP_DETAIL.test(pathname);
+
+  // Không dính ⇒ không đè lên ảnh nào cả, nên phải là bản LIGHT (chữ mực trên
+  // kính trắng). Bản dark là chữ TRẮNG, sinh ra để đọc trên ảnh hero — đặt nó
+  // trên nền trang sáng thì chữ chìm và cả thanh trông bệt.
+  if (!pinned) return { tone: "light", overlay: false, pinned };
+
   // `/diem-den` khớp cả LIGHT_ROUTES lẫn tiền tố của trang điểm đến — kiểm tra
   // khớp chính xác trước để nó không rơi nhầm vào nhánh hero.
-  if (LIGHT_ROUTES.has(pathname)) return { tone: "light", overlay: false };
+  if (LIGHT_ROUTES.has(pathname)) return { tone: "light", overlay: false, pinned };
 
   // Hero ảnh tràn viền chạy dưới header: trang chủ luôn có, trang điểm đến chỉ
   // khi cấu hình hero là kiểu "center" (dải ảnh bắt đầu từ y=0).
   const overlay =
     pathname === "/" || (PLACE_DETAIL.test(pathname) && heroLayout === "center");
 
-  return { tone: "dark", overlay };
+  return { tone: "dark", overlay, pinned };
 }

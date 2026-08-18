@@ -41,6 +41,8 @@ export default async function TripEditorPage({
           partySize: trip.partySize,
           shareId: trip.shareId,
           visibility: trip.visibility,
+          place: trip.place,
+          isTemplate: trip.isTemplate,
         }}
         days={days}
         backlog={trip.backlog}

@@ -41,7 +41,9 @@ const getServerScrolled = () => false;
 // nội dung trang trôi bên dưới vẫn thấy được. Cuộn xuống chỉ làm tint đậm thêm,
 // thanh không xê dịch.
 //
-// Hai chế độ chỉ khác nhau ở vị trí trong luồng và độ đậm lúc nghỉ:
+// BA chế độ, khác nhau ở vị trí trong luồng:
+// - `!pinned`: nằm trong luồng, CUỘN ĐI (trang lịch trình — xem lib/site-chrome).
+// Hai chế độ còn lại khác nhau ở vị trí trong luồng và độ đậm lúc nghỉ:
 // - `overlay` (trang có hero ảnh tràn viền): `fixed` để hero bắt đầu từ y=0 và
 //   chạy dưới header; lúc chưa cuộn thì tint gần như trong veo, ảnh nguyên vẹn.
 // - thường: `sticky` (nội dung bắt đầu ngay dưới thanh, không bị khuất) và tint
@@ -90,8 +92,12 @@ export function HeaderChrome({
     getScrolled,
     getServerScrolled,
   );
-  const { tone, overlay } = chromeFor(usePathname(), heroLayout);
-  const deep = !overlay || scrolled;
+  const { tone, overlay, pinned } = chromeFor(usePathname(), heroLayout);
+  // `deep` = dùng lớp kính "đã cuộn" (blur mạnh + tint + hairline).
+  // Header KHÔNG dính thì luôn dùng lớp này: nó không đè lên gì cả, mà lớp
+  // "nghỉ" vốn trong veo (blur 2px, không nền, không hairline) — đặt trên nền
+  // trang thì thành một vệt bệt không ra thanh cũng không ra nền.
+  const deep = !overlay || scrolled || !pinned;
   const light = tone === "light";
 
   return (
@@ -108,7 +114,8 @@ export function HeaderChrome({
         // Kéo theo: mọi thanh dính bên dưới phải neo `top-0 lg:top-16`.
         "group/header relative top-0 z-50 hidden w-full lg:block",
         !light && "dark",
-        overlay ? "fixed" : "sticky",
+        // `relative` đã có sẵn ở dòng trên — không dính thì để nguyên nó.
+        overlay ? "fixed" : pinned ? "sticky" : null,
       )}
     >
       {/* Scrim đỉnh — chỉ lúc còn trong veo trên hero. Cao hơn header và fade

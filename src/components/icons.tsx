@@ -76,6 +76,7 @@ export const Flag = make("flag");
 export const Footprints = make("footprints");
 export const Frown = make("frown");
 export const Globe = make("globe");
+export const GripVertical = make("grip-vertical");
 export const Heading2 = make("heading-2");
 export const Heading3 = make("heading-3");
 export const Heart = make("heart");

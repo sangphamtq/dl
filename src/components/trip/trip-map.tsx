@@ -20,9 +20,12 @@ const TripMapInner = dynamic(() => import("@/components/trip/trip-map-inner"), {
 export function TripMap({
   points,
   dayLabel,
+  ghosts,
 }: {
   points: TripMapPoint[];
   dayLabel: string;
+  /** Mục chưa xếp ngày có toạ độ — chấm mờ, để thấy chúng nằm gần tuyến nào. */
+  ghosts?: { id: string; name: string; lat: number; lng: number }[];
 }) {
   const [route, setRoute] = useState<[number, number][] | null>(null);
 
@@ -46,7 +49,7 @@ export function TripMap({
     };
   }, [points]);
 
-  if (points.length === 0) {
+  if (points.length === 0 && (ghosts?.length ?? 0) === 0) {
     return (
       <div className="grid h-full min-h-[24rem] place-items-center bg-muted/40 px-6 text-center">
         <div>
@@ -62,7 +65,7 @@ export function TripMap({
 
   return (
     <div className="h-full min-h-[24rem]">
-      <TripMapInner points={points} route={points.length >= 2 ? route : null} />
+      <TripMapInner points={points} route={points.length >= 2 ? route : null} ghosts={ghosts} />
     </div>
   );
 }

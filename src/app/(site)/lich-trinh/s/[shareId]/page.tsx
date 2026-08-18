@@ -34,8 +34,10 @@ export default async function SharedTripPage({
         placeName: trip.place?.name ?? null,
         placeSlug: trip.place?.slug ?? null,
         isTemplate: false,
+        coverImage: trip.coverImage,
       }}
       days={days}
+      backlog={trip.backlog}
     />
   );
 }

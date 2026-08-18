@@ -21,7 +21,6 @@ import {
 } from "@/lib/opening-hours";
 
 export type TripItemKind =
-  | "place"
   | "spot"
   | "eatery"
   | "accommodation"
@@ -32,7 +31,6 @@ export type TripItemKind =
 // Con số tròn, cố ý thô — mục đích là ra được một mốc giờ HỢP LÝ để cảnh báo,
 // không phải dự báo chính xác. Người dùng sửa được từng mục.
 export const DEFAULT_STAY_MIN: Record<TripItemKind, number> = {
-  place: 120,
   spot: 90,
   eatery: 60,
   activity: 120, // ghi đè bằng durationText nếu đọc được

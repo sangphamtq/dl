@@ -29,7 +29,7 @@ import {
 // /login rồi quay về tay trắng thì tính năng chết ngay tại đây. Nên:
 //   1. chưa đăng nhập → mở LoginDrawer TẠI CHỖ (không điều hướng thẳng)
 //   2. ghi ý định vào sessionStorage + quay lại đúng trang cũ
-//   3. quay về → tự thêm, báo "đã thêm vào Túi đồ"
+//   3. quay về → tự thêm, báo "đã thêm vào lịch trình"
 
 const INTENT_KEY = "halivivu:trip-intent";
 
@@ -131,7 +131,7 @@ export function AddToTripButton({
       toast.success(
         res.data.duplicate
           ? `${name} đã có trong “${res.data.tripTitle}”`
-          : `Đã thêm vào Túi đồ của “${res.data.tripTitle}”`,
+          : `Đã thêm vào “${res.data.tripTitle}”`,
         {
           action: canSwitch
             ? { label: "Đổi chuyến", onClick: () => void openPicker() }
@@ -211,7 +211,7 @@ export function AddToTripButton({
           <DialogHeader>
             <DialogTitle>Chuyển sang chuyến nào?</DialogTitle>
             <DialogDescription>
-              {name} sẽ vào Túi đồ của chuyến bạn chọn, và bạn chuyển sang lên lịch
+              {name} sẽ vào chuyến bạn chọn, và bạn chuyển sang lên lịch
               trình cho chuyến đó.
             </DialogDescription>
           </DialogHeader>
@@ -243,7 +243,7 @@ export function AddToTripButton({
         onOpenChange={setLoginOpen}
         redirectTo={backTo}
         title="Đăng nhập để lưu vào lịch trình"
-        description={`Đăng nhập rồi ${name} sẽ được thêm vào Túi đồ ngay.`}
+        description={`Đăng nhập rồi ${name} sẽ được thêm vào lịch trình ngay.`}
       />
     </>
   );

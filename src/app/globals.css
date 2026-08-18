@@ -275,6 +275,21 @@
 .dl-trip-pin:hover {
   transform: scale(1.12);
 }
+/* Mục CHƯA xếp ngày trên bản đồ lịch trình: vòng tròn rỗng viền ĐỨT — cùng họ
+   với .dl-trip-pin nhưng đọc ra là "đã lưu, chưa đưa vào lịch". Nền đặc để
+   không lẫn vào tile bản đồ. */
+.dl-trip-ghost {
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: var(--background);
+  border: 2px dashed color-mix(in oklch, var(--primary) 60%, transparent);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.25);
+  transition: transform 0.15s ease;
+}
+.dl-trip-ghost:hover {
+  transform: scale(1.2);
+}
 /* Chấm spot trên mini-map cục bộ (trang chi tiết điểm đến) */
 .dl-mini-spot {
   display: block;
