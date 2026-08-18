@@ -21,6 +21,7 @@ import {
   ArrowRight,
 } from "@/components/icons";
 import { cn } from "@/lib/utils";
+import { AddToTripButton } from "@/components/site/add-to-trip-button";
 import { coverUrl } from "@/lib/place-image";
 import { googleEmbedSrc } from "@/lib/map-url";
 import { DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -33,6 +34,7 @@ import {
 import { ACCOMMODATION_CATEGORY_LABELS, label } from "@/lib/listing-labels";
 
 export type AccommodationDetailData = {
+  id: string;
   slug: string;
   name: string;
   description: string | null;
@@ -339,6 +341,17 @@ export function AccommodationDetail({
               ))}
             </div>
           )}
+
+          {/* Lưu vào lịch trình — KHÔNG nhét vào thanh ghim đáy: ở đó "Nhắn
+              Zalo chính chủ" là nút chính và cả mục Lưu trú tồn tại để dẫn
+              khách tới đúng kênh chính chủ. */}
+          <div className="mt-5">
+            <AddToTripButton
+              target={{ kind: "accommodation", id: data.id }}
+              name={data.name}
+              className="h-8 px-3 text-xs"
+            />
+          </div>
 
           {/* Đường sang trang chi tiết — ĐÍCH CHIA SẺ (chủ nhà dán link vào
               group FB). Popup chỉ là bản xem nhanh nên lối này phải rõ ràng. */}

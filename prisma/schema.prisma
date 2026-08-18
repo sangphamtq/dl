@@ -32,8 +32,8 @@ enum HeroLayout {
 
 // Cấu hình site dạng singleton (luôn 1 bản ghi id="singleton").
 model SiteSetting {
-  id           String   @id @default("singleton")
-  siteName     String   @default("Halivivu")
+  id           String     @id @default("singleton")
+  siteName     String     @default("Halivivu")
   tagline      String?
   description  String? // mô tả meta (SEO)
   contactEmail String?
@@ -266,6 +266,7 @@ model User {
 
   checkIns CheckIn[] // các điểm đến/tỉnh đã đánh dấu "đã đến"
   reviews  Review[] // đánh giá điểm đến đã viết
+  trips    Trip[] // lịch trình chuyến đi (kể cả lịch trình mẫu nếu là editor)
 
   saleProfile   SaleProfile?  @relation("SaleOwner") // hồ sơ CTV (nếu có) — đăng ký làm người bán
   salesReviewed SaleProfile[] @relation("SaleReviewer") // hồ sơ CTV mình đã duyệt (staff)
@@ -340,6 +341,12 @@ model Place {
   wardCode     Int?
   wardName     String?
 
+  // Toạ độ trung tâm. Trước đây chỉ có bảng tra tay lib/place-coords.ts (theo
+  // slug, không phủ hết) — giữ nguyên làm fallback, nhưng lịch trình cần toạ độ
+  // thật trên bản ghi để ước tính quãng đường.
+  lat Float?
+  lng Float?
+
   parentId String?
   parent   Place?  @relation("PlaceTree", fields: [parentId], references: [id], onDelete: SetNull)
   children Place[] @relation("PlaceTree")
@@ -352,14 +359,16 @@ model Place {
   accommodations Accommodation[]
   transports     Transport[]
 
-  images       Image[]
-  videos       PlaceVideo[] // video TikTok giới thiệu (hiển thị ở hero + modal)
-  postRefs     PostRef[]
-  threads      Thread[] // chủ đề cộng đồng gắn điểm đến này
-  saleProfiles SaleProfile[]   @relation("SaleAreas") // CTV phục vụ nơi này (M:N)
+  images        Image[]
+  videos        PlaceVideo[] // video TikTok giới thiệu (hiển thị ở hero + modal)
+  postRefs      PostRef[]
+  threads       Thread[] // chủ đề cộng đồng gắn điểm đến này
+  saleProfiles  SaleProfile[] @relation("SaleAreas") // CTV phục vụ nơi này (M:N)
   // lượt xem theo ngày: xem model ViewStat (polymorphic, entityType='place')
-  checkIns     CheckIn[] // người dùng đã đánh dấu "đã đến" nơi này
-  reviews      Review[] // đánh giá của Vivu-er (chỉ điểm đến lớn)
+  checkIns      CheckIn[] // người dùng đã đánh dấu "đã đến" nơi này
+  reviews       Review[] // đánh giá của Vivu-er (chỉ điểm đến lớn)
+  tripTemplates Trip[]        @relation("TripPlace") // lịch trình mẫu gắn nơi này
+  tripItems     TripItem[] // mục lịch trình trỏ tới nơi này
 
   tags String[] @default([])
 
@@ -427,18 +436,18 @@ model CheckIn {
 // điểm cộng/cần lưu ý (vocab định nghĩa trong code, lưu String[]) + nội dung viết
 // (tùy chọn). Hiện ngay; staff ẩn nếu cần. 1 review/người/điểm đến, sửa được.
 model Review {
-  id       String @id @default(cuid())
+  id       String  @id @default(cuid())
   // Exclusive arc: đúng 1 trong place/spot được set (kiểm ở app).
   placeId  String?
   place    Place?  @relation(fields: [placeId], references: [id], onDelete: Cascade)
   spotId   String?
   spot     Spot?   @relation(fields: [spotId], references: [id], onDelete: Cascade)
   authorId String
-  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  author   User    @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   stance     ReviewStance
-  highlights String[] @default([]) // nhãn "điểm cộng" đã chọn
-  caveats    String[] @default([]) // nhãn "cần lưu ý" đã chọn
+  highlights String[]     @default([]) // nhãn "điểm cộng" đã chọn
+  caveats    String[]     @default([]) // nhãn "cần lưu ý" đã chọn
   content    String? // nội dung viết (tùy chọn)
 
   isHidden Boolean @default(false) // staff ẩn khỏi công khai (không tính vào tổng hợp)
@@ -484,8 +493,9 @@ model Activity {
 
   spotLinks SpotActivity[] // M:N qua bảng nối (mang nội dung riêng theo spot)
 
-  images   Image[]
-  postRefs PostRef[]
+  images    Image[]
+  postRefs  PostRef[]
+  tripItems TripItem[]
 
   tags        String[]      @default([])
   status      PublishStatus @default(draft)
@@ -551,9 +561,10 @@ model Spot {
   reviews  Review[] // đánh giá của Vivu-er cho địa điểm này
   threads  Thread[] // chủ đề cộng đồng gắn địa điểm này
 
-  images   Image[]
-  postRefs PostRef[]
-  videos   SpotVideo[] // video TikTok giới thiệu (hiển thị ở hero + modal)
+  images    Image[]
+  postRefs  PostRef[]
+  videos    SpotVideo[] // video TikTok giới thiệu (hiển thị ở hero + modal)
+  tripItems TripItem[]
 
   tags        String[]      @default([])
   status      PublishStatus @default(draft)
@@ -590,12 +601,12 @@ model SpotActivity {
 
 // Điểm nhấn của một địa điểm — mỗi mục có tiêu đề, mô tả và ảnh riêng.
 model SpotHighlight {
-  id       String  @id @default(cuid())
-  spotId   String
-  spot     Spot    @relation(fields: [spotId], references: [id], onDelete: Cascade)
-  order    Int     @default(0)
-  title    String
-  body     String? // mô tả ngắn (rich text HTML)
+  id     String  @id @default(cuid())
+  spotId String
+  spot   Spot    @relation(fields: [spotId], references: [id], onDelete: Cascade)
+  order  Int     @default(0)
+  title  String
+  body   String? // mô tả ngắn (rich text HTML)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -668,8 +679,9 @@ model Eatery {
 
   specialties Specialty[] @relation("SpecialtyEateries") // M:N
 
-  images   Image[]
-  postRefs PostRef[]
+  images    Image[]
+  postRefs  PostRef[]
+  tripItems TripItem[]
 
   tags        String[]      @default([])
   status      PublishStatus @default(draft)
@@ -721,8 +733,9 @@ model Accommodation {
   placeId String
   place   Place  @relation(fields: [placeId], references: [id], onDelete: Cascade)
 
-  images   Image[]
-  postRefs PostRef[]
+  images    Image[]
+  postRefs  PostRef[]
+  tripItems TripItem[]
 
   tags        String[]      @default([])
   status      PublishStatus @default(draft)
@@ -822,6 +835,8 @@ model Image {
   post            Post?          @relation(fields: [postId], references: [id], onDelete: Cascade)
   threadId        String?
   thread          Thread?        @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  tripId          String?
+  trip            Trip?          @relation(fields: [tripId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
 
@@ -835,6 +850,7 @@ model Image {
   @@index([transportId])
   @@index([postId])
   @@index([threadId])
+  @@index([tripId])
 }
 
 // Video TikTok gắn vào Place (giới thiệu điểm đến). Chỉ lưu videoId của TikTok
@@ -1024,8 +1040,8 @@ model ThreadReply {
   content  String // văn bản thường (hiển thị whitespace-pre-wrap)
 
   parentId String?
-  parent   ThreadReply?  @relation("ThreadReplyChildren", fields: [parentId], references: [id], onDelete: Cascade)
-  replies  ThreadReply[] @relation("ThreadReplyChildren")
+  parent   ThreadReply?    @relation("ThreadReplyChildren", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  ThreadReply[]   @relation("ThreadReplyChildren")
   likes    ThreadLike[]
   reports  ContentReport[]
 
@@ -1169,4 +1185,110 @@ model Notification {
 
   @@index([userId, isRead])
   @@index([userId, createdAt])
+}
+
+// ============================================================
+// LỊCH TRÌNH CHUYẾN ĐI — Trip + TripDay + TripItem
+// Thiết kế đầy đủ & lý do từng quyết định: docs/lich-trinh.md.
+// Định vị: sổ tay chuyến đi (gom → xếp ngày → cảnh báo khả thi → chia sẻ),
+// KHÔNG phải nền tảng đặt chỗ. Bắt đăng nhập, dữ liệu nằm trong DB.
+// ============================================================
+
+enum TripVisibility {
+  private // chỉ chủ sở hữu
+  unlisted // ai có link đều xem được (không index)
+}
+
+model Trip {
+  id      String @id @default(cuid())
+  ownerId String
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  title     String
+  summary   String? // 1 câu — card + SEO (chủ yếu cho lịch trình mẫu)
+  startDate DateTime? @db.Date // null = chuyến chưa định ngày
+  partySize Int? // số người — CHỈ hiển thị, không dùng để tính tiền
+
+  // Chia sẻ: shareId sinh khi bật chia sẻ (null = chưa từng bật).
+  shareId    String?        @unique
+  visibility TripVisibility @default(private)
+
+  // Lịch trình mẫu do biên tập soạn — dùng CHUNG bảng này, chỉ khác cờ.
+  isTemplate Boolean @default(false)
+  slug       String? @unique // CHỈ template — /lich-trinh/mau/[slug]
+  placeId    String? // template gắn 1 Place để hiện ở trang điểm đến
+  place      Place?  @relation("TripPlace", fields: [placeId], references: [id], onDelete: SetNull)
+
+  days   TripDay[]
+  items  TripItem[]
+  images Image[] // ảnh bìa (template)
+
+  // AdminFields — thực chất chỉ template dùng tới status/publishedAt/isFeatured/order.
+  status      PublishStatus @default(draft)
+  publishedAt DateTime?
+  isFeatured  Boolean       @default(false)
+  order       Int?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([ownerId])
+  @@index([isTemplate, status])
+  @@index([placeId])
+}
+
+model TripDay {
+  id     String @id @default(cuid())
+  tripId String
+  trip   Trip   @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  index    Int // 0-based
+  // Giờ bắt đầu ngày tính bằng PHÚT từ 00:00 (480 = 08:00) — khớp thẳng với
+  // openingStatus() trong lib/opening-hours, khỏi phải đổi múi giờ ở giữa.
+  startMin Int     @default(480)
+  title    String?
+  note     String?
+
+  items TripItem[]
+
+  @@unique([tripId, index])
+  @@index([tripId])
+}
+
+model TripItem {
+  id     String @id @default(cuid())
+  tripId String
+  trip   Trip   @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  // null = TÚI ĐỒ (đã lưu nhưng chưa xếp vào ngày nào). Cố ý nullable: người
+  // dùng gom trước, xếp sau — bắt chọn ngày ngay lúc bấm "thêm" là ma sát.
+  dayId String?
+  day   TripDay? @relation(fields: [dayId], references: [id], onDelete: SetNull)
+
+  order   Int
+  stayMin Int? // null → mặc định theo loại (xem lib/trip-time.ts)
+  note    String?
+
+  // Exclusive arc — đúng 1 FK được set (convention của Image/PostRef).
+  // KHÔNG có specialtyId (Specialty đang tắt) và KHÔNG có transportId
+  // (Transport là nội dung hướng dẫn, không phải điểm dừng có toạ độ).
+  placeId         String?
+  place           Place?         @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  spotId          String?
+  spot            Spot?          @relation(fields: [spotId], references: [id], onDelete: Cascade)
+  eateryId        String?
+  eatery          Eatery?        @relation(fields: [eateryId], references: [id], onDelete: Cascade)
+  accommodationId String?
+  accommodation   Accommodation? @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
+  activityId      String?
+  activity        Activity?      @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  // …hoặc mục TỰ NHẬP (chuyến bay, nhà người quen — thứ site không có).
+  customTitle String?
+  customLat   Float?
+  customLng   Float?
+
+  createdAt DateTime @default(now())
+
+  @@index([tripId])
+  @@index([dayId])
 }

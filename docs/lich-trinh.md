@@ -1,10 +1,10 @@
 # Lịch trình chuyến đi — thiết kế
 
-> Tài liệu thiết kế cho chức năng **Lịch trình** (`/lich-trinh`). **CHƯA TRIỂN KHAI** —
-> mọi thứ dưới đây là quyết định đã chốt + phần còn treo, viết ra để lần sau bám theo
-> mà không phải phân tích lại từ đầu.
+> Tài liệu của chức năng **Lịch trình** (`/lich-trinh`). Ghi lại quyết định thiết kế **và**
+> hiện trạng mã nguồn, để lần sau bám theo mà không phải phân tích lại từ đầu.
 >
-> Trạng thái: **phân tích xong, chờ chốt 6 mục ở §9 trước khi viết code.**
+> Trạng thái: **ĐÃ DỰNG v1** — migration `20260818122303_trips`, 4 route công khai + 1 mục
+> CMS. Bản đồ mã nguồn ở §12, phần còn thiếu ở §13.
 > Cập nhật: 2026-08-18.
 
 ## 1. Định vị — cái này KHÔNG phải TripIt
@@ -137,11 +137,31 @@ trang chủ trắng trơn = tính năng chết ngay tại đây. Bắt buộc:
 2. Ghi ý định vào `sessionStorage`: `{ type, id }` + `callbackUrl` về **đúng trang cũ**.
 3. Quay về → **tự thêm** + toast "Đã thêm vào Túi đồ · Xem lịch trình".
 
-### "Chuyến đang mở"
+### "Chuyến đang lên lịch trình"
 
-Có nhiều chuyến thì mỗi lần bấm lại hỏi "chuyến nào" là quá phiền. Giải: lưu
-`activeTripId` trong **cookie**; bấm là thêm thẳng vào chuyến đang mở, toast kèm nút
-"Đổi chuyến". Chưa có chuyến nào → tự tạo "Chuyến đi của tôi".
+Có nhiều chuyến thì mỗi lần bấm lại hỏi "chuyến nào" là quá phiền. Giải: một người có
+nhiều chuyến nhưng tại một thời điểm chỉ **đang lên lịch cho MỘT chuyến**, lưu id chuyến
+đó trong **cookie** (`halivivu_trip`); bấm Thêm là vào thẳng Túi đồ của nó.
+
+> ⚠️ **Đừng gọi là "chuyến đang mở".** "Đang mở" trong sản phẩm này đã mang nghĩa **quán
+> còn mở cửa** (`lib/opening-hours`, huy hiệu + chip lọc ở màn hình Ẩm thực). Hai nghĩa
+> khác nhau cùng một chữ thì người đọc phải đoán theo ngữ cảnh.
+
+**Ba cách nó đổi** — thiếu cách nào thì người dùng cũng bị "thêm vào đâu không biết":
+
+1. **Mở trình soạn** `/lich-trinh/[id]` ⇒ chuyển sang lên lịch cho chuyến đó
+   (`markTripPlanning` qua `TripPlanningSync`). Hợp lý vì trang đó là chỗ *sửa*, không
+   phải chỗ *xem*. Cố ý **không** `revalidatePath` — nếu không trang tự làm mới ngay khi
+   vừa mở.
+2. **Đặt tay** từ menu "…" trên thẻ ở `/lich-trinh` → *"Lên lịch trình cho chuyến này"*
+   (`setPlanningTrip`, có revalidate để nhãn trên thẻ đổi ngay).
+3. **Đổi ngay lúc vừa thêm**: toast sau khi thêm có nút **"Đổi chuyến"** (chỉ hiện khi có
+   ≥2 chuyến) → chọn chuyến → `moveItemToTrip` chuyển mục sang Túi đồ chuyến đó **và**
+   chuyển luôn chuyến đang lên lịch. Đây là khoảnh khắc DUY NHẤT người dùng nhìn thấy
+   mình đang lên lịch cho chuyến nào, nên phải sửa được ngay tại đó.
+
+Chưa có chuyến nào → tự tạo "Chuyến đi của tôi" (không hỏi tên: hỏi tên đúng lúc người ta
+mới chỉ muốn lưu một quán là ma sát vô ích).
 
 ## 5. Máy tính giờ ước tính (phần lõi)
 
@@ -218,30 +238,27 @@ Theo đúng khuôn `StayShare` đã có ở trang lưu trú: nút chia sẻ + **
 Bật chia sẻ mới sinh `shareId`. Trang `/lich-trinh/s/[shareId]` chỉ đọc, `noindex`, có nút
 "Nhân bản về lịch trình của tôi".
 
-## 9. ⚠️ Phải chốt TRƯỚC khi viết dòng code đầu tiên
+## 9. Sáu quyết định — ĐÃ CHỐT khi dựng v1
 
-| # | Vấn đề | Đề xuất | Chốt? |
-|---|---|---|---|
-| 1 | **Nguồn định tuyến.** `src/lib/map-actions.ts` tự ghi chú "OSRM demo, KHÔNG dùng cho production". Lịch trình gọi nhiều gấp bội bản đồ. | Ma trận thời gian → **ORS** (đã có key + cache 30 ngày ở `lib/routing.ts`); OSRM chỉ còn vẽ hình tuyến. | ☐ |
-| 2 | **`Place` không có `lat/lng`** — chỉ có bảng tra `src/lib/place-coords.ts` theo slug, không phủ hết. Mục kiểu `Place` sẽ thường xuyên rơi vào cảnh báo ⚪. | Thêm `lat/lng` vào `Place`, migrate từ `PLACE_COORDS`. Hoặc: chỉ cho thêm listing (có toạ độ) vào lịch trình. | ☐ |
-| 3 | **"Ước tính chi phí"** đang hứa trong text placeholder của `/lich-trinh`. | **Bỏ khỏi v1.** `Eatery`/`Accommodation` **cố ý không có `priceRange`** ⇒ ước tính sẽ *sai một cách vô hình*, đúng cái bẫy `foodIntro`/`priceRange` mà `CLAUDE.md` đã ghi lại. Chỉ cộng `ticketTiers` và gọi đúng tên **"Vé vào cửa (ước tính)"**. | ☐ |
-| 4 | **Offline.** DB + bắt đăng nhập ⇒ "mang theo khi đi" mất tác dụng, đúng lúc cần nhất. | v1.5: nút "Lưu để dùng offline" ghi snapshot JSON vào IndexedDB. | ☐ |
-| 5 | **`BottomNav`** đang 4 mục (đã ẩn Cộng đồng để nhường chỗ). | Lịch trình có xứng một tab không, hay giữ nút ở header (`lich-trinh-nav-link.tsx`)? | ☐ |
-| 6 | **Nút "Thêm" trên lưới card** | v1 chỉ ở trang chi tiết + popup (lý do ở §6). | ☐ |
+| # | Vấn đề | Đã làm |
+|---|---|---|
+| 1 | **Nguồn định tuyến.** `src/lib/map-actions.ts` tự ghi chú "OSRM demo, KHÔNG dùng cho production". | ✅ Ma trận thời gian → **ORS** qua `getDrivingDistances` (cache 30 ngày). OSRM **chỉ còn vẽ hình tuyến** trên bản đồ. ORS im lặng → ước lượng chim bay ×1.3 @38km/h, đánh dấu `approx` và UI hiện tiền tố `~`. |
+| 2 | **`Place` không có `lat/lng`** | ✅ Thêm `Place.lat/lng` + `pnpm backfill:place-coords`. Kết quả: **31/31 điểm đến** có toạ độ, **1/63 tỉnh** (tỉnh hiếm khi là điểm dừng; nhập tay được trong CMS). |
+| 3 | **"Ước tính chi phí"** | ✅ **BỎ khỏi v1** đúng như đề xuất — không có dòng chi phí nào trong UI. `Eatery`/`Accommodation` cố ý không có `priceRange` nên mọi con số sẽ sai vô hình. |
+| 4 | **Offline** | ❌ Chưa làm (xem §13). |
+| 5 | **`BottomNav`** | ✅ **Không** thêm tab. Giữ nút ở header (`lich-trinh-nav-link.tsx`) — thanh tab vẫn 4 mục. |
+| 6 | **Nút "Thêm" trên lưới card** | ✅ Chỉ ở **trang chi tiết + popup**. Lưới thẻ không đụng vào. |
 
-## 10. Phân kỳ
+## 10. Phân kỳ — tình trạng
 
-1. **Schema + migration** — 3 bảng, `Image.tripId`, `Place.lat/lng`. Không UI.
-2. **Trình soạn** `/lich-trinh/[id]`: túi đồ, ngày, kéo thả, bản đồ. Chưa cảnh báo.
-3. **Máy tính giờ + cảnh báo** (§5) — *phần tạo ra giá trị thật*.
-4. **Nút "Thêm vào lịch trình"** + luồng đăng nhập giữa chừng + chuyến đang mở (§4).
-5. **CMS template** + `/lich-trinh/mau/[slug]` + khối gợi ý ở trang điểm đến (§7).
-6. **Chia sẻ** + QR + nhân bản (§8).
+1. ✅ **Schema + migration** — 3 bảng, `Image.tripId`, `Place.lat/lng`.
+2. ✅ **Trình soạn** `/lich-trinh/[id]` — túi đồ, ngày, đổi thứ tự, bản đồ.
+3. ✅ **Máy tính giờ + cảnh báo** (§5).
+4. ✅ **Nút "Thêm vào lịch trình"** + đăng nhập giữa chừng + chuyến đang lên lịch.
+5. ✅ **CMS template** + `/lich-trinh/mau/[slug]` + khối gợi ý ở trang điểm đến.
+6. ✅ **Chia sẻ** + QR + nhân bản.
 
-> Bước **3 và 4 mới là chỗ ăn thua**; 1–2 chỉ là hạ tầng. Nếu hụt thời gian, thà chậm ở
-> 5–6 còn hơn làm mỏng 3.
-
-## 11. Hiện trạng liên quan (đã khảo sát 2026-08-18)
+## 11. Hiện trạng liên quan (khảo sát 2026-08-18)
 
 | Mảnh | Trạng thái |
 |---|---|
@@ -255,3 +272,43 @@ Bật chia sẻ mới sinh `shareId`. Trang `/lich-trinh/s/[shareId]` chỉ đ�
 Nói cách khác: chế độ "Lộ trình" trong `map-explorer` đã làm sẵn ~70% phần khó (sắp xếp
 điểm → tuyến → thời gian chặng). Lịch trình về bản chất là **làm cho thứ đó tồn tại lâu
 dài, vắt qua nhiều ngày và nhiều tỉnh**.
+
+## 12. Bản đồ mã nguồn (v1 đã dựng)
+
+| Lớp | File | Vai trò |
+|---|---|---|
+| Logic thuần | `src/lib/trip-time.ts` | Máy tính giờ + cảnh báo (§5). Không Prisma, không React, không "bây giờ" ⇒ test tay được |
+| Quãng đường | `src/lib/trip-route.ts` | `getLegs()` — ORS cho chặng liên tiếp, rơi về chim bay và đánh dấu `approx` |
+| Dữ liệu | `src/lib/trip.ts` | Nạp Trip → quy 5 loại mục về `ResolvedItem`; `buildDayViews()` dùng chung cho **cả ba** trang |
+| Mutation | `src/app/(site)/lich-trinh/actions.ts` | CRUD chuyến/ngày/mục, `moveItem`, chia sẻ, nhân bản, cookie chuyến-đang-mở |
+| Trang | `src/app/(site)/lich-trinh/{page,[id],s/[shareId],mau/[slug]}` | Danh sách · trình soạn · bản chia sẻ · lịch trình mẫu |
+| UI soạn | `src/components/trip/trip-editor.tsx` | Dòng thời gian, Túi đồ, đổi thứ tự, sửa thời gian ở lại |
+| UI đọc | `src/components/trip/trip-view.tsx` | Bản chỉ đọc dùng cho chia sẻ + mẫu |
+| Bản đồ | `src/components/trip/trip-map{,-inner}.tsx` | Pin **đánh số theo thứ tự** + tuyến của MỘT ngày |
+| Chia sẻ | `src/components/trip/trip-share.tsx` | Công tắc bật/tắt + QR + copy (khuôn `StayShare`) |
+| Nút thêm | `src/components/site/add-to-trip-button.tsx` | Gắn ở hero điểm đến (2 biến thể), hero địa điểm, trang hoạt động, trang lưu trú, popup quán ăn, popup lưu trú |
+| CMS | `src/app/cms/lich-trinh/**` | Danh sách + form xuất bản mẫu + ảnh bìa. **Nội dung ngày soạn ở trình soạn công khai** |
+| Script | `scripts/backfill-place-coords.ts` | `pnpm backfill:place-coords` |
+
+Sửa kèm ở nơi khác: `Place.lat/lng` (schema + form CMS + actions) · `Image.tripId` +
+`lib/owner.ts` + enum của route uploadthing · `RESERVED_SLUGS` thêm `lich-trinh` ·
+`sw.js` lên **v2** kèm `CACHE_ANYWAY` · `sitemap.ts` thêm mẫu · gỡ nhãn "Sắp có" khỏi
+`site-header.tsx` và `mobile-menu-sheet.tsx` · khối "Gợi ý lịch trình" ở trang điểm đến ·
+`.dl-trip-pin` trong `globals.css`.
+
+> **Cách kiểm giờ ước tính ngoài trình duyệt:** script gọi `lib/trip.ts` sẽ vướng hai thứ —
+> `import "server-only"` (không có trong node_modules gốc) và `unstable_cache` (ném
+> `Invariant: incrementalCache missing` ngoài runtime Next). Cả hai đều **không phải lỗi
+> code**: `getLegs()` bắt lỗi và rơi về ước lượng chim bay. Muốn chạy thì stub
+> `server-only` qua `NODE_PATH` và chấp nhận mọi chặng đều `approx`.
+
+## 13. Còn thiếu / cố ý chưa làm
+
+| Việc | Ghi chú |
+|---|---|
+| **Kéo–thả** sắp lại mục | Đang dùng **nút ▲▼ + menu "Chuyển sang ngày"**. Cố ý: kéo–thả xuyên vùng chứa mà không thư viện thì rất dễ vỡ trên cảm ứng, trong khi giá trị của tính năng nằm ở dòng thời gian + cảnh báo. Muốn làm thật thì thêm `@dnd-kit`. |
+| **Lưu offline** | §9.4 — chưa làm. Lịch trình cần nhất lúc mất sóng mà lại bắt đăng nhập + đọc DB. Hướng: nút "Lưu để dùng offline" ghi snapshot JSON vào IndexedDB. |
+| Sửa **tiêu đề/ghi chú của ngày** và **ghi chú của mục** | Schema có (`TripDay.title/note`, `TripItem.note`), trang chỉ-đọc đã hiện, nhưng trình soạn chưa có ô nhập. |
+| `PostRef.tripId` | Chưa thêm — blog chưa trỏ thẳng vào lịch trình mẫu được. |
+| Toạ độ **tỉnh** | 62/63 tỉnh chưa có `lat/lng`. Mục kiểu "Tỉnh" trong lịch trình sẽ hiện cảnh báo ⚪. Nhập tay trong CMS hoặc bổ sung bảng tra. |
+| Ước tính chi phí | **Cố ý bỏ** (§9.3) — đừng thêm lại nếu chưa có dữ liệu giá thật. |

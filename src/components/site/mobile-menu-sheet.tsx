@@ -16,7 +16,6 @@ import {
   Search,
 } from "@/components/icons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import {
   Drawer,
   DrawerContent,
@@ -56,7 +55,7 @@ const NAV = [
 const MINE = [
   { href: "/thong-bao", label: "Thông báo", Icon: Bell, badgeUnread: true },
   { href: "/tai-khoan/da-den", label: "Đã đến", Icon: MapPinCheck },
-  { href: "/lich-trinh", label: "Lịch trình", Icon: Route, soon: true },
+  { href: "/lich-trinh", label: "Lịch trình", Icon: Route },
 ];
 
 // Bảng menu trượt từ ĐÁY màn hình, thay cho toàn bộ header ở mobile.
@@ -196,7 +195,7 @@ export function MobileMenuSheet({
                   chúng ở đúng vai phụ và tiết kiệm chiều cao cho phần điều
                   hướng phía trên. */}
               <div className="mt-2 grid grid-cols-3 gap-2">
-                {MINE.map(({ href, label, Icon, badgeUnread, soon }) => (
+                {MINE.map(({ href, label, Icon, badgeUnread }) => (
                   <Link
                     key={href}
                     href={href}
@@ -214,11 +213,6 @@ export function MobileMenuSheet({
                       <span className="absolute right-2 top-2 grid min-w-4 place-items-center rounded-full bg-warm px-1 text-[0.625rem] font-semibold tabular-nums leading-4 text-warm-foreground">
                         {data!.unread > 9 ? "9+" : data!.unread}
                       </span>
-                    )}
-                    {soon && (
-                      <Badge className="absolute right-1.5 top-1.5 h-3.5 border-transparent bg-warm/15 px-1 text-[0.55rem] font-semibold leading-none text-warm">
-                        Sắp
-                      </Badge>
                     )}
                   </Link>
                 ))}

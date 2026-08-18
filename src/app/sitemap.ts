@@ -7,13 +7,18 @@ const pub = { status: "published" as const };
 const sel = { where: pub, select: { slug: true, updatedAt: true } };
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [places, activities, spots, accommodations, posts] =
+  const [places, activities, spots, accommodations, posts, templates] =
     await Promise.all([
       prisma.place.findMany(sel),
       prisma.activity.findMany(sel),
       prisma.spot.findMany(sel),
       prisma.accommodation.findMany(sel),
       prisma.post.findMany(sel),
+      // Lịch trình MẪU thôi — lịch trình cá nhân và bản chia sẻ đều noindex.
+      prisma.trip.findMany({
+        where: { ...pub, isTemplate: true, slug: { not: null } },
+        select: { slug: true, updatedAt: true },
+      }),
     ]);
 
   const entries = (
@@ -38,5 +43,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...entries(spots, "dia-diem"),
     ...entries(accommodations, "luu-tru"),
     ...entries(posts, "blog"),
+    ...entries(
+      templates.filter((t): t is { slug: string; updatedAt: Date } => t.slug !== null),
+      "lich-trinh/mau",
+    ),
   ];
 }

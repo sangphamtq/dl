@@ -4,6 +4,7 @@ import { HeroFrame } from "@/components/site/hero-frame";
 import { PlaceHeroStack, type HeroImage } from "@/components/site/place-hero-stack";
 import { ShareButton } from "@/components/site/share-button";
 import { CheckInButton } from "@/components/site/check-in-button";
+import { AddToTripButton } from "@/components/site/add-to-trip-button";
 import { CheckInFaces, type CheckInPerson } from "@/components/site/check-in-faces";
 import type { PlaceStat } from "@/lib/place-meta";
 
@@ -61,6 +62,15 @@ export function PlaceHero({
                 <span />
               )}
               <div className="flex items-center gap-2">
+                {checkIn && (
+                  <AddToTripButton
+                    target={{ kind: "place", id: place.id }}
+                    name={place.name}
+                    redirectTo={`/diem-den/${place.slug}`}
+                    isAuthed={checkIn.isAuthed}
+                    variant="bare"
+                  />
+                )}
                 {checkIn && (
                   <CheckInButton
                     targetKind="place"

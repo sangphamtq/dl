@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { Combobox } from "@/components/ui/combobox";
 import { FormSection } from "@/components/cms/form-section";
+import { MapLinkField } from "@/components/cms/map-link-field";
 import {
   createPlace,
   updatePlace,
@@ -45,6 +46,8 @@ const EMPTY: PlaceFormValues = {
   districtName: "",
   wardCode: "",
   wardName: "",
+  lat: "",
+  lng: "",
   tags: "",
   quickInfo: [],
 };
@@ -379,6 +382,41 @@ export function PlaceForm({
                 </div>
               </>
             )}
+          </div>
+
+          {/* Toạ độ trung tâm — Lịch trình dùng để ước tính quãng đường giữa
+              các điểm dừng. Thiếu thì mục kiểu "Điểm đến" trong lịch trình chỉ
+              hiện "chưa ước tính được đường đi". */}
+          <MapLinkField
+            onPick={(lat, lng) => {
+              set("lat", lat);
+              set("lng", lng);
+            }}
+            label="Link Google Maps (để lấy toạ độ trung tâm)"
+          />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="lat">Vĩ độ (lat)</Label>
+              <Input
+                id="lat"
+                type="number"
+                step="any"
+                value={values.lat}
+                onChange={(e) => set("lat", e.target.value)}
+                placeholder="20.9101"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="lng">Kinh độ (lng)</Label>
+              <Input
+                id="lng"
+                type="number"
+                step="any"
+                value={values.lng}
+                onChange={(e) => set("lng", e.target.value)}
+                placeholder="107.1839"
+              />
+            </div>
           </div>
         </FormSection>
 

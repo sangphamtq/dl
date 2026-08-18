@@ -9,6 +9,7 @@ export const OWNER_FK = {
   accommodation: "accommodationId",
   transport: "transportId",
   post: "postId",
+  trip: "tripId", // lịch trình mẫu — ảnh bìa hiện trên thẻ gợi ý
 } as const;
 
 export type OwnerType = keyof typeof OWNER_FK;
@@ -25,4 +26,5 @@ export const OWNER_CMS_BASE: Record<OwnerType, string | null> = {
   accommodation: "/cms/accommodations",
   transport: "/cms/transport",
   post: "/cms/posts",
+  trip: "/cms/lich-trinh",
 };

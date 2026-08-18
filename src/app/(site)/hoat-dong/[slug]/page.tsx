@@ -25,11 +25,13 @@ import {
 import { RelatedPosts } from "@/components/site/related-posts";
 import { ListingViewTracker } from "@/components/site/listing-view-tracker";
 import { isStaffViewer } from "@/lib/preview";
+import { auth } from "@/auth";
 import { PeerBar } from "@/components/site/peer-bar";
 import { getListingPeers } from "@/lib/peers";
 import { HeroFrame } from "@/components/site/hero-frame";
 import { PlaceHeroStack, type HeroImage } from "@/components/site/place-hero-stack";
 import { ShareButton } from "@/components/site/share-button";
+import { AddToTripButton } from "@/components/site/add-to-trip-button";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -98,7 +100,8 @@ export default async function ActivityPublicPage({
     },
   });
 
-  const staff = await isStaffViewer();
+  const [staff, session] = await Promise.all([isStaffViewer(), auth()]);
+  const isAuthed = Boolean(session?.user?.id);
   if (!activity || (activity.status !== "published" && !staff)) notFound();
 
   const peers = await getListingPeers("activity", activity.placeId);
@@ -159,7 +162,16 @@ export default async function ActivityPublicPage({
                     />
                     Trải nghiệm tại {activity.place.name}
                   </Link>
-                  <ShareButton title={activity.name} iconOnly />
+                  <div className="flex items-center gap-2">
+                    <AddToTripButton
+                      target={{ kind: "activity", id: activity.id }}
+                      name={activity.name}
+                      redirectTo={`/hoat-dong/${activity.slug}`}
+                      isAuthed={isAuthed}
+                      variant="bare"
+                    />
+                    <ShareButton title={activity.name} iconOnly />
+                  </div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-4 text-sm font-medium">

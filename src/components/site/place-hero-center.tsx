@@ -4,6 +4,7 @@ import { PlaceHeroCanvas } from "@/components/site/place-hero-canvas";
 import type { HeroImage } from "@/components/site/place-hero-stack";
 import { ShareButton } from "@/components/site/share-button";
 import { CheckInButton } from "@/components/site/check-in-button";
+import { AddToTripButton } from "@/components/site/add-to-trip-button";
 import { CheckInFaces, type CheckInPerson } from "@/components/site/check-in-faces";
 import type { PlaceStat } from "@/lib/place-meta";
 
@@ -98,6 +99,16 @@ export function PlaceHeroCenter({
               nền kính: hero này chỉ có đường 1px và chữ, thêm một khối đặc/mờ ở
               góc là nó hút mắt hơn cả tên điểm đến. */}
           <div className="flex items-center gap-2">
+            {checkIn && (
+              <AddToTripButton
+                target={{ kind: "place", id: place.id }}
+                name={place.name}
+                redirectTo={`/diem-den/${place.slug}`}
+                isAuthed={checkIn.isAuthed}
+                variant="bare"
+                className="h-9 rounded-full border border-white/30 px-4 text-white/85 hover:border-white/70 hover:text-white"
+              />
+            )}
             {checkIn && (
               <CheckInButton
                 targetKind="place"

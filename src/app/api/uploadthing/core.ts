@@ -66,6 +66,7 @@ export const ourFileRouter = {
           "accommodation",
           "transport",
           "post",
+          "trip",
         ]),
         ownerId: z.string().min(1),
         // Ảnh trưng bày hay ảnh tấm thực đơn (hiện chỉ Quán ăn dùng "menu").

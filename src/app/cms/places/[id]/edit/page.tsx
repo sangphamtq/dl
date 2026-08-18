@@ -35,6 +35,8 @@ export default async function EditPlacePage({
         districtName: true,
         wardCode: true,
         wardName: true,
+        lat: true,
+        lng: true,
         tags: true,
         quickInfo: true,
       },
@@ -83,6 +85,8 @@ export default async function EditPlacePage({
     districtName: place.districtName ?? "",
     wardCode: place.wardCode?.toString() ?? "",
     wardName: place.wardName ?? "",
+    lat: place.lat?.toString() ?? "",
+    lng: place.lng?.toString() ?? "",
     tags: place.tags.join(", "),
     quickInfo: (place.quickInfo as QuickFact[] | null) ?? [],
   };

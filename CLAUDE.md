@@ -470,7 +470,8 @@ trùng tên, **gắn địa danh** để phân biệt (vd hai "Quán Cô Ba" →
 `quan-co-ba-da-nang`). `placeSlug` duy nhất giữa mọi `Place`.
 
 > **Tiền tố là từ khoá dành riêng:** `diem-den`, `hoat-dong`, `dia-diem`, `dac-san`,
-> `quan-an`, `luu-tru`, `di-chuyen`, `blog`, `login`, `api` — không được trùng với slug.
+> `quan-an`, `luu-tru`, `di-chuyen`, `blog`, `lich-trinh`, `login`, `api` — không được
+> trùng với slug. Danh sách thật nằm ở `RESERVED_SLUGS` trong `src/lib/slug.ts`.
 
 **Màn hình Ẩm thực** (`/diem-den/[placeSlug]/am-thuc`, `FoodSection`) — **MỘT danh sách quán,
 MỘT bộ điều khiển**, bám đúng ba câu hỏi của người mở tab, theo thứ tự hay gặp:
@@ -939,7 +940,7 @@ Tính năng lớn chưa làm được phân tích trước và ghi ra file riên
 
 | File | Nội dung | Trạng thái |
 |---|---|---|
-| [`docs/lich-trinh.md`](docs/lich-trinh.md) | **Lịch trình chuyến đi** (`/lich-trinh`): schema `Trip`/`TripDay`/`TripItem`, máy tính giờ ước tính + cảnh báo giờ mở cửa, lịch trình mẫu, chia sẻ | Phân tích xong, **chưa code** — còn 6 mục phải chốt ở §9 |
+| [`docs/lich-trinh.md`](docs/lich-trinh.md) | **Lịch trình chuyến đi** (`/lich-trinh`): schema `Trip`/`TripDay`/`TripItem`, máy tính giờ ước tính + cảnh báo giờ mở cửa, lịch trình mẫu, chia sẻ | **ĐÃ DỰNG v1** — bản đồ mã nguồn ở §12, phần còn thiếu ở §13 |
 
 ## Phạm vi hiện tại
 
@@ -960,6 +961,7 @@ Tính năng lớn chưa làm được phân tích trước và ghi ra file riên
 | Tìm kiếm | `/tim-kiem` | `lib/search.ts`; header có `header-search.tsx` |
 | Cộng đồng | `/cong-dong` · `/cong-dong/[slug]` · `/diem-den/[placeSlug]/cong-dong` · `/dia-diem/[slug]/cong-dong` | `Thread`/`ThreadReply`/`ThreadLike` + báo cáo. **Lối vào đang tạm ẩn** — xem "Điều hướng header" |
 | Uy tín & chống lừa | `/kiem-tra` (tra SĐT/FB/web/STK) · `/sale` · `/sale/[slug]` · `/sale/dang-ky` | `SaleProfile`, `ScamReport`, `lib/trust.ts`. **Lối vào đang tạm ẩn** |
+| Lịch trình | `/lich-trinh` · `/lich-trinh/[id]` (soạn) · `/lich-trinh/s/[shareId]` (chia sẻ) · `/lich-trinh/mau/[slug]` (mẫu) | `Trip`/`TripDay`/`TripItem`; **bắt đăng nhập**. Chi tiết: [`docs/lich-trinh.md`](docs/lich-trinh.md) |
 | Cá nhân | `/tai-khoan/da-den` (bản đồ tỉnh đã đến) · `/thong-bao` | `CheckIn`, `Notification` |
 | Khác | `/gioi-thieu` · `/offline` · `/login` | |
 
@@ -973,7 +975,8 @@ CRUD **đầy đủ** (list · new · edit · detail) cho: `places`, `activities
 `eateries`, `accommodations`, `transport`, `specialties` (đang khoá), `posts`.
 Cộng thêm: `analytics` (traffic, Recharts) · `community` + `community/reports` (kiểm duyệt)
 · `reviews` · `sales` · `scam-reports` · `media` · `users` · `export` (xuất Excel) ·
-`settings` (`SiteSetting`).
+`settings` (`SiteSetting`) · **`lich-trinh`** (lịch trình mẫu — chỉ phần xuất bản; nội
+dung từng ngày soạn ở trình soạn công khai `/lich-trinh/[id]`).
 
 ### Đã chạy — dữ liệu mẫu
 
@@ -984,7 +987,7 @@ diện: **Phan Thiết** (dish-led, nhiều quán) và **Tà Xùa** (view-led, n
 
 ### Chưa có — trang mới chỉ là `ComingSoon`
 
-`/lich-trinh` · `/dich-vu` · `/thue-xe` · `/trai-nghiem` · `/luu-tru` (trang index — lưu ý
+`/dich-vu` · `/thue-xe` · `/trai-nghiem` · `/luu-tru` (trang index — lưu ý
 `/luu-tru/[slug]` thì **đã chạy**) · `/lien-he` · `/cau-hoi-thuong-gap` · `/dieu-khoan` ·
 `/bao-mat`.
 
@@ -993,5 +996,7 @@ một số lối vào nav đang tạm ẩn (xem "Điều hướng header").
 
 ### Bước kế tiếp
 
-**Lịch trình chuyến đi** — đã phân tích thiết kế xong, xem [`docs/lich-trinh.md`](docs/lich-trinh.md);
-còn 6 mục phải chốt ở §9 trước khi viết code.
+**Lịch trình đã dựng xong v1.** Việc còn treo của nó liệt kê ở
+[`docs/lich-trinh.md`](docs/lich-trinh.md) §13 — đáng làm nhất: **kéo–thả** thay cho nút
+▲▼, **lưu offline**, và điền toạ độ cho 62 tỉnh còn thiếu (`pnpm backfill:place-coords`
+chỉ phủ được điểm đến).

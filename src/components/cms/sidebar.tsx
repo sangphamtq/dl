@@ -13,6 +13,7 @@ import {
   BedDouble,
   Bus,
   Newspaper,
+  Route,
   Eye,
   MessageSquareText,
   MessagesSquare,
@@ -80,6 +81,10 @@ const NAV: NavGroup[] = [
   {
     label: "Blog",
     items: [{ href: "/cms/posts", label: "Bài viết", icon: Newspaper }],
+  },
+  {
+    label: "Lịch trình",
+    items: [{ href: "/cms/lich-trinh", label: "Lịch trình mẫu", icon: Route }],
   },
   {
     label: "Cộng đồng",

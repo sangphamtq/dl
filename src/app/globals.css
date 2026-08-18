@@ -255,6 +255,26 @@
     0 0 0 4px color-mix(in oklch, var(--pin, var(--primary)) 26%, transparent),
     0 4px 10px rgb(0 0 0 / 0.35);
 }
+/* Pin đánh SỐ THỨ TỰ cho bản đồ lịch trình — thứ tự là nội dung của lịch
+   trình, nên pin mang số chứ không mang icon loại như .dl-pin. */
+.dl-trip-pin {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 9999px;
+  background: var(--primary);
+  border: 2.5px solid #fff;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.3);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  transition: transform 0.15s ease;
+}
+.dl-trip-pin:hover {
+  transform: scale(1.12);
+}
 /* Chấm spot trên mini-map cục bộ (trang chi tiết điểm đến) */
 .dl-mini-spot {
   display: block;

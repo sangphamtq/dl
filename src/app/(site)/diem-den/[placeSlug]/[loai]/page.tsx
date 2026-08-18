@@ -273,6 +273,7 @@ async function fetchEateryDetails(placeId: string): Promise<EateryDetailData[]> 
     where: { placeId, status: "published" },
     orderBy: FOOD_ORDER,
     select: {
+      id: true,
       slug: true,
       name: true,
       description: true,
@@ -339,6 +340,7 @@ async function fetchAccommodationDetails(
       { name: "asc" },
     ],
     select: {
+      id: true,
       slug: true,
       name: true,
       description: true,

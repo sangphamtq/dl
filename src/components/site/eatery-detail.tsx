@@ -20,6 +20,7 @@ import {
   X,
 } from "@/components/icons";
 import { cn } from "@/lib/utils";
+import { AddToTripButton } from "@/components/site/add-to-trip-button";
 import { coverUrl } from "@/lib/place-image";
 import { googleEmbedSrc } from "@/lib/map-url";
 import {
@@ -43,6 +44,7 @@ import {
 } from "@/lib/listing-labels";
 
 export type EateryDetailData = {
+  id: string;
   slug: string;
   name: string;
   description: string | null;
@@ -371,6 +373,18 @@ export function EateryDetail({
           <DialogDescription className="sr-only">
             Thông tin chi tiết quán {data.name}
           </DialogDescription>
+
+          {/* Lưu vào lịch trình — đặt ở đây chứ KHÔNG nhét vào thanh ghim đáy:
+              thanh đó có "Chỉ đường" làm nút chính, thêm một nút nữa vào là hai
+              lời mời tranh nhau. Đây cũng là chỗ luôn hiện, kể cả quán không có
+              số điện thoại/website nên không có thanh ghim. */}
+          <div className="mt-3">
+            <AddToTripButton
+              target={{ kind: "eatery", id: data.id }}
+              name={data.name}
+              className="h-8 px-3 text-xs"
+            />
+          </div>
 
           {/* ── TIN THỰC ĐỊA: thứ quyết định "đi hay không", đặt NGAY dưới tên ──
                  Bản cũ chôn giờ mở cửa xuống hàng đầu của một bảng ở tận đáy

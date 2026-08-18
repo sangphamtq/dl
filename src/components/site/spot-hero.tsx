@@ -10,6 +10,7 @@ import { HeroFrame } from "@/components/site/hero-frame";
 import { PlaceHeroStack, type HeroImage } from "@/components/site/place-hero-stack";
 import { PlaceVideos, type PlaceVideo } from "@/components/site/tiktok-videos";
 import { CheckInButton } from "@/components/site/check-in-button";
+import { AddToTripButton } from "@/components/site/add-to-trip-button";
 import { CheckInFaces, type CheckInPerson } from "@/components/site/check-in-faces";
 import { ShareButton } from "@/components/site/share-button";
 
@@ -77,6 +78,13 @@ export function SpotHero({
                 Địa điểm tại {place.name}
               </Link>
               <div className="flex items-center gap-2">
+                <AddToTripButton
+                  target={{ kind: "spot", id }}
+                  name={name}
+                  redirectTo={checkInRedirect}
+                  isAuthed={checkIn.isAuthed}
+                  variant="bare"
+                />
                 <CheckInButton
                   targetKind="spot"
                   targetId={id}

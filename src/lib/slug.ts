@@ -33,6 +33,7 @@ export const RESERVED_SLUGS = new Set([
   "luu-tru",
   "di-chuyen",
   "blog",
+  "lich-trinh",
   "cong-dong",
   "sale",
   "kiem-tra",

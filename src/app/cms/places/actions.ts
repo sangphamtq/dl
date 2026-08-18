@@ -25,11 +25,21 @@ export type PlaceFormInput = {
   districtName: string;
   wardCode: string;
   wardName: string;
+  lat: string; // toạ độ trung tâm ("" = chưa có)
+  lng: string;
   tags: string; // chuỗi phân tách bằng dấu phẩy
   quickInfo: QuickFact[]; // "Thông tin chung": danh sách tên + nội dung
 };
 
 export type ActionResult = { ok: true; id: string } | { ok: false; error: string };
+
+// Toạ độ: "" → null; số hợp lệ → số; rác → null (không chặn lưu vì cả biểu mẫu).
+function coord(v: string): number | null {
+  const t = v.trim();
+  if (!t) return null;
+  const n = Number(t);
+  return Number.isFinite(n) ? n : null;
+}
 
 async function requireStaff() {
   const session = await auth();
@@ -116,6 +126,8 @@ async function normalize(
       districtName: districtCode ? input.districtName.trim() || null : null,
       wardCode,
       wardName: wardCode ? input.wardName.trim() || null : null,
+      lat: coord(input.lat),
+      lng: coord(input.lng),
       tags,
       quickInfo: quickInfo.length
         ? (quickInfo as Prisma.InputJsonValue)

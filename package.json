@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "eslint",
     "set-role": "tsx scripts/set-role.ts",
+    "backfill:place-coords": "tsx scripts/backfill-place-coords.ts",
     "export:excel": "tsx scripts/export-excel.ts",
     "seed:places": "tsx prisma/seed-places.ts",
     "seed:phan-thiet": "tsx prisma/seed-phan-thiet.ts",

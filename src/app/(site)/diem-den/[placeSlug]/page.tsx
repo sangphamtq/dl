@@ -246,7 +246,7 @@ export default async function PlaceDetailPage({
   // Trạng thái check-in "đã đến" của user hiện tại + tổng số người đã đến.
   const session = await auth();
   const userId = session?.user?.id;
-  const [checkInRow, visitors] = await Promise.all([
+  const [checkInRow, visitors, tripTemplates] = await Promise.all([
     userId
       ? prisma.checkIn.findUnique({
           where: { userId_placeId: { userId, placeId: place.id } },
@@ -254,6 +254,20 @@ export default async function PlaceDetailPage({
         })
       : Promise.resolve(null),
     getVisitors("place", place.id),
+    // Lịch trình mẫu gắn nơi này — lối vào tính năng Lịch trình từ trang điểm
+    // đến, đồng thời giải bài toán "/lich-trinh lần đầu vào thì trống trơn".
+    prisma.trip.findMany({
+      where: { isTemplate: true, status: "published", placeId: place.id },
+      orderBy: [{ isFeatured: "desc" }, { order: "asc" }],
+      take: 3,
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        summary: true,
+        _count: { select: { days: true, items: true } },
+      },
+    }),
   ]);
   const checkIn = { checked: !!checkInRow, isAuthed: !!userId };
 
@@ -653,6 +667,39 @@ export default async function PlaceDetailPage({
                 verifiedTotal={verifiedStays}
                 stays={place.accommodations}
               />
+            </section>
+          )}
+
+          {tripTemplates.length > 0 && (
+            <section id="lich-trinh" className="scroll-mt-32">
+              <SectionHeading
+                title={`Gợi ý lịch trình ở ${place.name}`}
+                href="/lich-trinh"
+                count={tripTemplates.length}
+                unit="lịch trình"
+              />
+              <ul className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {tripTemplates.map((t) => (
+                  <li key={t.id}>
+                    <Link
+                      href={`/lich-trinh/mau/${t.slug}`}
+                      className="group flex h-full flex-col rounded-2xl border border-border/60 bg-card p-5 transition-shadow hover:shadow-lg hover:shadow-black/5"
+                    >
+                      <span className="text-xs font-medium text-warm">
+                        {t._count.days} ngày · {t._count.items} điểm dừng
+                      </span>
+                      <span className="mt-1.5 font-semibold leading-snug tracking-tight group-hover:text-primary">
+                        {t.title}
+                      </span>
+                      {t.summary && (
+                        <span className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
+                          {t.summary}
+                        </span>
+                      )}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </section>
           )}
 

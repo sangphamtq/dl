@@ -1,0 +1,371 @@
+import "server-only";
+import { prisma } from "@/lib/prisma";
+import { coverUrl } from "@/lib/place-image";
+import {
+  SPOT_CATEGORY_LABELS,
+  EATERY_CATEGORY_LABELS,
+  ACCOMMODATION_CATEGORY_LABELS,
+  ACTIVITY_CATEGORY_LABELS,
+  label,
+} from "@/lib/listing-labels";
+import { scheduleDay, legKey, type ScheduleItemInput, type TripItemKind, type TripWarning } from "@/lib/trip-time";
+import { getLegs, legMinutes } from "@/lib/trip-route";
+
+// Lớp đọc dữ liệu của Lịch trình: nạp một Trip rồi QUY MỌI LOẠI MỤC VỀ MỘT HÌNH
+// DẠNG CHUNG (ResolvedItem). Nhờ vậy UI và máy tính giờ chỉ phải biết một kiểu,
+// không rẽ nhánh 5 lần ở khắp nơi.
+//
+// Exclusive arc: mỗi TripItem chỉ có đúng 1 FK được set — xem docs/lich-trinh.md §3.
+
+export type ResolvedItem = {
+  id: string; // id của TripItem (không phải của entity đích)
+  kind: TripItemKind;
+  dayId: string | null;
+  order: number;
+  note: string | null;
+  stayMin: number | null;
+
+  name: string;
+  href: string | null; // null với mục tự nhập
+  image: string | null;
+  typeLabel: string; // "Địa điểm" · "Quán ăn" …
+  categoryLabel: string | null;
+  areaLabel: string | null; // địa chỉ rút gọn / tên nơi chứa
+
+  lat: number | null;
+  lng: number | null;
+  openingHours: string | null;
+  durationText: string | null;
+  bestTime: string | null;
+  notice: string | null;
+};
+
+export type TripDayData = {
+  id: string;
+  index: number;
+  startMin: number;
+  title: string | null;
+  note: string | null;
+  items: ResolvedItem[];
+};
+
+export type TripData = {
+  id: string;
+  ownerId: string;
+  title: string;
+  summary: string | null;
+  startDate: Date | null;
+  partySize: number | null;
+  shareId: string | null;
+  visibility: "private" | "unlisted";
+  isTemplate: boolean;
+  slug: string | null;
+  status: "draft" | "published";
+  place: { slug: string; name: string } | null;
+  coverImage: string | null;
+  days: TripDayData[];
+  backlog: ResolvedItem[]; // Túi đồ — mục chưa xếp ngày (dayId = null)
+  updatedAt: Date;
+};
+
+export const TYPE_LABELS: Record<TripItemKind, string> = {
+  place: "Điểm đến",
+  spot: "Địa điểm",
+  eatery: "Quán ăn",
+  accommodation: "Nơi ở",
+  activity: "Hoạt động",
+  custom: "Tự thêm",
+};
+
+const imgSelect = { select: { url: true, isCover: true } } as const;
+
+// Một truy vấn duy nhất cho cả cây Trip → Days → Items → 5 entity đích.
+const tripInclude = {
+  place: { select: { slug: true, name: true } },
+  images: { where: { isCover: true }, take: 1, select: { url: true } },
+  days: { orderBy: { index: "asc" } },
+  items: {
+    orderBy: { order: "asc" },
+    include: {
+      place: {
+        select: { slug: true, name: true, kind: true, lat: true, lng: true, images: imgSelect },
+      },
+      spot: {
+        select: {
+          slug: true, name: true, address: true, lat: true, lng: true,
+          openingHours: true, category: true, bestTime: true, notice: true,
+          images: imgSelect, place: { select: { name: true } },
+        },
+      },
+      eatery: {
+        select: {
+          slug: true, name: true, address: true, lat: true, lng: true,
+          openingHours: true, category: true, bestTime: true, notice: true,
+          images: imgSelect, place: { select: { name: true } },
+        },
+      },
+      accommodation: {
+        select: {
+          slug: true, name: true, address: true, lat: true, lng: true,
+          category: true, notice: true,
+          images: imgSelect, place: { select: { name: true } },
+        },
+      },
+      activity: {
+        select: {
+          slug: true, name: true, durationText: true, seasonText: true, category: true,
+          images: imgSelect, place: { select: { name: true } },
+          // Activity không có toạ độ riêng — mượn của spot liên kết đầu tiên để
+          // vẫn ước tính được quãng đường (xem docs/lich-trinh.md §5, cảnh báo ⚪).
+          spotLinks: {
+            orderBy: { order: "asc" },
+            take: 1,
+            select: { spot: { select: { lat: true, lng: true, address: true } } },
+          },
+        },
+      },
+    },
+  },
+} as const;
+
+type RawTrip = NonNullable<Awaited<ReturnType<typeof findTrip>>>;
+type RawItem = RawTrip["items"][number];
+
+function findTrip(where: { id: string } | { shareId: string } | { slug: string }) {
+  return prisma.trip.findUnique({ where: where as { id: string }, include: tripInclude });
+}
+
+// Đuôi địa chỉ sau khi bỏ đoạn trùng tên nơi chứa — cùng ý với `areaOf` của thẻ
+// lưu trú: "TP. Phan Thiết" lặp ở mọi thẻ thì vô nghĩa, "Mũi Né" mới có ích.
+function areaOf(address: string | null, placeName: string | null): string | null {
+  if (!address) return placeName;
+  const parts = address.split(",").map((p) => p.trim()).filter(Boolean);
+  const useful = parts.filter(
+    (p) => !placeName || !p.toLowerCase().includes(placeName.toLowerCase()),
+  );
+  return useful[useful.length - 1] ?? placeName;
+}
+
+function resolveItem(item: RawItem): ResolvedItem {
+  const base = {
+    id: item.id,
+    dayId: item.dayId,
+    order: item.order,
+    note: item.note,
+    stayMin: item.stayMin,
+    openingHours: null as string | null,
+    durationText: null as string | null,
+    bestTime: null as string | null,
+    notice: null as string | null,
+  };
+
+  if (item.spot) {
+    const s = item.spot;
+    return {
+      ...base, kind: "spot", name: s.name, href: `/dia-diem/${s.slug}`,
+      image: coverUrl(s.images, s.slug, 200, 200),
+      typeLabel: TYPE_LABELS.spot,
+      categoryLabel: label(SPOT_CATEGORY_LABELS, s.category),
+      areaLabel: areaOf(s.address, s.place?.name ?? null),
+      lat: s.lat, lng: s.lng, openingHours: s.openingHours,
+      durationText: null, bestTime: s.bestTime, notice: s.notice,
+    };
+  }
+  if (item.eatery) {
+    const e = item.eatery;
+    return {
+      ...base, kind: "eatery", name: e.name, href: null, // quán ăn không có trang riêng (popup)
+      image: coverUrl(e.images, e.slug, 200, 200),
+      typeLabel: TYPE_LABELS.eatery,
+      categoryLabel: label(EATERY_CATEGORY_LABELS, e.category),
+      areaLabel: areaOf(e.address, e.place?.name ?? null),
+      lat: e.lat, lng: e.lng, openingHours: e.openingHours,
+      durationText: null, bestTime: e.bestTime, notice: e.notice,
+    };
+  }
+  if (item.accommodation) {
+    const a = item.accommodation;
+    return {
+      ...base, kind: "accommodation", name: a.name, href: `/luu-tru/${a.slug}`,
+      image: coverUrl(a.images, a.slug, 200, 200),
+      typeLabel: TYPE_LABELS.accommodation,
+      categoryLabel: label(ACCOMMODATION_CATEGORY_LABELS, a.category),
+      areaLabel: areaOf(a.address, a.place?.name ?? null),
+      lat: a.lat, lng: a.lng, openingHours: null,
+      durationText: null, bestTime: null, notice: a.notice,
+    };
+  }
+  if (item.activity) {
+    const ac = item.activity;
+    const borrowed = ac.spotLinks[0]?.spot ?? null;
+    return {
+      ...base, kind: "activity", name: ac.name, href: `/hoat-dong/${ac.slug}`,
+      image: coverUrl(ac.images, ac.slug, 200, 200),
+      typeLabel: TYPE_LABELS.activity,
+      categoryLabel: label(ACTIVITY_CATEGORY_LABELS, ac.category),
+      areaLabel: areaOf(borrowed?.address ?? null, ac.place?.name ?? null),
+      lat: borrowed?.lat ?? null, lng: borrowed?.lng ?? null,
+      openingHours: null, durationText: ac.durationText,
+      bestTime: ac.seasonText, notice: null,
+    };
+  }
+  if (item.place) {
+    const p = item.place;
+    return {
+      ...base, kind: "place", name: p.name, href: `/diem-den/${p.slug}`,
+      image: coverUrl(p.images, p.slug, 200, 200),
+      typeLabel: p.kind === "province" ? "Tỉnh" : TYPE_LABELS.place,
+      categoryLabel: null, areaLabel: null,
+      lat: p.lat, lng: p.lng, openingHours: null,
+      durationText: null, bestTime: null, notice: null,
+    };
+  }
+
+  // Mục tự nhập.
+  return {
+    ...base, kind: "custom", name: item.customTitle ?? "Mục tự thêm", href: null,
+    image: null, typeLabel: TYPE_LABELS.custom, categoryLabel: null, areaLabel: null,
+    lat: item.customLat, lng: item.customLng,
+    durationText: null, bestTime: null, notice: null, openingHours: null,
+  };
+}
+
+function shape(trip: RawTrip): TripData {
+  const items = trip.items.map(resolveItem);
+  return {
+    id: trip.id,
+    ownerId: trip.ownerId,
+    title: trip.title,
+    summary: trip.summary,
+    startDate: trip.startDate,
+    partySize: trip.partySize,
+    shareId: trip.shareId,
+    visibility: trip.visibility,
+    isTemplate: trip.isTemplate,
+    slug: trip.slug,
+    status: trip.status,
+    place: trip.place,
+    coverImage: trip.images[0]?.url ?? null,
+    days: trip.days.map((d) => ({
+      id: d.id,
+      index: d.index,
+      startMin: d.startMin,
+      title: d.title,
+      note: d.note,
+      items: items.filter((i) => i.dayId === d.id).sort((a, b) => a.order - b.order),
+    })),
+    backlog: items.filter((i) => i.dayId === null).sort((a, b) => a.order - b.order),
+    updatedAt: trip.updatedAt,
+  };
+}
+
+export async function getTripById(id: string): Promise<TripData | null> {
+  const trip = await findTrip({ id });
+  return trip ? shape(trip) : null;
+}
+
+export async function getTripByShareId(shareId: string): Promise<TripData | null> {
+  const trip = await prisma.trip.findUnique({ where: { shareId }, include: tripInclude });
+  return trip ? shape(trip) : null;
+}
+
+export async function getTemplateBySlug(slug: string): Promise<TripData | null> {
+  const trip = await prisma.trip.findUnique({ where: { slug }, include: tripInclude });
+  return trip && trip.isTemplate ? shape(trip) : null;
+}
+
+// ── Dựng khung nhìn đã tính giờ ──────────────────────────────────────────
+// Dùng chung cho CẢ BA trang (soạn · bản chia sẻ · lịch trình mẫu) — nếu để
+// mỗi trang tự tính thì ba nơi sẽ trôi khác nhau lúc nào không hay.
+
+export type ItemView = ResolvedItem & {
+  arriveMin: number;
+  leaveMin: number;
+  effectiveStayMin: number;
+  driveToNextMin: number | null;
+  driveApprox: boolean;
+  warnings: TripWarning[];
+};
+
+export type DayView = {
+  id: string;
+  index: number;
+  startMin: number;
+  title: string | null;
+  note: string | null;
+  dateLabel: string | null;
+  items: ItemView[];
+  endMin: number;
+  driveMin: number;
+  warnings: TripWarning[];
+};
+
+export async function buildDayViews(trip: TripData): Promise<DayView[]> {
+  return Promise.all(
+    trip.days.map(async (day) => {
+      const legs = await getLegs(
+        day.items.map((i) => ({ id: i.id, lat: i.lat, lng: i.lng })),
+      );
+      const sched = scheduleDay(day.startMin, day.items.map(toScheduleInput), legMinutes(legs));
+
+      const items: ItemView[] = day.items.map((item, i) => {
+        const s = sched.items[i];
+        const next = day.items[i + 1];
+        return {
+          ...item,
+          arriveMin: s.arriveMin,
+          leaveMin: s.leaveMin,
+          effectiveStayMin: s.stayMin,
+          driveToNextMin: s.driveToNextMin,
+          driveApprox: next ? (legs[legKey(item.id, next.id)]?.approx ?? false) : false,
+          warnings: s.warnings,
+        };
+      });
+
+      return {
+        id: day.id,
+        index: day.index,
+        startMin: day.startMin,
+        title: day.title,
+        note: day.note,
+        dateLabel: labelOfDate(dateOfDay(trip.startDate, day.index)),
+        items,
+        endMin: sched.endMin,
+        driveMin: sched.driveMin,
+        warnings: sched.warnings,
+      };
+    }),
+  );
+}
+
+function labelOfDate(d: Date | null): string | null {
+  if (!d) return null;
+  return d.toLocaleDateString("vi-VN", {
+    weekday: "short",
+    day: "numeric",
+    month: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+/** Chuyển ResolvedItem sang đầu vào của máy tính giờ. */
+export function toScheduleInput(item: ResolvedItem): ScheduleItemInput {
+  return {
+    id: item.id,
+    kind: item.kind,
+    name: item.name,
+    stayMin: item.stayMin,
+    durationText: item.durationText,
+    openingHours: item.openingHours,
+    lat: item.lat,
+    lng: item.lng,
+  };
+}
+
+/** Ngày thật của một ngày trong lịch (null nếu chuyến chưa định ngày). */
+export function dateOfDay(startDate: Date | null, index: number): Date | null {
+  if (!startDate) return null;
+  const d = new Date(startDate);
+  d.setDate(d.getDate() + index);
+  return d;
+}

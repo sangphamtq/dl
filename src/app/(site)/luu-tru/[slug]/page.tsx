@@ -42,8 +42,10 @@ import { ListingCard } from "@/components/site/listing-card";
 import { Rail } from "@/components/site/rail";
 import { PeerBar } from "@/components/site/peer-bar";
 import { StayShare } from "@/components/site/stay-share";
+import { AddToTripButton } from "@/components/site/add-to-trip-button";
 import { getListingPeers } from "@/lib/peers";
 import { isStaffViewer } from "@/lib/preview";
+import { auth } from "@/auth";
 
 const pub = { status: "published" as const };
 
@@ -145,7 +147,8 @@ export default async function AccommodationPublicPage({
     },
   });
 
-  const staff = await isStaffViewer();
+  const [staff, session] = await Promise.all([isStaffViewer(), auth()]);
+  const isAuthed = Boolean(session?.user?.id);
   if (!acc || (acc.status !== "published" && !staff)) notFound();
 
   const peers = await getListingPeers("accommodation", acc.placeId);
@@ -212,7 +215,16 @@ export default async function AccommodationPublicPage({
                     />
                     Nơi lưu trú tại {acc.place.name}
                   </Link>
-                  <StayShare title={acc.name} />
+                  <div className="flex items-center gap-2">
+                    <AddToTripButton
+                      target={{ kind: "accommodation", id: acc.id }}
+                      name={acc.name}
+                      redirectTo={`/luu-tru/${acc.slug}`}
+                      isAuthed={isAuthed}
+                      variant="bare"
+                    />
+                    <StayShare title={acc.name} />
+                  </div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3 text-sm font-medium">
