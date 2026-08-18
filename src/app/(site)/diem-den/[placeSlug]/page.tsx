@@ -265,7 +265,14 @@ export default async function PlaceDetailPage({
         slug: true,
         title: true,
         summary: true,
-        _count: { select: { days: true, items: true } },
+        _count: {
+          select: {
+            days: true,
+            // CHỈ mục đã xếp vào ngày mới là "điểm dừng". Mục trong Túi đồ
+            // (dayId = null) là gợi ý kèm theo, đếm vào đây là nói quá.
+            items: { where: { dayId: { not: null } } },
+          },
+        },
       },
     }),
   ]);

@@ -20,6 +20,7 @@
     "seed:blog": "tsx prisma/seed-blog.ts",
     "seed:blog-phan-thiet": "tsx prisma/seed-blog-phan-thiet.ts",
     "seed:community": "tsx prisma/seed-community.ts",
+    "seed:trip-phan-thiet": "tsx prisma/seed-trip-phan-thiet.ts",
     "seed:sales": "tsx prisma/seed-sales.ts"
   },
   "dependencies": {
