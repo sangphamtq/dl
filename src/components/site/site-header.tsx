@@ -167,20 +167,54 @@ export async function SiteHeader({
               />
             </>
           ) : (
-            <div className="ml-1 flex items-center gap-2">
-              <Link
-                href="/login"
-                className="hidden h-10 items-center rounded-full border border-foreground/30 px-4 text-sm font-semibold text-foreground transition-colors hover:bg-foreground/10 sm:inline-flex"
-              >
-                Đăng ký
-              </Link>
-              <Link
-                href="/login"
-                className="inline-flex h-10 items-center rounded-full bg-warm px-4 text-sm font-semibold text-warm-foreground transition-colors hover:bg-warm/90"
-              >
-                Đăng nhập
-              </Link>
-            </div>
+            /* MỘT nút duy nhất, không phải cặp "Đăng ký · Đăng nhập".
+               Lý do: /login chỉ có Google/Facebook — OAuth không phân biệt đăng
+               ký với đăng nhập (lần đầu tự tạo tài khoản), nên nút "Đăng ký" cũ
+               dẫn tới đúng trang kia, một trang mang tiêu đề "Đăng nhập". Ngoài
+               ra ba viên pill cùng cỡ, cùng bo tròn xếp liền nhau (ô tìm kiếm ·
+               Đăng ký · Đăng nhập) làm ô tìm kiếm đọc ra như nút thứ ba. Mọi lối
+               vào khác của site (mobile-nav, menu hamburger, LoginDrawer) vốn đã
+               chỉ có một nút "Đăng nhập" — nay header khớp.
+
+               XANH LÁ (`primary`) chứ không phải cam (`warm`). Cam là màu duy
+               nhất trong header phải ĐI VÁ mới đọc được: `--warm-foreground` ở
+               scope sáng là trắng, mà trắng trên #ff8800 chỉ được ~2.4:1 (AA cần
+               4.5:1) nên phải ép riêng màu chữ cho từng tone. Cặp
+               `brand`/`brand-foreground` thì trắng trên #2e871c được ~4.6:1,
+               đạt AA mà không cần ngoại lệ nào. Xanh cũng là màu của chính
+               wordmark trong logo, nên nút và logo giờ là một bộ thay vì hai
+               điểm màu cãi nhau qua thanh header.
+
+               Dùng `brand` chứ KHÔNG phải `primary`: trong scope `.dark` (tone
+               tối của header) `--primary` tự sáng lên thành xanh bạc hà — đúng
+               cho chữ/nền xanh trên nền gần đen, nhưng sai cho một viên nút ĐỤC
+               vốn tự mang nền của nó đi. Hệ quả là cùng một nút ra hai sắc xanh
+               khác hẳn giữa trang có hero và trang nền sáng. `--brand` cố ý
+               không khai báo lại trong `.dark` — xem chú thích ở `globals.css`.
+
+               KHÔNG icon, không đĩa, không bóng đổ màu: nhãn hai chữ trên nền
+               đặc đã là tín hiệu đủ mạnh cạnh một ô tìm kiếm chỉ có hairline.
+               Mọi thứ thêm vào đây đều là trang trí.
+
+               GÓC: `rounded-full`. Đã thử bo theo `--radius` (10px) cho bớt
+               dáng "viên nang mặc định" rồi BỎ — đừng thử lại. Lý do: viên tròn
+               là ngôn ngữ của site chứ không phải một lựa chọn lười. Trong các
+               control cùng cỡ (h-9…h-11) thì 14 chỗ bo tròn hết cỡ so với 9 chỗ
+               bo nhẹ; nút CTA của hero, chip lọc, ô tìm kiếm trang /diem-den đều
+               tròn. Bo vuông riêng cụm header thì header thành hòn đảo, và trên
+               /diem-den nó ngồi ngay trên một ô tìm kiếm tròn làm đúng việc đó.
+               (`Button` của shadcn dùng `rounded-md`, nhưng đó là form/CMS —
+               không phải chrome public.)
+
+               `[text-shadow:none]`: hàng cha đắp bóng chữ cho chữ trắng nổi trên
+               ảnh hero; trên nền đặc thì không có ảnh nào để tách, bóng tối chỉ
+               làm nhãn bẩn. */
+            <Link
+              href="/login"
+              className="ml-1.5 inline-flex h-10 items-center rounded-full bg-brand px-4.5 text-sm font-semibold text-brand-foreground transition-[background-color,transform] duration-200 [text-shadow:none] hover:bg-brand/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-transparent active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100"
+            >
+              Đăng nhập
+            </Link>
           )}
         </div>
         </TooltipProvider>

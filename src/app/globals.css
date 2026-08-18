@@ -48,6 +48,8 @@
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand: var(--brand);
   --color-warm-foreground: var(--warm-foreground);
   --color-warm: var(--warm);
   --color-warm-bright: var(--warm-bright);
@@ -77,6 +79,15 @@
   --popover-foreground: #1f2226;
   --primary: #2e871c;
   --primary-foreground: #ffffff;
+  /* Xanh THƯƠNG HIỆU cho vật thể ĐỤC — nút CTA trên header, huy hiệu đặt trên
+     ảnh. Cùng sắc với --primary bản sáng, nhưng cố ý KHÔNG khai báo lại trong
+     .dark (giống --warm-bright và bộ --wood*): --primary tự sáng lên trong scope
+     tối để chữ/nền xanh còn đọc được trên nền gần đen, còn một viên nút đục thì
+     không cần — nó tự mang nền của nó đi. Dùng --primary ở đó chỉ khiến cùng một
+     nút ra xanh bạc hà trên trang có hero và xanh rừng trên trang nền sáng.
+     Chữ trắng trên nền này được ~4.6:1, đạt AA ở mọi bối cảnh. */
+  --brand: #2e871c;
+  --brand-foreground: #ffffff;
   --warm: #ff8800;
   --warm-foreground: #ffffff;
   /* Accent cam đặt TRÊN ẢNH TỐI (hero) — cố ý KHÔNG khai báo lại trong .dark:

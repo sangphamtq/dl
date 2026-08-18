@@ -38,6 +38,12 @@ export function HeaderSearch() {
         aria-label="Tìm kiếm"
         // Ô VIỀN MẢNH trong suốt — cùng ngôn ngữ với hairline đóng khung thanh,
         // không đắp thêm một mảng đặc lên nội dung phía sau.
+        // `rounded-full`, KHÔNG phải `--radius`: đã thử bo 10px cho bớt dáng
+        // "viên nang mặc định" rồi bỏ. Viên tròn mới là ngôn ngữ của site —
+        // trong các control cùng cỡ (h-9…h-11) thì 14 chỗ bo tròn hết cỡ so với
+        // 9 chỗ bo nhẹ, và chính ô tìm kiếm của trang /diem-den
+        // (`destination-filter.tsx`) là `h-9 rounded-full`. Bo vuông riêng ô này
+        // thì nó ngồi ngay TRÊN một ô tìm kiếm tròn làm đúng việc đó.
         className="hidden h-10 w-36 items-center gap-1.5 rounded-full border border-foreground/25 bg-foreground/5 pl-3.5 pr-4 text-sm text-foreground transition-colors hover:bg-foreground/15 lg:flex xl:w-44"
       >
         <Search className="size-4 shrink-0" aria-hidden />
