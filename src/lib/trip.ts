@@ -49,6 +49,13 @@ export type TripDayData = {
   items: ResolvedItem[];
 };
 
+export type TripPerson = {
+  id: string;
+  name: string | null;
+  image: string | null;
+  isOwner: boolean;
+};
+
 export type TripData = {
   id: string;
   ownerId: string;
@@ -61,6 +68,12 @@ export type TripData = {
   isTemplate: boolean;
   slug: string | null;
   status: "draft" | "published";
+  /** Khoá lạc quan — client gửi lại khi kéo–thả (docs/lich-trinh-cong-tac.md §3). */
+  version: number;
+  ownerName: string | null;
+  memberIds: string[];
+  /** Chủ chuyến + người đã nhận lời mời, chủ đứng đầu. KHÔNG gồm lời mời còn treo. */
+  people: TripPerson[];
   place: { slug: string; name: string } | null;
   coverImage: string | null;
   days: TripDayData[];
@@ -81,6 +94,11 @@ const imgSelect = { select: { url: true, isCover: true } } as const;
 // Một truy vấn duy nhất cho cả cây Trip → Days → Items → 5 entity đích.
 const tripInclude = {
   place: { select: { slug: true, name: true } },
+  owner: { select: { id: true, name: true, image: true } },
+  members: {
+    orderBy: { createdAt: "asc" },
+    select: { userId: true, user: { select: { name: true, image: true } } },
+  },
   images: { where: { isCover: true }, take: 1, select: { url: true } },
   days: { orderBy: { index: "asc" } },
   items: {
@@ -228,6 +246,19 @@ function shape(trip: RawTrip): TripData {
     isTemplate: trip.isTemplate,
     slug: trip.slug,
     status: trip.status,
+    version: trip.version,
+    ownerName: trip.owner?.name ?? null,
+    memberIds: trip.members.map((m) => m.userId),
+    people: [
+      // Chủ chuyến luôn đứng đầu — cụm avatar chồng đọc từ trái sang.
+      { id: trip.ownerId, name: trip.owner?.name ?? null, image: trip.owner?.image ?? null, isOwner: true },
+      ...trip.members.map((m) => ({
+        id: m.userId,
+        name: m.user?.name ?? null,
+        image: m.user?.image ?? null,
+        isOwner: false,
+      })),
+    ],
     place: trip.place,
     coverImage: trip.images[0]?.url ?? null,
     days: trip.days.map((d) => ({

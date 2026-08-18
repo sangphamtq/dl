@@ -22,8 +22,11 @@ export default async function TripEditorPage({
 
   const trip = await getTripById(id);
   if (!trip) notFound();
-  // Không lộ sự tồn tại của chuyến người khác → 404 chứ không phải 403.
-  if (trip.ownerId !== session.user.id) notFound();
+  // Chủ chuyến HOẶC người được mời cùng sửa. Không lộ sự tồn tại của chuyến
+  // người khác → 404 chứ không phải 403.
+  const canEdit =
+    trip.ownerId === session.user.id || trip.memberIds.includes(session.user.id);
+  if (!canEdit) notFound();
 
   const [days, planningId] = await Promise.all([
     buildDayViews(trip),
@@ -43,6 +46,9 @@ export default async function TripEditorPage({
           visibility: trip.visibility,
           place: trip.place,
           isTemplate: trip.isTemplate,
+          version: trip.version,
+          isOwner: trip.ownerId === session.user.id,
+          people: trip.people,
         }}
         days={days}
         backlog={trip.backlog}

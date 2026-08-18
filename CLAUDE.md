@@ -941,6 +941,7 @@ Tính năng lớn chưa làm được phân tích trước và ghi ra file riên
 | File | Nội dung | Trạng thái |
 |---|---|---|
 | [`docs/lich-trinh.md`](docs/lich-trinh.md) | **Lịch trình chuyến đi** (`/lich-trinh`): schema `Trip`/`TripDay`/`TripItem`, máy tính giờ ước tính + cảnh báo giờ mở cửa, lịch trình mẫu, chia sẻ | **ĐÃ DỰNG v1** — bản đồ mã nguồn ở §12, phần còn thiếu ở §13 |
+| [`docs/lich-trinh-cong-tac.md`](docs/lich-trinh-cong-tac.md) | **Nhiều người cùng sửa lịch trình**: `TripMember`, chống đụng độ bằng `Trip.version`, 14 chỗ kiểm quyền phải đổi | Phân tích xong, **chưa code** — còn 3 câu phải chốt ở §7 |
 
 ## Phạm vi hiện tại
 

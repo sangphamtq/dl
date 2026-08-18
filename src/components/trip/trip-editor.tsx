@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useState, useTransition, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 import {
@@ -27,7 +28,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { ResolvedItem, DayView, ItemView } from "@/lib/trip";
+import type { ResolvedItem, DayView, ItemView, TripPerson } from "@/lib/trip";
 import { formatMinutes, fmtDuration, DEFAULT_STAY_MIN } from "@/lib/trip-time";
 import {
   addDay,
@@ -92,6 +93,12 @@ type TripHeader = {
   place: { slug: string; name: string } | null;
   /** Mẫu do biên tập soạn. CHỈ mẫu mới có tên ngày & ghi chú ngày — xem DayBlock. */
   isTemplate: boolean;
+  /** Khoá lạc quan, gửi lại khi kéo–thả (docs/lich-trinh-cong-tac.md §3). */
+  version: number;
+  /** Chủ chuyến mới được xoá chuyến / bật chia sẻ / quản lý thành viên. */
+  isOwner: boolean;
+  /** Chủ chuyến + người đã tham gia — cụm avatar chồng cạnh nút Chia sẻ. */
+  people: TripPerson[];
 };
 
 const STAY_PRESETS = [15, 30, 45, 60, 90, 120, 180, 240, 360];
@@ -107,6 +114,7 @@ export function TripEditor({
   days: DayView[];
   backlog: ResolvedItem[];
 }) {
+  const router = useRouter();
   const [pending, start] = useTransition();
   const [activeDayId, setActiveDayId] = useState(days[0]?.id ?? "");
   const fields = useTripFields();
@@ -163,7 +171,26 @@ export function TripEditor({
     dnd.endDrag();
 
     const at = dnd.commitMove(id, e.over ? String(e.over.id) : null);
-    if (at) run(() => moveItem(id, at.dayId, at.index));
+    // Gửi kèm phiên bản client đang thấy: thao tác này theo VỊ TRÍ, người khác
+    // vừa sửa là chỉ số trỏ sai chỗ. Lệch ⇒ server từ chối.
+    //
+    // Khi đó phải `router.refresh()` chứ KHÔNG chỉ `resetFromProps()`: props
+    // hiện tại chính là bản cũ đã lệch, dựng lại bàn từ đó thì vẫn sai. Và vì
+    // action bị từ chối TRƯỚC khi ghi, nó không `revalidatePath` — không tự
+    // làm mới thì người dùng kẹt với dữ liệu cũ, thao tác nào cũng bị chối.
+    if (at)
+      run(async () => {
+        const res = await moveItem(id, at.dayId, at.index, trip.version);
+        if (!res.ok && res.stale) {
+          dnd.resetFromProps();
+          router.refresh();
+          // Báo NHẸ, không phải toast đỏ: người dùng không làm gì sai, chỉ là
+          // có người khác nhanh tay hơn. Trả `ok` để `run` khỏi báo lỗi lần nữa.
+          toast(res.error);
+          return { ok: true };
+        }
+        return res;
+      });
   }
 
   const activeItem = dnd.activeId ? dnd.byId.get(dnd.activeId) : null;
@@ -254,6 +281,8 @@ export function TripEditor({
                 title={trip.title}
                 shareId={trip.shareId}
                 shared={trip.visibility === "unlisted"}
+                isOwner={trip.isOwner}
+                people={trip.people}
               />
             </div>
           </div>

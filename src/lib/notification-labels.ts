@@ -8,6 +8,7 @@ export const NOTIF_MESSAGES: Record<string, string> = {
   sale_approved: "đã duyệt hồ sơ CTV của bạn",
   sale_rejected: "đã từ chối hồ sơ CTV của bạn",
   thread_moderated: "đã kiểm duyệt (ẩn/khóa) nội dung của bạn",
+  trip_invite: "đã mời bạn cùng sửa lịch trình",
 };
 
 export const notifMessage = (type: string): string =>

@@ -22,13 +22,19 @@ export default async function LichTrinhPage() {
 
   const [trips, templates, planningId] = await Promise.all([
     prisma.trip.findMany({
-      where: { ownerId: userId, isTemplate: false },
+      // Chuyến mình sở hữu HOẶC được mời cùng sửa.
+      where: {
+        isTemplate: false,
+        OR: [{ ownerId: userId }, { members: { some: { userId } } }],
+      },
       orderBy: { updatedAt: "desc" },
       select: {
         id: true,
         title: true,
         startDate: true,
         updatedAt: true,
+        ownerId: true,
+        owner: { select: { name: true } },
         _count: { select: { items: true, days: true } },
         // Ảnh bìa thẻ: mượn ảnh của địa điểm đầu tiên trong chuyến.
         items: {
@@ -116,6 +122,15 @@ export default async function LichTrinhPage() {
                         {trip.id === planningId && (
                           <span className="absolute left-3 top-3 rounded-full bg-background/90 px-2.5 py-1 text-xs font-medium text-primary backdrop-blur-sm">
                             Đang lên lịch trình
+                          </span>
+                        )}
+                        {/* Chuyến của người khác mời mình vào — không đánh dấu
+                            thì danh sách trộn lẫn mà không biết cái nào của ai. */}
+                        {trip.ownerId !== userId && (
+                          <span className="absolute bottom-3 left-3 rounded-full bg-background/90 px-2.5 py-1 text-xs font-medium backdrop-blur-sm">
+                            {trip.owner?.name
+                              ? `Chuyến của ${trip.owner.name.split(" ").slice(-1)[0]}`
+                              : "Được mời cùng sửa"}
                           </span>
                         )}
                         <TripCardMenu

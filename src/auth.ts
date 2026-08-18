@@ -3,6 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import { authConfig } from "@/auth.config";
+import { claimTripInvites } from "@/lib/trip-invites";
 
 // Đăng nhập nhanh CHỈ Ở DEV: vào bằng email của một User có sẵn trong DB, KHÔNG
 // mật khẩu — để test các tài khoản seed (CTV…) khi auth thật chỉ có OAuth.
@@ -35,4 +36,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [...authConfig.providers, ...devLogin],
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
+  events: {
+    // Nhận các lời mời cùng sửa lịch trình đang treo cho email này. Đặt ở đây
+    // (Node, có Prisma) chứ không ở auth.config.ts — file đó phải edge-safe cho
+    // proxy.ts. Hàm tự nuốt lỗi nên không bao giờ chặn đăng nhập.
+    async signIn({ user }) {
+      if (user.id) await claimTripInvites(user.id, user.email);
+    },
+  },
 });

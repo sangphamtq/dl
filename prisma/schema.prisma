@@ -91,6 +91,7 @@ enum NotificationType {
   sale_approved // hồ sơ CTV được duyệt
   sale_rejected // hồ sơ CTV bị từ chối
   thread_moderated // bài/bình luận cộng đồng của bạn bị staff ẩn/khóa
+  trip_invite // được mời cùng sửa một lịch trình
 }
 
 // Lý do báo cáo một bài/bình luận cộng đồng.
@@ -264,9 +265,10 @@ model User {
   notifications      Notification[] @relation("NotifRecipient") // thông báo nhận
   notificationsActed Notification[] @relation("NotifActor") // thông báo do mình gây ra
 
-  checkIns CheckIn[] // các điểm đến/tỉnh đã đánh dấu "đã đến"
-  reviews  Review[] // đánh giá điểm đến đã viết
-  trips    Trip[] // lịch trình chuyến đi (kể cả lịch trình mẫu nếu là editor)
+  checkIns        CheckIn[] // các điểm đến/tỉnh đã đánh dấu "đã đến"
+  reviews         Review[] // đánh giá điểm đến đã viết
+  trips           Trip[] // lịch trình chuyến đi (kể cả lịch trình mẫu nếu là editor)
+  tripMemberships TripMember[] // chuyến của người khác mà mình được mời cùng sửa
 
   saleProfile   SaleProfile?  @relation("SaleOwner") // hồ sơ CTV (nếu có) — đăng ký làm người bán
   salesReviewed SaleProfile[] @relation("SaleReviewer") // hồ sơ CTV mình đã duyệt (staff)
@@ -1193,6 +1195,14 @@ model Notification {
 // KHÔNG phải nền tảng đặt chỗ. Bắt đăng nhập, dữ liệu nằm trong DB.
 // ============================================================
 
+// Vai trong một chuyến. CỐ Ý chỉ hai vai, KHÔNG có `viewer`: ai chỉ cần xem thì
+// đã có link chia sẻ (visibility=unlisted). Thêm vai thứ ba là thêm một trục
+// quyền mà không giải quyết vấn đề nào mới. Xem docs/lich-trinh-cong-tac.md §2.
+enum TripRole {
+  owner
+  editor
+}
+
 enum TripVisibility {
   private // chỉ chủ sở hữu
   unlisted // ai có link đều xem được (không index)
@@ -1222,9 +1232,18 @@ model Trip {
   placeId    String?
   place      Place?  @relation("TripPlace", fields: [placeId], references: [id], onDelete: SetNull)
 
-  days   TripDay[]
-  items  TripItem[]
-  images Image[] // ảnh bìa (template)
+  days    TripDay[]
+  items   TripItem[]
+  images  Image[] // ảnh bìa (template)
+  members TripMember[]
+  invites TripInvite[]
+
+  // Khoá lạc quan cho THAO TÁC THEO VỊ TRÍ. `moveItem` đánh số lại cả một vùng
+  // chứa, nên hai người cùng kéo trong một ngày sẽ ghi đè nhau LẶNG LẼ: người
+  // sau gửi "đặt ở chỉ số 2" tính trên bàn đã cũ. Mọi mutation tăng số này;
+  // client gửi kèm số nó đang thấy, lệch thì bị từ chối và buộc làm mới.
+  // Xem docs/lich-trinh-cong-tac.md §3.
+  version Int @default(0)
 
   // AdminFields — thực chất chỉ template dùng tới status/publishedAt/isFeatured/order.
   status      PublishStatus @default(draft)
@@ -1237,6 +1256,42 @@ model Trip {
   @@index([ownerId])
   @@index([isTemplate, status])
   @@index([placeId])
+}
+
+// Người được mời cùng sửa một chuyến. Chủ chuyến vẫn là Trip.ownerId (xoá
+// chuyến, quản lý thành viên, bật/tắt chia sẻ) — bảng này chỉ nói ai được SỬA
+// NỘI DUNG.
+model TripMember {
+  id     String   @id @default(cuid())
+  tripId String
+  trip   Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  userId String
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   TripRole @default(editor)
+
+  addedById String? // ai mời (chỉ để hiển thị)
+  createdAt DateTime @default(now())
+
+  @@unique([tripId, userId])
+  @@index([userId])
+}
+
+// Lời mời cho email CHƯA có tài khoản. Site chỉ đăng nhập bằng OAuth nên không
+// gửi được mail xác thực riêng — thay vào đó giữ lời mời ở đây, và lần đầu
+// người đó đăng nhập bằng đúng email này thì tự thành thành viên (xem
+// `claimTripInvites` gọi trong sự kiện signIn ở auth.ts).
+model TripInvite {
+  id     String   @id @default(cuid())
+  tripId String
+  trip   Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  email  String // luôn lưu ở dạng thường (lowercase)
+  role   TripRole @default(editor)
+
+  invitedById String?
+  createdAt   DateTime @default(now())
+
+  @@unique([tripId, email])
+  @@index([email])
 }
 
 model TripDay {
