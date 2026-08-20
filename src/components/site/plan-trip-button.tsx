@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { CalendarDays, Loader2, Route, Sparkles } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { LoginDrawer } from "@/components/site/login-drawer";
+import { tripBagChanged } from "@/components/trip/trip-bag-events";
 import {
   Dialog,
   DialogContent,
@@ -63,6 +64,8 @@ export function PlanTripButton({
 
   function go(id: string) {
     setOptions(null);
+    // Chuyến đang lên lịch vừa đổi → cái túi nổi phải đổi tên chuyến theo.
+    tripBagChanged();
     router.push(`/lich-trinh/${id}`);
   }
 

@@ -926,12 +926,33 @@ hamburger.
   var(--browser-bottom-chrome)` (dưới `lg`). `BackToTop`, `InstallPrompt`, dock của
   `PeerBar` cộng biến này vào `bottom` → tự nằm trên thanh tab **và trên cả thanh công cụ
   trình duyệt**. **Thêm phần tử `fixed` bám đáy mới thì cộng `var(--bottom-nav-h)` vào
-  `bottom`.**
+  `bottom`** — và nếu nó bám đáy–PHẢI thì cộng thêm **`var(--trip-dock-h)`** (túi lịch
+  trình, xem dưới).
 - **Khối giữ chỗ** cuối trang cao đúng bằng thanh (viết thẳng số, không đọc biến — biến chỉ
   có giá trị sau khi hydrate) để footer không bị khuất; riêng trang bản đồ (`*/ban-do`, cao
   `100dvh`, không cuộn) thì bỏ khối này, thanh tab đè lên bản đồ.
 - Không đọc session (root layout **không** được gọi `auth()` — sẽ phá `force-static` của
   `/offline`). Mục Tài khoản trỏ `/tai-khoan/da-den`, trang đó tự redirect về `/login`.
+
+## Nút "Lịch trình" (nút nổi kéo thả được, ở mọi trang)
+
+`src/components/trip/trip-dock.tsx` — nút nổi **kéo thả được** trên **mọi trang công khai**,
+mở ngăn kéo "gom rồi xếp". Thân ngăn kéo là **cả lịch trình**: khối *Chưa xếp ngày* đứng
+trước, rồi **từng ngày kèm mục trong nó**, cuối là *+ Thêm ngày*. Xếp/chuyển ngày, đưa về
+túi, bỏ mục, đổi chuyến, mở trình soạn — nhưng **không** có giờ ước tính / cảnh báo /
+kéo–thả (nhân đôi trình soạn thì hai chỗ sớm muộn lệch nhau). Dữ liệu từ `getTripBag()` (`lich-trinh/actions.ts`),
+dựng ở `(site)/layout.tsx`; nút "Thêm vào lịch trình" ở các trang chi tiết báo cho nó qua
+`trip-bag-events.ts`. Thiết kế đầy đủ: [`docs/lich-trinh.md`](docs/lich-trinh.md) §6f.
+
+- **Ẩn ở** `/lich-trinh`, `/cms`, `/sale`, `/login`, `/offline` (`HIDDEN_ON` trong file đó).
+- **Nút là một viên tròn 44px ở GIỮA cạnh phải** — cố ý tránh dải đáy vốn đã đông
+  (`BottomNav` · `PeerBar` · `BackToTop` · `InstallPrompt`); nhờ vậy **không thanh nào phải
+  chừa chỗ cho nó**. Đã thử rồi bỏ: viên chữ "Lịch trình" (chiếm chỗ vĩnh viễn trên mọi
+  trang) và cho kéo thả chính cái nút (giải sai bài) — xem §6f.
+- **Kéo–thả mục ngay trong ngăn kéo**, dùng chung `applyMove`/`BACKLOG`/`dayKey` của
+  `trip-dnd.ts` với trình soạn. `DndContext`/`DragOverlay` phải nằm **ngoài** `DrawerContent`
+  (vaul đặt `transform` lên panel ⇒ `position: fixed` bên trong lệch gốc toạ độ), và vùng
+  danh sách cần `data-vaul-no-drag`.
 
 ## Tài liệu thiết kế riêng (`docs/`)
 
@@ -963,7 +984,7 @@ Tính năng lớn chưa làm được phân tích trước và ghi ra file riên
 | Tìm kiếm | `/tim-kiem` | `lib/search.ts`; header có `header-search.tsx` |
 | Cộng đồng | `/cong-dong` · `/cong-dong/[slug]` · `/diem-den/[placeSlug]/cong-dong` · `/dia-diem/[slug]/cong-dong` | `Thread`/`ThreadReply`/`ThreadLike` + báo cáo. **Lối vào đang tạm ẩn** — xem "Điều hướng header" |
 | Uy tín & chống lừa | `/kiem-tra` (tra SĐT/FB/web/STK) · `/sale` · `/sale/[slug]` · `/sale/dang-ky` | `SaleProfile`, `ScamReport`, `lib/trust.ts`. **Lối vào đang tạm ẩn** |
-| Lịch trình | `/lich-trinh` · `/lich-trinh/[id]` (soạn) · `/lich-trinh/s/[shareId]` (chia sẻ) · `/lich-trinh/mau/[slug]` (mẫu) | `Trip`/`TripDay`/`TripItem`; **bắt đăng nhập**. Chi tiết: [`docs/lich-trinh.md`](docs/lich-trinh.md) |
+| Lịch trình | `/lich-trinh` · `/lich-trinh/[id]` (soạn) · `/lich-trinh/s/[shareId]` (chia sẻ) · `/lich-trinh/mau/[slug]` (mẫu) | `Trip`/`TripDay`/`TripItem`; **bắt đăng nhập**. Cộng **nút "Lịch trình"** nổi ở mọi trang (xem mục riêng bên dưới). Chi tiết: [`docs/lich-trinh.md`](docs/lich-trinh.md) |
 | Cá nhân | `/tai-khoan/da-den` (bản đồ tỉnh đã đến) · `/thong-bao` | `CheckIn`, `Notification` |
 | Khác | `/gioi-thieu` · `/offline` · `/login` | |
 

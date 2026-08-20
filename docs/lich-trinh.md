@@ -494,6 +494,96 @@ Thêm hai điều chỉnh nhỏ cùng đợt:
 > gian (`RailItem` · `RailLeg` · `DayHeading` · `Warning` · `Thumb` · `MICRO`). Trang soạn và
 > trang chỉ-đọc **đều** dùng nó — đừng chép ra sửa riêng, đó là cách chúng trôi khác nhau.
 
+## 6f. NÚT "LỊCH TRÌNH" — viên nổi ở mọi trang + ngăn kéo soạn nhanh
+
+**Lỗ hổng nó lấp:** `AddToTripButton` bỏ mục vào một chuyến mà người dùng **không nhìn
+thấy**. Bằng chứng duy nhất là cái toast 4 giây; qua trang sau thì không đâu trên site nói
+*đang lên lịch cho chuyến nào* và *đã gom được gì*. Cookie `halivivu_trip` (§4) là một
+trạng thái quan trọng nhưng vô hình — chính vì vô hình mà v1 phải vá bằng nút "Đổi chuyến"
+nhét trong toast.
+
+`TripDock` (`components/trip/trip-dock.tsx`) biến trạng thái đó thành một **vật thể thường
+trực**: một viên tròn nhỏ nổi ở mọi trang công khai, mở ra ngăn kéo "gom rồi xếp".
+
+**Nút CHỈ CÓ MỘT DẠNG: viên "Lịch trình"** — icon + nhãn + viên số **mục chưa xếp ngày**
+(0 thì không có số). Bản đầu đổi hình theo trạng thái (có mục thì thành ảnh bìa mục mới
+nhất + "4 mục / chưa xếp ngày"); nhìn thì bắt mắt nhưng một vật thể thường trực mà cứ đổi
+hình đổi cỡ thì mắt phải nhận diện lại mỗi lần, và bề rộng nhảy làm mọi thanh chừa chỗ
+theo nó cũng nhảy. Viên số đặt **sau nhãn**, không phải huy hiệu dán lên icon: icon chỉ
+`size-4`, huy hiệu cỡ đó đè kín mất hình.
+
+Chưa đăng nhập / chưa có chuyến vẫn hiện y hệt — nó là **cửa vào** tính năng, không chỉ
+cái gương soi: bấm vào thì ngăn kéo mời đăng nhập (`LoginDrawer`) hoặc tạo chuyến.
+
+### Nút giữ ở mức TỐI THIỂU
+
+Một viên **tròn 44px** (đúng ngưỡng chạm thoải mái, không hơn), đặt ở **giữa cạnh phải**.
+
+- Vì sao không phải viên chữ "Lịch trình": dễ hiểu hơn thật, nhưng một vật thể nổi trên MỌI
+  trang thì mỗi pixel nó chiếm là một pixel **vĩnh viễn** lấy của nội dung — mà nội dung mới
+  là thứ người ta tới để xem. Nghĩa của nút do `aria-label` + `title` gánh.
+- Vì sao **giữa cạnh phải** chứ không phải góc đáy–phải: dải đáy là chỗ đông nhất
+  (`BottomNav` · `PeerBar` · `BackToTop` · lời mời cài app). Đặt vào đó là phải bắt cả bốn
+  thứ kia tránh đường — tôi đã thử, bằng hai biến CSS `--trip-dock-h`/`--trip-dock-w` do nút
+  tự ghi ra; chạy được, nhưng thành bốn chỗ phải nhớ mỗi khi thêm một phần tử nổi mới. Dời
+  nút ra khỏi dải đáy thì **không cần chỗ nào tránh nó cả**.
+- Số **mục chưa xếp ngày** là một huy hiệu nhỏ ở góc nút (0 thì không có).
+
+> **Đã thử và BỎ: cho KÉO THẢ CHÍNH CÁI NÚT** (dính mép, nhớ vị trí trong `localStorage`).
+> Chạy đúng, nhưng giải sai bài: nút đã nhỏ và đã tránh dải đáy thì không còn che gì đáng để
+> phải dời, mà người dùng lại phải học thêm một thao tác chẳng để làm gì. Thứ thật sự cần
+> kéo là **các mục trong lịch trình**.
+
+**Ngăn kéo hiện CẢ LỊCH TRÌNH, không chỉ cái túi.** Bản đầu chỉ liệt kê mục *chưa xếp
+ngày* — như vậy nó mới là một cái giỏ hàng, và muốn biết chuyến đang thành hình ra sao
+thì vẫn phải mở trình soạn. Nay thân ngăn kéo là: **Chưa xếp ngày** (thứ đang chờ mình
+làm gì đó, nên đứng trước) → **từng ngày kèm mục trong nó** → **+ Thêm ngày**.
+
+- Tiêu đề nhóm **dính khi cuộn** (`sticky`), luôn biết đang đọc ngày nào.
+- Nhãn ngày = **"Ngày 2 · Tên tự đặt"**. Lấy mỗi `title` làm nhãn (bản đầu) thì một ngày
+  đặt tên "Ngày ra đảo" mất luôn dấu hiệu nó là ngày thứ mấy — trong khi cả lịch trình
+  chạy theo số ngày.
+- **Hai hình dạng cho hai việc khác nhau:** mục trong **túi** có nút chữ **"Xếp ngày ▾"**
+  (việc đang chờ) + thùng rác; mục **trong một ngày** chỉ có nút **"…"** gom chuyển ngày /
+  đưa về túi / bỏ. Lặp chữ "Ngày 1" ở mọi hàng ngay dưới tiêu đề đã ghi "NGÀY 1" là chữ
+  thừa.
+- Đổi chuyến đang lên lịch ngay trên tiêu đề (`listMyTrips` + `setPlanningTrip`) — cách thứ
+  tư để đổi, cạnh ba cách ở §4, và là cách duy nhất **luôn ở trong tầm tay**.
+- **KÉO–THẢ ngay trong ngăn kéo**: kéo giữa túi ↔ các ngày và đổi thứ tự trong một ngày.
+  Dùng **chung `applyMove`/`BACKLOG`/`dayKey` của `trip-dnd.ts`** với trình soạn — phép tính
+  chỉ số khi đổi vùng là chỗ dễ sai nhất, đã có `pnpm check:trip-dnd` canh, viết bản thứ hai
+  là tự chuốc lỗi. Bốn điều bắt buộc:
+  - **Tay cầm grip nhìn thấy được**, không phải "cả hàng kéo được" (cùng kết luận §6c: kéo
+    cả hàng thì trên cảm ứng mọi cú vuốt để cuộn đều có thể thành cú kéo). Grip cũng là tay
+    cầm cho **bàn phím**. Ảnh và link tên mục đặt `draggable={false}`.
+  - **`data-vaul-no-drag`** trên vùng danh sách: thiếu nó thì trên điện thoại, kéo một mục
+    xuống dưới sẽ kéo luôn cả ngăn kéo đóng lại (vaul hiểu vuốt dọc là "đóng bảng").
+  - **`DndContext` và `DragOverlay` phải nằm NGOÀI `DrawerContent`**: vaul đặt `transform`
+    lên panel, mà `position: fixed` bên trong một phần tử có `transform` lấy chính phần tử
+    đó làm gốc toạ độ ⇒ bản sao đi theo con trỏ trôi lệch hẳn khỏi con trỏ.
+  - Khối "Chưa xếp ngày" render **kể cả khi rỗng** (thành vùng thả để kéo mục ra khỏi ngày),
+    và ngày rỗng cũng là một `DropZone`.
+- Menu vẫn còn cho những lần dời xa và cho cảm ứng: `moveItem(id, dayId, day.items.length,
+  version)` — chèn xuống cuối ngày; `dayId = null` là bỏ khỏi ngày.
+- Ngăn kéo cố ý **không** có giờ ước tính và cảnh báo giờ mở cửa: nhân đôi trình soạn thì
+  hai chỗ sớm muộn lệch nhau. Đó là lý do vẫn có nút "Mở lịch trình →".
+- **Bàn cục bộ**: `syncedSig` giữ chữ ký của **bản server đã tiếp nhận gần nhất**, KHÔNG
+  phải chữ ký của bàn cục bộ — lưu nhầm cái sau thì ngay sau khi thả, bản server (còn cũ vì
+  action chưa xong) sẽ khác nó và ghi đè lại ⇒ mục nhảy về chỗ cũ. Đồng bộ làm **trong
+  render** (mẫu "adjusting state when props change"), không phải trong effect: effect gọi
+  setState là một vòng render thừa và eslint chặn. Cờ "đang kéo" là **state `activeId`**,
+  không phải ref — đọc ref trong render bị React Compiler cấm.
+- Gửi kèm `Trip.version`; lệch (`stale`) thì **không** báo lỗi đỏ mà nạp lại rồi mời làm lại.
+- `ItemRow` phải ở **cấp module**, không khai trong thân `TripDock`: component khai trong
+  render là một kiểu MỚI sau mỗi lần render ⇒ React unmount cả hàng ⇒ menu chọn ngày vừa
+  mở đóng ngay.
+
+**Hình thức:** trượt từ **đáy** dưới `lg` (ngón cái với tới), **nép phải** từ `lg`. Một
+`Drawer` (vaul) đổi `direction`, không phải hai component.
+
+**Ẩn ở** `/lich-trinh` (trong trình soạn thì cả trang ĐÃ là cái túi), `/cms`, `/sale`,
+`/login`, `/offline`.
+
 ## 7. Lịch trình mẫu — đòn bẩy mạnh nhất
 
 - Soạn ở **`/cms/lich-trinh`** — dùng lại chính trình soạn ở §6, chỉ khác `isTemplate=true`
@@ -562,6 +652,7 @@ dài, vắt qua nhiều ngày và nhiều tỉnh**.
 | Bản đồ | `src/components/trip/trip-map{,-inner}.tsx` | Pin **đánh số theo thứ tự** + tuyến của MỘT ngày |
 | Chia sẻ | `src/components/trip/trip-share.tsx` | Công tắc bật/tắt + QR + copy (khuôn `StayShare`) |
 | Nút lên lịch | `src/components/site/plan-trip-button.tsx` | CTA trang điểm đến (§6b) — `getPlanOptions` · `startTripForPlace` |
+| **Nút Lịch trình** | **`src/components/trip/trip-dock.tsx`** · `trip-bag-events.ts` | Viên nổi + ngăn kéo **kéo–thả được** "gom rồi xếp" ở MỌI trang công khai (§6f). Dữ liệu: `getTripBag()` (trả **cả ngày kèm mục** + túi chưa xếp, một truy vấn rồi chia nhóm ở JS); dựng ở `(site)/layout.tsx` |
 | Nút thêm | `src/components/site/add-to-trip-button.tsx` | Gắn ở hero địa điểm, trang hoạt động, trang lưu trú, popup quán ăn, popup lưu trú. **KHÔNG** ở trang điểm đến (§6b) |
 | CMS | `src/app/cms/lich-trinh/**` | Danh sách + form xuất bản mẫu + ảnh bìa. **Nội dung ngày soạn ở trình soạn công khai** |
 | Script | `scripts/backfill-place-coords.ts` | `pnpm backfill:place-coords` |
@@ -570,7 +661,9 @@ Sửa kèm ở nơi khác: `Place.lat/lng` (schema + form CMS + actions) · `Ima
 `lib/owner.ts` + enum của route uploadthing · `RESERVED_SLUGS` thêm `lich-trinh` ·
 `sw.js` lên **v2** kèm `CACHE_ANYWAY` · `sitemap.ts` thêm mẫu · gỡ nhãn "Sắp có" khỏi
 `site-header.tsx` và `mobile-menu-sheet.tsx` · khối "Gợi ý lịch trình" ở trang điểm đến ·
-`.dl-trip-pin` trong `globals.css`.
+`.dl-trip-pin` trong `globals.css` · **`--trip-dock-h`/`--trip-dock-w` trong `globals.css`
++ `back-to-top.tsx`, `install-prompt.tsx`, `place-about-video.tsx`, `peer-bar.tsx` tránh chỗ
+cho cái túi (§6f).**
 
 > **Cách kiểm giờ ước tính ngoài trình duyệt:** script gọi `lib/trip.ts` sẽ vướng hai thứ —
 > `import "server-only"` (không có trong node_modules gốc) và `unstable_cache` (ném

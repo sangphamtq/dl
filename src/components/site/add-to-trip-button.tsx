@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Check, Loader2, Plus } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { LoginDrawer } from "@/components/site/login-drawer";
+import { tripBagChanged } from "@/components/trip/trip-bag-events";
 import {
   addItem,
   listMyTrips,
@@ -103,6 +104,7 @@ export function AddToTripButton({
       }
       setTripId(id);
       setPickerOpen(false);
+      tripBagChanged();
       toast.success(`Đã chuyển ${name} sang “${title}”`);
     });
   }
@@ -123,6 +125,10 @@ export function AddToTripButton({
       setAdded(true);
       setTripId(res.data.tripId);
       lastItemId.current = res.data.itemId;
+      // Báo cho TÚI LỊCH TRÌNH (nút nổi ở mọi trang) nạp lại — nếu không, cái
+      // túi vẫn hiện con số cũ và người dùng lại rơi vào đúng cảnh "thêm rồi mà
+      // không thấy đâu" mà cái túi sinh ra để chấm dứt.
+      tripBagChanged();
 
       // Có nhiều chuyến thì lời mời hữu ích nhất là ĐỔI CHUYẾN: người dùng không
       // nhìn thấy mình đang lên lịch cho chuyến nào cho tới đúng khoảnh khắc này.

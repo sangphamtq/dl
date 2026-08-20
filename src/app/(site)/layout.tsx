@@ -2,6 +2,8 @@ import { getSettings } from "@/lib/settings";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { FooterGate } from "@/components/site/footer-gate";
+import { TripDock } from "@/components/trip/trip-dock";
+import { getTripBag } from "@/app/(site)/lich-trinh/actions";
 
 // Vỏ chung của MỌI trang công khai.
 //
@@ -26,7 +28,12 @@ export default async function SiteLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { heroLayout } = await getSettings();
+  // Túi lịch trình đọc ở ĐÂY chứ không phải trong từng trang: cùng lý do
+  // header nằm ở layout — điều hướng phía client chỉ thay `children`, nên một
+  // truy vấn ở đây phục vụ cả phiên lướt thay vì chạy lại mỗi lần chuyển trang.
+  // (Đổi lại `initial` cũ dần khi lướt, nên TripDock tự nạp lại lúc mở ngăn kéo
+  // và mỗi khi có mục vừa được thêm.)
+  const [{ heroLayout }, tripBag] = await Promise.all([getSettings(), getTripBag()]);
 
   return (
     <div className="flex flex-1 flex-col">
@@ -39,6 +46,7 @@ export default async function SiteLayout({
       <FooterGate>
         <SiteFooter />
       </FooterGate>
+      <TripDock initial={tripBag} />
     </div>
   );
 }

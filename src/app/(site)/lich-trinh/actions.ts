@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { notify } from "@/lib/notifications";
+import { coverUrl } from "@/lib/place-image";
 import type { TripPackScope } from "@/generated/prisma/enums";
 import { Prisma } from "@/generated/prisma/client";
 import type { ActionResult } from "@/app/(site)/blog/actions";
@@ -1407,4 +1408,190 @@ export async function leaveTrip(tripId: string): Promise<ActionResult> {
 
   revalidatePath("/lich-trinh");
   return { ok: true };
+}
+
+// ── TÚI LỊCH TRÌNH (dock nổi ở mọi trang) ────────────────────────────────
+// Nút "Thêm vào lịch trình" ở trang chi tiết bỏ mục vào một chuyến mà người
+// dùng KHÔNG nhìn thấy: bằng chứng duy nhất là cái toast 4 giây. `TripDock`
+// (components/trip/trip-dock.tsx) biến chuyến đang lên lịch thành một vật thể
+// thường trực — và `getTripBag` là dữ liệu của nó.
+//
+// Cố ý KHÁC `getTrip` ở lib/trip.ts: cái đó nạp cả cây (ngày → mục → 5 entity
+// đích + toạ độ + giờ mở cửa) để dựng dòng thời gian. Túi chỉ cần ẢNH + TÊN +
+// LOẠI của các mục CHƯA XẾP NGÀY, nên có select riêng gọn hơn hẳn — nó chạy
+// một lần trên MỌI trang công khai, không được phép nặng.
+//
+// ⚠️ TUYỆT ĐỐI KHÔNG ghi cookie trong hàm này. Nó được gọi thẳng từ
+// `(site)/layout.tsx` lúc render Server Component, mà `cookies().set` ở đó thì
+// Next ném lỗi. Vì vậy nó chỉ ĐỌC chuyến đang lên lịch, không "ghi nhớ" như
+// `resolveTargetTrip`.
+
+export type TripBagItem = {
+  id: string; // id của TripItem
+  name: string;
+  typeLabel: string;
+  image: string | null;
+  href: string | null; // null: quán ăn (chỉ có popup) & mục tự thêm
+};
+
+/** Một ngày của chuyến, KÈM các mục trong nó. */
+export type TripBagDay = {
+  id: string;
+  index: number;
+  title: string | null;
+  items: TripBagItem[];
+};
+
+export type TripBag = {
+  authed: boolean;
+  trip: { id: string; title: string; version: number } | null;
+  /**
+   * CẢ lịch trình theo ngày, không chỉ danh sách ngày để chọn: ngăn kéo phải
+   * cho thấy chuyến đang thành hình ra sao, nếu không nó chỉ là một cái giỏ
+   * hàng và người dùng vẫn phải mở trình soạn mới biết mình đã xếp những gì.
+   */
+  days: TripBagDay[];
+  unscheduled: TripBagItem[];
+  /** Số mục ĐÃ xếp vào ngày — dòng tóm tắt ở chân ngăn kéo. */
+  scheduledCount: number;
+  tripCount: number;
+};
+
+const EMPTY_BAG: TripBag = {
+  authed: false,
+  trip: null,
+  days: [],
+  unscheduled: [],
+  scheduledCount: 0,
+  tripCount: 0,
+};
+
+const bagImages = { where: { isCover: true }, take: 1, select: { url: true, isCover: true } } as const;
+
+export async function getTripBag(): Promise<TripBag> {
+  const session = await auth();
+  const userId = session?.user?.id;
+  if (!userId) return EMPTY_BAG;
+
+  const [cookieId, tripCount] = await Promise.all([
+    getPlanningTripId(),
+    prisma.trip.count({ where: myTripsWhere(userId) }),
+  ]);
+  if (tripCount === 0) return { ...EMPTY_BAG, authed: true };
+
+  // Cookie trỏ chuyến không còn quyền (bị gỡ khỏi chuyến, chuyến đã xoá) thì
+  // rơi về chuyến sửa gần nhất — giống `resolveTargetTrip`, chỉ khác là không
+  // ghi lại cookie và không đẻ chuyến mới.
+  const trip =
+    (cookieId
+      ? await prisma.trip.findFirst({
+          where: { id: cookieId, ...myTripsWhere(userId) },
+          select: bagSelect,
+        })
+      : null) ??
+    (await prisma.trip.findFirst({
+      where: myTripsWhere(userId),
+      orderBy: { updatedAt: "desc" },
+      select: bagSelect,
+    }));
+
+  if (!trip) return { ...EMPTY_BAG, authed: true, tripCount };
+
+  // Một truy vấn lấy MỌI mục rồi chia theo ngày ở JS — rẻ hơn nạp `items` lồng
+  // trong từng `days` (Prisma sẽ chạy một truy vấn cho mỗi quan hệ lồng).
+  const byDay = new Map<string, TripBagItem[]>();
+  const unscheduled: TripBagItem[] = [];
+  for (const row of trip.items) {
+    const item = bagItem(row);
+    if (!row.dayId) {
+      unscheduled.push(item);
+      continue;
+    }
+    const list = byDay.get(row.dayId);
+    if (list) list.push(item);
+    else byDay.set(row.dayId, [item]);
+  }
+
+  const days = trip.days.map((d) => ({
+    id: d.id,
+    index: d.index,
+    title: d.title,
+    items: byDay.get(d.id) ?? [],
+  }));
+
+  return {
+    authed: true,
+    trip: { id: trip.id, title: trip.title, version: trip.version },
+    days,
+    unscheduled,
+    scheduledCount: trip.items.length - unscheduled.length,
+    tripCount,
+  };
+}
+
+const bagSelect = {
+  id: true,
+  title: true,
+  version: true,
+  days: {
+    orderBy: { index: "asc" },
+    select: { id: true, index: true, title: true },
+  },
+  items: {
+    // KHÔNG lọc `dayId: null` nữa: ngăn kéo hiển thị cả lịch trình theo ngày.
+    orderBy: { order: "asc" },
+    select: {
+      id: true,
+      dayId: true,
+      customTitle: true,
+      spot: { select: { slug: true, name: true, images: bagImages } },
+      eatery: { select: { slug: true, name: true, images: bagImages } },
+      accommodation: { select: { slug: true, name: true, images: bagImages } },
+      activity: { select: { slug: true, name: true, images: bagImages } },
+    },
+  },
+} satisfies Prisma.TripSelect;
+
+type BagRow = Prisma.TripGetPayload<{ select: typeof bagSelect }>["items"][number];
+
+function bagItem(item: BagRow): TripBagItem {
+  if (item.spot)
+    return {
+      id: item.id,
+      name: item.spot.name,
+      typeLabel: "Địa điểm",
+      image: coverUrl(item.spot.images, item.spot.slug, 120, 120),
+      href: `/dia-diem/${item.spot.slug}`,
+    };
+  if (item.eatery)
+    return {
+      id: item.id,
+      name: item.eatery.name,
+      typeLabel: "Quán ăn",
+      image: coverUrl(item.eatery.images, item.eatery.slug, 120, 120),
+      href: null, // quán ăn cố ý không có trang riêng (xem CLAUDE.md — popup)
+    };
+  if (item.accommodation)
+    return {
+      id: item.id,
+      name: item.accommodation.name,
+      typeLabel: "Nơi ở",
+      image: coverUrl(item.accommodation.images, item.accommodation.slug, 120, 120),
+      href: `/luu-tru/${item.accommodation.slug}`,
+    };
+  if (item.activity)
+    return {
+      id: item.id,
+      name: item.activity.name,
+      typeLabel: "Hoạt động",
+      image: coverUrl(item.activity.images, item.activity.slug, 120, 120),
+      href: `/hoat-dong/${item.activity.slug}`,
+    };
+  return {
+    id: item.id,
+    name: item.customTitle ?? "Mục tự thêm",
+    typeLabel: "Tự thêm",
+    image: null,
+    href: null,
+  };
 }
