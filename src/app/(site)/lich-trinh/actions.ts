@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { notify } from "@/lib/notifications";
+import type { TripPackScope } from "@/generated/prisma/enums";
 import { Prisma } from "@/generated/prisma/client";
 import type { ActionResult } from "@/app/(site)/blog/actions";
 
@@ -26,6 +27,10 @@ const COOKIE_MAX_AGE = 60 * 60 * 24 * 180; // 180 ngày
 
 const MAX_TITLE = 120;
 const MAX_NOTE = 500;
+// Ghi chú của cả chuyến dài hơn note của một mục: người ta dán vào đó cả một xác
+// nhận đặt phòng. Hằng RIÊNG, đừng nới MAX_NOTE — nó đang giữ cho note của mục
+// ngắn đúng một dòng rưỡi trên thẻ.
+const MAX_TRIP_NOTE = 2000;
 const MAX_DAYS = 30;
 
 // Đích của một mục — đúng 1 loại (exclusive arc ở tầng dữ liệu).
@@ -118,9 +123,17 @@ function bump(tripId: string) {
   });
 }
 
+// Cả bốn mục render sẵn trong MỘT trang (TripWorkspace) từ cả hai route, nên
+// mutation của mục nào cũng phải revalidate đủ bốn đường dẫn — người dùng có
+// thể đã deep-load bất kỳ mục nào rồi chuyển qua lại bằng pushState.
+function refreshTripPaths(tripId: string) {
+  for (const seg of ["", "/ghi-chu", "/do-mang-theo", "/chi-phi"])
+    revalidatePath(`/lich-trinh/${tripId}${seg}`);
+}
+
 function refresh(tripId: string, slug?: string | null) {
   revalidatePath("/lich-trinh");
-  revalidatePath(`/lich-trinh/${tripId}`);
+  refreshTripPaths(tripId);
   if (slug) revalidatePath(`/lich-trinh/mau/${slug}`);
 }
 
@@ -700,6 +713,8 @@ export async function cloneTrip(
       id: true, title: true, summary: true, ownerId: true, isTemplate: true, visibility: true,
       members: { where: { userId }, select: { id: true } },
       days: { orderBy: { index: "asc" }, select: { id: true, index: true, startMin: true, title: true, note: true } },
+      notes: { orderBy: { createdAt: "asc" }, select: { body: true, isPinned: true } },
+      packing: { orderBy: { createdAt: "asc" }, select: { name: true } },
       items: {
         orderBy: { order: "asc" },
         select: {
@@ -761,12 +776,348 @@ export async function cloneTrip(
         },
       });
     }
+    // Ghi chú thì CHÉP — khác `title`/`note` của ngày ở trên. Lý do bên đó là
+    // "chữ người dùng không thấy, không sửa, không xoá được"; ở đây ngược lại,
+    // mục Ghi chú cho họ đủ cả ba. Mẹo thực địa của một mẫu ("xe khách cuối tuần
+    // hết vé sớm") chính là thứ đáng mang theo. Tác giả để trống: người chép
+    // không viết ra nó, mà tác giả gốc thì không có mặt trong chuyến mới.
+    for (const n of source.notes) {
+      await tx.tripNote.create({
+        data: { tripId: trip.id, body: n.body, isPinned: n.isPinned },
+      });
+    }
+    // Danh sách đồ cũng chép — mẫu Tà Xùa ghi "áo ấm, giày bám" là tri thức thực
+    // địa, đúng thứ đáng thừa kế. Nhưng KHÔNG chép `assigneeId` (người trong
+    // chuyến mới khác hẳn) và KHÔNG chép `isDone` (chuyến mới thì chưa xếp gì).
+    for (const it of source.packing) {
+      await tx.tripPackItem.create({ data: { tripId: trip.id, name: it.name } });
+    }
     return trip.id;
   });
 
   await rememberPlanning(created);
   revalidatePath("/lich-trinh");
   return { ok: true, data: { id: created } };
+}
+
+// ── Ghi chú của chuyến ───────────────────────────────────────────────────
+//
+// Ai trong chuyến cũng thêm/sửa/xoá được MỌI mẩu, kể cả của người khác. Đây là
+// tính nhất quán chứ không phải dễ dãi: thành viên ĐÃ xoá được điểm dừng của
+// người khác trong lịch trình, nên dựng riêng một luật chặt hơn cho ghi chú thì
+// hai mục cạnh nhau hành xử khác nhau mà không giải thích được. `TripMember`
+// chính là ranh giới tin cậy.
+//
+// KHÔNG `bump()` version: version chặn đụng độ THEO VỊ TRÍ khi kéo–thả, còn ghi
+// chú thì không có vị trí nào để đụng. Bump ở đây chỉ khiến mỗi lần gõ ghi chú
+// lại làm mới cả trang lịch trình.
+
+function refreshNotes(tripId: string) {
+  refreshTripPaths(tripId);
+}
+
+/** Tìm mẩu ghi chú + kiểm quyền sửa chuyến chứa nó. */
+async function editableNote(noteId: string) {
+  const note = await prisma.tripNote.findUnique({
+    where: { id: noteId },
+    select: { id: true, tripId: true },
+  });
+  if (!note) throw new Error("Không tìm thấy ghi chú.");
+  await editableTrip(note.tripId);
+  return note;
+}
+
+export async function addNote(
+  tripId: string,
+  rawBody: string,
+): Promise<ActionResult<{ id: string }>> {
+  const body = clip(rawBody.trim(), MAX_TRIP_NOTE);
+  if (!body) return { ok: false, error: "Ghi chú đang trống." };
+  try {
+    const { userId } = await editableTrip(tripId);
+    const note = await prisma.tripNote.create({
+      data: { tripId, body, authorId: userId },
+      select: { id: true },
+    });
+    refreshNotes(tripId);
+    return { ok: true, data: { id: note.id } };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+export async function updateNote(noteId: string, rawBody: string): Promise<ActionResult> {
+  const body = clip(rawBody.trim(), MAX_TRIP_NOTE);
+  if (!body) return { ok: false, error: "Ghi chú đang trống." };
+  try {
+    const note = await editableNote(noteId);
+    await prisma.tripNote.update({ where: { id: noteId }, data: { body } });
+    refreshNotes(note.tripId);
+    return { ok: true };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+export async function deleteNote(noteId: string): Promise<ActionResult> {
+  try {
+    const note = await editableNote(noteId);
+    await prisma.tripNote.delete({ where: { id: noteId } });
+    refreshNotes(note.tripId);
+    return { ok: true };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+export async function setNotePinned(noteId: string, pinned: boolean): Promise<ActionResult> {
+  try {
+    const note = await editableNote(noteId);
+    await prisma.tripNote.update({ where: { id: noteId }, data: { isPinned: pinned } });
+    refreshNotes(note.tripId);
+    return { ok: true };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+// ── Đồ mang theo ─────────────────────────────────────────────────────────
+//
+// Cùng luật quyền với ghi chú: ai trong chuyến cũng thêm/sửa/gán/xoá được mọi
+// món. Không `bump()` version (không có thao tác theo vị trí nào ở đây).
+
+function refreshPacking(tripId: string) {
+  refreshTripPaths(tripId);
+}
+
+async function editablePackItem(itemId: string) {
+  const item = await prisma.tripPackItem.findUnique({
+    where: { id: itemId },
+    select: { id: true, tripId: true },
+  });
+  if (!item) throw new Error("Không tìm thấy món đồ.");
+  await editableTrip(item.tripId);
+  return item;
+}
+
+export async function addPackItem(
+  tripId: string,
+  rawName: string,
+  scope: TripPackScope = "group",
+): Promise<ActionResult<{ id: string }>> {
+  const name = clip(rawName.trim(), MAX_TITLE);
+  if (!name) return { ok: false, error: "Chưa nhập tên món đồ." };
+  try {
+    await editableTrip(tripId);
+    const item = await prisma.tripPackItem.create({
+      data: { tripId, name, scope },
+      select: { id: true },
+    });
+    refreshPacking(tripId);
+    return { ok: true, data: { id: item.id } };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+export async function updatePackItem(
+  itemId: string,
+  patch: {
+    name?: string;
+    scope?: TripPackScope;
+    isReady?: boolean;
+    isPacked?: boolean;
+    assigneeId?: string | null;
+  },
+): Promise<ActionResult> {
+  try {
+    const item = await editablePackItem(itemId);
+
+    const data: {
+      name?: string;
+      scope?: TripPackScope;
+      isReady?: boolean;
+      isPacked?: boolean;
+      assigneeId?: string | null;
+    } = {};
+    if (patch.name !== undefined) {
+      const name = clip(patch.name.trim(), MAX_TITLE);
+      if (!name) return { ok: false, error: "Tên món đồ đang trống." };
+      data.name = name;
+    }
+    // Đổi sang `personal` thì bỏ luôn người nhận: đồ ai cũng phải mang thì
+    // không có chuyện "Minh mang hộ".
+    if (patch.scope !== undefined) {
+      data.scope = patch.scope;
+      if (patch.scope === "personal") data.assigneeId = null;
+    }
+    if (patch.isReady !== undefined) data.isReady = patch.isReady;
+    if (patch.isPacked !== undefined) data.isPacked = patch.isPacked;
+    if (patch.assigneeId !== undefined) {
+      // Chỉ gán được cho người THỰC SỰ ở trong chuyến — nếu không thì một id bất
+      // kỳ gửi lên sẽ hiện thành "ai đó" không rõ danh tính trên danh sách.
+      if (patch.assigneeId) {
+        const t = await prisma.trip.findUnique({
+          where: { id: item.tripId },
+          select: { ownerId: true, members: { where: { userId: patch.assigneeId }, select: { id: true } } },
+        });
+        const inTrip = t?.ownerId === patch.assigneeId || (t?.members.length ?? 0) > 0;
+        if (!inTrip) return { ok: false, error: "Người này không ở trong chuyến." };
+      }
+      data.assigneeId = patch.assigneeId;
+    }
+
+    await prisma.tripPackItem.update({ where: { id: itemId }, data });
+    refreshPacking(item.tripId);
+    return { ok: true };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+/**
+ * Tick/bỏ tick món ĐỒ RIÊNG — trạng thái của CHÍNH NGƯỜI ĐANG ĐĂNG NHẬP, không
+ * phải của cả nhóm. Bản ghi chỉ được tạo khi có người tick lần đầu (upsert), nên
+ * chuyến 5 người × 30 món không sinh 150 dòng rỗng.
+ */
+export async function setMyPackCheck(
+  itemId: string,
+  patch: { isReady?: boolean; isPacked?: boolean },
+): Promise<ActionResult> {
+  try {
+    const item = await prisma.tripPackItem.findUnique({
+      where: { id: itemId },
+      select: { id: true, tripId: true, scope: true },
+    });
+    if (!item) return { ok: false, error: "Không tìm thấy món đồ." };
+    if (item.scope !== "personal")
+      return { ok: false, error: "Món này là đồ chung của nhóm." };
+    const { userId } = await editableTrip(item.tripId);
+
+    await prisma.tripPackCheck.upsert({
+      where: { itemId_userId: { itemId, userId } },
+      create: { itemId, userId, ...patch },
+      update: patch,
+    });
+    refreshPacking(item.tripId);
+    return { ok: true };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+export async function deletePackItem(itemId: string): Promise<ActionResult> {
+  try {
+    const item = await editablePackItem(itemId);
+    await prisma.tripPackItem.delete({ where: { id: itemId } });
+    refreshPacking(item.tripId);
+    return { ok: true };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+// ── Chi phí ──────────────────────────────────────────────────────────────
+//
+// Số tiền do NGƯỜI DÙNG GÕ, không bao giờ suy ra từ danh mục — xem chú thích ở
+// model `TripExpense` và docs/lich-trinh.md §9.3.
+
+const MAX_AMOUNT = 2_000_000_000; // 2 tỉ: đủ cho mọi chuyến, chặn số gõ nhầm
+
+function refreshMoney(tripId: string) {
+  refreshTripPaths(tripId);
+}
+
+/** Lọc danh sách id chỉ giữ người THỰC SỰ ở trong chuyến. */
+async function peopleInTrip(tripId: string, ids: string[]): Promise<string[]> {
+  if (ids.length === 0) return [];
+  const t = await prisma.trip.findUnique({
+    where: { id: tripId },
+    select: { ownerId: true, members: { select: { userId: true } } },
+  });
+  if (!t) return [];
+  const inTrip = new Set([t.ownerId, ...t.members.map((m) => m.userId)]);
+  return [...new Set(ids)].filter((id) => inTrip.has(id));
+}
+
+export async function addExpense(
+  tripId: string,
+  input: { title: string; amount: number; paidById: string | null; shareIds: string[] },
+): Promise<ActionResult<{ id: string }>> {
+  const title = clip(input.title.trim(), MAX_TITLE);
+  if (!title) return { ok: false, error: "Chưa nhập tên khoản chi." };
+  const amount = Math.round(input.amount);
+  if (!Number.isFinite(amount) || amount <= 0)
+    return { ok: false, error: "Số tiền không hợp lệ." };
+  if (amount > MAX_AMOUNT) return { ok: false, error: "Số tiền lớn bất thường." };
+
+  try {
+    await editableTrip(tripId);
+    const [payer] = await peopleInTrip(tripId, input.paidById ? [input.paidById] : []);
+    const shareIds = await peopleInTrip(tripId, input.shareIds);
+    if (shareIds.length === 0) return { ok: false, error: "Chưa chọn ai chia khoản này." };
+
+    const expense = await prisma.tripExpense.create({
+      data: {
+        tripId,
+        title,
+        amount,
+        paidById: payer ?? null,
+        shares: { create: shareIds.map((userId) => ({ userId })) },
+      },
+      select: { id: true },
+    });
+    refreshMoney(tripId);
+    return { ok: true, data: { id: expense.id } };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+/**
+ * XOÁ MỀM — khoản chi chuyển vào mục "Đã xoá" kèm tên người xoá, khôi phục
+ * được. Không có đường xoá thật nào từ giao diện: sổ tiền chung mà xoá được
+ * lặng lẽ thì một người có thể rút hoá đơn khỏi sổ không ai biết. Xem comment
+ * ở model `TripExpense`.
+ */
+export async function deleteExpense(expenseId: string): Promise<ActionResult> {
+  try {
+    const ex = await prisma.tripExpense.findUnique({
+      where: { id: expenseId },
+      select: { tripId: true, deletedAt: true },
+    });
+    if (!ex) return { ok: false, error: "Không tìm thấy khoản chi." };
+    if (ex.deletedAt) return { ok: false, error: "Khoản này đã xoá rồi." };
+    const { userId } = await editableTrip(ex.tripId);
+    await prisma.tripExpense.update({
+      where: { id: expenseId },
+      data: { deletedAt: new Date(), deletedById: userId },
+    });
+    refreshMoney(ex.tripId);
+    return { ok: true };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+export async function restoreExpense(expenseId: string): Promise<ActionResult> {
+  try {
+    const ex = await prisma.tripExpense.findUnique({
+      where: { id: expenseId },
+      select: { tripId: true, deletedAt: true },
+    });
+    if (!ex) return { ok: false, error: "Không tìm thấy khoản chi." };
+    if (!ex.deletedAt) return { ok: false, error: "Khoản này chưa bị xoá." };
+    await editableTrip(ex.tripId);
+    await prisma.tripExpense.update({
+      where: { id: expenseId },
+      data: { deletedAt: null, deletedById: null },
+    });
+    refreshMoney(ex.tripId);
+    return { ok: true };
+  } catch (e) {
+    return fail(e);
+  }
 }
 
 // ── Danh sách chuyến (dùng cho popup "đổi chuyến") ───────────────────────

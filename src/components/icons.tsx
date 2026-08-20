@@ -22,6 +22,9 @@ function make(name: string): LucideIcon {
 
 export const AlertCircle = make("alert-circle");
 export const AlignCenter = make("align-center");
+export const Backpack = make("backpack");
+export const ClipboardList = make("clipboard-list");
+export const NotebookPen = make("notebook-pen");
 export const AlignLeft = make("align-left");
 export const AlignRight = make("align-right");
 export const ArrowDownWideNarrow = make("arrow-down-wide-narrow");

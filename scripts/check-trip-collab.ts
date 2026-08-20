@@ -64,7 +64,107 @@ async function main() {
   ok("nhận lời mời treo → có thông báo", notif?.actorId === owner.id);
   ok("thông báo kèm tên chuyến", notif?.excerpt === "COLLAB TEST");
 
-  // 4. version tăng khi có mutation
+  // 4. GHI CHÚ: người được mời cũng thêm/sửa/xoá được (cùng luật với điểm dừng),
+  //    người ngoài thì không thấy gì cả.
+  const note = await prisma.tripNote.create({
+    data: { tripId: trip.id, body: "mã đặt phòng SH-4471", authorId: owner.id },
+    select: { id: true },
+  });
+  const seenByMate = await prisma.tripNote.count({
+    where: {
+      id: note.id,
+      trip: { OR: [{ ownerId: mate.id }, { members: { some: { userId: mate.id } } }] },
+    },
+  });
+  ok("ghi chú: người được mời ĐỌC được", seenByMate === 1);
+
+  const outsider = await prisma.user.create({
+    data: { email: "nguoi-ngoai@example.com", name: "Người Ngoài" },
+    select: { id: true },
+  });
+  const seenByOutsider = await prisma.tripNote.count({
+    where: {
+      id: note.id,
+      trip: { OR: [{ ownerId: outsider.id }, { members: { some: { userId: outsider.id } } }] },
+    },
+  });
+  ok("ghi chú: người ngoài KHÔNG đọc được", seenByOutsider === 0);
+
+  // Ghim + xoá chuyến kéo theo ghi chú (Cascade).
+  await prisma.tripNote.update({ where: { id: note.id }, data: { isPinned: true } });
+  const pinnedFirst = await prisma.tripNote.findFirst({
+    where: { tripId: trip.id },
+    orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }],
+    select: { id: true },
+  });
+  ok("ghi chú: mẩu đã ghim đứng đầu", pinnedFirst?.id === note.id);
+
+  // 4b. ĐỒ MANG THEO: gán được cho người trong chuyến, và gỡ người khỏi chuyến
+  //     thì món quay về "chưa ai nhận" chứ KHÔNG biến mất (SetNull).
+  const pack = await prisma.tripPackItem.create({
+    data: { tripId: trip.id, name: "Sạc dự phòng", assigneeId: ghost.id },
+    select: { id: true },
+  });
+  await prisma.tripMember.deleteMany({ where: { tripId: trip.id, userId: ghost.id } });
+  await prisma.user.delete({ where: { id: ghost.id } });
+  const after2 = await prisma.tripPackItem.findUnique({
+    where: { id: pack.id },
+    select: { assigneeId: true },
+  });
+  ok("đồ mang theo: gỡ người → món CÒN, về chưa ai nhận", after2 !== null && after2.assigneeId === null);
+
+  // 4c. ĐỒ RIÊNG: trạng thái là CỦA TỪNG NGƯỜI. Chủ chuyến tick xong thì người
+  //     được mời vẫn phải thấy "chưa tick" — nếu dùng chung một cờ thì cả nhóm
+  //     tưởng mình đã xếp đồ trong khi chưa ai đụng vào.
+  const mine = await prisma.tripPackItem.create({
+    data: { tripId: trip.id, name: "Bàn chải", scope: "personal" },
+    select: { id: true },
+  });
+  await prisma.tripPackCheck.create({
+    data: { itemId: mine.id, userId: owner.id, isReady: true },
+  });
+  const forOwner = await prisma.tripPackCheck.findUnique({
+    where: { itemId_userId: { itemId: mine.id, userId: owner.id } },
+    select: { isReady: true },
+  });
+  const forMate = await prisma.tripPackCheck.findUnique({
+    where: { itemId_userId: { itemId: mine.id, userId: mate.id } },
+  });
+  ok("đồ riêng: chủ chuyến đã tick", forOwner?.isReady === true);
+  ok("đồ riêng: người kia VẪN chưa tick", forMate === null);
+
+  // 4d. CHI PHÍ: xoá chuyến thì khoản chi và các phần chia mất theo (Cascade).
+  const ex = await prisma.tripExpense.create({
+    data: {
+      tripId: trip.id, title: "Tiền phòng", amount: 900_000, paidById: owner.id,
+      shares: { create: [{ userId: owner.id }, { userId: mate.id }] },
+    },
+    select: { id: true },
+  });
+  ok("chi phí: ghi được kèm phần chia", (await prisma.tripExpenseShare.count({ where: { expenseId: ex.id } })) === 2);
+
+  // Xoá là XOÁ MỀM: bản ghi còn nguyên, mang tên người xoá, khôi phục được.
+  await prisma.tripExpense.update({
+    where: { id: ex.id },
+    data: { deletedAt: new Date(), deletedById: mate.id },
+  });
+  const softDeleted = await prisma.tripExpense.findUnique({
+    where: { id: ex.id },
+    select: { deletedAt: true, deletedBy: { select: { name: true } } },
+  });
+  ok("chi phí: xoá mềm giữ bản ghi + tên người xoá",
+    softDeleted?.deletedAt != null && softDeleted?.deletedBy != null);
+  await prisma.tripExpense.update({
+    where: { id: ex.id },
+    data: { deletedAt: null, deletedById: null },
+  });
+  const restored = await prisma.tripExpense.findUnique({
+    where: { id: ex.id },
+    select: { deletedAt: true },
+  });
+  ok("chi phí: khôi phục xong sạch dấu xoá", restored?.deletedAt === null);
+
+  // 5. version tăng khi có mutation
   const v0 = (await prisma.trip.findUnique({ where: { id: trip.id }, select: { version: true } }))!.version;
   await prisma.trip.update({ where: { id: trip.id }, data: { version: { increment: 1 } } });
   const v1 = (await prisma.trip.findUnique({ where: { id: trip.id }, select: { version: true } }))!.version;
@@ -72,8 +172,14 @@ async function main() {
 
   // dọn
   await prisma.trip.delete({ where: { id: trip.id } });
-  await prisma.notification.deleteMany({ where: { userId: ghost.id } });
-  await prisma.user.delete({ where: { id: ghost.id } });
+  const notesLeft = await prisma.tripNote.count({ where: { id: note.id } });
+  ok("ghi chú: xoá chuyến thì mất theo (Cascade)", notesLeft === 0);
+  ok(
+    "chi phí: xoá chuyến thì khoản chi + phần chia mất theo",
+    (await prisma.tripExpense.count({ where: { id: ex.id } })) === 0 &&
+      (await prisma.tripExpenseShare.count({ where: { expenseId: ex.id } })) === 0,
+  );
+  await prisma.user.delete({ where: { id: outsider.id } });
   if (temp) await prisma.user.delete({ where: { id: mate.id } });
   console.log(`\n${pass} qua · ${fail} hỏng`);
   if (fail) process.exit(1);

@@ -29,7 +29,7 @@ function resolve(name, depth = 0) {
 
 // Mọi icon lucide đang dùng trong repo (PascalCase). Cập nhật khi import icon mới.
 const LUCIDE =
-  "AlertCircle AlignCenter AlignLeft AlignRight ArrowDownWideNarrow ArrowLeft ArrowRight ArrowUp ArrowUpRight BadgeCheck BedDouble Bell Bike Bold BookOpen Building2 Bus CalendarClock CalendarDays Camera Car CarTaxiFront Check CheckCheck CheckCircle2 CheckIcon ChefHat ChevronDown ChevronDownIcon ChevronLeft ChevronLeftIcon ChevronRight ChevronRightIcon ChevronUp ChevronUpIcon ChevronsUpDown CircleCheck CircleIcon Clock Cloud Coffee Compass ConciergeBell Construction Crosshair Database DatabaseZap Download ExternalLink Eye EyeOff FileText Flag Footprints Frown Globe GripVertical Heading2 Heading3 Heart HelpCircle Home Image ImageIcon ImageOff ImagePlus Info Italic KeyRound Landmark Layers LayoutDashboard LayoutGrid Lightbulb Link2 List ListOrdered Loader2 Lock LockOpen LogOut Mail Map MapPin MapPinCheck MapPinCheckInside MapPinPlus MapPinned Maximize Meh Menu MessageCircle MessageSquare MessageSquareText MessagesSquare MoreHorizontal MoreHorizontalIcon Mountain Navigation Newspaper PanelLeftIcon Pause PenLine Pencil Phone Pin PinOff Plane PlaneLanding Play Plus Quote Redo2 RefreshCw Reply RotateCcw RotateCw Route Search SearchIcon Send Settings Share2 Shield ShieldAlert ShieldCheck ShieldQuestion ShieldX Ship Sliders Smile Sparkles Star Store Strikethrough Sunrise Tag ThumbsUp Ticket TrainFront Trash2 TriangleAlert Underline Undo2 UploadCloud User UserPlus Users Utensils UtensilsCrossed Wallet WifiOff X XCircle XIcon".split(
+  "AlertCircle AlignCenter Backpack ClipboardList NotebookPen AlignLeft AlignRight ArrowDownWideNarrow ArrowLeft ArrowRight ArrowUp ArrowUpRight BadgeCheck BedDouble Bell Bike Bold BookOpen Building2 Bus CalendarClock CalendarDays Camera Car CarTaxiFront Check CheckCheck CheckCircle2 CheckIcon ChefHat ChevronDown ChevronDownIcon ChevronLeft ChevronLeftIcon ChevronRight ChevronRightIcon ChevronUp ChevronUpIcon ChevronsUpDown CircleCheck CircleIcon Clock Cloud Coffee Compass ConciergeBell Construction Crosshair Database DatabaseZap Download ExternalLink Eye EyeOff FileText Flag Footprints Frown Globe GripVertical Heading2 Heading3 Heart HelpCircle Home Image ImageIcon ImageOff ImagePlus Info Italic KeyRound Landmark Layers LayoutDashboard LayoutGrid Lightbulb Link2 List ListOrdered Loader2 Lock LockOpen LogOut Mail Map MapPin MapPinCheck MapPinCheckInside MapPinPlus MapPinned Maximize Meh Menu MessageCircle MessageSquare MessageSquareText MessagesSquare MoreHorizontal MoreHorizontalIcon Mountain Navigation Newspaper PanelLeftIcon Pause PenLine Pencil Phone Pin PinOff Plane PlaneLanding Play Plus Quote Redo2 RefreshCw Reply RotateCcw RotateCw Route Search SearchIcon Send Settings Share2 Shield ShieldAlert ShieldCheck ShieldQuestion ShieldX Ship Sliders Smile Sparkles Star Store Strikethrough Sunrise Tag ThumbsUp Ticket TrainFront Trash2 TriangleAlert Underline Undo2 UploadCloud User UserPlus Users Utensils UtensilsCrossed Wallet WifiOff X XCircle XIcon".split(
     " ",
   );
 
@@ -45,6 +45,7 @@ const kebab = (s) =>
 // còn lại dùng chính tên kebab của lucide.
 const DICT = {
   "grip-vertical": "drag-indicator",
+  "clipboard-list": "assignment", "notebook-pen": "note-alt",
   "alert-circle": "error", "align-center": "format-align-center",
   "align-left": "format-align-left", "align-right": "format-align-right",
   "arrow-down-wide-narrow": "sort", "arrow-left": "arrow-back",
@@ -83,7 +84,7 @@ const DICT = {
   "more-horizontal": "more-horiz", mountain: "landscape",
   navigation: "navigation", newspaper: "newspaper", "panel-left": "view-sidebar",
   pause: "pause", "pen-line": "edit", pencil: "edit", phone: "call",
-  pin: "push-pin", "pin-off": "push-pin", plane: "flight",
+  pin: "keep", "pin-off": "keep-off", plane: "flight",
   "plane-landing": "flight-land", play: "play-arrow", plus: "add",
   quote: "format-quote", "redo-2": "redo", "refresh-cw": "refresh",
   reply: "reply", "rotate-ccw": "rotate-left", "rotate-cw": "rotate-right",

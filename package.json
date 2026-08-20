@@ -23,7 +23,8 @@
     "seed:blog-phan-thiet": "tsx prisma/seed-blog-phan-thiet.ts",
     "seed:community": "tsx prisma/seed-community.ts",
     "seed:trip-phan-thiet": "tsx prisma/seed-trip-phan-thiet.ts",
-    "seed:sales": "tsx prisma/seed-sales.ts"
+    "seed:sales": "tsx prisma/seed-sales.ts",
+    "check:trip-money": "NODE_PATH=scripts/.shim tsx scripts/check-trip-money.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",

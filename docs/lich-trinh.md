@@ -239,6 +239,12 @@ này" là đi thẳng từ trang mẫu sang trang soạn, nên khung lệch nhau
   **không** tính vào `fitBounds`: khung nhìn phải bám tuyến của ngày, không để một mục ở xa
   kéo cho zoom out.
   ⚠️ Đây là HAI thứ khác nhau — danh sách ở miền lập kế hoạch, chấm ở miền địa lý. Đừng gộp.
+- **Ngày đang được bản đồ vẽ** đánh dấu bằng một **vạch cam NGẮN** ngang tầm tiêu đề, nằm
+  trong lề trái. Bản trước là `border-l-2` chạy **hết chiều cao** khối ngày: mảng màu đậm
+  nhất màn hình, trong khi nó chỉ nhắc lại điều dải chọn ngày (dính trên đầu, luôn thấy) đã
+  nói bằng chữ cam + gạch chân — và vì dán sát mép cột trái, nó đọc ra như đường viền của
+  sidebar chứ không phải dấu của ngày. Cùng màn hình đã có ba chỗ cam (dải ngày · dấu ngày ·
+  mục đang mở ở sidebar) nên chỗ nào cũng phải nhẹ hết mức còn đọc được.
 - **Dải chọn ngày** (`trip-day-strip.tsx`) quyết định bản đồ vẽ ngày nào, và bấm thì cuộn
   tới ngày đó. Bản trước chọn ngày bằng cách bắt `mousedown` lên khối ngày: không nhìn
   thấy được, không dùng bàn phím được, và trên điện thoại chạm để cuộn cũng đổi ngày.
@@ -549,6 +555,7 @@ dài, vắt qua nhiều ngày và nhiều tỉnh**.
 | Mutation | `src/app/(site)/lich-trinh/actions.ts` | CRUD chuyến/ngày/mục, `moveItem`, chia sẻ, nhân bản, cookie chuyến-đang-mở |
 | Trang | `src/app/(site)/lich-trinh/{page,[id],s/[shareId],mau/[slug]}` | Danh sách · trình soạn · bản chia sẻ · lịch trình mẫu |
 | Kéo–thả | `src/components/trip/trip-dnd.ts` | Bàn id theo vùng + `applyMove` (§6c) · kiểm bằng `pnpm check:trip-dnd` |
+| Mục của chuyến | `src/lib/trip-sections.ts` · `trip-side-nav.tsx` · `trip-topbar.tsx` · `trip-soon.tsx` · `[id]/[muc]/page.tsx` | Sidebar 5 mục + route. **Ghi chú** · **Đồ mang theo** · **Chi phí** đã dựng (`trip-notes/packing/money.tsx`). Mục *Phân công* đã **bỏ hẳn** — xem [lich-trinh-cong-cu-nhom.md](lich-trinh-cong-cu-nhom.md) |
 | Vỏ chung | `src/components/trip/trip-shell.tsx` · `trip-day-strip.tsx` · **`trip-rail.tsx`** | Khung BA CỘT tràn viền · dải chọn ngày · **dòng thời gian dạng ray** — dùng chung cả ba trang (§6a) |
 | UI soạn | `src/components/trip/trip-editor.tsx` | Dòng thời gian, cột Chưa xếp ngày, đổi thứ tự, sửa thời gian ở lại |
 | UI đọc | `src/components/trip/trip-view.tsx` | Bản chỉ đọc dùng cho chia sẻ + mẫu |

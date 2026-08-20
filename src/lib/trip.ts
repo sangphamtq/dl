@@ -384,3 +384,109 @@ export function dateOfDay(startDate: Date | null, index: number): Date | null {
   d.setDate(d.getDate() + index);
   return d;
 }
+
+export type TripNoteRow = {
+  id: string;
+  body: string;
+  isPinned: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  author: { name: string | null; image: string | null } | null;
+};
+
+// Ghi chú của một chuyến. Ghim lên đầu, còn lại MỚI NHẤT TRƯỚC: mẩu vừa thêm là
+// mẩu đang nghĩ tới. Mẩu tham chiếu (mã đặt phòng) chìm dần thì ghim, chứ không
+// dựng thêm sắp xếp tay.
+export function getTripNotes(tripId: string): Promise<TripNoteRow[]> {
+  return prisma.tripNote.findMany({
+    where: { tripId },
+    orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }],
+    select: {
+      id: true, body: true, isPinned: true, createdAt: true, updatedAt: true,
+      author: { select: { name: true, image: true } },
+    },
+  });
+}
+
+export type TripPackRow = {
+  id: string;
+  name: string;
+  scope: "group" | "personal";
+  /** Đã quy về "của người đang xem": món chung lấy cờ chung, món riêng lấy tick của chính họ. */
+  isReady: boolean;
+  isPacked: boolean;
+  /** Chỉ món chung mới có người nhận. */
+  assignee: { id: string; name: string | null; image: string | null } | null;
+};
+
+/**
+ * Đồ mang theo, ĐÃ QUY VỀ GÓC NHÌN của một người:
+ *   • món `group`    → hai cờ trên chính bản ghi (Minh xếp rồi là cả nhóm xong);
+ *   • món `personal` → tick riêng của người đang xem trong `TripPackCheck`;
+ *     chưa có bản ghi nghĩa là chưa tick.
+ * Nhờ vậy giao diện chỉ phải biết MỘT hình dạng hàng, không rẽ nhánh khắp nơi.
+ *
+ * Thứ tự THÊM VÀO, cố định — KHÔNG đẩy món đã xong xuống cuối: tick ba món liên
+ * tiếp mà danh sách nhảy loạn dưới tay thì không ai tick tiếp.
+ */
+export async function getTripPackItems(
+  tripId: string,
+  viewerId: string,
+): Promise<TripPackRow[]> {
+  const rows = await prisma.tripPackItem.findMany({
+    where: { tripId },
+    orderBy: { createdAt: "asc" },
+    select: {
+      id: true, name: true, scope: true, isReady: true, isPacked: true,
+      assignee: { select: { id: true, name: true, image: true } },
+      checks: { where: { userId: viewerId }, select: { isReady: true, isPacked: true } },
+    },
+  });
+
+  return rows.map((r) => {
+    const mine = r.checks[0];
+    return {
+      id: r.id,
+      name: r.name,
+      scope: r.scope,
+      assignee: r.scope === "group" ? r.assignee : null,
+      isReady: r.scope === "group" ? r.isReady : (mine?.isReady ?? false),
+      isPacked: r.scope === "group" ? r.isPacked : (mine?.isPacked ?? false),
+    };
+  });
+}
+
+export type TripExpenseRow = {
+  id: string;
+  title: string;
+  amount: number;
+  paidBy: { id: string; name: string | null; image: string | null } | null;
+  shareIds: string[];
+  /** Khác null = đã xoá mềm — nằm ở mục "Đã xoá", KHÔNG tính vào sổ. */
+  deletedAt: Date | null;
+  deletedBy: { name: string | null } | null;
+};
+
+// Khoản chi của một chuyến, mới nhất trước: sổ chi tiêu thì thứ vừa tiêu là thứ
+// người ta vừa nghĩ tới.
+export async function getTripExpenses(tripId: string): Promise<TripExpenseRow[]> {
+  const rows = await prisma.tripExpense.findMany({
+    where: { tripId },
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true, title: true, amount: true, deletedAt: true,
+      paidBy: { select: { id: true, name: true, image: true } },
+      deletedBy: { select: { name: true } },
+      shares: { select: { userId: true } },
+    },
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    title: r.title,
+    amount: r.amount,
+    paidBy: r.paidBy,
+    shareIds: r.shares.map((s) => s.userId),
+    deletedAt: r.deletedAt,
+    deletedBy: r.deletedBy,
+  }));
+}

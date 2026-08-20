@@ -269,6 +269,12 @@ model User {
   reviews         Review[] // đánh giá điểm đến đã viết
   trips           Trip[] // lịch trình chuyến đi (kể cả lịch trình mẫu nếu là editor)
   tripMemberships TripMember[] // chuyến của người khác mà mình được mời cùng sửa
+  tripNotes       TripNote[]   @relation("TripNoteAuthor")
+  tripPackItems   TripPackItem[] @relation("TripPackAssignee")
+  tripPackChecks  TripPackCheck[] @relation("TripPackChecker")
+  tripExpensesPaid TripExpense[] @relation("TripExpensePayer")
+  tripExpensesDeleted TripExpense[] @relation("TripExpenseDeleter")
+  tripExpenseShares TripExpenseShare[] @relation("TripExpenseSharer")
 
   saleProfile   SaleProfile?  @relation("SaleOwner") // hồ sơ CTV (nếu có) — đăng ký làm người bán
   salesReviewed SaleProfile[] @relation("SaleReviewer") // hồ sơ CTV mình đã duyệt (staff)
@@ -1237,6 +1243,9 @@ model Trip {
   images  Image[] // ảnh bìa (template)
   members TripMember[]
   invites TripInvite[]
+  notes    TripNote[]
+  packing  TripPackItem[]
+  expenses TripExpense[]
 
   // Khoá lạc quan cho THAO TÁC THEO VỊ TRÍ. `moveItem` đánh số lại cả một vùng
   // chứa, nên hai người cùng kéo trong một ngày sẽ ghi đè nhau LẶNG LẼ: người
@@ -1261,6 +1270,165 @@ model Trip {
 // Người được mời cùng sửa một chuyến. Chủ chuyến vẫn là Trip.ownerId (xoá
 // chuyến, quản lý thành viên, bật/tắt chia sẻ) — bảng này chỉ nói ai được SỬA
 // NỘI DUNG.
+// Ghi chú của cả chuyến — mã đặt phòng, số hiệu chuyến bay, số chủ homestay,
+// dặn dò cả nhóm. KHÁC ba chỗ ghi chú đã có: `TripItem.note` nói về một điểm
+// dừng, `TripDay.note` nói về một ngày (chỉ mẫu), `Trip.summary` là mô tả của
+// MẪU và chỉ sửa được trong CMS.
+//
+// Vì sao NHIỀU MẨU chứ không phải một ô text dùng chung trên `Trip`: dự án cố ý
+// không có realtime cho phần sửa lịch trình (docs/lich-trinh-cong-tac.md §5).
+// Một tài liệu chung mà không có realtime thì hai người cùng gõ là người lưu sau
+// ghi đè sạch, im lặng. Điều quyết định không phải xác suất mà là BÁN KÍNH THIỆT
+// HẠI: ghi đè một tài liệu chung xoá mọi thứ cả nhóm đã viết, ghi đè một mẩu chỉ
+// xoá một mẩu. Chi tiết: docs/lich-trinh-cong-cu-nhom.md §11.3.
+model TripNote {
+  id     String @id @default(cuid())
+  tripId String
+  trip   Trip   @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  // CHỮ THUẦN, không phải HTML rich-text. Thứ ghi chú cần chỉ là xuống dòng và
+  // link bấm được — link được nhận diện lúc HIỂN THỊ (dựng bằng JSX nên không
+  // có mặt phẳng XSS). Xem §11.4.
+  body String @db.Text
+
+  // SetNull: gỡ một người khỏi chuyến không được xoá ghi chú họ để lại.
+  authorId String?
+  author   User?   @relation("TripNoteAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+
+  // Ghim lên đầu — thay cho sắp xếp tay. Mẩu tham chiếu (mã đặt phòng) sẽ chìm
+  // dần khi danh sách xếp mới-nhất-trước; ghim là cách rẻ nhất để giữ nó ở trên.
+  isPinned Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tripId, isPinned, createdAt])
+}
+
+// Món đồ CHUNG của nhóm hay ĐỒ RIÊNG mỗi người tự lo.
+//
+//   • `group`    — một cái cho cả nhóm (lều, loa, bộ sạc). Có người nhận, và
+//                  trạng thái là CHUNG: Minh xếp rồi thì cả nhóm coi như xong.
+//   • `personal` — ai cũng phải mang một cái (bàn chải, thuốc riêng). KHÔNG có
+//                  người nhận, và trạng thái là RIÊNG TỪNG NGƯỜI → lưu ở
+//                  `TripPackCheck`, không dùng hai cờ dưới đây.
+enum TripPackScope {
+  group
+  personal
+}
+
+// Danh sách đồ mang theo. Vấn đề nó giải: không phải "quên mang quần áo" (ai
+// cũng nhớ) mà là **ba người cùng mang sạc dự phòng, không ai mang lều** — tức
+// là chuyện PHÂN CÔNG đồ chung. Vì vậy trục chính là `assigneeId`.
+//
+// HAI LƯỢT DUYỆT, đúng cách người ta chuẩn bị thật:
+//   1. `isReady`  — "đã có sẵn": mấy hôm trước, soát xem trong nhà CÓ chưa,
+//                   thiếu thì còn kịp mua/mượn.
+//   2. `isPacked` — "đã xếp vào túi": tối trước hôm đi, soát lần cuối.
+// Gộp hai lượt vào một ô tick là đánh mất đúng chỗ hay hỏng: có sẵn ở nhà không
+// có nghĩa là nó đã nằm trong túi.
+//
+// Cố ý KHÔNG có: `qty` (tên món tự nói — "2 ổ cắm"), `category` (phân loại là
+// việc của bốn mục, không phải của một cái nhãn — cùng lý do đã bỏ nó ở
+// `TripNote`), `order` (đây là checklist, không phải lịch trình: không ai xếp
+// lại thứ tự đồ đạc). Chi tiết: docs/lich-trinh-cong-cu-nhom.md §12.
+model TripPackItem {
+  id     String @id @default(cuid())
+  tripId String
+  trip   Trip   @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  name  String
+  scope TripPackScope @default(group)
+
+  // Ai mang — CHỈ có nghĩa với `group`. SetNull: gỡ một người khỏi chuyến thì
+  // món đồ quay về "chưa ai nhận" chứ không biến mất.
+  assigneeId String?
+  assignee   User?   @relation("TripPackAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+
+  // Trạng thái CHUNG — chỉ dùng cho `group`. Món `personal` đọc/ghi ở TripPackCheck.
+  isReady  Boolean @default(false)
+  isPacked Boolean @default(false)
+
+  checks TripPackCheck[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tripId, createdAt])
+}
+
+// Trạng thái RIÊNG của từng người cho một món `personal`. Không có bản ghi =
+// chưa tick gì — không tạo sẵn cho mọi người × mọi món (một chuyến 5 người ×
+// 30 món đã là 150 dòng rỗng).
+model TripPackCheck {
+  id     String       @id @default(cuid())
+  itemId String
+  item   TripPackItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  userId String
+  user   User         @relation("TripPackChecker", fields: [userId], references: [id], onDelete: Cascade)
+
+  isReady  Boolean @default(false)
+  isPacked Boolean @default(false)
+
+  @@unique([itemId, userId])
+  @@index([userId])
+}
+
+// Một khoản đã chi trong chuyến — AI TRẢ và CHIA CHO NHỮNG AI.
+//
+// ⚠️ Đây KHÔNG phải "ước tính chi phí" mà docs/lich-trinh.md §9.3 đã bỏ. Chỗ đó
+// nói về việc SUY RA giá từ danh mục (`Eatery`, `Accommodation`…) — mọi con số
+// kiểu đó sẽ sai một cách vô hình. Ở đây số là do người dùng GÕ VÀO, nên nó
+// luôn đúng với thứ họ biết. Bất biến giữ nguyên: không bao giờ tự điền tiền
+// từ dữ liệu danh mục.
+//
+// `amount` là **ĐỒNG, số nguyên**. Không có `currency` (dự án chỉ phục vụ du
+// lịch trong nước), không có `category` (phân loại là việc của các mục, không
+// phải một cái nhãn — cùng lý do đã bỏ ở TripNote/TripPackItem).
+model TripExpense {
+  id     String @id @default(cuid())
+  tripId String
+  trip   Trip   @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  title  String
+  amount Int
+
+  // Ai ứng tiền. SetNull: gỡ người khỏi chuyến thì khoản chi vẫn còn (nó đã xảy
+  // ra rồi), chỉ mất tên người trả.
+  paidById String?
+  paidBy   User?   @relation("TripExpensePayer", fields: [paidById], references: [id], onDelete: SetNull)
+
+  // Chia ĐỀU cho những người có mặt trong `shares`. Cố ý không có số tiền trên
+  // từng phần: chia theo tỉ lệ/số lẻ là bài toán khác hẳn, và nhóm bạn đi chơi
+  // gần như luôn chia đều.
+  shares TripExpenseShare[]
+
+  // XOÁ MỀM, không xoá thật. Đây là sổ tiền của cả nhóm — ai trong chuyến cũng
+  // xoá được, nên một người "gian" có thể lặng lẽ rút một hoá đơn khỏi sổ và
+  // không ai biết. Xoá mềm biến việc đó thành công khai: khoản đã xoá vẫn nằm
+  // trong mục "Đã xoá" kèm TÊN NGƯỜI XOÁ và khôi phục lại được. Xoá thật chỉ
+  // xảy ra khi cả chuyến bị xoá (Cascade).
+  deletedAt   DateTime?
+  deletedById String?
+  deletedBy   User?     @relation("TripExpenseDeleter", fields: [deletedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tripId, createdAt])
+}
+
+model TripExpenseShare {
+  id        String      @id @default(cuid())
+  expenseId String
+  expense   TripExpense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User        @relation("TripExpenseSharer", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([expenseId, userId])
+  @@index([userId])
+}
+
 model TripMember {
   id     String   @id @default(cuid())
   tripId String

@@ -24,3 +24,8 @@ export function timeAgo(date: Date): string {
   if (diff < 604800) return rtf.format(-Math.floor(diff / 86400), "day");
   return dateFmt.format(new Date(date));
 }
+
+// Tiền Việt: "1.800.000đ". Không dùng `style: "currency"` — nó ra "1.800.000 ₫"
+// với dấu cách và ký hiệu ₫ mà người Việt gõ/đọc ít hơn hẳn chữ "đ".
+export const formatVnd = (n: number): string =>
+  new Intl.NumberFormat("vi-VN").format(Math.round(n)) + "đ";
