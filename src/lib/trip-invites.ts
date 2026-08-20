@@ -53,7 +53,7 @@ export async function claimTripInvites(
         userId,
         actorId: inv.invitedById,
         type: "trip_invite",
-        url: `/lich-trinh/${inv.tripId}`,
+        url: `/lich-trinh/cua-toi/${inv.tripId}`,
         excerpt: inv.trip?.title,
       });
     }

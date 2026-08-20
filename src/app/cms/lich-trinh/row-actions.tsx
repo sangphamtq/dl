@@ -72,7 +72,7 @@ export function TemplateRowActions({
           </DropdownMenuItem>
           {slug && (
             <DropdownMenuItem asChild>
-              <Link href={`/lich-trinh/mau/${slug}`} target="_blank">
+              <Link href={`/lich-trinh/${slug}`} target="_blank">
                 <ExternalLink className="size-4" aria-hidden />
                 Xem trang công khai
               </Link>

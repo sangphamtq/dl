@@ -30,7 +30,7 @@ import { TRIP_SECTIONS, tripSectionHref, type TripSection } from "@/lib/trip-sec
 
 function useActiveToken(tripId: string): string | null {
   const path = usePathname();
-  const rest = path.replace(`/lich-trinh/${tripId}`, "").replace(/^\//, "");
+  const rest = path.replace(`/lich-trinh/cua-toi/${tripId}`, "").replace(/^\//, "");
   return rest || null;
 }
 

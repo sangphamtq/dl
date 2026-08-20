@@ -147,8 +147,8 @@ export function TripEditor({
   const pathname = usePathname();
   // Token mục đang mở, suy từ URL — pushState của sidebar đổi được nó mà không
   // cần vòng server.
-  const tab = pathname?.startsWith(`/lich-trinh/${trip.id}/`)
-    ? pathname.slice(`/lich-trinh/${trip.id}/`.length).replace(/\/+$/, "")
+  const tab = pathname?.startsWith(`/lich-trinh/cua-toi/${trip.id}/`)
+    ? pathname.slice(`/lich-trinh/cua-toi/${trip.id}/`.length).replace(/\/+$/, "")
     : null;
   const [pending, start] = useTransition();
   const [activeDayId, setActiveDayId] = useState(days[0]?.id ?? "");

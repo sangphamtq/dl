@@ -269,7 +269,7 @@ export function TripShare({
                   return;
                 }
                 toast("Đã rời khỏi lịch trình");
-                window.location.href = "/lich-trinh";
+                window.location.href = "/lich-trinh/cua-toi";
               })
             }
             className="mt-3 inline-flex items-center gap-1.5 text-xs text-destructive underline-offset-2 hover:underline"

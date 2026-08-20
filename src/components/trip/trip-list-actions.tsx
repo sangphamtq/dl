@@ -40,7 +40,7 @@ export function NewTripButton() {
             toast.error(res.error);
             return;
           }
-          router.push(`/lich-trinh/${res.data.id}`);
+          router.push(`/lich-trinh/cua-toi/${res.data.id}`);
         })
       }
       disabled={pending}

@@ -81,7 +81,7 @@ export function TemplateForm({
           className="font-mono"
         />
         <p className="text-xs text-muted-foreground">
-          Bỏ trống sẽ tự tạo từ tên. URL công khai: /lich-trinh/mau/{form.slug || "…"}
+          Bỏ trống sẽ tự tạo từ tên. URL công khai: /lich-trinh/{form.slug || "…"}
         </p>
       </div>
 

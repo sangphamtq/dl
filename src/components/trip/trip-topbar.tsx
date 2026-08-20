@@ -52,7 +52,7 @@ export function TripTopbar({
     <header className="border-b">
       <div className="px-4 py-6 sm:px-6 lg:px-8">
         <Link
-          href="/lich-trinh"
+          href="/lich-trinh/cua-toi"
           className={cn(MICRO, "text-muted-foreground transition-colors hover:text-foreground")}
         >
           ‹ Lịch trình của tôi

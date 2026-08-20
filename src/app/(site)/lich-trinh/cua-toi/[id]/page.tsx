@@ -10,5 +10,5 @@ export default async function TripEditorPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  return <TripWorkspace id={id} currentPath={`/lich-trinh/${id}`} />;
+  return <TripWorkspace id={id} currentPath={`/lich-trinh/cua-toi/${id}`} />;
 }

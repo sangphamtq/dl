@@ -23,15 +23,17 @@ const MAP_ROUTES = /^\/ban-do$|^\/diem-den\/[^/]+\/ban-do$/;
 const PLACE_DETAIL = /^\/diem-den\/[^/]+$/;
 
 /**
- * Trang lịch trình cụ thể (soạn · bản chia sẻ · lịch trình mẫu) — KHÔNG gồm
- * `/lich-trinh` (danh sách chuyến, vẫn là trang nội dung bình thường).
+ * Trang lịch trình CỤ THỂ (soạn · bản chia sẻ · lịch trình mẫu) — không gồm hai
+ * trang DANH SÁCH: `/lich-trinh` (mẫu, công khai) và `/lich-trinh/cua-toi`
+ * (chuyến của tôi). Cả hai vẫn là trang nội dung bình thường, header dính như
+ * mọi nơi khác.
  *
  * Ở đây header KHÔNG dính: ba trang này là bố cục ba cột cao đúng một màn hình,
  * hai cột ngoài tự dính lấy. Giữ thêm một thanh dính nữa ở trên cùng thì vừa ăn
  * mất 64px vĩnh viễn của vùng làm việc, vừa chồng lên dải chọn ngày (vốn cũng
  * dính `top-0`). Cuộn qua là nó đi luôn, trả cả màn hình cho lịch trình.
  */
-const TRIP_DETAIL = /^\/lich-trinh\/.+/;
+const TRIP_DETAIL = /^\/lich-trinh\/(?!cua-toi$)(?:cua-toi\/)?[^/]+/;
 
 export function isMapRoute(pathname: string): boolean {
   return MAP_ROUTES.test(pathname);

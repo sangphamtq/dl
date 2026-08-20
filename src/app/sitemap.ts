@@ -34,6 +34,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: BASE, lastModified: new Date() },
     { url: `${BASE}/diem-den`, lastModified: new Date() },
     { url: `${BASE}/blog`, lastModified: new Date() },
+    // Danh sách lịch trình mẫu — trang công khai của tính năng Lịch trình.
+    { url: `${BASE}/lich-trinh`, lastModified: new Date() },
   ];
 
   return [
@@ -45,7 +47,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...entries(posts, "blog"),
     ...entries(
       templates.filter((t): t is { slug: string; updatedAt: Date } => t.slug !== null),
-      "lich-trinh/mau",
+      "lich-trinh",
     ),
   ];
 }

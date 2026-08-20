@@ -131,7 +131,7 @@ export function UserMenu({ user, provinces, homeProvince }: Props) {
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link href="/lich-trinh">
+            <Link href="/lich-trinh/cua-toi">
               <Route className="size-4" aria-hidden />
               Lịch trình của tôi
               <Badge className="ml-auto h-4 border-transparent bg-warm/15 px-1 text-[0.6rem] font-semibold text-warm">

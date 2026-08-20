@@ -26,7 +26,7 @@ import {
 
 // Khung nhìn CHỈ ĐỌC của một lịch trình — dùng cho cả hai đích:
 //   · /lich-trinh/s/[shareId]  — bản chia sẻ của người dùng
-//   · /lich-trinh/mau/[slug]   — lịch trình mẫu do biên tập soạn
+//   · /lich-trinh/[slug]       — lịch trình mẫu do biên tập soạn
 // Khác trang soạn ở chỗ không có thao tác nào ngoài "Dùng lịch trình này".
 export function TripView({
   trip,
@@ -67,7 +67,7 @@ export function TripView({
         return;
       }
       toast.success("Đã lưu vào lịch trình của bạn");
-      router.push(`/lich-trinh/${res.data.id}`);
+      router.push(`/lich-trinh/cua-toi/${res.data.id}`);
     });
   }
 

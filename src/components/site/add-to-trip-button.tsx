@@ -144,7 +144,7 @@ export function AddToTripButton({
             : {
                 label: "Xem lịch trình",
                 onClick: () => {
-                  window.location.href = `/lich-trinh/${res.data.tripId}`;
+                  window.location.href = `/lich-trinh/cua-toi/${res.data.tripId}`;
                 },
               },
         },
@@ -179,7 +179,7 @@ export function AddToTripButton({
       return;
     }
     if (added && tripId) {
-      window.location.href = `/lich-trinh/${tripId}`;
+      window.location.href = `/lich-trinh/cua-toi/${tripId}`;
       return;
     }
     save();
@@ -258,7 +258,7 @@ export function AddToTripButton({
 // Link tiện cho toast/nơi khác muốn dẫn thẳng tới lịch trình.
 export function TripLink({ id, children }: { id: string; children: React.ReactNode }) {
   return (
-    <Link href={`/lich-trinh/${id}`} className="font-medium text-primary hover:underline">
+    <Link href={`/lich-trinh/cua-toi/${id}`} className="font-medium text-primary hover:underline">
       {children}
     </Link>
   );

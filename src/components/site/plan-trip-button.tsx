@@ -66,7 +66,7 @@ export function PlanTripButton({
     setOptions(null);
     // Chuyến đang lên lịch vừa đổi → cái túi nổi phải đổi tên chuyến theo.
     tripBagChanged();
-    router.push(`/lich-trinh/${id}`);
+    router.push(`/lich-trinh/cua-toi/${id}`);
   }
 
   function open() {

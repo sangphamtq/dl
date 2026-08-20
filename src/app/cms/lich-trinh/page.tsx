@@ -54,7 +54,7 @@ export default async function CmsTripTemplatesPage() {
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <Link
-                    href={`/cms/lich-trinh/${t.id}`}
+                    href={`/cms/lich-trinh/cua-toi/${t.id}`}
                     className="font-medium hover:text-primary"
                   >
                     {t.title}
@@ -75,13 +75,13 @@ export default async function CmsTripTemplatesPage() {
                       {t.place.name}
                     </span>
                   )}
-                  {t.slug && <span className="font-mono">/lich-trinh/mau/{t.slug}</span>}
+                  {t.slug && <span className="font-mono">/lich-trinh/{t.slug}</span>}
                 </p>
               </div>
 
               <div className="flex items-center gap-2">
                 <Link
-                  href={`/lich-trinh/${t.id}`}
+                  href={`/lich-trinh/cua-toi/${t.id}`}
                   className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
                 >
                   Soạn ngày

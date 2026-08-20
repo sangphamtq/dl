@@ -689,7 +689,7 @@ export default async function PlaceDetailPage({
                 {tripTemplates.map((t) => (
                   <li key={t.id}>
                     <Link
-                      href={`/lich-trinh/mau/${t.slug}`}
+                      href={`/lich-trinh/${t.slug}`}
                       className="group flex h-full flex-col rounded-2xl border border-border/60 bg-card p-5 transition-shadow hover:shadow-lg hover:shadow-black/5"
                     >
                       <span className="text-xs font-medium text-warm">

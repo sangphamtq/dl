@@ -7,7 +7,7 @@ import {
   getTripPackItems,
   getTripExpenses,
 } from "@/lib/trip";
-import { getPlanningTripId } from "../actions";
+import { getPlanningTripId } from "../../actions";
 import { TripEditor } from "@/components/trip/trip-editor";
 import { TripPlanningSync } from "@/components/trip/trip-planning-sync";
 

@@ -19,6 +19,14 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "*.vn" },
     ],
   },
+  // URL cũ của lịch trình mẫu. Giữ chuyển hướng VĨNH VIỄN vì đây là đích SEO
+  // chính của tính năng và link đã nằm trong sitemap gửi Google.
+  async redirects() {
+    return [
+      { source: "/lich-trinh/mau", destination: "/lich-trinh", permanent: true },
+      { source: "/lich-trinh/mau/:slug", destination: "/lich-trinh/:slug", permanent: true },
+    ];
+  },
   async headers() {
     return [
       {

@@ -472,6 +472,13 @@ trùng tên, **gắn địa danh** để phân biệt (vd hai "Quán Cô Ba" →
 > **Tiền tố là từ khoá dành riêng:** `diem-den`, `hoat-dong`, `dia-diem`, `dac-san`,
 > `quan-an`, `luu-tru`, `di-chuyen`, `blog`, `lich-trinh`, `login`, `api` — không được
 > trùng với slug. Danh sách thật nằm ở `RESERVED_SLUGS` trong `src/lib/slug.ts`.
+>
+> **`/lich-trinh` chia theo CÔNG KHAI vs RIÊNG TƯ, không theo loại màn hình:**
+> `/lich-trinh` + `/lich-trinh/[slug]` là lịch trình mẫu (công khai, có index, là đích SEO);
+> mọi thứ của người dùng nằm dưới **một** tiền tố `/lich-trinh/cua-toi` (noindex, `sw.js`
+> chặn cache bằng đúng một dòng). Vì slug mẫu ở tầng một nên `cua-toi` · `s` · `mau` là từ
+> khoá dành riêng của riêng nó — `RESERVED_TRIP_SLUGS` trong `src/lib/slug.ts`. URL cũ
+> (`/lich-trinh/mau/[slug]`, `/lich-trinh/[id]`) đều có chuyển hướng vĩnh viễn.
 
 **Màn hình Ẩm thực** (`/diem-den/[placeSlug]/am-thuc`, `FoodSection`) — **MỘT danh sách quán,
 MỘT bộ điều khiển**, bám đúng ba câu hỏi của người mở tab, theo thứ tự hay gặp:
@@ -984,7 +991,7 @@ Tính năng lớn chưa làm được phân tích trước và ghi ra file riên
 | Tìm kiếm | `/tim-kiem` | `lib/search.ts`; header có `header-search.tsx` |
 | Cộng đồng | `/cong-dong` · `/cong-dong/[slug]` · `/diem-den/[placeSlug]/cong-dong` · `/dia-diem/[slug]/cong-dong` | `Thread`/`ThreadReply`/`ThreadLike` + báo cáo. **Lối vào đang tạm ẩn** — xem "Điều hướng header" |
 | Uy tín & chống lừa | `/kiem-tra` (tra SĐT/FB/web/STK) · `/sale` · `/sale/[slug]` · `/sale/dang-ky` | `SaleProfile`, `ScamReport`, `lib/trust.ts`. **Lối vào đang tạm ẩn** |
-| Lịch trình | `/lich-trinh` · `/lich-trinh/[id]` (soạn) · `/lich-trinh/s/[shareId]` (chia sẻ) · `/lich-trinh/mau/[slug]` (mẫu) | `Trip`/`TripDay`/`TripItem`; **bắt đăng nhập**. Cộng **nút "Lịch trình"** nổi ở mọi trang (xem mục riêng bên dưới). Chi tiết: [`docs/lich-trinh.md`](docs/lich-trinh.md) |
+| Lịch trình | **công khai:** `/lich-trinh` (danh sách mẫu) · `/lich-trinh/[slug]` (một mẫu) — **riêng tư:** `/lich-trinh/cua-toi` · `/lich-trinh/cua-toi/[id]` (soạn) · `/lich-trinh/s/[shareId]` (chia sẻ) | `Trip`/`TripDay`/`TripItem`; nhánh `cua-toi` **bắt đăng nhập**, phần mẫu thì không. Cộng **nút "Lịch trình"** nổi ở mọi trang (xem mục riêng bên dưới). Chi tiết: [`docs/lich-trinh.md`](docs/lich-trinh.md) §4 |
 | Cá nhân | `/tai-khoan/da-den` (bản đồ tỉnh đã đến) · `/thong-bao` | `CheckIn`, `Notification` |
 | Khác | `/gioi-thieu` · `/offline` · `/login` | |
 

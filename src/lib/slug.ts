@@ -43,3 +43,10 @@ export const RESERVED_SLUGS = new Set([
   "api",
   "cms",
 ]);
+
+// Slug của LỊCH TRÌNH MẪU sống ở tầng một: `/lich-trinh/[slug]`. Hai đoạn tĩnh
+// cùng tầng dưới đây vì vậy là từ khoá dành riêng — Next ưu tiên đoạn tĩnh nên
+// không có chuyện tranh nhau, nhưng một mẫu lỡ mang slug đó thì vĩnh viễn không
+// ai mở được nó. "mau" giữ lại vì URL cũ `/lich-trinh/mau/[slug]` còn đang được
+// chuyển hướng (xem `next.config.ts`).
+export const RESERVED_TRIP_SLUGS = new Set(["cua-toi", "s", "mau"]);

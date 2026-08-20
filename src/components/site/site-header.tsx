@@ -34,7 +34,7 @@ const NAV: NavEntry[] = [
       { href: "/diem-den", label: "Điểm đến" },
       { href: "/dia-diem", label: "Địa điểm" },
       { href: "/ban-do", label: "Bản đồ du lịch" },
-      { href: "/lich-trinh", label: "Lịch trình" },
+      { href: "/lich-trinh", label: "Lịch trình mẫu" },
     ],
   },
   { href: "/blog", label: "Cẩm nang" },

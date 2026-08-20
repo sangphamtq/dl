@@ -55,7 +55,7 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     shortcuts: [
       { name: "Khám phá điểm đến", short_name: "Điểm đến", url: "/diem-den" },
       { name: "Bản đồ", short_name: "Bản đồ", url: "/ban-do" },
-      { name: "Lịch trình của tôi", short_name: "Lịch trình", url: "/lich-trinh" },
+      { name: "Lịch trình của tôi", short_name: "Lịch trình", url: "/lich-trinh/cua-toi" },
       { name: "Tìm kiếm", short_name: "Tìm kiếm", url: "/tim-kiem" },
     ],
   };

@@ -87,10 +87,12 @@ import {
 // soạn (`trip-dnd.ts`) — phép tính chỉ số khi đổi vùng là chỗ dễ sai nhất và đã
 // có `pnpm check:trip-dnd` canh, viết lại một bản thứ hai là tự chuốc lỗi.
 
-// Khu vực riêng tư / trang tự chứa. `/lich-trinh` nằm đây vì trong trình soạn
-// thì cả trang ĐÃ là cái túi — một nút nổi mở lại chính nó là thừa.
+// Khu vực riêng tư / trang tự chứa. `/lich-trinh/cua-toi` nằm đây vì trong
+// trình soạn thì cả trang ĐÃ là cái túi — một nút nổi mở lại chính nó là thừa.
+// Chỉ chặn NHÁNH riêng tư: `/lich-trinh` (danh sách mẫu) là trang công khai, ở
+// đó nút vẫn có ích — khách xem mẫu rồi mở túi của mình ra so.
 // Giữ đồng bộ với `HIDDEN_ON` của bottom-nav & install-prompt.
-const HIDDEN_ON = ["/lich-trinh", "/cms", "/sale", "/login", "/offline"];
+const HIDDEN_ON = ["/lich-trinh/cua-toi", "/cms", "/sale", "/login", "/offline"];
 
 // Số ngày là thứ ĐỊNH VỊ, tên tự đặt chỉ là phụ đề. Bản đầu lấy `title` thay
 // cho cả nhãn, nên một ngày đặt tên "Ngày ra đảo" là mất luôn dấu hiệu nó là
@@ -610,7 +612,7 @@ export function TripDock({ initial }: { initial: TripBag }) {
             {hasTrip && (
               <div className="border-t border-border/60 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
                 <Button asChild className="w-full" onClick={() => setOpen(false)}>
-                  <Link href={`/lich-trinh/${bag.trip!.id}`}>
+                  <Link href={`/lich-trinh/cua-toi/${bag.trip!.id}`}>
                     Mở lịch trình
                     <ChevronRight className="size-4" aria-hidden />
                   </Link>

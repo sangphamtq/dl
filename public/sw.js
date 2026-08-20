@@ -13,7 +13,7 @@
  * ĐỔI `VERSION` mỗi khi sửa file này → cache cũ bị dọn ở bước activate.
  */
 
-const VERSION = "v2";
+const VERSION = "v3";
 const SHELL_CACHE = `halivivu-shell-${VERSION}`;
 const STATIC_CACHE = `halivivu-static-${VERSION}`;
 const PAGES_CACHE = `halivivu-pages-${VERSION}`;
@@ -35,23 +35,20 @@ const NEVER_CACHE = [
   "/tai-khoan",
   "/thong-bao",
   "/kiem-tra",
-  "/lich-trinh",
+  "/lich-trinh/cua-toi",
 ];
 
 // …trừ vài nhánh CON của một tiền tố riêng tư vốn lại là nội dung công khai.
-// NEVER_CACHE khớp theo tiền tố, nên không có danh sách này thì "/lich-trinh"
-// sẽ chặn luôn lịch trình mẫu (nội dung biên tập, có index, rất đáng cache) và
-// bản chia sẻ (đích của link gửi cho người khác).
-const CACHE_ANYWAY = ["/lich-trinh/mau/", "/lich-trinh/s/"];
+// (Từng có `CACHE_ANYWAY` để gỡ lịch trình mẫu và bản chia sẻ ra khỏi lệnh cấm
+// của tiền tố "/lich-trinh". Nay nhánh riêng tư gom hết vào "/lich-trinh/cua-toi"
+// nên không còn gì phải gỡ — chính là cái được của việc sắp lại URL.)
 
 // Số mục tối đa giữ lại cho mỗi cache "mọc dần".
 const LIMITS = { [PAGES_CACHE]: 50, [IMAGES_CACHE]: 80 };
 
 // ── Tiện ích ────────────────────────────────────────────────────────────────
 
-const isPrivate = (pathname) =>
-  !CACHE_ANYWAY.some((p) => pathname.startsWith(p)) &&
-  NEVER_CACHE.some((p) => pathname.startsWith(p));
+const isPrivate = (pathname) => NEVER_CACHE.some((p) => pathname.startsWith(p));
 
 const isImmutable = (pathname) =>
   pathname.startsWith("/_next/static/") || pathname.startsWith("/fonts/");

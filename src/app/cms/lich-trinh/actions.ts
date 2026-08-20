@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { slugify } from "@/lib/slug";
+import { slugify, RESERVED_TRIP_SLUGS } from "@/lib/slug";
 
 // CMS — lịch trình MẪU (Trip.isTemplate = true). Nội dung từng ngày vẫn soạn ở
 // trình soạn công khai /lich-trinh/[id] (mẫu do chính editor sở hữu nên vào
@@ -68,6 +68,10 @@ export async function updateTemplate(
 
   const slug = slugify(input.slug.trim() || title);
   if (!slug) return { ok: false, error: "Slug không hợp lệ." };
+  // Mẫu nằm ở `/lich-trinh/[slug]`, cùng tầng với `cua-toi` và `s` — trùng thì
+  // trang mẫu vĩnh viễn không mở được.
+  if (RESERVED_TRIP_SLUGS.has(slug))
+    return { ok: false, error: `"${slug}" là từ khoá dành riêng, chọn slug khác.` };
 
   const clash = await prisma.trip.findFirst({
     where: { slug, NOT: { id } },
@@ -104,7 +108,7 @@ export async function updateTemplate(
 
   revalidatePath("/cms/lich-trinh");
   revalidatePath(`/cms/lich-trinh/${id}`);
-  revalidatePath(`/lich-trinh/mau/${slug}`);
+  revalidatePath(`/lich-trinh/${slug}`);
   revalidatePath("/lich-trinh");
   return { ok: true };
 }

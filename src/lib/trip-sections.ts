@@ -35,7 +35,7 @@ export const TRIP_SECTIONS: TripSection[] = [
 ];
 
 export const tripSectionHref = (tripId: string, token: string | null) =>
-  token ? `/lich-trinh/${tripId}/${token}` : `/lich-trinh/${tripId}`;
+  token ? `/lich-trinh/cua-toi/${tripId}/${token}` : `/lich-trinh/cua-toi/${tripId}`;
 
 export const findTripSection = (token: string) =>
   TRIP_SECTIONS.find((s) => s.token === token) ?? null;

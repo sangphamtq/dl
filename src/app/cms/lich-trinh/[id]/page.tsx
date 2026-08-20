@@ -71,7 +71,7 @@ export default async function CmsTripTemplateEditPage({
           </p>
         </div>
         <Link
-          href={`/lich-trinh/${trip.id}`}
+          href={`/lich-trinh/cua-toi/${trip.id}`}
           className={cn(buttonVariants({ variant: "outline" }), "shrink-0")}
         >
           Mở trình soạn

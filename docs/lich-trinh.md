@@ -56,7 +56,7 @@ model Trip {
 
   // Lịch trình mẫu (biên tập soạn)
   isTemplate Boolean @default(false)
-  slug       String? @unique               // CHỈ template — /lich-trinh/mau/[slug]
+  slug       String? @unique               // CHỈ template — /lich-trinh/[slug]
   placeId    String?                       // template gắn 1 Place để hiện ở trang điểm đến
 
   days   TripDay[]
@@ -121,17 +121,49 @@ Phải sửa kèm:
 
 ## 4. URL & luồng đăng nhập
 
+**Ranh giới là CÔNG KHAI vs RIÊNG TƯ, và nó nằm ngay trong đường dẫn:**
+
 | Route | Ai xem | Index? |
 |---|---|---|
-| `/lich-trinh` | Chủ sở hữu — danh sách chuyến + gợi ý mẫu | noindex |
-| `/lich-trinh/[id]` | Chủ sở hữu — **trình soạn** | noindex |
+| `/lich-trinh` | **Công khai** — danh sách lịch trình mẫu | ✅ index |
+| `/lich-trinh/[slug]` | **Công khai** — một lịch trình mẫu | ✅ index, SEO chính |
+| `/lich-trinh/cua-toi` | Chủ sở hữu — danh sách chuyến của tôi | noindex |
+| `/lich-trinh/cua-toi/[id]` | Chủ sở hữu — **trình soạn** | noindex |
+| `/lich-trinh/cua-toi/[id]/[muc]` | Chủ sở hữu — ghi chú · đồ · chi phí | noindex |
 | `/lich-trinh/s/[shareId]` | Ai có link — **chỉ đọc** | noindex |
-| `/lich-trinh/mau/[slug]` | Công khai — **lịch trình mẫu** | ✅ index, SEO chính |
 
-- `lich-trinh` phải thêm vào **danh sách tiền tố dành riêng** trong `CLAUDE.md` §URL.
-- ⚠️ **Va chạm `sw.js`:** `NEVER_CACHE` khớp theo **prefix**, nên thêm `/lich-trinh` sẽ
-  chặn luôn `/lich-trinh/mau/...` (công khai, rất đáng cache). Phải sửa `isPrivate()`
-  trong `public/sw.js` để có allowlist đi trước — và **nhớ tăng `VERSION`**.
+**Vì sao sắp lại (bản đầu để mọi thứ phẳng dưới `/lich-trinh`):** trang `/lich-trinh` khi
+đó là danh sách chuyến CÁ NHÂN và `redirect("/login")` ngay dòng đầu — nên lịch trình mẫu,
+thứ được dựng làm đòn bẩy SEO, lại **không có trang index công khai nào**. Khách từ Google
+vào một mẫu rồi muốn xem mẫu khác thì hết đường: `/lich-trinh/mau` (không slug) trả 404, còn
+`/lich-trinh` thì đá sang `/login`.
+
+Ba cái được của cách sắp mới:
+
+1. **Mẫu chiếm tầng một** (`/lich-trinh/[slug]`) — URL ngắn nhất cho thứ cần SEO nhất, và
+   `/lich-trinh` thành trang công khai đúng như người gõ địa chỉ mong đợi.
+2. **Cả nhánh riêng tư gom vào MỘT tiền tố** `/lich-trinh/cua-toi` ⇒ `sw.js` chặn cache bằng
+   đúng một dòng `NEVER_CACHE`, và **xoá được hẳn `CACHE_ANYWAY`** — danh sách allowlist
+   từng phải dựng chỉ để gỡ mẫu + bản chia sẻ ra khỏi lệnh cấm của tiền tố `/lich-trinh`.
+   (Nhớ **tăng `VERSION`** trong `sw.js` — đã lên `v3`.)
+3. **`revalidatePath` không còn mập mờ:** trước đây `"/lich-trinh"` vừa là danh sách cá nhân
+   vừa là nơi mẫu xuất hiện; nay `/lich-trinh/cua-toi` là của người dùng (7 chỗ trong
+   `actions.ts`), `/lich-trinh` là của biên tập (CMS).
+
+**Chuyển hướng VĨNH VIỄN cho URL cũ** — link mẫu đã nằm trong sitemap gửi Google, và link
+trình soạn đã nằm trong email mời:
+
+| Cũ | Mới | Ở đâu |
+|---|---|---|
+| `/lich-trinh/mau` | `/lich-trinh` | `next.config.ts` → `redirects()` |
+| `/lich-trinh/mau/[slug]` | `/lich-trinh/[slug]` | `next.config.ts` |
+| `/lich-trinh/[id]` (cuid) | `/lich-trinh/cua-toi/[id]` | trong `[slug]/page.tsx` — không phân biệt được ở tầng config, nên khi không tìm thấy mẫu thì tra tiếp `Trip.id` rồi mới `notFound()` |
+
+- `lich-trinh` nằm trong **danh sách tiền tố dành riêng** (`RESERVED_SLUGS`).
+- ⚠️ Slug mẫu ở tầng một nên **`cua-toi` · `s` · `mau` là từ khoá dành riêng của riêng nó**
+  (`RESERVED_TRIP_SLUGS` trong `lib/slug.ts`, kiểm trong `cms/lich-trinh/actions.ts`). Next
+  ưu tiên đoạn tĩnh nên không có chuyện tranh nhau, nhưng một mẫu lỡ mang slug đó thì vĩnh
+  viễn không ai mở được.
 
 ### Bấm "Thêm vào lịch trình" khi chưa đăng nhập
 
@@ -588,7 +620,7 @@ làm gì đó, nên đứng trước) → **từng ngày kèm mục trong nó** 
 
 - Soạn ở **`/cms/lich-trinh`** — dùng lại chính trình soạn ở §6, chỉ khác `isTemplate=true`
   + có `slug` / `status` / ảnh bìa.
-- `/lich-trinh/mau/ha-long-3n2d` — công khai, chỉ đọc, nút lớn **"Dùng lịch trình này"**
+- `/lich-trinh/ha-long-3n2d` — công khai, chỉ đọc, nút lớn **"Dùng lịch trình này"**
   → deep-copy sang tài khoản người dùng (`isTemplate=false`, `startDate=null`, `slug=null`).
 - **Cross-link:** trang `/diem-den/[slug]` hiện khối "Gợi ý lịch trình" lọc theo
   `Trip.placeId` — giải luôn bài toán *vào `/lich-trinh` lần đầu thấy trang trống*.
@@ -643,7 +675,7 @@ dài, vắt qua nhiều ngày và nhiều tỉnh**.
 | Quãng đường | `src/lib/trip-route.ts` | `getLegs()` — ORS cho chặng liên tiếp, rơi về chim bay và đánh dấu `approx` |
 | Dữ liệu | `src/lib/trip.ts` | Nạp Trip → quy 5 loại mục về `ResolvedItem`; `buildDayViews()` dùng chung cho **cả ba** trang |
 | Mutation | `src/app/(site)/lich-trinh/actions.ts` | CRUD chuyến/ngày/mục, `moveItem`, chia sẻ, nhân bản, cookie chuyến-đang-mở |
-| Trang | `src/app/(site)/lich-trinh/{page,[id],s/[shareId],mau/[slug]}` | Danh sách · trình soạn · bản chia sẻ · lịch trình mẫu |
+| Trang | `src/app/(site)/lich-trinh/{page,[slug],cua-toi/page,cua-toi/[id],s/[shareId]}` | Danh sách mẫu (công khai) · một mẫu · chuyến của tôi · trình soạn · bản chia sẻ |
 | Kéo–thả | `src/components/trip/trip-dnd.ts` | Bàn id theo vùng + `applyMove` (§6c) · kiểm bằng `pnpm check:trip-dnd` |
 | Mục của chuyến | `src/lib/trip-sections.ts` · `trip-side-nav.tsx` · `trip-topbar.tsx` · `trip-soon.tsx` · `[id]/[muc]/page.tsx` | Sidebar 5 mục + route. **Ghi chú** · **Đồ mang theo** · **Chi phí** đã dựng (`trip-notes/packing/money.tsx`). Mục *Phân công* đã **bỏ hẳn** — xem [lich-trinh-cong-cu-nhom.md](lich-trinh-cong-cu-nhom.md) |
 | Vỏ chung | `src/components/trip/trip-shell.tsx` · `trip-day-strip.tsx` · **`trip-rail.tsx`** | Khung BA CỘT tràn viền · dải chọn ngày · **dòng thời gian dạng ray** — dùng chung cả ba trang (§6a) |

@@ -10,14 +10,15 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 // nhạt khi đang ở trang lịch trình (trạng thái active).
 export function LichTrinhNavLink() {
   const pathname = usePathname();
-  const active =
-    pathname === "/lich-trinh" || pathname.startsWith("/lich-trinh/");
+  // Sáng khi đang ở BẤT KỲ đâu trong tính năng, kể cả trang mẫu công khai —
+  // người dùng không phân biệt nhánh, họ chỉ biết "mình đang ở phần lịch trình".
+  const active = pathname === "/lich-trinh" || pathname.startsWith("/lich-trinh/");
 
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <Link
-          href="/lich-trinh"
+          href="/lich-trinh/cua-toi"
           aria-label="Lịch trình của tôi"
           aria-current={active ? "page" : undefined}
           className={cn(

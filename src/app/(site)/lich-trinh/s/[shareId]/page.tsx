@@ -4,7 +4,7 @@ import { TripView } from "@/components/trip/trip-view";
 
 // Bản CHIA SẺ của một lịch trình cá nhân: ai có link đều xem được, chỉ đọc.
 // `noindex` — đây vẫn là dữ liệu cá nhân, chỉ là chủ chuyến chủ động đưa link
-// cho người khác (khác hẳn lịch trình mẫu ở /lich-trinh/mau/[slug], vốn là nội
+// cho người khác (khác hẳn lịch trình mẫu ở /lich-trinh/[slug], vốn là nội
 // dung biên tập và CÓ index).
 export const metadata = {
   title: "Lịch trình được chia sẻ · Halivivu",
