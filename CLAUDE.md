@@ -1010,10 +1010,18 @@ dung từng ngày soạn ở trình soạn công khai `/lich-trinh/[id]`).
 
 ### Đã chạy — dữ liệu mẫu
 
-**11 script seed** trong `prisma/` (chạy qua `pnpm seed:*`): `places`, `phan-thiet`,
+**12 script seed** trong `prisma/` (chạy qua `pnpm seed:*`): `places`, `phan-thiet`,
 `ta-xua`, `blog`, `blog-phan-thiet`, `community`, `sales`, `reviews-phan-thiet`,
-`homestay-phan-thiet`, `homestay-ta-xua`. Hai điểm đến có dữ liệu dày nhất để thử giao
-diện: **Phan Thiết** (dish-led, nhiều quán) và **Tà Xùa** (view-led, nhiều quán view).
+`homestay-phan-thiet`, `homestay-ta-xua`, `trip-phan-thiet`, `trip-ta-xua`. Hai điểm đến
+có dữ liệu dày nhất để thử giao diện: **Phan Thiết** (dish-led, nhiều quán) và **Tà Xùa**
+(view-led).
+
+> Hai seed lịch trình mẫu khác nhau về **độ dày**, cố ý: `trip-phan-thiet` là 3N2Đ dựa
+> trên đủ cả spot/quán ăn/lưu trú; `trip-ta-xua` chỉ 2N1Đ, **6 mục, toàn spot + activity**
+> — vì Tà Xùa là điểm đến *view-led* mà cả chuyến thật chỉ xoay quanh một việc (dậy trước
+> bình minh xem biển mây), và vì DB hiện chưa có `Eatery` nào cho Tà Xùa còn
+> `Accommodation` thì nằm ở seed riêng chưa chạy. **Đừng "làm dày" nó cho cân với Phan
+> Thiết** — nhồi điểm cho đủ ba ngày là bịa ra một chuyến không ai đi.
 
 ### Chưa có — trang mới chỉ là `ComingSoon`
 

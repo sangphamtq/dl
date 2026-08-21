@@ -14,7 +14,18 @@ import type { HeroLayout } from "@/generated/prisma/enums";
 // khớp CHÍNH XÁC đường dẫn, không dùng tiền tố mơ hồ.
 
 /** Trang mở bằng nền SÁNG → băng kính bản `light` (chữ mực). */
-const LIGHT_ROUTES = new Set(["/diem-den", "/gioi-thieu", "/blog"]);
+const LIGHT_ROUTES = new Set([
+  "/diem-den",
+  "/gioi-thieu",
+  "/blog",
+  // Hai trang DANH SÁCH của lịch trình. Cả hai mở bằng nền sáng, không có ảnh
+  // nào chạy dưới header — để chúng rơi vào mặc định `dark` thì tint `black/20`
+  // đặt trên nền trắng ra một vệt xám ~#cacaca vắt ngang đầu trang, còn chữ
+  // trắng trên đó chỉ được ~1.7:1. (Các trang lịch trình CỤ THỂ thì khác: xem
+  // TRIP_DETAIL bên dưới — chúng không dính header, và cũng lấy bản light.)
+  "/lich-trinh",
+  "/lich-trinh/cua-toi",
+]);
 
 /** Trang bản đồ: cao đúng một màn hình, không có chân trang. */
 const MAP_ROUTES = /^\/ban-do$|^\/diem-den\/[^/]+\/ban-do$/;

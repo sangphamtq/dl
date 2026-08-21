@@ -626,6 +626,103 @@ làm gì đó, nên đứng trước) → **từng ngày kèm mục trong nó** 
   `Trip.placeId` — giải luôn bài toán *vào `/lich-trinh` lần đầu thấy trang trống*.
 - Blog đã hứa "lịch trình gợi ý" (`src/app/(site)/blog/page.tsx`) → nối vào đây.
 
+### 7a. Trang danh sách `/lich-trinh` — DẢI MỞ ĐẦU + BỘ DUYỆT + LƯỚI THẺ
+
+Bố cục: dải mở đầu (chữ trái, ảnh mờ dần bên phải) → **thanh công cụ nổi** cưỡi lên mép dưới
+của dải → **chip điểm đến** → số kết quả + đổi kiểu xem → **lưới thẻ** (đổi được sang danh
+sách) → *Tải thêm* → dải **bốn cam kết** + lối sang phần tự xếp.
+
+Phần tương tác nằm ở `src/components/trip/trip-browser.tsx` (client); trang vẫn là Server
+Component, chỉ lấy dữ liệu rồi dựng dải mở đầu và dải cuối. Số mẫu xuất bản đếm trên đầu
+ngón tay nên **lọc ở client là đủ** — khỏi một vòng server cho mỗi lần bấm chip.
+
+#### Mọi ô điều khiển đều mọc từ dữ liệu thật
+
+`Trip` **không có `category`, không có `tags`, không có đánh giá**. Vì vậy bản dựng KHÔNG có
+hàng chip "sở thích" (Biển đảo · Trekking · Food tour…) và KHÔNG có sao/điểm trên thẻ — hai
+thứ đó chỉ dựng được bằng cách bịa. Với một site mà cả một mục (`/kiem-tra`, huy hiệu xác
+minh ở Lưu trú) tồn tại để chống thông tin giả thì một hàng `★ 4.8 (128)` bịa là thứ đắt
+nhất có thể mất. Ba trục còn lại đều đọc thẳng từ dữ liệu, và **ô nào chỉ có một giá trị thì
+tự ẩn**:
+
+| Ô | Nguồn |
+|---|---|
+| Chip **điểm đến** | `Trip.placeId` — nhóm tự nhiên nhất của lịch trình mẫu |
+| **Số ngày** | `days.length`, câu hỏi đầu tiên của người xếp lịch |
+| **Sắp xếp** | Nổi bật (giữ thứ tự server) · Ít ngày trước · Nhiều ngày trước |
+
+Cũng bỏ **nút trái tim** trên thẻ: site chưa có tính năng lưu chuyến của người khác, một
+trái tim không làm gì thì tệ hơn là không có.
+
+#### Thẻ KHÔNG CÓ HỘP
+
+Bản đầu của thẻ là đúng khuôn mặc định của mọi trang liệt kê trên đời: hộp trắng bo góc có
+viền và bóng khi rê chuột, ảnh dán trên nóc, một viên kính *"3 ngày 2 đêm"* ở góc ảnh, rồi
+tên → hai dòng mô tả → hàng chip màu → hàng chân có icon bên trái và con số bên phải. **Không
+mảnh nào trong đó nói rằng thứ đang xem là một lịch trình** — thay ảnh và chữ là nó thành thẻ
+khách sạn, thẻ khoá học, thẻ bất động sản.
+
+| Bỏ | Thay bằng |
+|---|---|
+| Viền + bóng + nền thẻ | Ảnh và chữ đặt thẳng trên nền trang (đúng quy ước đã chốt ở popup Quán ăn: hộp dành cho thứ khác hẳn về vật liệu, không phải để gói mọi thứ cho gọn) |
+| Viên kính "3 ngày 2 đêm" trên ảnh | Một dòng nhãn `3 NGÀY 2 ĐÊM │ BÌNH THUẬN` — một dòng chữ thay cho một miếng dán, và gộp hai dữ kiện từng nằm ở hai chỗ hai chất liệu |
+| Hàng chip màu | **Bảng ngày có kẻ chỉ**: mỗi dòng là một ngày thật (`01` · tên ngày · số điểm dừng) |
+| Hàng chân "tổng n điểm dừng" | Bỏ hẳn — cột phải của bảng đã liệt kê từng ngày, cộng lại là ra |
+
+Bảng ngày dùng `mt-auto` để **bị đẩy xuống đáy thẻ**: các thẻ trong cùng một hàng lưới có
+bảng thẳng hàng nhau dù tên chuyến dài ngắn khác nhau. Và `max-w-xl` — chỉ có tác dụng ở kiểu
+DANH SÁCH, nơi cột chữ rộng cả nghìn pixel; không chặn thì tên ngày và số điểm dừng dạt về
+hai mép cách nhau gần 900px.
+
+Kiểu danh sách ngăn nhau bằng **kẻ chỉ** (`divide-y`) chứ không phải khoảng cách: thẻ đã bỏ
+vỏ hộp, chỉ cách nhau một khe thì bảng ngày của mục trên chạy thẳng vào dòng nhãn của mục dưới.
+
+#### Ảnh
+
+- **Ảnh dải mở đầu KHÔNG được trùng ảnh bìa của bất kỳ thẻ nào bên dưới** — cùng một tấm
+  hiện hai lần trong một màn hình thì dải mở đầu đọc ra như một cái thẻ bị phóng to. Thẻ chỉ
+  dùng ảnh bìa của chuyến, nên ảnh dải lấy từ **điểm dừng trong ngày** (vẫn là ảnh của đúng
+  chuyến đó).
+- Ảnh dải phải tan ở **cả mép trái lẫn mép dưới** (`mask-image` + một lớp gradient nền), nếu
+  không dải màu cắt ngang ảnh bằng một đường thẳng.
+- ⚠ **Mẫu chưa có ảnh bìa: KHÔNG mượn `coverUrl()`** (ảnh giữ chỗ picsum). Đã thử và bỏ —
+  mẫu Tà Xùa, một chuyến LÊN NÚI SĂN MÂY, nhận về một tấm **bờ biển bão tố**. Chỗ ảnh vẽ
+  thứ có thật thay thế: **N nốt tròn đánh số nối nhau bằng nét đứt** = chuyến này dài mấy
+  ngày, bằng chính hoạ tiết tuyến đường của dự án. Nốt phải đủ LỚN (`size-10 sm:size-12`) —
+  bản đầu để `size-3` thì cả tấm 448×298 chỉ có hai chấm tí xíu ở giữa, đọc ra là ảnh hỏng.
+
+#### Chi tiết phải giữ
+
+- **Ô tìm kiếm có trần bề ngang (`sm:max-w-md`), cụm ô chọn dồn về mép phải.** Để ô tìm kiếm
+  ăn hết `flex-1` thì ở màn 1440 nó thành một ô trống dài 1000px.
+- **`<select>` thật của trình duyệt** cho Số ngày / Sắp xếp (lớp chữ hiển thị nằm dưới, select
+  trong suốt phủ lên): trên điện thoại nó mở bộ chọn của hệ điều hành, và bàn phím / trình đọc
+  màn hình có sẵn mọi thứ.
+- **Đổi bộ lọc thì kéo danh sách về trang đầu** (`reset()`): đang mở 18 mục rồi lọc còn 2 thì
+  nút *Tải thêm* biến mất mà người dùng không hiểu vì sao.
+- **Bốn cam kết ở dải cuối phải ĐÚNG.** Bản phác có *"Hỗ trợ 24/7"* và *"Đánh giá từ người đi
+  trước"* — site không có tổng đài, lịch trình mẫu không có đánh giá nào. Bốn dòng đang dùng
+  đều kiểm lại được bằng chính mã nguồn: do biên tập soạn · có giờ ước tính · sao về rồi sửa ·
+  xem không cần đăng nhập.
+- **Mẫu RỖNG không lên trang công khai** — `where` đòi `days: { some: { items: { some: {} } } }`.
+  Một mẫu vừa tạo trong CMS lọt ra đây thì trang đang mời khách xem một lịch trình không có
+  gì. Biên tập vẫn thấy nó ở `/cms/lich-trinh`. KHÔNG dùng `items: { some: {} }` — `items`
+  tính cả mục còn trong túi *Chưa xếp ngày*.
+- **Số điểm dừng cộng từ CHÍNH các ngày**, không lấy `Trip._count.items` (mẫu Phan Thiết:
+  21 mục nhưng chỉ 17 nằm trong ba ngày).
+- **`h1` KHÔNG lặp lại chữ của breadcrumb**, và con số nằm trong ngữ pháp chứ không xếp thành
+  một hàng số liệu (cùng quy ước với `/diem-den`).
+- **Container `max-w-7xl px-4 sm:px-6`** — đúng bằng container của header.
+
+> **Tông header:** `/lich-trinh` và `/lich-trinh/cua-toi` đã vào `LIGHT_ROUTES`
+> (`src/lib/site-chrome.ts`). Hai trang mở bằng nền sáng mà header lấy mặc định `dark` thì
+> tint `black/20` ra một vệt xám ~#cacaca vắt ngang đầu trang, chữ trắng trên đó chỉ ~1.7:1.
+
+> **Các bản đã dựng rồi thay** (đọc lịch sử git nếu cần lấy lại): ① lưới thẻ + nền
+> `from-sky-100` + vòng tròn đồng tâm — bản đầu, ba lỗi §6a lặp lại ở trang index; ② trang đôi
+> ảnh lớn + khung ngày dạng ray dọc; ③ cột lề dính + dải phim theo ngày; ④ mục lục đánh số +
+> tuyến đường nốt tròn.
+
 ## 8. Chia sẻ
 
 Theo đúng khuôn `StayShare` đã có ở trang lưu trú: nút chia sẻ + **mã QR** + copy link.

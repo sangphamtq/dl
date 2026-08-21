@@ -16,7 +16,7 @@ import { prisma } from "@/lib/prisma";
 // ⚠ KIỂM BẰNG TRANG THẬT, ĐỪNG KIỂM BẰNG SCRIPT. Script chạy ngoài Next không
 // gọi được ORS (unstable_cache cần runtime của Next) nên rơi về ước lượng chim
 // bay — mà chim bay ở đây CHẬM HƠN đường thật, khiến mọi mốc dôi ra ~45 phút và
-// tưởng là an toàn. Mở /lich-trinh/mau/phan-thiet-3n2d rồi soi giờ trên đó.
+// tưởng là an toàn. Mở /lich-trinh/phan-thiet-3n2d rồi soi giờ trên đó.
 //
 // Hai cảnh báo CAM còn lại là ĐÚNG, cố ý giữ: Bàu Trắng cách thành phố ~1,5 giờ
 // lái thật, và ngày 2 dậy 4:30 rồi ăn tối thì đúng là một ngày dài.
@@ -218,7 +218,7 @@ async function main() {
   console.log(`✓ Lịch trình mẫu "${SLUG}" — ${PLAN.length} ngày, ${added} mục`);
   console.log(`  chủ sở hữu: ${owner.email ?? owner.id}`);
   console.log(`  ảnh bìa: ${cover ? "có" : "KHÔNG (chưa có ảnh đồi cát)"}`);
-  console.log(`  xem tại: /lich-trinh/mau/${SLUG}`);
+  console.log(`  xem tại: /lich-trinh/${SLUG}`);
   if (missing.length) {
     console.log(`\n⚠ ${missing.length} mục không tìm thấy (slug lệch?):`);
     for (const m of missing) console.log(`  · ${m}`);

@@ -1230,7 +1230,7 @@ model Trip {
 
   // Lịch trình mẫu do biên tập soạn — dùng CHUNG bảng này, chỉ khác cờ.
   isTemplate Boolean @default(false)
-  slug       String? @unique // CHỈ template — /lich-trinh/mau/[slug]
+  slug       String? @unique // CHỈ template — /lich-trinh/[slug]
   // Điểm đến chính của chuyến. Với TEMPLATE: nơi nó được gắn để hiện ở trang
   // điểm đến. Với chuyến của người dùng: nơi bấm "Lên lịch trình đi X" — đặt
   // lúc tạo và KHÔNG bảo trì về sau (chuyến mở rộng sang tỉnh khác vẫn giữ
