@@ -36,6 +36,17 @@ const DRINK_SLOTS = 2;
 
 // Section "Ẩm thực" của trang Place — MỘT HÀNG BỐN Ô, ảnh làm chủ.
 //
+// ĐÃ THỬ VÀ BỎ — dải ĐÊM + bảng thực đơn xếp dòng. Mục này từng được dựng lại
+// thành đỉnh của mạch cuộn: nền tối (bọc `class="dark"` ở `<Band night>`), ảnh
+// ngang 14rem, tên cỡ display, cột giờ căn phải. Lý lẽ khi đó: ba mục liền nhau
+// (Trải nghiệm · Ăn uống · Lưu trú) là ba lưới 4 ô giống hệt, và Ăn uống là mục
+// duy nhất có trục THỜI GIAN để xếp thành bảng.
+// NGƯỜI DÙNG BÁC BỎ: không muốn nó tối, và không muốn nó nổi hơn các mục khác.
+// Quyết định đã chốt — mục này là một dải NGANG HÀNG, cùng khuôn thẻ với
+// StayDirectory/ExperienceGrid. Đừng dựng lại dải tối ở đây.
+// (Đánh đổi đã biết và đã chấp nhận: nửa dưới trang trở lại ba lưới 4 ô cùng
+// hình. Muốn phá khuôn đó thì phải phá ở chỗ khác, không phải ở đây.)
+//
 // Bản trước là hai khối rời: danh sách CHỮ "Ăn ở đâu" rồi dải ảnh "Quán nước",
 // mỗi khối một link "Xem tất cả" — cộng cả link trên tiêu đề là BA link cùng trỏ
 // một chỗ, và section mở đầu bằng một danh sách không ảnh giữa trang lấy ảnh làm
@@ -80,7 +91,12 @@ export function FoodMenu({
 
       {/* Một hàng: bốn ô từ lg. Hẹp hơn thì hai cột rồi một cột — bốn ô dàn ngang
           trên màn 768px chỉ còn ~180px/ô, nhãn trên ảnh hết chỗ. */}
-      <ul className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* `grid-cols-2 md:grid-cols-4` — KHỚP với ExperienceGrid và
+          StayDirectory sau đợt layout. Bản cũ `grid-cols-1 sm:grid-cols-2
+          lg:grid-cols-4` để bậc chuyển cột ở `lg`, nên quãng 768–1023px nhận
+          bố cục điện thoại với đệm desktop; và 4 mục ở 3 cột vẫn là hai hàng
+          (3 + 1 mồ côi) nên đi thẳng 4 cột. */}
+      <ul className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4">
         {venues.map((v, i) => (
           <VenueTile key={v.slug} v={v} priority={i < SLOTS} href={href} />
         ))}
@@ -174,7 +190,7 @@ function VenueTile({
         </span>
 
         <span className="flex flex-1 flex-col px-1.5 pb-1 pt-3">
-          <span className={cn(MICRO, "text-warm")}>{kicker}</span>
+          <span className={cn(MICRO, "text-warm-ink")}>{kicker}</span>
 
           <span className="mt-1 flex items-start gap-2">
             <span className="line-clamp-2 min-w-0 flex-1 font-[family-name:var(--font-display)] text-base font-semibold leading-snug tracking-tight transition-colors group-hover:text-primary sm:text-lg">

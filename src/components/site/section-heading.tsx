@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Ic } from "@/components/icon";
+import { cn } from "@/lib/utils";
 
 // Tiêu đề section — MỘT khuôn duy nhất: tên bên trái, link "Xem tất cả" bên phải.
 //
@@ -23,15 +24,43 @@ export function SectionHeading({
   href,
   count,
   unit,
+  linkLabel,
   actions,
+  size = "lead",
 }: {
   title: string;
   href?: string;
   count?: number;
   unit?: string; // đơn vị đi kèm số, vd "địa điểm" → "Xem tất cả 8 địa điểm"
+  /**
+   * Nhãn link, mặc định "Xem tất cả".
+   *
+   * Có mục mà "xem tất cả" là câu SAI: mục Đi lại hiện hết số bản ghi ngay trên
+   * trang tổng quan, thứ còn thiếu ở màn hình kia là phần hướng dẫn bằng lời
+   * (nhà xe, hotline, cảnh báo) — nên nhãn phải là "Xem hướng dẫn đầy đủ".
+   * Đổi nhãn ở đây chứ không tự dựng một link riêng: link của tiêu đề mang mũi
+   * tên VẼ SẴN và ngồi đúng ô phải của hàng tiêu đề, hai thứ mà bản tự dựng sẽ
+   * làm lệch (mũi tên Unicode, và một hàng tiêu đề trống bên phải).
+   */
+  linkLabel?: string;
   // Điều khiển riêng của section (vd nút "Viết đánh giá") — đứng trước link
   // "Xem tất cả" trong cùng hàng tiêu đề, không đẻ thêm một hàng nút.
   actions?: React.ReactNode;
+  /**
+   * HAI TẦNG, và đây là thứ sửa lỗi cấu trúc lớn nhất của trang điểm đến.
+   *
+   * Trước đây trang có ĐÚNG MỘT đơn vị cấu trúc — dải + tiêu đề 40px + 160px
+   * khoảng trống — dùng y hệt nhau cho mục 15 quán ăn lẫn mục có ĐÚNG MỘT lịch
+   * trình, và cho cả khối đánh giá RỖNG. Trọng lượng thật chênh nhau 15 lần mà
+   * hình thức thì bằng nhau, nên mắt không xếp hạng được gì: nhịp dọc phẳng lì,
+   * còn dải tint xen kẽ theo vị trí thì không nhóm được nội dung nào.
+   *
+   *  · `lead`  — mục có kho nội dung thật (Địa điểm · Trải nghiệm · Ẩm thực ·
+   *              Lưu trú). Giữ nguyên cỡ cũ.
+   *  · `minor` — mục kết/phụ và mục đang rỗng. Nhỏ hơn hẳn một bậc để nó thôi
+   *              đòi ngang hàng với bốn mục trên.
+   */
+  size?: "lead" | "minor";
 }) {
   const link = href && (
     <Link
@@ -39,11 +68,14 @@ export function SectionHeading({
       className="group inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-primary transition-colors hover:text-primary/80"
     >
       <span>
-        Xem tất cả
-        {/* Con số ẩn dưới sm: màn hẹp thì tiêu đề đã chiếm gần hết hàng, thêm
-            "16 quán" là link tự xuống dòng. */}
+        {linkLabel ?? "Xem tất cả"}
+        {/* Con số hiện ở MỌI khổ. Trước đây nó ẩn dưới sm với lý do "link sẽ tự
+            xuống dòng" — nhưng hàng này đã có `flex-wrap`, xuống dòng là hành vi
+            đúng chứ không phải hỏng. Đổi lại, ẩn nó lấy mất thông tin ở đúng chỗ
+            cần nhất: trên điện thoại mọi link đọc trơ ra "Xem tất cả →", khách
+            không biết danh sách có 4 hay 40 mục trước khi tốn một lượt tải. */}
         {count != null && (
-          <span className="hidden tabular-nums sm:inline">
+          <span className="tabular-nums">
             {" "}
             {count}
             {unit ? ` ${unit}` : ""}
@@ -74,7 +106,14 @@ export function SectionHeading({
           · skill `design` chốt "heading đậm, ĐEN, gọn", còn hai màu nhấn dành
             cho link/giá/badge/dải CTA.
           min-w-0: tiêu đề dài thì XUỐNG DÒNG, không đẩy link lòi khỏi mép. */}
-      <h2 className="min-w-0 font-[family-name:var(--font-display)] text-[clamp(1.75rem,3.2vw,2.5rem)] font-bold leading-[1.15] tracking-[-0.03em] text-foreground">
+      <h2
+        className={cn(
+          "min-w-0 font-[family-name:var(--font-display)] font-bold leading-[1.15] tracking-[-0.03em] text-foreground",
+          size === "lead"
+            ? "text-[clamp(1.75rem,3.2vw,2.5rem)]"
+            : "text-xl sm:text-2xl",
+        )}
+      >
         {title}
       </h2>
       {(actions || href) && (

@@ -13,14 +13,13 @@ export type NavColumn = {
   desc?: string;
   badge?: string;
 };
-// Group có HOẶC danh sách (items) HOẶC mega-menu theo cột (columns) — bắt buộc một.
+
 export type NavGroup = { label: string; href: string } & (
   | { items: NavLink[]; columns?: never }
   | { columns: NavColumn[]; items?: never }
 );
 export type NavEntry = NavLink | NavGroup;
 
-// Nav desktop: mỗi entry là link phẳng, hoặc nhóm dropdown (khi có `items`).
 export function SiteNav({
   entries,
   className,
@@ -31,13 +30,6 @@ export function SiteNav({
   const pathname = usePathname();
 
   return (
-    // font-heading (Be Vietnam Pro) thay vì font thân (Cabin): nav là chữ
-    // cấu trúc, cùng họ với tiêu đề thì header đọc như một khối riêng tách khỏi
-    // nội dung. Font đã nạp sẵn cho h1–h6 nên không tốn thêm request.
-    // Đổi font menu = đổi đúng class này. Utility có sẵn: font-sans (Cabin),
-    // font-heading (= font display), font-rounded (Mali), font-mono (chồng chữ
-    // mono hệ thống, không tải font). `--font-display` KHÔNG khai trong @theme
-    // nên không có class tương ứng — gọi qua font-[family-name:var(...)].
     <nav className={cn("h-full items-center gap-1 font-heading", className)}>
       {entries.map((e) => {
         if ("items" in e || "columns" in e)
@@ -57,7 +49,7 @@ export function SiteNav({
             key={e.href}
             href={e.href}
             aria-current={active ? "page" : undefined}
-            className="group/nav relative flex h-full items-center px-3 text-base font-light text-foreground"
+            className="group/nav relative flex h-full items-center px-3 text-base font-normal text-foreground"
           >
             <NavLabel active={active}>{e.label}</NavLabel>
             {e.badge && (

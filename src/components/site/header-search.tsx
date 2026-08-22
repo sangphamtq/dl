@@ -9,7 +9,13 @@ import {
 } from "@/components/ui/tooltip";
 import { CommandPalette } from "./command-palette";
 
-// Ô tìm kiếm header: ở lg+ là "ô" bấm mở Command palette (⌘K); dưới lg là icon.
+// Nút tìm kiếm của header: một icon mở Command palette (⌘K).
+//
+// CHỈ MỘT nút, không có bản mobile. `HeaderSearch` chỉ được dùng trong
+// `SiteHeader`, mà header thì `hidden lg:block` — nên nhánh `lg:hidden` từng có
+// ở đây là code chết. Dưới `lg`, lối vào tìm kiếm là tab giữa của `BottomNav`
+// (nó tự dựng `CommandPalette` riêng). Vì vậy nút này KHÔNG cần class responsive
+// nào: cha quyết định lúc nào cả thanh xuất hiện.
 export function HeaderSearch() {
   const [open, setOpen] = useState(false);
 
@@ -26,40 +32,37 @@ export function HeaderSearch() {
 
   return (
     <>
-      {/* Desktop: ô giả input, bấm mở palette. Cố ý HẸP — nav vừa tăng cỡ chữ
-          nên chỗ trống ở khoảng 1024–1280px rất sát. Nhãn "Tìm kiếm" bỏ dấu ba
-          chấm; gợi ý phím ⌘K đã chuyển vào ô input trong modal.
-          h-10 + bg-muted/40: khớp CHÍNH XÁC nhóm tiện ích bên cạnh (nút size-9
-          trong khung p-0.5 = 40px, nền muted/40) để hai khối thành một hàng
-          liền mạch, không lệch cao và không lệch sắc. */}
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-label="Tìm kiếm"
-        // Ô VIỀN MẢNH trong suốt — cùng ngôn ngữ với hairline đóng khung thanh,
-        // không đắp thêm một mảng đặc lên nội dung phía sau.
-        // `rounded-full`, KHÔNG phải `--radius`: đã thử bo 10px cho bớt dáng
-        // "viên nang mặc định" rồi bỏ. Viên tròn mới là ngôn ngữ của site —
-        // trong các control cùng cỡ (h-9…h-11) thì 14 chỗ bo tròn hết cỡ so với
-        // 9 chỗ bo nhẹ, và chính ô tìm kiếm của trang /diem-den
-        // (`destination-filter.tsx`) là `h-9 rounded-full`. Bo vuông riêng ô này
-        // thì nó ngồi ngay TRÊN một ô tìm kiếm tròn làm đúng việc đó.
-        className="hidden h-10 w-36 items-center gap-1.5 rounded-full border border-foreground/25 bg-foreground/5 pl-3.5 pr-4 text-sm text-foreground transition-colors hover:bg-foreground/15 lg:flex xl:w-44"
-      >
-        <Search className="size-4 shrink-0" aria-hidden />
-        <span className="flex-1 text-left">Tìm kiếm</span>
-      </button>
-
-      {/* Mobile/tablet (< lg): icon mở palette */}
       <Tooltip>
         <TooltipTrigger asChild>
           <button
             type="button"
             aria-label="Tìm kiếm"
             onClick={() => setOpen(true)}
-            className="grid size-10 place-items-center rounded-full text-foreground transition-colors hover:bg-foreground/15 lg:hidden"
+            // TRẦN — không nền, không viền, không bóng. Cùng VẬT LIỆU với nhóm
+            // icon bên phải (Nơi đã đến · Lịch trình · Chuông): đĩa tròn chỉ
+            // hiện khi rê.
+            //
+            // Đã thử và BỎ ba bản có khung — đừng quay lại: viên nang rộng có
+            // viền + nền + bóng (thành một cặp nút anh em giả với "Đăng nhập"
+            // ngay cạnh, dù vai trò ngược hẳn); ô vuông nền xám đặc (`xám là
+            // màu chết` — đọc ra khối chưa được style); ô viền mảnh (thêm một
+            // đường viền nữa vào thanh vốn chỉ toàn mực trần). Mọi thứ đắp thêm
+            // lên nút này đều thành vật thừa, vì cả header không dùng khung.
+            //
+            // ⚠️ KHÔNG tô nền brand nhạt (`bg-primary/10 text-primary`): đó
+            // đúng là trạng thái ACTIVE của ba nút bên cạnh, tô vậy thì nút tìm
+            // kiếm lúc nào cũng trông như đang bật.
+            //
+            // Phân biệt với nhóm kia bằng hai thứ KHÔNG phải trang trí:
+            //   · NÉT LỚN HƠN MỘT BẬC — `size-5` so với `size-4` của nhóm.
+            //   · VẠCH NGĂN đứng giữa (dựng ở `site-header`, chỉ khi đã đăng
+            //     nhập — lúc chưa đăng nhập nhóm kia không tồn tại nên không có
+            //     gì để mà ngăn).
+            // Tức là cái "khác" đến từ nhịp và khoảng trắng. Nhờ vậy cả thanh
+            // vẫn chỉ có ĐÚNG MỘT hình khối đặc: nút "Đăng nhập".
+            className="grid size-10 shrink-0 place-items-center rounded-full text-foreground transition-colors hover:bg-foreground/10"
           >
-            <Search className="size-4" aria-hidden />
+            <Search className="size-5" aria-hidden />
           </button>
         </TooltipTrigger>
         <TooltipContent>Tìm kiếm</TooltipContent>

@@ -43,6 +43,12 @@
       "skillPath": "grill-me/SKILL.md",
       "computedHash": "81770c424f4bcbe02503f997d1e633e4e62974e537c824af4780e9161b7e20e7"
     },
+    "impeccable": {
+      "source": "pbakaus/impeccable",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/impeccable/SKILL.md",
+      "computedHash": "3afb2a5e8cb327d83f75d585494dcdb6aaaf7506cf0410cddd072b30f960efea"
+    },
     "information-architecture": {
       "source": "julianoczkowski/designer-skills",
       "sourceType": "github",

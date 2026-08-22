@@ -64,10 +64,16 @@ export function PlaceHeroCenter({
   visitors?: { total: number; people: CheckInPerson[] };
   reviews?: { stars: number; total: number };
 }) {
-  const hasMeta =
-    stats.length > 0 ||
-    (visitors && visitors.total > 0) ||
-    (reviews && reviews.total > 0);
+  // Hàng số liệu cần ÍT NHẤT HAI dữ kiện mới hiện.
+  // Điểm đến thưa (Tà Xùa) chỉ có "Lượt xem 4", và một con số yếu đứng trơ trọi
+  // giữa hero, ngay dưới tagline, không đọc ra là dữ kiện — nó đọc ra là "chưa
+  // ai tới đây". Hàng này vốn là hàng BẰNG CHỨNG XÃ HỘI; một con số lẻ không
+  // phải bằng chứng. Hai trở lên thì mới thành một hàng dữ kiện.
+  const metaCount =
+    stats.length +
+    (visitors && visitors.total > 0 ? 1 : 0) +
+    (reviews && reviews.total > 0 ? 1 : 0);
+  const hasMeta = metaCount >= 2;
 
   return (
     <PlaceHeroCanvas
@@ -141,18 +147,23 @@ export function PlaceHeroCenter({
           <span aria-hidden className="h-px w-8 bg-warm-bright/50 sm:w-12" />
         </div>
 
-        {/* Chữ tô bằng gradient rồi cắt theo hình chữ (bg-clip-text): trắng đặc
-            ở phần trên, nhạt dần về đáy — nét chữ như chìm vào ảnh.
-            Hai số điều khiển độ mờ: `from-35%` = mốc bắt đầu nhạt (càng nhỏ càng
-            mờ sớm), `to-white/30` = độ đậm còn lại ở đáy (càng nhỏ càng tan).
-            Mức này là thoả hiệp: quanh đường baseline còn ~54% trắng (đọc thoải
-            mái kể cả trên ảnh nền sáng), chân chữ ~30%. Đẩy xuống 25%/15% thì
-            hiệu ứng mạnh hơn nhưng bắt đầu khó đọc.
-            font-extrabold (800): Be Vietnam Pro ở 700 hơi nhẹ so với cỡ chữ này,
-            mà nét càng dày thì dải chuyển sắc càng lộ. Sans hình học nên siết
-            tracking sâu hơn serif; không đặt font-variation-settings vì đây là
-            font tĩnh, không có trục nào. */}
-        <h1 className="mt-4 text-balance bg-gradient-to-b from-white from-35% to-white/30 bg-clip-text font-[family-name:var(--font-display)] text-[clamp(3.25rem,10vw,8.5rem)] font-extrabold leading-[0.88] tracking-[-0.045em] text-transparent">
+        {/* CHỮ ĐẶC, không gradient.
+            Bản trước tô gradient rồi cắt theo hình chữ (`bg-clip-text` +
+            `text-transparent`) cho nét chữ chìm dần vào ảnh. Bỏ vì hai lý do,
+            và lý do thứ hai mới là lý do thật:
+              · detector của impeccable bắt đúng luật `gradient-text`, và craft
+                floor cấm thẳng: nhấn mạnh đến từ CỠ và ĐỘ ĐẬM, không từ dải màu;
+              · `text-transparent` khiến màu tính toán của <h1> là rgba(0,0,0,0),
+                nên KHÔNG công cụ nào tính được tương phản của tiêu đề lớn nhất
+                trang — kể cả trình kiểm tra của công nghệ trợ giúp. Một tiêu đề
+                đặt trên ảnh mà không kiểm được tương phản là chỗ không nên có
+                hiệu ứng.
+            Thay bằng chữ trắng đặc + `drop-shadow` để tách khỏi ảnh: cùng việc
+            "chìm vào ảnh" nhưng đo được, và đọc chắc trên cả ảnh sáng.
+            font-extrabold (800): Be Vietnam Pro ở 700 hơi nhẹ so với cỡ chữ này.
+            Sans hình học nên siết tracking sâu hơn serif; không đặt
+            font-variation-settings vì đây là font tĩnh, không có trục nào. */}
+        <h1 className="mt-4 text-balance font-[family-name:var(--font-display)] text-[clamp(3.25rem,10vw,8.5rem)] font-extrabold leading-[0.88] tracking-[-0.045em] text-white [text-shadow:0_2px_28px_rgba(0,0,0,0.45)]">
           {place.name}
         </h1>
 

@@ -129,16 +129,26 @@ export async function SiteHeader({
         {/* Cụm phải — tiện ích: tìm kiếm · tài khoản (flex-1, dồn về mút phải) */}
         <TooltipProvider delayDuration={300}>
         <div className="flex flex-1 items-center justify-end gap-1">
-          {/* Tìm kiếm — ô bấm + Command palette (⌘K); dưới lg là icon */}
+          {/* Tìm kiếm — icon mở Command palette (⌘K). Cùng chất với nhóm icon
+              bên phải, chỉ khác nét lớn hơn một bậc + vạch ngăn; lý do ở trong
+              chính component. */}
           <HeaderSearch />
 
           {user ? (
             <>
-              {/* Cụm tiện ích: icon TRẦN, chỉ hiện nền tròn khi hover/active.
-                  Bỏ khung segmented mờ vì cạnh ô tìm kiếm (đã có nền) và avatar
-                  thì ba khối nền xếp liền nhau — nặng, và trên hero ảnh thành ba
-                  mảng xám. Giờ chỉ còn MỘT mảng nền duy nhất là ô tìm kiếm. */}
-              <div className="ml-0.5 flex items-center gap-0.5">
+              {/* Cụm tiện ích: icon TRẦN + ĐĨA TRÒN khi hover/active. Bỏ khung
+                  segmented mờ vì ba khối nền xếp liền nhau thì nặng, và trên
+                  hero ảnh thành ba mảng xám.
+                  Ba nút này im lặng lúc nghỉ là CÓ CHỦ Ý: chúng mang trạng thái
+                  `active` (đang ở trang đó) — nền chỉ có nghĩa khi nó nói lên
+                  điều gì. Nút tìm kiếm bên trái thì ngược lại, luôn có nền và
+                  bo `rounded-lg`, nên không nhập vào nhóm này. */}
+              {/* Vạch ngăn CÔNG CỤ (tìm kiếm) với NƠI CHỐN CỦA TÔI (nhóm
+                  icon). Nằm trong nhánh này, không đặt cạnh `HeaderSearch`:
+                  chưa đăng nhập thì nhóm kia không tồn tại, một vạch ngăn giữa
+                  một icon lẻ và nút "Đăng nhập" chẳng ngăn cái gì. */}
+              <span aria-hidden className="mx-1.5 h-6 w-px bg-foreground/25" />
+              <div className="flex items-center gap-0.5">
                 <DaDenNavLink />
                 {/* Lịch trình (ẩn trên màn rất hẹp — vẫn có trong menu + nút nổi) */}
                 <div className="hidden sm:flex">
@@ -172,7 +182,8 @@ export async function SiteHeader({
                ký với đăng nhập (lần đầu tự tạo tài khoản), nên nút "Đăng ký" cũ
                dẫn tới đúng trang kia, một trang mang tiêu đề "Đăng nhập". Ngoài
                ra ba viên pill cùng cỡ, cùng bo tròn xếp liền nhau (ô tìm kiếm ·
-               Đăng ký · Đăng nhập) làm ô tìm kiếm đọc ra như nút thứ ba. Mọi lối
+               Đăng ký · Đăng nhập) làm ô tìm kiếm đọc ra như nút thứ ba — ô tìm
+               kiếm nay đã là một icon, nhưng cặp hai nút auth thì vẫn thừa. Mọi lối
                vào khác của site (mobile-nav, menu hamburger, LoginDrawer) vốn đã
                chỉ có một nút "Đăng nhập" — nay header khớp.
 
@@ -196,22 +207,29 @@ export async function SiteHeader({
                đặc đã là tín hiệu đủ mạnh cạnh một ô tìm kiếm chỉ có hairline.
                Mọi thứ thêm vào đây đều là trang trí.
 
-               GÓC: `rounded-full`. Đã thử bo theo `--radius` (10px) cho bớt
-               dáng "viên nang mặc định" rồi BỎ — đừng thử lại. Lý do: viên tròn
-               là ngôn ngữ của site chứ không phải một lựa chọn lười. Trong các
-               control cùng cỡ (h-9…h-11) thì 14 chỗ bo tròn hết cỡ so với 9 chỗ
-               bo nhẹ; nút CTA của hero, chip lọc, ô tìm kiếm trang /diem-den đều
-               tròn. Bo vuông riêng cụm header thì header thành hòn đảo, và trên
-               /diem-den nó ngồi ngay trên một ô tìm kiếm tròn làm đúng việc đó.
-               (`Button` của shadcn dùng `rounded-md`, nhưng đó là form/CMS —
-               không phải chrome public.)
+               GÓC: `rounded-lg` = `--radius` của theme (10px), cùng radius
+               với `Button` của shadcn. Trước đây là `rounded-full` với lập luận
+               "viên tròn là ngôn ngữ của site — 14 control bo tròn hết cỡ so
+               với 9 chỗ bo nhẹ". Đếm lại thì tỉ lệ thật là 21/19, tức sát nhau
+               chứ không áp đảo; và cái đọc ra "mặc định" ở đây không phải con
+               số bo góc mà là việc nút này với ô tìm kiếm bên cạnh TỪNG là hai
+               viên nang cùng cỡ cùng hình — một cặp anh em giả, dù vai trò
+               ngược hẳn nhau. Ô tìm kiếm nay là chữ trần (xem `header-search`),
+               nên nút này là hình khối ĐẶC DUY NHẤT của thanh: thứ tự đọc tự
+               hiện ra.
+
+               ⚠️ Đổi ở đây thì phải đổi cùng lúc với `header-search.tsx` —
+               hai thứ chỉ đúng khi đứng cạnh nhau. Phạm vi CỐ Ý dừng ở header:
+               chip lọc / ô tìm kiếm của `destination-filter` (ngay dưới header
+               ở /diem-den) vẫn `rounded-full`, đó là chênh lệch đã biết và
+               chấp nhận.
 
                `[text-shadow:none]`: hàng cha đắp bóng chữ cho chữ trắng nổi trên
                ảnh hero; trên nền đặc thì không có ảnh nào để tách, bóng tối chỉ
                làm nhãn bẩn. */
             <Link
               href="/login"
-              className="ml-1.5 inline-flex h-10 items-center rounded-full bg-brand px-4.5 text-sm font-semibold text-brand-foreground transition-[background-color,transform] duration-200 [text-shadow:none] hover:bg-brand/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-transparent active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100"
+              className="ml-1.5 inline-flex h-10 items-center rounded-lg bg-brand px-4.5 text-sm font-semibold text-brand-foreground transition-[background-color,transform] duration-200 [text-shadow:none] hover:bg-brand/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-transparent active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100"
             >
               Đăng nhập
             </Link>

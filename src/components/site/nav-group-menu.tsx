@@ -13,10 +13,6 @@ type Column = { href: string; title: string; desc?: string; badge?: string };
 const WARM_BADGE =
   "h-4 shrink-0 border-transparent bg-warm/15 px-1 text-[0.6rem] font-semibold leading-none text-warm";
 
-// Nhãn nav + gạch chân mục đang mở. Gạch nằm ngay DƯỚI CHỮ (không phải dưới
-// mép thanh) và chỉ dài bằng chữ — dấu hiệu duy nhất cho trạng thái active, nên
-// chữ không phải đổi màu, giữ hàng nav một sắc độ đồng đều.
-// Đặt ở đây (không phải site-nav) vì site-nav đã import file này — tránh vòng import.
 export function NavLabel({
   children,
   active,
@@ -27,12 +23,7 @@ export function NavLabel({
   return (
     <span
       className={cn(
-        // Gạch mảnh 1px và thụt vào 6px mỗi bên — cố ý NGẮN HƠN chữ một chút để
-        // nó đọc như một dấu nhấn, không phải cái gạch chân của link.
         "relative py-1 after:absolute after:inset-x-1.5 after:-bottom-px after:h-px after:bg-current after:transition-opacity after:duration-200 after:content-['']",
-        // Chữ nav LUÔN trắng hẳn (không hạ opacity để phân biệt trạng thái) —
-        // trên băng kính nhạt, chữ mờ là mất hút. Phản hồi hover chuyển hết sang
-        // gạch chân: hiện mờ khi rê, đặc khi đang ở trang đó.
         active
           ? "after:opacity-100"
           : "after:opacity-0 group-hover/nav:after:opacity-40",
@@ -43,9 +34,6 @@ export function NavLabel({
   );
 }
 
-// Nhóm nav dạng dropdown: mở khi hover/focus, đóng khi rời chuột hoặc click.
-// State JS (không dựa :focus-within) để click xong không bị "pin". Hai kiểu panel:
-// danh sách (items) hoặc mega-menu thẻ theo cột (columns).
 export function NavGroupMenu({
   label,
   href,
@@ -79,7 +67,7 @@ export function NavGroupMenu({
         aria-current={active ? "page" : undefined}
         aria-expanded={open}
         onClick={() => setOpen(false)}
-        className="group/nav relative flex h-full items-center gap-1 pl-3 pr-2 text-base font-medium text-foreground"
+        className="group/nav relative flex h-full items-center gap-1 pl-3 pr-2 text-base font-normal text-foreground"
       >
         <NavLabel active={active}>{label}</NavLabel>
         <ChevronDown

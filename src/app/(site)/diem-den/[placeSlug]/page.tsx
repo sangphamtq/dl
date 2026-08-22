@@ -20,6 +20,7 @@ import { SpotSpotlight } from "@/components/site/spot-spotlight";
 import { ExperienceGrid } from "@/components/site/experience-grid";
 import { FoodMenu } from "@/components/site/food-menu";
 import { StayDirectory } from "@/components/site/stay-directory";
+import { TransportBrief } from "@/components/site/transport-brief";
 import { CommunityPreview } from "@/components/site/community-preview";
 import { getPlaceCommunityDigest } from "@/lib/community-feed";
 import { getSettings } from "@/lib/settings";
@@ -56,10 +57,22 @@ const pub = { status: "published" as const };
 // bọc nền, không bọc container.
 function Band({
   tint,
+  minor,
   bleed,
   children,
 }: {
   tint?: boolean;
+  /**
+   * TẦNG PHỤ — đệm dọc hẹp hơn hẳn, cho mục kết/phụ (vd Gợi ý lịch trình).
+   *
+   * Đo bản cũ: khoảng cách mép-nội-dung giữa các mục là 160px × 5 lần và
+   * 192px × 2 lần, còn khoảng cách BÊN TRONG mục là 20–40px. Tức cả trang chỉ
+   * có HAI thanh ghi — ~30px và ~160px — và không có quãng nào diễn đạt được
+   * "liên quan nhưng khác". Thiếu quãng đó nên dải tint bị trưng dụng làm việc
+   * nhóm nội dung, mà nó thì xen kẽ theo vị trí nên nhóm sai.
+   * `py-10 sm:py-12` cho ra seam ~96px: thanh ghi thứ ba, nằm đúng giữa.
+   */
+  minor?: boolean;
   bleed?: boolean;
   children: React.ReactNode;
 }) {
@@ -68,7 +81,12 @@ function Band({
       {bleed ? (
         children
       ) : (
-        <div className="mx-auto max-w-7xl space-y-16 px-4 py-14 sm:space-y-20 sm:px-6 sm:py-20">
+        <div
+          className={cn(
+            "mx-auto max-w-7xl space-y-16 px-4 sm:space-y-20 sm:px-6",
+            minor ? "py-10 sm:py-12" : "py-14 sm:py-20",
+          )}
+        >
           {children}
         </div>
       )}
@@ -230,6 +248,26 @@ export default async function PlaceDetailPage({
           address: true,
           isVerified: true,
           images: listingImages,
+        },
+      },
+      // Di chuyển — mục này trước đây KHÔNG được truy vấn ở trang tổng quan, dù
+      // thanh tab vẫn đếm và quảng cáo "Di chuyển N". Chỉ lấy đúng các trường mà
+      // bảng tuyến cần; phần hướng dẫn bằng lời (nhà xe, hotline, cảnh báo) để
+      // dành cho màn hình /di-chuyen.
+      transports: {
+        where: pub,
+        orderBy: [{ order: "asc" }, { name: "asc" }],
+        select: {
+          id: true,
+          name: true,
+          direction: true,
+          mode: true,
+          fromName: true,
+          duration: true,
+          distanceKm: true,
+          priceFrom: true,
+          priceTo: true,
+          isRecommended: true,
         },
       },
       videos: {
@@ -496,7 +534,12 @@ export default async function PlaceDetailPage({
                   "Thông tin chung" nằm TRONG cột trái chứ không thành hàng
                   riêng bên dưới: chữ không thôi thì thấp hơn video một quãng,
                   gom vào đây vừa lấp đúng chỗ trống vừa bớt một tầng cho mục. */}
-              <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_24rem] lg:items-start lg:gap-14">
+              {/* Bậc `md` là bậc BỊ THIẾU của cả trang: mọi chuyển cột ở đây đều gác
+                  ở `lg`, nên quãng 768–1023px nhận đúng bố cục điện thoại với
+                  đệm của desktop — đo được 9.483px, tức là bản render CAO NHẤT
+                  của trang, cao hơn cả ở 390px. Máy tính bảng trả thêm ~2.000px
+                  cuộn để đổi lấy 256px hẹp hơn laptop. */}
+              <div className="grid grid-cols-1 gap-8 md:grid-cols-[1fr_18rem] md:items-start md:gap-10 lg:grid-cols-[1fr_24rem] lg:gap-14">
                 <div>
                   {lede && (
                     // Drop cap thay cho tiêu đề đã bỏ — báo hiệu điểm mở đầu
@@ -504,14 +547,20 @@ export default async function PlaceDetailPage({
                     // `leading-[0.85]` + `mt-1`: chừa chỗ cho dấu tiếng Việt khi
                     // chữ đầu là Ở/Ấ/Đ… (leading quá chặt sẽ ăn mất dấu).
                     // Bỏ `text-balance` vì cân dòng đá nhau với chữ float.
-                    <p className="text-xl font-medium leading-relaxed text-foreground first-letter:float-left first-letter:mr-2.5 first-letter:mt-1 first-letter:text-[3.25rem] first-letter:font-semibold first-letter:leading-[0.85] sm:text-2xl sm:leading-relaxed sm:first-letter:text-[4rem]">
+                    // `max-w-[46rem]`: ở 1440px cột trái rộng 952px ≈ 95 ký tự
+                    // một dòng — quá xa ngưỡng đọc 65–75, và chính nó tạo ra cái
+                    // lỗ ở đáy mục: chiều cao cột chữ tỉ lệ NGHỊCH với bề rộng,
+                    // còn cột video thì ghim cứng 24rem, nên màn càng rộng thì
+                    // khoảng hụt càng lớn. Bó measure là sửa đúng nguyên nhân,
+                    // không phải kéo giãn cột kia cho bằng.
+                    <p className="max-w-[46rem] text-xl font-medium leading-relaxed text-foreground first-letter:float-left first-letter:mr-2.5 first-letter:mt-1 first-letter:text-[3.25rem] first-letter:font-semibold first-letter:leading-[0.85] sm:text-2xl sm:leading-relaxed sm:first-letter:text-[4rem]">
                       {lede}
                     </p>
                   )}
                   {descBody && (
                     <PlainProse
                       text={descBody}
-                      className="mt-4 leading-7 text-muted-foreground"
+                      className="mt-4 max-w-[46rem] leading-7 text-muted-foreground"
                     />
                   )}
                   {/* Bài giới thiệu đặt NGAY DƯỚI mô tả (trước khối Thông tin
@@ -554,7 +603,6 @@ export default async function PlaceDetailPage({
                       />
                     </Link>
                   )}
-                  {quickFacts.length > 0 && <QuickInfo facts={quickFacts} />}
                 </div>
                 {videos.length > 0 ? (
                   <PlaceAboutVideo videos={videos} placeName={place.name} />
@@ -566,6 +614,18 @@ export default async function PlaceDetailPage({
                   />
                 )}
               </div>
+
+              {/* "Thông tin chung" là HÀNG KHÉP ĐÁY trải hết bề ngang, không
+                  còn nằm trong cột trái.
+                  Lý lẽ cũ ("gom vào cột trái để lấp chỗ trống") đúng hồi nó là
+                  bảng 2 cột; đo lại sau khi cho nó 4 ô một hàng thì nó rút ngắn
+                  cột trái nhiều hơn phần measure kéo dài ra, nên khoảng hụt so
+                  với cột video còn RỘNG THÊM: 410 / 563 = lệch 153px ở 1440.
+                  Đuổi theo chiều cao hai cột là sai bài. Đưa bảng xuống dưới thì
+                  mục có một mép đáy nằm ngang chạy hết bề ngang — khối chữ và
+                  video ngắn dài bao nhiêu cũng không còn nghĩa lý, và bốn dữ
+                  kiện tra cứu đứng đúng vai: phần khép lại, không phải phần đọc. */}
+              {quickFacts.length > 0 && <QuickInfo facts={quickFacts} />}
             </section>
           )}
 
@@ -573,7 +633,7 @@ export default async function PlaceDetailPage({
           {/* Điểm đến con (chỉ tỉnh) — lưới (là Place, cấp khác) */}
           {showChildren && (
             <section id="diem-den-con" className="scroll-mt-32">
-              <SectionHeading title={`Điểm đến tại ${place.name}`} />
+              <SectionHeading title={`Điểm đến ở ${place.name}`} />
               <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
                 {place.children.map((c) => (
                   <PlaceCard key={c.slug} place={c} />
@@ -645,7 +705,10 @@ export default async function PlaceDetailPage({
           </Band>
         )}
 
-        {/* Ẩm thực — một hàng ô ảnh, quán ăn & quán nước chung (xem FoodMenu) */}
+        {/* Ẩm thực — một dải NGANG HÀNG, cùng khuôn thẻ với Lưu trú / Trải
+            nghiệm (xem FoodMenu). Từng là dải ĐÊM và là đỉnh của mạch cuộn;
+            người dùng bác bỏ cả hai — không muốn nó tối, không muốn nó nổi hơn
+            các mục khác. Đừng dựng lại. */}
         {(place.eateries.length > 0 || drinkVenues.length > 0) && (
           <Band tint={tinted()}>
             <section id="am-thuc" className="scroll-mt-32">
@@ -660,12 +723,19 @@ export default async function PlaceDetailPage({
           </Band>
         )}
 
-        {/* Lưu trú + trạng thái rỗng */}
-        {(place.accommodations.length > 0 || !hasAnyContent) && (
+        {/* Lưu trú — một hàng bốn ô ảnh, chữ + huy hiệu xác minh đặt trên ảnh
+            (xem StayDirectory).
+
+            ⚠️ BA DẢI RIÊNG, KHÔNG GỘP. Trước đây Lưu trú + Lịch trình + trạng
+            thái rỗng dùng CHUNG một `<Band>` mở bằng
+            `(accommodations.length > 0 || !hasAnyContent)`. Hệ quả: một điểm đến
+            CÓ nội dung (nên `hasAnyContent` = true) nhưng CHƯA có chỗ ở thì cả
+            dải không render — và mục Lịch trình nằm bên trong biến mất theo, dù
+            lịch trình mẫu đã xuất bản. Tà Xùa dính đúng lỗi này: `/lich-trinh`
+            đang đăng "Tà Xùa 2 ngày 1 đêm" mà trang điểm đến không hề nhắc tới.
+            Mỗi mục từ nay tự gate bằng ĐIỀU KIỆN CỦA CHÍNH NÓ. */}
+        {place.accommodations.length > 0 && (
           <Band tint={tinted()}>
-            {/* Lưu trú — một hàng bốn ô ảnh, chữ + huy hiệu xác minh đặt trên
-                ảnh (xem StayDirectory) */}
-            {place.accommodations.length > 0 && (
             <section id="luu-tru" className="scroll-mt-32">
               <StayDirectory
                 placeName={place.name}
@@ -675,24 +745,71 @@ export default async function PlaceDetailPage({
                 stays={place.accommodations}
               />
             </section>
-          )}
+          </Band>
+        )}
 
-          {tripTemplates.length > 0 && (
+        {/* Đi lại — đặt SAU Lưu trú, TRƯỚC Lịch trình.
+            Theo đúng thứ tự thanh tab đã công bố, và đọc thành một mạch lập kế
+            hoạch: chỗ ở → đường đi → lịch trình. */}
+        {place.transports.length > 0 && (
+          <Band tint={tinted()}>
+            <section id="di-chuyen" className="scroll-mt-32">
+              {/* Link đi qua `SectionHeading` (ô phải của hàng tiêu đề) chứ
+                  KHÔNG tự dựng trong component: đây là mục lead duy nhất từng
+                  để trống nửa phải hàng tiêu đề, và link tự dựng còn mang mũi
+                  tên Unicode thay vì mũi tên vẽ sẵn của bộ icon.
+                  Nhãn riêng vì mục này hiện HẾT số bản ghi — "xem tất cả" là
+                  câu sai; thứ còn ở màn hình kia là hướng dẫn bằng lời. */}
+              <SectionHeading
+                title={`Đi lại ở ${place.name}`}
+                href={`/diem-den/${place.slug}/di-chuyen`}
+                linkLabel="Xem hướng dẫn đầy đủ"
+              />
+              <div className="mt-7">
+                <TransportBrief items={place.transports} />
+              </div>
+            </section>
+          </Band>
+        )}
+
+        {tripTemplates.length > 0 && (
+          <Band tint={tinted()} minor>
             <section id="lich-trinh" className="scroll-mt-32">
+              {/* TẦNG PHỤ. Mục này gần như luôn có ĐÚNG MỘT thẻ (Phan Thiết 1,
+                  Tà Xùa 1) — mặc bộ chrome của mục 15 quán thì nó đọc ra một
+                  dải hỏng: tiêu đề 40px chạy hết 1392px với một thẻ 574px nằm
+                  ở mép trái và 800px tint trống bên phải.
+                  Bỏ luôn `count`/`unit`: nhãn cũ ra "Xem tất cả 1 lịch trình"
+                  — con số đó là số thẻ ĐANG HIỆN, nên câu link tự mâu thuẫn.
+                  Link vẫn giữ vì /lich-trinh còn lịch trình của nơi khác. */}
               <SectionHeading
                 title={`Gợi ý lịch trình ở ${place.name}`}
                 href="/lich-trinh"
-                count={tripTemplates.length}
-                unit="lịch trình"
+                size="minor"
               />
-              <ul className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {/* Lưới CO THEO SỐ LƯỢNG. Phần lớn điểm đến chỉ có 1 lịch trình
+                  mẫu (Phan Thiết đúng 1, Tà Xùa 1) — để nguyên `lg:grid-cols-3`
+                  thì một thẻ chữ nhỏ đứng lọt thỏm dưới một tiêu đề 40px chạy
+                  hết bề ngang, đọc ra là "lưới ba ô bị thiếu hai ô" chứ không
+                  phải một mục có một mục con. Ít thẻ thì bó bề ngang lại để
+                  chúng lấp đầy hàng của mình. */}
+              <ul
+                className={cn(
+                  "mt-5 grid grid-cols-1 gap-4",
+                  tripTemplates.length === 1
+                    ? "max-w-xl"
+                    : tripTemplates.length === 2
+                      ? "sm:grid-cols-2 lg:max-w-4xl"
+                      : "sm:grid-cols-2 lg:grid-cols-3",
+                )}
+              >
                 {tripTemplates.map((t) => (
                   <li key={t.id}>
                     <Link
                       href={`/lich-trinh/${t.slug}`}
                       className="group flex h-full flex-col rounded-2xl border border-border/60 bg-card p-5 transition-shadow hover:shadow-lg hover:shadow-black/5"
                     >
-                      <span className="text-xs font-medium text-warm">
+                      <span className="text-xs font-medium text-warm-ink">
                         {t._count.days} ngày · {t._count.items} điểm dừng
                       </span>
                       <span className="mt-1.5 font-semibold leading-snug tracking-tight group-hover:text-primary">
@@ -708,9 +825,12 @@ export default async function PlaceDetailPage({
                 ))}
               </ul>
             </section>
-          )}
+          </Band>
+        )}
 
-          {!hasAnyContent && (
+        {/* Trạng thái rỗng — nhánh THỨ BA, độc lập với hai dải trên. */}
+        {!hasAnyContent && (
+          <Band tint={tinted()}>
             <div className="rounded-lg border border-dashed border-border px-6 py-16 text-center">
               <Ic
                 icon="compass"
@@ -723,7 +843,6 @@ export default async function PlaceDetailPage({
                 lại sau nhé.
               </p>
             </div>
-            )}
           </Band>
         )}
 
@@ -850,21 +969,18 @@ function AboutMedia({
 }
 
 /* ── "Thông tin chung" trong cột trái của mục Đôi nét (nội dung từ CMS)
-   Kẻ mảnh, không card/bóng: hero phía trên và băng ảnh phía dưới đã đủ đậm.
-   Luôn 2 cột — đặt dưới phần chữ trong cột trái nên không đủ rộng cho 4.
-   Đường kẻ dọc tính theo chỉ số thay vì nth-child: ô mở đầu mỗi hàng (chỉ số
-   chẵn) không có kẻ trái, ô còn lại thì có. */
+   Kẻ ngang mảnh, không card/bóng: hero phía trên và băng ảnh phía dưới đã đủ đậm.
+   BỐN Ô MỘT HÀNG từ md. Chú thích cũ ghi "không đủ rộng cho 4" — đo lại thì sai:
+   cột trái rộng 952px ở 1440px, tức mỗi ô 4-across vẫn được ~230px trong khi giá
+   trị thật chỉ dài ~110px. Ở 2 cột, mỗi ô rộng 476px chứa một mẩu chữ 110px, và
+   ĐÓ mới là lý do phải kẻ dọc: vạch kẻ đang gánh việc của khoảng cách.
+   Bốn ô đúng cỡ thì `gap` tự tách chúng ra — bỏ luôn kẻ dọc, và bỏ luôn phép
+   tính `i % 2` vốn không thể đúng khi số cột đổi theo breakpoint. */
 function QuickInfo({ facts }: { facts: { label: string; value: string }[] }) {
   return (
-    <dl className="mt-7 grid grid-cols-2 gap-y-5 border-y border-border/60 py-6">
+    <dl className="mt-7 grid grid-cols-2 gap-x-6 gap-y-5 border-y border-border/60 py-6 md:grid-cols-4">
       {facts.map((f, i) => (
-        <div
-          key={i}
-          className={cn(
-            "border-border/60 pr-5",
-            i % 2 === 0 ? "" : "border-l pl-5",
-          )}
-        >
+        <div key={i}>
           <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
             {f.label}
           </dt>

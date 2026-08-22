@@ -7,7 +7,6 @@ import { signOut } from "next-auth/react";
 import {
   LayoutDashboard,
   LogOut,
-  Home,
   MapPinCheck,
   MapPin,
   Check,
@@ -119,12 +118,6 @@ export function UserMenu({ user, provinces, homeProvince }: Props) {
             onDone={() => setOpen(false)}
           />
           <DropdownMenuItem asChild>
-            <Link href="/">
-              <Home className="size-4" aria-hidden />
-              Trang chủ
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
             <Link href="/tai-khoan/da-den">
               <MapPinCheck className="size-4" aria-hidden />
               Nơi đã đến
@@ -134,9 +127,6 @@ export function UserMenu({ user, provinces, homeProvince }: Props) {
             <Link href="/lich-trinh/cua-toi">
               <Route className="size-4" aria-hidden />
               Lịch trình của tôi
-              <Badge className="ml-auto h-4 border-transparent bg-warm/15 px-1 text-[0.6rem] font-semibold text-warm">
-                Sắp có
-              </Badge>
             </Link>
           </DropdownMenuItem>
           {isStaff && (

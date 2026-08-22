@@ -2,7 +2,7 @@
 
 import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useLayoutEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   BedDouble,
   LayoutGrid,
@@ -100,6 +100,20 @@ export function PlaceTabs({ items }: { items: PlaceTab[] }) {
   // hero còn chiếm hết khung nhìn) trình duyệt sẽ cuộn luôn CẢ TRANG xuống cho
   // nó lọt vào tầm nhìn — người dùng vừa mở trang điểm đến đã bị nhảy qua hero.
   const navRef = useRef<HTMLElement | null>(null);
+  // Còn tab bị khuất bên nào? Dùng để chỉ fade ĐÚNG mép đang giấu nội dung.
+  // Bản trước fade mép phải VĨNH VIỄN, kể cả khi đã cuộn hết — một vệt mờ luôn
+  // hiện thì đọc ra là trang trí, nên trên máy 390px ba tab (Ẩm thực · Nơi lưu
+  // trú · Di chuyển) nằm ngoài màn mà không có tín hiệu nào nói rằng chúng tồn
+  // tại. Fade có/không theo trạng thái mới là một tín hiệu.
+  const [edge, setEdge] = useState({ left: false, right: false });
+  const measure = (nav: HTMLElement | null) => {
+    if (!nav) return;
+    const left = nav.scrollLeft > 4;
+    const right = nav.scrollLeft + nav.clientWidth < nav.scrollWidth - 4;
+    setEdge((prev) =>
+      prev.left === left && prev.right === right ? prev : { left, right },
+    );
+  };
   useIsoLayoutEffect(() => {
     const nav = navRef.current;
     const el = tabRefs.current[pathname];
@@ -127,8 +141,20 @@ export function PlaceTabs({ items }: { items: PlaceTab[] }) {
           {/* flex-1 để dải tab luôn chiếm hết phần trống → lớp mask chỉ ăn vào
               khoảng trống khi chưa tràn, và fade đúng chữ khi tràn. */}
           <nav
-            ref={navRef}
-            className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto [-ms-overflow-style:none] [mask-image:linear-gradient(to_right,black_calc(100%_-_2rem),transparent)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            ref={(el) => {
+              navRef.current = el;
+              measure(el);
+            }}
+            onScroll={(e) => measure(e.currentTarget)}
+            className={cn(
+              "flex min-w-0 flex-1 items-center gap-1 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+              edge.left && edge.right &&
+                "[mask-image:linear-gradient(to_right,transparent,black_2rem,black_calc(100%_-_2rem),transparent)]",
+              edge.left && !edge.right &&
+                "[mask-image:linear-gradient(to_right,transparent,black_2rem)]",
+              !edge.left && edge.right &&
+                "[mask-image:linear-gradient(to_right,black_calc(100%_-_2rem),transparent)]",
+            )}
           >
             {navItems.map((it) => {
               const active = pathname === it.href;
@@ -141,7 +167,9 @@ export function PlaceTabs({ items }: { items: PlaceTab[] }) {
                   }}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "inline-flex h-8 shrink-0 items-center gap-2 whitespace-nowrap px-2.5 text-sm transition-colors",
+                    // h-11 dưới lg: 32px là dưới ngưỡng đích chạm 44×44, mà đây là thanh
+                    // điều hướng chính của trang trên điện thoại.
+                    "inline-flex h-11 shrink-0 items-center gap-2 whitespace-nowrap px-2.5 text-sm transition-colors lg:h-8",
                     active
                       ? "font-semibold text-foreground"
                       : "font-medium text-muted-foreground hover:text-foreground",
@@ -162,7 +190,7 @@ export function PlaceTabs({ items }: { items: PlaceTab[] }) {
                   {/* Số lượng: `tabular-nums` để số không so le khi đổi trang, và
                       nhạt hơn nhãn — nó là chú thích, không phải nhãn. */}
                   {it.count != null && (
-                    <span className="text-[0.6875rem] font-normal tabular-nums text-muted-foreground/70">
+                    <span className="text-[0.6875rem] font-normal tabular-nums text-muted-foreground">
                       {it.count}
                     </span>
                   )}
@@ -191,7 +219,7 @@ export function PlaceTabs({ items }: { items: PlaceTab[] }) {
                     aria-label={tab.label}
                     title={tab.label}
                     className={cn(
-                      "inline-flex h-8 shrink-0 items-center gap-2 px-2 text-sm transition-colors sm:px-2.5",
+                      "inline-flex h-11 shrink-0 items-center gap-2 px-2 text-sm transition-colors sm:px-2.5 lg:h-8",
                       active
                         ? "font-semibold text-foreground"
                         : "font-medium text-muted-foreground hover:text-foreground",

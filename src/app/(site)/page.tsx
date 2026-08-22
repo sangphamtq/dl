@@ -7,10 +7,7 @@ import { cn } from "@/lib/utils";
 import { coverUrl } from "@/lib/place-image";
 import { POST_CATEGORY_LABELS, label } from "@/lib/listing-labels";
 import { SectionHeading } from "@/components/site/section-heading";
-import {
-  HeroSlideshow,
-  type HeroShot,
-} from "@/components/site/hero-slideshow";
+import { CtaButton } from "@/components/site/cta-button";
 
 const pub = { status: "published" as const };
 
@@ -37,14 +34,6 @@ const PRINTS = [
   { tilt: "rotate-1" },
   { tilt: "-rotate-3" },
 ];
-
-// Lớp phủ hero — ĐẬM Ở ĐỈNH, ngược hẳn lớp phủ của thẻ.
-// Khối chữ nằm ở PHẦN TRÊN bức ảnh (như tấm banner tham chiếu), mà phần trên
-// của ảnh phong cảnh gần như luôn là trời sáng. Công thức đậm-ở-đáy của thẻ đặt
-// vào đây thì dằn đúng chỗ không có chữ nào. Vẫn để đáy tối nhẹ trở lại để
-// khung hình không bị hẫng một đầu.
-const HERO_SCRIM =
-  "absolute inset-0 -z-10 bg-[linear-gradient(to_bottom,rgba(0,0,0,0.5)_0%,rgba(0,0,0,0.42)_22%,rgba(0,0,0,0.26)_48%,rgba(0,0,0,0.18)_70%,rgba(0,0,0,0.34)_100%)]";
 
 // Năm mục của một trang điểm đến — đúng năm thứ đang có thật (xem CLAUDE.md).
 //
@@ -94,6 +83,19 @@ export default async function Home() {
           tagline: true,
           images: cover,
           parent: { select: { name: true } },
+          // Đếm THEO TỪNG MỤC của trang điểm đến — đây là thứ hero dùng để nói
+          // "trang này có gì" bằng số thật thay vì bằng một danh sách danh từ.
+          // Lọc `published` ngay trong _count: đếm cả bản nháp thì con số trên
+          // hero không khớp với thứ người xem bấm vào sẽ thấy.
+          _count: {
+            select: {
+              spots: { where: pub },
+              activities: { where: pub },
+              eateries: { where: pub },
+              accommodations: { where: pub },
+              transports: { where: pub },
+            },
+          },
         },
       }),
       prisma.post.findMany({
@@ -126,78 +128,202 @@ export default async function Home() {
   // Tỉnh THẬT SỰ có điểm đến, không phải tổng số tỉnh đã xuất bản.
   const provinceCount = new Set(destParents.map((d) => d.parentId)).size;
 
-  // Hai nhóm KHÔNG GIAO NHAU cắt từ cùng một danh sách: năm ảnh nền hero thay
-  // nhau, và bốn tấm ảnh in ở section ngay dưới. Trùng nhau thì một nơi vừa lướt
-  // qua làm ảnh nền lại hiện ngay bên dưới thành thẻ.
-  const shots: HeroShot[] = featured.slice(0, 5).map((p) => ({
-    slug: p.slug,
-    name: p.name,
-    province: p.parent?.name ?? null,
-    url: coverUrl(p.images, p.slug, 1920, 1280),
-    thumb: coverUrl(p.images, p.slug, 160, 120),
-  }));
-  const prints = featured.slice(5, 9);
+  // HERO LẤY MỘT NƠI LÀM VÍ DỤ — và phải là nơi CÓ NỘI DUNG THẬT.
+  //
+  // Hero nay nói về TRANG WEB, nhưng nói bằng một trang có thật thay vì bằng
+  // tính từ: thẻ bên phải liệt kê đúng năm mục của một điểm đến kèm số lượng.
+  // Nơi rỗng vào đó là hỏng cả hai đầu — thẻ ra năm số 0, và nút "Xem trang"
+  // dẫn tới một trang trống.
+  //
+  // Lọc theo DỮ LIỆU chứ không theo cờ `isFeatured`: biên tập bật nổi bật cho
+  // một nơi từ lúc mới tạo là chuyện bình thường, nội dung mới là thứ nói được
+  // nơi đó đã đủ để đem ra làm ví dụ hay chưa.
+  const hasContent = (p: (typeof featured)[number]) =>
+    p._count.spots +
+      p._count.activities +
+      p._count.eateries +
+      p._count.accommodations +
+      p._count.transports >
+    0;
+  // Nơi dày nhất, không phải nơi đầu danh sách: đây là gian hàng mẫu của cả
+  // site nên lấy trang đầy đủ nhất đang có.
+  const sample =
+    featured
+      .filter(hasContent)
+      .sort(
+        (a, b) =>
+          b._count.spots +
+          b._count.activities +
+          b._count.eateries +
+          b._count.accommodations +
+          b._count.transports -
+          (a._count.spots +
+            a._count.activities +
+            a._count.eateries +
+            a._count.accommodations +
+            a._count.transports),
+      )[0] ?? null;
+
+  const sampleRows = sample
+    ? ([
+        ["Địa điểm", sample._count.spots],
+        ["Trải nghiệm", sample._count.activities],
+        ["Quán ăn & cà phê", sample._count.eateries],
+        ["Nơi lưu trú", sample._count.accommodations],
+        ["Cách di chuyển", sample._count.transports],
+      ] as const)
+    : [];
+
+  // Ảnh in bên dưới không lặp lại nơi vừa dùng làm ví dụ ở hero.
+  const prints = featured.filter((p) => p.slug !== sample?.slug).slice(0, 4);
 
   return (
     <main className="flex-1">
-      {/* ── HERO — BANNER ĐIỆN ẢNH, ẢNH NỀN THAY NHAU ─────────────────────
-          Năm ảnh điểm đến crossfade 7 giây một lượt (xem HeroSlideshow — kèm
-          chấm chuyển, nút tạm dừng và cách tải ảnh dần).
-          Ảnh tràn viền, khối chữ canh giữa ở PHẦN TRÊN ảnh, xếp ba tầng:
-            · tên nước bằng CHỮ VIẾT TAY cỡ lớn,
-            · một dòng chữ hoa giãn ký tự,
-            · một dòng mảnh liệt kê bằng dấu chấm giữa.
-          Không thẻ, không ảnh in, không lưới — hero lần này là một tấm banner
-          đúng nghĩa, còn các lối đi tiếp nằm ở section ngay dưới.
+      {/* ── HERO — NÓI VỀ TRANG WEB, KHÔNG PHẢI VỀ MỘT ĐIỂM ĐẾN ──────────
+          Bản trước là ảnh TRÀN VIỀN với một điểm đến làm nhân vật chính. Bản
+          này đổi chủ ngữ: câu chuyện là chính cái site, còn điểm đến rút về vai
+          VÍ DỤ — thẻ bên phải.
 
-          Chữ bút lông là `--font-script` (Dancing Script) và ĐÂY LÀ CHỖ DUY
-          NHẤT trong cả site dùng nó — xem ghi chú ở layout.tsx về lý do nó được
-          đưa trở lại kèm `preload: false`. Thêm chỗ thứ hai là hỏng giao kèo đó.
-          `leading-[1.05]` chứ không siết chặt hơn: chữ script có nét thò lên
-          thò xuống, mà "Việt" còn thêm dấu nặng dưới đáy. */}
-      <section className="relative isolate flex min-h-[48rem] items-start justify-center overflow-hidden pb-28 pt-36 lg:min-h-svh lg:pt-48">
-        <HeroSlideshow shots={shots} />
-        <span aria-hidden className={HERO_SCRIM} />
+          Vì vậy hero cũng không còn là ảnh nền nữa mà là một khối hai cột trên
+          nền sáng. Kéo theo hai thứ phải đổi cùng lúc, đừng tách ra:
+            · `site-chrome.ts` — `/` chuyển sang LIGHT_ROUTES và rời khỏi
+              `overlay`. Không đổi thì header vẫn là kính TỐI chờ đè lên ảnh, mà
+              dưới nó giờ là nền trắng;
+            · hero KHÔNG còn cần client JS. Slideshow cũ (`hero-slideshow.tsx`)
+              là "use client" vì phải đếm giờ đổi ảnh; ở đây mọi thứ tĩnh nên
+              hero chạy thẳng trên server.
 
-        <div className="mx-auto w-full max-w-4xl px-4 text-center sm:px-6">
-          {user?.name && (
-            <p className="mb-2 text-sm font-medium text-white/75">
-              Chào {user.name}
+          NÓI BẰNG VÍ DỤ, KHÔNG BẰNG TÍNH TỪ. Cột phải không phải ảnh trang trí:
+          nó là một trang điểm đến CÓ THẬT, liệt kê đúng năm mục kèm số lượng
+          thật. "Gom đủ mọi thứ vào một trang" là một lời hứa; năm dòng số là
+          bằng chứng — và bấm vào kiểm được ngay. */}
+      <section className="relative overflow-hidden border-b border-border/60 bg-gradient-to-b from-primary/[0.07] via-background to-background">
+        <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 py-14 sm:px-6 sm:py-20 lg:grid-cols-[1.02fr_0.98fr] lg:gap-16 lg:py-24">
+          {/* ── Cột trái: trang này là gì ─────────────────────────────── */}
+          <div>
+            {user?.name && (
+              <p className="mb-4 text-sm font-medium text-muted-foreground">
+                Chào {user.name}
+              </p>
+            )}
+            <h1 className="text-balance font-[family-name:var(--font-display)] text-[clamp(2.15rem,4.6vw,3.6rem)] font-bold leading-[1.08] tracking-tight">
+              Mỗi nơi một trang,{" "}
+              <span className="text-primary">đủ cho cả chuyến đi</span>
+            </h1>
+
+            <p className="mt-6 max-w-xl text-pretty leading-relaxed text-muted-foreground sm:text-lg">
+              Địa điểm, trải nghiệm, quán ăn, chỗ ở và cách đi lại của một điểm
+              đến — gom sẵn vào cùng một trang, thay vì mười tab và ba group
+              Facebook.
             </p>
+
+            {/* Số liệu TOÀN SITE (khác thẻ bên phải, vốn là số của một nơi).
+                Đây là câu trả lời cho "trang này đã có bao nhiêu" — thứ mà mọi
+                lời giới thiệu đều né. Tính từ DB nên không bao giờ lỗi thời. */}
+            <p className="mt-8 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-sm text-muted-foreground">
+              <Stat n={provinceCount} unit="tỉnh thành" />
+              <Dot />
+              <Stat n={destCount} unit="điểm đến" />
+              <Dot />
+              <Stat n={spotCount} unit="địa điểm" />
+              <Dot />
+              <Stat n={eateryCount} unit="quán ăn" />
+            </p>
+
+            <div className="mt-9 flex flex-wrap items-center gap-3">
+              <CtaButton href="/diem-den">Khám phá điểm đến</CtaButton>
+              <Link
+                href="/blog"
+                className="inline-flex h-12 items-center rounded-full border border-border px-5 text-[0.95rem] font-medium transition-colors hover:border-primary/40 hover:text-primary"
+              >
+                Đọc cẩm nang
+              </Link>
+            </div>
+          </div>
+
+          {/* ── Cột phải: một trang điểm đến thật, thu nhỏ ─────────────── */}
+          {/* `max-w` + `mx-auto` chứ không để thẻ tràn hết ô lưới: `TripDock` là
+              một viên tròn CỐ ĐỊNH ở giữa mép phải màn hình, mà cột số của thẻ
+              căn phải — ở quãng viewport ~1440px (đúng bằng `max-w-7xl`) hai thứ
+              đè lên nhau và con số đầu tiên biến mất. Kéo thẻ vào trong là hết
+              chồng, mà thẻ cũng không bị kéo dài quá khổ. `mx-auto` (căn GIỮA ô
+              lưới) chứ không `ml-auto`: dán thẻ vào mép phải thì dù đã thu hẹp
+              nó vẫn nằm đúng dưới viên nút. */}
+          {sample && (
+            <div className="relative mx-auto w-full max-w-lg lg:max-w-[32rem]">
+              {/* Mảng nền mềm sau thẻ — thay cho vòng tròn đồng tâm/đường bay
+                  nét đứt: cùng tác dụng tách lớp mà không thêm một họa tiết nào
+                  mới vào site. */}
+              <div
+                aria-hidden
+                className="absolute -inset-3 -z-10 rounded-[2.25rem] bg-primary/[0.07] sm:-inset-5"
+              />
+              <article className="overflow-hidden rounded-3xl border border-border/60 bg-card shadow-xl shadow-black/5">
+                <div className="relative aspect-[16/10]">
+                  <Image
+                    src={coverUrl(sample.images, sample.slug, 960, 600)}
+                    alt={`Ảnh ${sample.name}`}
+                    fill
+                    priority
+                    sizes="(min-width: 1024px) 44vw, 100vw"
+                    className="object-cover"
+                  />
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/35 to-transparent px-5 pb-4 pt-12">
+                    {sample.parent?.name && (
+                      <p className="text-xs font-medium text-white/75">
+                        {sample.parent.name}
+                      </p>
+                    )}
+                    <p className="font-[family-name:var(--font-display)] text-2xl font-bold tracking-tight text-white">
+                      {sample.name}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Năm mục — đúng thứ tự các mục trong một trang điểm đến (xem
+                    CLAUDE.md), KHÔNG sắp theo số lớn nhỏ: thẻ này dạy cấu trúc,
+                    mà cấu trúc thì không đổi chỗ theo dữ liệu.
+                    Mục rỗng vẫn hiện, ghi "—": giấu đi thì thẻ hoá ra hứa rằng
+                    trang chỉ có bốn mục. */}
+                <ul className="divide-y divide-border/60">
+                  {sampleRows.map(([label, n]) => (
+                    <li
+                      key={label}
+                      className="flex items-center justify-between px-5 py-2.5 text-sm"
+                    >
+                      <span className="text-muted-foreground">{label}</span>
+                      <span
+                        className={cn(
+                          "font-semibold tabular-nums",
+                          n > 0 ? "text-foreground" : "text-muted-foreground/50",
+                        )}
+                      >
+                        {n > 0 ? n : "—"}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+
+                <Link
+                  href={`/diem-den/${sample.slug}`}
+                  className="group flex items-center justify-between border-t border-border/60 px-5 py-3.5 text-sm font-semibold text-primary transition-colors hover:bg-primary/5"
+                >
+                  Xem trang {sample.name}
+                  <ArrowRight
+                    className="size-4 shrink-0 transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none"
+                    aria-hidden
+                  />
+                </Link>
+              </article>
+            </div>
           )}
-
-          {/* Cả hai tầng nằm TRONG h1: tách tên nước ra một thẻ riêng thì trang
-              còn lại một tiêu đề cụt ngủn là "Việt Nam", không nói được trang
-              này làm gì. */}
-          <h1 className="text-white [text-shadow:0_2px_24px_rgba(0,0,0,0.55)]">
-            <span className="block font-[family-name:var(--font-script)] text-[clamp(3.5rem,10vw,7.5rem)] font-bold leading-[1.05] tracking-[-0.005em]">
-              Việt Nam
-            </span>
-            {/* `max-w-4xl` cho khối chữ + `text-balance` ở dòng này: ở
-                `max-w-3xl` (768px) câu hoa giãn 0.22em rộng ~817px nên rớt hai
-                chữ cuối xuống dòng hai, thành một dòng dài và một dòng cụt. */}
-            <span className="mt-3 block text-balance font-[family-name:var(--font-display)] text-[clamp(0.95rem,2.1vw,1.6rem)] font-semibold uppercase leading-tight tracking-[0.14em] text-white/90 sm:tracking-[0.22em]">
-              Mỗi nơi một trang, đủ cho cả chuyến đi
-            </span>
-          </h1>
-
-          {/* Dòng này liệt kê đúng NĂM MỤC có thật của một trang điểm đến, thay
-              cho bản cũ nhắc lại bốn câu hỏi vốn đã là tiêu đề trang Giới thiệu.
-              Người đọc đối chiếu được ngay khi bấm vào một nơi bất kỳ. */}
-          <p className="mx-auto mt-6 max-w-xl text-balance text-sm leading-relaxed text-white/80 [text-shadow:0_1px_12px_rgba(0,0,0,0.7)] sm:text-base">
-            Địa điểm · Trải nghiệm · Ăn uống · Lưu trú · Di chuyển
-          </p>
-
-          <CtaButton href="/diem-den" tone="photo" className="mt-10">
-            Khám phá {destCount} điểm đến
-          </CtaButton>
         </div>
       </section>
 
       {/* ── ĐIỂM ĐẾN NỔI BẬT ───────────────────────────────────────────────
-          Hero nay là banner thuần, không còn lối đi nào trong đó ngoài một nút,
-          nên bốn nơi đầu tiên phải có mặt ngay dưới. Vẫn là ảnh in nghiêng —
-          giữ lại chất liệu ấy ở đúng một chỗ, không rải khắp trang. */}
+          Hero nói về cái site và chỉ đưa ra MỘT nơi làm ví dụ, nên phần "đi đâu
+          bây giờ" dồn hết vào đây. Vẫn là ảnh in nghiêng — giữ lại chất liệu ấy
+          ở đúng một chỗ, không rải khắp trang. */}
       {prints.length > 0 && (
         <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20">
           <SectionHeading
@@ -423,54 +549,27 @@ function PostTile({ p }: { p: PostRow }) {
   );
 }
 
-// Nút hành động chính. MỘT khuôn cho cả hero lẫn khối kết, chỉ đổi tông màu
-// theo thứ nằm sau lưng nó.
-//
-// Bản trước có: đĩa trắng lọt trong viên nút, hai mũi tên chạy qua nhau, một
-// vệt sáng quét chéo, nút nhấc lên 2px và bóng màu nở ra khi rê chuột. Năm hiệu
-// ứng cho một cái nút — mỗi thứ riêng lẻ đều "hiện đại", cộng lại thì nó là thứ
-// duy nhất trên trang đòi được chú ý, và đòi to hơn cả tấm ảnh lẫn tiêu đề.
-//
-// Ở đây chỉ còn hình viên thuốc, một màu nền và MỘT chuyển động: mũi tên nhích
-// 2px. Đúng cử chỉ mà `SectionHeading` và mọi link "Xem tất cả" trong site đang
-// dùng — nút chính không cần một ngôn ngữ chuyển động riêng, nó chỉ cần đậm hơn.
-function CtaButton({
-  href,
-  children,
-  className,
-  /** `photo`: nút nằm trên ảnh → nền trắng, chữ mực, có bóng để tách khỏi ảnh.
-   *  Mặc định nằm trên nền trang → nền `primary`. */
-  tone = "surface",
-}: {
-  href: string;
-  children: React.ReactNode;
-  className?: string;
-  tone?: "photo" | "surface";
-}) {
-  return (
-    <Link
-      href={href}
-      className={cn(
-        "group inline-flex h-12 items-center gap-2.5 rounded-full px-6 font-[family-name:var(--font-display)] text-[0.95rem] font-semibold transition-colors",
-        tone === "photo"
-          ? "bg-white text-foreground shadow-md shadow-black/20 hover:bg-white/90"
-          : "bg-primary text-primary-foreground hover:bg-primary/90",
-        className,
-      )}
-    >
-      {children}
-      <ArrowRight
-        className="size-4 shrink-0 transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none"
-        aria-hidden
-      />
-    </Link>
-  );
-}
-
 function Num({ children }: { children: React.ReactNode }) {
   return (
     <strong className="font-semibold tabular-nums text-foreground">
       {children}
     </strong>
+  );
+}
+
+function Stat({ n, unit }: { n: number; unit: string }) {
+  return (
+    <span>
+      <strong className="font-semibold tabular-nums text-foreground">{n}</strong>{" "}
+      {unit}
+    </span>
+  );
+}
+
+function Dot() {
+  return (
+    <span aria-hidden className="text-border">
+      ·
+    </span>
   );
 }

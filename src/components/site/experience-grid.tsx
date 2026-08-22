@@ -63,7 +63,14 @@ export function ExperienceGrid({
         unit={unit}
       />
 
-      <ul className="mt-6 grid grid-cols-2 gap-x-5 gap-y-9 sm:gap-x-6 lg:grid-cols-4">
+      {/* Bậc `md` bị thiếu: mọi chuyển cột của trang đều gác ở `lg`, nên
+          768–1023px nhận bố cục điện thoại với đệm desktop — đo được đó là bản
+          render CAO NHẤT của cả trang, cao hơn cả ở 390px.
+          Đi thẳng `md:grid-cols-4`, KHÔNG qua 3: các lưới này luôn có ĐÚNG 4
+          mục, nên 3 cột vẫn là hai hàng (3 + 1 mồ côi) — tức tốn y hệt chiều
+          cao của 2 cột mà lại thêm một ô lẻ. Bốn cột ở 768px cho ô rộng ~170px,
+          đúng bằng ô ở khổ 390px hai cột, nên chữ vẫn vừa. */}
+      <ul className="mt-6 grid grid-cols-2 gap-x-5 gap-y-9 sm:gap-x-6 md:grid-cols-4">
         {items.map((it) => (
           <Card key={it.slug} it={it} />
         ))}
@@ -92,7 +99,7 @@ function Card({ it }: { it: ExperienceItem }) {
         </span>
 
         {it.category && (
-          <span className={cn(MICRO, "mt-4 block text-warm")}>{it.category}</span>
+          <span className={cn(MICRO, "mt-4 block text-warm-ink")}>{it.category}</span>
         )}
 
         {/* Chiều cao tối thiểu cho khối tên: tên một dòng và tên hai dòng nằm

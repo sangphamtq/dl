@@ -53,6 +53,8 @@
   --color-warm-foreground: var(--warm-foreground);
   --color-warm: var(--warm);
   --color-warm-bright: var(--warm-bright);
+  --color-warm-ink: var(--warm-ink);
+  --color-primary-ink: var(--primary-ink);
   --color-wood: var(--wood);
   --color-wood-light: var(--wood-light);
   --color-wood-dark: var(--wood-dark);
@@ -96,6 +98,21 @@
      Dùng hex thay oklch: oklch(.82 .18 62) bị ép về gamut sRGB thành #ffaf62 —
      cam phấn, nhạt hơn cả --warm chứ không nổi hơn. */
   --warm-bright: #ff9a1f;
+  /* HAI MÀU "INK" — dành riêng cho vai trò CHỮ trên nền SÁNG.
+     --warm (#ff8800) và --primary (#2e871c) được chỉnh cho nền tối và cho mảng
+     nền đặc: trong dải đêm --warm-bright đo được 9,3:1, còn chữ trắng trên nền
+     --primary được ~4,6:1. Nhưng dùng chính chúng làm CHỮ trên nền sáng thì
+     trượt AA, và đó là chỗ chúng đang bị dùng nhiều nhất — nhãn loại 9,6–12px,
+     số đếm tab, số thứ tự: đo được 1,7–2,8:1, tức là lớp quét mắt của trang.
+     Hai token dưới đây tối đủ để đạt 4,5:1 trên CẢ nền trắng LẪN dải --muted
+     (#edeae4, nền chặt hơn):
+       --warm-ink    #a34c00 → 5,85:1 trên trắng · 4,87:1 trên muted
+       --primary-ink #26701a → 6,15:1 trên trắng · 5,12:1 trên muted
+     LUẬT: nền/huy hiệu đặc dùng --warm/--primary; CHỮ trên nền sáng dùng bản
+     -ink. Trong scope .dark hai token này lật về bản sáng (xem .dark bên dưới),
+     nên dải đêm không đổi một pixel nào. */
+  --warm-ink: #a34c00;
+  --primary-ink: #26701a;
   /* Gỗ của biển chỉ đường trong hero. Cùng lý do với --warm-bright: vật thể này
      luôn nằm trên ảnh tối nên KHÔNG khai báo lại trong .dark. */
   --wood-light: #a9754a;
@@ -162,6 +179,11 @@
   --primary-foreground: oklch(0.16 0.05 145);
   --warm: oklch(0.72 0.17 50);
   --warm-foreground: oklch(0.18 0.04 60);
+  /* Trên nền tối thì "chữ nhấn" phải SÁNG lên, không tối đi — nên hai token ink
+     lật về đúng bản dùng cho nền tối. Nhờ vậy cùng một class `text-warm-ink`
+     đọc đúng ở cả dải sáng lẫn dải đêm. */
+  --warm-ink: #ff9a1f;
+  --primary-ink: oklch(0.72 0.16 145);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
@@ -199,6 +221,15 @@
   }
   h1, h2, h3, h4, h5, h6 {
     @apply font-heading;
+  }
+  /* Vệt bôi chọn chữ. Mặc định của trình duyệt là xanh dương hệ điều hành —
+     màu duy nhất trên site không đến từ bảng màu nào của site, và nó hiện ra ở
+     mọi lần người đọc quét chữ để copy địa chỉ hay tên quán.
+     CHỈ đặt nền, KHÔNG đặt `color`: cùng một quy tắc phải chạy trên cả chữ mực
+     (thân bài) lẫn chữ trắng (tên điểm đến trên ảnh hero). Ép một màu chữ thì
+     một trong hai chỗ sẽ mất tương phản. */
+  ::selection {
+    background-color: color-mix(in oklch, var(--primary) 26%, transparent);
   }
 }
 /* Vân gỗ cho biển chỉ đường trong hero: nhiễu fractal của SVG (feTurbulence) kéo

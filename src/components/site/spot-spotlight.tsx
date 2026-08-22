@@ -84,7 +84,11 @@ function SpotRow({
         aria-controls={panelId}
         // Lớp phủ không có chữ bên trong → phải tự đặt tên cho trình đọc màn hình.
         aria-label={`Xem ảnh ${s.name}`}
-        className="absolute inset-0 rounded-xl"
+        // Vòng focus TƯỜNG MINH. Đây là nút phủ trong suốt phủ kín cả dòng, và
+        // là widget phức tạp nhất trang — nhưng nó là control DUY NHẤT ở đây
+        // không tự vẽ vòng focus, nên người dùng bàn phím chỉ được vòng mặc định
+        // của trình duyệt trong khi mọi nút khác quanh nó đều có ring riêng.
+        className="absolute inset-0 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       />
 
       {/* Hover và active nằm trên CÙNG MỘT THANG: nền hàng. Rỗng → chạm vào →
@@ -104,7 +108,7 @@ function SpotRow({
           aria-hidden
           className={cn(
             "hidden w-7 shrink-0 self-start pt-0.5 font-[family-name:var(--font-display)] text-xl font-bold tabular-nums leading-none tracking-tight transition-colors lg:block",
-            on ? "text-warm" : "text-muted-foreground/40",
+            on ? "text-warm-ink" : "text-muted-foreground",
           )}
         >
           {num(i)}
@@ -392,7 +396,12 @@ export function SpotSpotlight({
             nghìn px, chữ tràn ra ngoài màn hình rồi bị `overflow-hidden` xén.
             `grid-cols-1` của Tailwind = `minmax(0,1fr)` nên track không bao giờ
             vượt bề ngang cha. Áp dụng cho mọi lưới chỉ khai báo cột ở lg. */}
-        <div className="mt-6 grid flex-1 grid-cols-1 gap-8 lg:grid-cols-12 lg:items-stretch lg:gap-12">
+        {/* `gap-3` dưới lg, `gap-8` từ sm. Dưới lg cột phải chỉ còn CỤM ĐIỀU
+                KHIỂN của carousel (bộ đếm + nút tạm dừng) — danh sách và nút
+                gạch đứt đều đã ẩn — nên khe 32px của bố cục hai cột đẩy chúng
+                trôi hẳn khỏi thứ chúng điều khiển. Điều khiển phải dính vào
+                đúng vật nó điều khiển. */}
+            <div className="mt-6 grid flex-1 grid-cols-1 gap-3 sm:gap-8 lg:grid-cols-12 lg:items-stretch lg:gap-12">
           <div
             id={panelId}
             className="relative isolate flex min-w-0 flex-col pb-6 lg:col-span-7 lg:pb-14 lg:pr-12 xl:pr-20"
@@ -457,7 +466,7 @@ export function SpotSpotlight({
                       type="button"
                       onClick={() => go(step)}
                       aria-label={label}
-                      className="grid size-10 place-items-center rounded-full bg-black/35 text-white ring-1 ring-white/25 backdrop-blur-sm transition-colors hover:bg-black/55 active:bg-black/60"
+                      className="relative grid size-10 place-items-center rounded-full bg-black/35 text-white ring-1 ring-white/25 backdrop-blur-sm transition-colors before:absolute before:-inset-1 before:content-[''] hover:bg-black/55 active:bg-black/60"
                     >
                       <Icon className="size-5" aria-hidden />
                     </button>
@@ -574,7 +583,9 @@ export function SpotSpotlight({
           <div className="lg:col-span-5 lg:flex lg:flex-col lg:pl-2">
             <div className="mb-3 flex items-center justify-between gap-4">
               <p className={cn(MICRO, "text-muted-foreground")}>
-                Chọn để xem
+                {/* "Chọn để xem" chỉ đúng ở lg, nơi có cột dòng để mà chọn.
+                    Dưới lg còn lại đúng bộ đếm, đọc kèm carousel ngay trên. */}
+                <span className="hidden lg:inline">Chọn để xem</span>
                 <span className="tabular-nums text-foreground">
                   {" "}
                   {num(index)}/{num(n - 1)}
@@ -588,7 +599,9 @@ export function SpotSpotlight({
                   type="button"
                   onClick={() => setPaused((p) => !p)}
                   aria-label={paused ? "Tiếp tục tự đổi" : "Tạm dừng tự đổi"}
-                  className="grid size-8 shrink-0 place-items-center rounded-full border border-border/70 text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground"
+                  // `before:-inset-1.5` nới vùng chạm 32→44px mà không phình hình khối —
+                  // cùng thủ pháp đã dùng ở các nút nhỏ trong hero.
+                  className="relative grid size-8 shrink-0 place-items-center rounded-full border border-border/70 text-muted-foreground transition-colors before:absolute before:-inset-1.5 before:content-[''] hover:border-foreground/40 hover:text-foreground"
                 >
                   {paused ? (
                     <Play className="size-3.5" aria-hidden />
@@ -599,20 +612,24 @@ export function SpotSpotlight({
               )}
             </div>
 
-            {/* MỘT cách trình bày cho mọi khổ: CỘT DỌC, sáu mục nhìn thấy hết
-                một lượt.
-                Dưới lg trước đây là carousel ngang (Embla): vuốt mượt nhưng chỉ
-                thấy ~1,5 thẻ mỗi lúc, nên phần lớn danh sách nằm ngoài màn hình
-                và người dùng không biết có bao nhiêu địa điểm — trong khi đây là
-                mục "đáng ghé", tức là cái cần liếc qua HẾT rồi mới chọn. Cột dọc
-                dài thêm vài trăm px nhưng cuộn dọc là thao tác sẵn có của trang,
-                không phải một cử chỉ riêng phải phát hiện ra. */}
+            {/* Cột chọn — CHỈ TỪ lg. Dưới lg đã có carousel thẻ ảnh ở trên.
+                ⚠️ Trước đây cả hai cùng render dưới lg, và đó là một lỗi thật
+                chứ không phải thừa thãi vô hại:
+                  · ~1.600px lặp lại đúng sáu cái tên, sáu tấm ảnh, sáu dòng mô
+                    tả — trên một trang tổng quan vốn đã cao ~9.000px ở khổ 390;
+                  · tệ hơn, đích chính của mỗi dòng là nút phủ "Xem ảnh {tên}",
+                    mà tác dụng duy nhất của nó là cuộn cái carousel giờ đã nằm
+                    xa phía trên khung nhìn. Khách chạm và KHÔNG THẤY GÌ xảy ra,
+                    còn link tên — thứ thật sự điều hướng — lại là đích nhỏ hơn
+                    nằm lọt trong dòng.
+                Cột dọc là thiết bị của bản DESKTOP, nơi nó nằm ngay cạnh khung
+                ảnh lớn nên chọn một dòng là thấy ảnh đổi tức thì. */}
             <div
               onMouseEnter={() => setHover(true)}
               onMouseLeave={() => setHover(false)}
               onFocusCapture={() => setHover(true)}
               onBlurCapture={() => setHover(false)}
-              className="flex flex-1 flex-col"
+              className="hidden flex-1 flex-col lg:flex"
             >
               {items.map((s, i) => (
                 <SpotRow
@@ -635,7 +652,11 @@ export function SpotSpotlight({
                 ngay đó là điều khiển, không phải một địa điểm nữa. */}
             <Link
               href={allHref}
-              className="group mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border/70 py-3 text-sm font-medium text-muted-foreground transition-colors hover:border-primary/50 hover:bg-muted/40 hover:text-foreground"
+              // CHỈ TỪ lg. Lý lẽ của nút này là "một lối ra ở cuối danh sách, không phải
+              // hàng thứ bảy" — mà dưới lg danh sách không còn (xem chú thích ở cột
+              // chọn), nên nó chỉ còn là bản sao của link trên tiêu đề, đặt cách đó
+              // đúng một thẻ carousel.
+              className="group mt-4 hidden w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border/70 py-3 text-sm font-medium text-muted-foreground transition-colors hover:border-primary/50 hover:bg-muted/40 hover:text-foreground lg:flex"
             >
               Xem tất cả{count != null ? ` ${count}` : ""} địa điểm
               <ArrowUpRight

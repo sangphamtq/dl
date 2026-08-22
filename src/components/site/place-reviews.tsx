@@ -114,7 +114,7 @@ const CV_CHIP = "bg-warm/10 text-warm";
 // Màu CHỮ của mức cảm nhận trên danh sách review (không nền, không viền).
 const STANCE_TEXT: Record<StanceTone, string> = {
   positive: "text-primary",
-  posSoft: "text-primary/85",
+  posSoft: "text-primary-ink",
   negSoft: "text-warm",
   negative: "text-destructive",
 };
@@ -224,10 +224,15 @@ export function ReviewsSection({
         count={hasReviews ? summary.total : undefined}
         unit="đánh giá"
         actions={writeBtn}
+        // Chưa có đánh giá nào → xuống TẦNG PHỤ. Ở điểm đến thưa (Tà Xùa) mục
+        // này là dải cuối cùng của trang và nội dung của nó vỏn vẹn một thẻ
+        // "chưa có gì": mặc tiêu đề 40px ngang hàng với mục 15 quán thì trang
+        // KẾT THÚC bằng một lời thông báo trống, phóng to.
+        size={hasReviews ? "lead" : "minor"}
       />
 
       {hasReviews ? (
-        <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[2fr_3fr] lg:gap-12">
+        <div className="mt-6 grid grid-cols-1 gap-8 md:grid-cols-[2fr_3fr] md:gap-10 lg:gap-12">
           {/* Trái: tổng hợp (dính khi cuộn trên desktop) */}
           <div className="lg:sticky lg:top-28 lg:self-start">
             {/* Mặt thẻ cho cả hai cột. Đây là section DUY NHẤT của trang không
@@ -368,7 +373,10 @@ function ScoreInfo() {
         <button
           type="button"
           aria-label="Cách tính điểm đáng đi"
-          className="text-muted-foreground transition-colors hover:text-foreground"
+          // Icon 16×16 là đích chạm 16×16 — dưới xa ngưỡng 44. `before:-inset-3`
+          // nới vùng chạm ra ~40px mỗi chiều mà không đổi hình khối; icon vẫn là
+          // một dấu ⓘ nhỏ nằm cạnh con số.
+          className="relative text-muted-foreground transition-colors before:absolute before:-inset-3 before:content-[''] hover:text-foreground"
         >
           <Info className="size-4" aria-hidden />
         </button>

@@ -15,6 +15,10 @@ import type { HeroLayout } from "@/generated/prisma/enums";
 
 /** Trang mở bằng nền SÁNG → băng kính bản `light` (chữ mực). */
 const LIGHT_ROUTES = new Set([
+  // Trang chủ: hero nay là khối hai cột trên NỀN SÁNG, không còn ảnh tràn viền
+  // chạy dưới header. Để nó ở bản `dark` thì tint `black/20` đặt trên nền trắng
+  // ra một vệt xám vắt ngang đầu trang, chữ trắng trên đó chỉ được ~1.7:1.
+  "/",
   "/diem-den",
   "/gioi-thieu",
   "/blog",
@@ -66,10 +70,11 @@ export function chromeFor(
   // khớp chính xác trước để nó không rơi nhầm vào nhánh hero.
   if (LIGHT_ROUTES.has(pathname)) return { tone: "light", overlay: false, pinned };
 
-  // Hero ảnh tràn viền chạy dưới header: trang chủ luôn có, trang điểm đến chỉ
+  // Hero ảnh tràn viền chạy dưới header — nay CHỈ còn ở trang điểm đến, và chỉ
   // khi cấu hình hero là kiểu "center" (dải ảnh bắt đầu từ y=0).
-  const overlay =
-    pathname === "/" || (PLACE_DETAIL.test(pathname) && heroLayout === "center");
+  // Trang chủ đã rời khỏi đây: hero của nó không còn là ảnh tràn viền nên không
+  // có gì để header chìm vào (xem `/` trong LIGHT_ROUTES bên trên).
+  const overlay = PLACE_DETAIL.test(pathname) && heroLayout === "center";
 
   return { tone: "dark", overlay, pinned };
 }

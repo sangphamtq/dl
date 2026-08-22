@@ -231,7 +231,11 @@ export function PlaceHeroCanvas({
                     alt=""
                     fill
                     priority={i === 0}
-                    sizes="100vw"
+                    // Hero bó trong `max-w-7xl` (= 90rem ở dự án này), nên trên
+                    // màn rộng hơn thế nó KHÔNG còn full-viewport: khai `100vw`
+                    // là bắt trình duyệt tải bản to hơn mức dùng, và Next log
+                    // đúng cảnh báo đó.
+                    sizes="(min-width: 90rem) 90rem, 100vw"
                     draggable={false}
                     // Zoom chạy đúng bằng thời lượng slide: đặt dài hơn thì ảnh
                     // bị chuyển đi giữa chừng, hoá ra chỉ zoom được một phần.
@@ -343,6 +347,11 @@ export function PlaceHeroCanvas({
             className={cn(
               "shrink-0",
               "flex flex-col items-center text-center",
+              // MỘT ảnh thì không có dải. Điểm đến thưa (Tà Xùa) đang hiện một
+              // ô thumbnail của đúng tấm ảnh đang phủ kín màn hình, kèm bộ đếm
+              // "1" — một bộ điều khiển không điều khiển gì, và nó tự tố rằng
+              // nơi này chỉ có một tấm hình.
+              n === 1 && "hidden",
             )}
           >
             {/* HÀNG ẢNH — hình chữ nhật trơn, bo góc vừa phải, CÙNG MỘT CỠ. Ô

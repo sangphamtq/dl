@@ -24,7 +24,16 @@ const MICRO = "text-[0.6rem] font-semibold uppercase tracking-[0.14em]";
 
 // Kính mờ trên ảnh — dùng cho cả huy hiệu xác minh và chip loại hình để hai đầu
 // hàng trên cùng một chất liệu.
-const GLASS = "rounded-full bg-black/35 text-white backdrop-blur-md";
+// Huy hiệu xác minh — NỀN ĐẶC, không phải kính.
+//
+// Bản kính (`bg-black/35 backdrop-blur-md` + chữ trắng) đo được ~2,6:1 trên ảnh
+// Sunny House (nhà trắng, cát nhạt) — dưới cả ngưỡng 4,5:1 của chữ lẫn 3:1 của
+// phần tử phi văn bản. Mà ảnh homestay đa số là ngoại thất ban ngày sáng, nên
+// đó là ca THƯỜNG chứ không phải ca biên. Đây lại đúng là nhãn mang tính quyết
+// định của cả mục: nó tồn tại để chống lừa cọc.
+// Nền đặc theo token thì tương phản không còn phụ thuộc vào bức ảnh nằm dưới.
+const VERIFIED_BADGE =
+  "rounded-full bg-primary text-primary-foreground shadow-sm shadow-black/25";
 
 // Section "Nơi lưu trú" của trang Place — MỘT HÀNG BỐN THẺ.
 //
@@ -66,7 +75,7 @@ export function StayDirectory({
   return (
     <div>
       <SectionHeading
-        title={`Ở đâu tại ${placeName}`}
+        title={`Nơi lưu trú ở ${placeName}`}
         href={href}
         count={total}
         unit="chỗ ở"
@@ -80,7 +89,7 @@ export function StayDirectory({
           trước. Nay còn hai NHÃN — mỗi nhãn một dữ kiện tra được. */}
       <div className="mt-6 flex flex-wrap items-center gap-2">
         <span className="rounded-md bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
-          Danh bạ, không đặt phòng
+          Danh bạ liên hệ chính chủ
         </span>
         {verifiedTotal > 0 ? (
           <span className="inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
@@ -95,9 +104,27 @@ export function StayDirectory({
         )}
       </div>
 
+      {/* XÁC MINH NGHĨA LÀ GÌ — một câu, đặt ngay dưới con số.
+          Trước đây trang này chưa bao giờ nói huy hiệu "Đã xác minh" là xác
+          minh CÁI GÌ, BỞI AI. Một chỗ đã xác minh và một chỗ chưa nằm cạnh nhau
+          trong cùng một hàng, khác nhau đúng một viên pill nhỏ — mà chính sự
+          khác nhau đó mới là sản phẩm. Nhãn không tự định nghĩa thì nó chỉ là
+          trang trí, và ở mục chống lừa cọc thì đó là trang trí nguy hiểm. */}
+      <p className="mt-2.5 max-w-2xl text-xs leading-relaxed text-muted-foreground">
+        <strong className="font-semibold text-foreground">Đã xác minh</strong> =
+        Halivivu đã đối chiếu kênh liên hệ (Zalo, Facebook, điện thoại) với chủ
+        nhà. Chỗ chưa xác minh vẫn hiện, nhưng bạn nên tự kiểm trước khi chuyển
+        cọc.
+      </p>
+
       {/* Một hàng: bốn ô từ lg. Hẹp hơn thì hai cột, rồi một cột — bốn ô dàn
           ngang trên màn 768px chỉ còn ~180px/ô, chữ trên ảnh hết chỗ. */}
-      <ul className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* `grid-cols-2` NGAY TỪ ĐẦU, khớp với `ExperienceGrid` ngay trên nó.
+          Ở `grid-cols-1` thì bốn ô xếp chồng cao 1.682px — mục này thành khối
+          LỚN NHẤT trang ở khổ 390 (18% tổng chiều cao), trong khi mục Ẩm thực
+          — thứ trang cố ý dựng làm đỉnh — chỉ 652px. Một bản XEM TRƯỚC bốn ô
+          không được nặng hơn đỉnh của trang. */}
+      <ul className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
         {stays.map((s, i) => (
           <StayTile key={s.slug} s={s} priority={i < 4} />
         ))}
@@ -138,7 +165,7 @@ function StayTile({ s, priority }: { s: StayEntry; priority: boolean }) {
             // từ lúc mắt còn ở khuôn hình, chưa xuống tới chữ.
             <span
               className={cn(
-                GLASS,
+                VERIFIED_BADGE,
                 "absolute left-2.5 top-2.5 inline-flex items-center gap-1 py-1 pl-1.5 pr-2.5 text-[0.7rem] font-semibold",
               )}
             >
@@ -150,7 +177,7 @@ function StayTile({ s, priority }: { s: StayEntry; priority: boolean }) {
 
         <span className="flex flex-1 flex-col px-1.5 pb-1 pt-3">
           {s.category && (
-            <span className={cn(MICRO, "text-warm")}>
+            <span className={cn(MICRO, "text-warm-ink")}>
               {label(ACCOMMODATION_CATEGORY_LABELS, s.category)}
             </span>
           )}
