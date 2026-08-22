@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState, useTransition, type ReactNode } from "react";
+import { Fragment, useEffect, useState, useTransition, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -152,6 +152,16 @@ export function TripEditor({
     : null;
   const [pending, start] = useTransition();
   const [activeDayId, setActiveDayId] = useState(days[0]?.id ?? "");
+
+  // ── Làm mờ cột GIỜ: chỉ đúng ngày bị đụng tới, và chỉ khi chờ LÂU ──────────
+  // Bản trước truyền thẳng `stale={pending}` cho MỌI ngày, nên mỗi lần kéo thả
+  // là cả trang xám giờ đi một nhịp — kể cả những ngày không liên quan, và kể
+  // cả khi server trả về sau 80ms. Hai lớp chặn:
+  //   · `staleDays` — chỉ ngày nguồn và ngày đích mới có giờ đổi;
+  //   · `slow` — chờ quá 350ms mới báo. Dưới ngưỡng đó người ta không kịp thấy
+  //     cái nháy, mà cái nháy mới là thứ làm giao diện có cảm giác chậm.
+  const [staleDays, setStaleDays] = useState<string[]>([]);
+  const slow = useDelayedFlag(pending, 350);
   const fields = useTripFields();
 
   const activeDay = days.find((d) => d.id === activeDayId) ?? days[0] ?? null;
@@ -205,7 +215,10 @@ export function TripEditor({
     const id = String(e.active.id);
     dnd.endDrag();
 
+    // Ngày NGUỒN đọc từ `byId` (dựng từ props = trạng thái server trước cú thả).
+    const fromDayId = dnd.byId.get(id)?.dayId ?? null;
     const at = dnd.commitMove(id, e.over ? String(e.over.id) : null);
+    setStaleDays([fromDayId, at?.dayId ?? null].filter((x): x is string => !!x));
     // Gửi kèm phiên bản client đang thấy: thao tác này theo VỊ TRÍ, người khác
     // vừa sửa là chỉ số trỏ sai chỗ. Lệch ⇒ server từ chối.
     //
@@ -339,7 +352,7 @@ export function TripEditor({
                   fields={fields}
                   itemIds={dnd.board[dayKey(day.id)] ?? []}
                   byId={dnd.byId}
-                  stale={pending}
+                  stale={slow && staleDays.includes(day.id)}
                   dayCount={days.length}
                   allDays={days}
                   active={day.id === activeDay?.id}
@@ -1096,4 +1109,28 @@ function fromTimeValue(v: string): number | null {
   if (!m) return null;
   const min = Number(m[1]) * 60 + Number(m[2]);
   return min >= 0 && min < 1440 ? min : null;
+}
+
+/**
+ * `true` chỉ khi `active` đã kéo dài quá `delayMs`. Dùng để KHÔNG báo "đang
+ * chờ" với những thao tác trả về nhanh — một cái nháy 100ms không cho người
+ * dùng thêm thông tin nào, nó chỉ làm giao diện trông giật.
+ */
+function useDelayedFlag(active: boolean, delayMs: number): boolean {
+  const [on, setOn] = useState(false);
+  // Tắt cờ NGAY TRONG RENDER khi hết chờ, không phải trong effect: gọi
+  // `setState` đồng bộ bên trong effect vừa tốn một vòng render thừa vừa bị
+  // eslint chặn đúng chỗ đó. Đây là mẫu "adjusting state when props change"
+  // của React, cùng cách `trip-dock` nhận lại trạng thái từ server.
+  const [wasActive, setWasActive] = useState(active);
+  if (wasActive !== active) {
+    setWasActive(active);
+    if (!active && on) setOn(false);
+  }
+  useEffect(() => {
+    if (!active) return;
+    const t = setTimeout(() => setOn(true), delayMs);
+    return () => clearTimeout(t);
+  }, [active, delayMs]);
+  return on;
 }

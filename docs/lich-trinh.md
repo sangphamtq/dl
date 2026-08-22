@@ -431,6 +431,52 @@ Nút tròn đánh số vẫn nới vùng chạm ~38px bằng `before:-inset-2` (
 > không lộ qua typecheck và không thấy được bằng ảnh chụp.
 > **`pnpm check:trip-dnd`** giữ 9 trường hợp cho chỗ này — chạy lại mỗi khi động vào.
 
+### 6c-a. Vì sao mỗi lần thả từng "mờ đi một lúc" — và ba chỗ đã chữa
+
+Triệu chứng: thả xong, thứ tự đổi ngay nhưng cột giờ xám lại chừng một giây rồi mới có số.
+Đo bằng script (`getTripById`, transaction viết lại thứ tự, và mạng) cho ra thủ phạm **không
+phải cơ sở dữ liệu**:
+
+| Nghi phạm | Đo được | Kết luận |
+|---|---|---|
+| Viết lại thứ tự cả một ngày 8 mục | **~24ms** (Postgres localhost, ping 1ms) | Không phải nguyên nhân ở dev — nhưng là 8+ vòng mạng nối đuôi nếu CSDL đặt xa |
+| `getTripById` + 3 truy vấn của ba mục kia | ~32ms + ~6ms | Không đáng kể |
+| **Một lời gọi ORS chưa có trong cache** | **~0,8s** (riêng bắt tay TLS đã ~0,6s) | ⇒ đây |
+
+Mấu chốt: **khoá cache của ORS là CẶP TOẠ ĐỘ**, mà mỗi lần đổi thứ tự là sinh ra những cặp
+liền kề mới. Nên gần như lần kéo–thả nào cũng ăn ít nhất một lời gọi HTTPS thật ra ngoài
+Internet, **ngay giữa lúc render lại trang** — và render đó chặn cho tới khi ORS trả lời.
+
+Ba chỗ đã sửa:
+
+1. **Ngân sách chờ định tuyến 300ms** (`ROUTE_BUDGET_MS`, `src/lib/trip-route.ts`). Quá hạn
+   thì dựng lịch bằng ước lượng chim bay — vốn đã có sẵn và được đánh dấu `approx` nên UI
+   hiện dấu `~`. Lời gọi bị bỏ dở giao cho **`after()`** nuôi tiếp tới khi ghi xong vào
+   `unstable_cache`.
+   > ⚠ `after()` là phần **bắt buộc**, không phải tối ưu thêm. Trên serverless, hàm bị đóng
+   > băng ngay khi trả response: bỏ mặc promise thì lời gọi chết nửa chừng, cache không bao
+   > giờ được nạp, mọi lần dựng sau lại hết hạn ở đúng mốc 300ms — số chính xác sẽ **không
+   > bao giờ** xuất hiện.
+   > Và `.catch` phải gắn **ngay trên promise gốc**, trước khi đua với đồng hồ: nếu nó lỗi
+   > sau khi đã quá hạn thì không còn ai `await`, mà một rejection không người nhận là đủ để
+   > hạ tiến trình Node.
+
+2. **Một câu lệnh đánh số lại cả vùng** thay cho vòng lặp `update` từng mục (`moveItem`):
+   `UPDATE "TripItem" … FROM (VALUES …)`. 24ms → 5ms tại chỗ, và quan trọng hơn là 8+ vòng
+   mạng → 1 khi CSDL đặt xa.
+
+3. **Làm mờ cột giờ có mục tiêu và có độ trễ** (`trip-editor.tsx`). Bản trước truyền
+   `stale={pending}` cho **mọi** ngày nên cả trang xám giờ đi một nhịp, kể cả ngày không
+   liên quan và kể cả khi server trả về sau 80ms. Nay chỉ **ngày nguồn + ngày đích**, và chỉ
+   khi chờ **quá 350ms** (`useDelayedFlag`) — dưới ngưỡng đó không ai kịp thấy, mà chính cái
+   nháy mới làm giao diện có cảm giác chậm.
+
+**Chưa làm, nếu vẫn thấy chậm thì đây là bước tiếp:** tính lịch **lạc quan ở client** — dùng
+lại chính `scheduleDay` (hàm thuần trong `lib/trip-time`) với các chặng đã biết, chặng mới
+thì ước lượng chim bay và đánh dấu `~`, rồi để số chính xác của server thay thế khi về. Khi
+đó cột giờ không bao giờ phải chờ. Đổi lại là hai nơi cùng gọi máy tính giờ — chấp nhận được
+vì **dùng chung một hàm**, khác với việc nuôi hai bản cài đặt (điều §6 đã cố ý tránh).
+
 ## 6d. Sửa tại chỗ (ghi chú) & ranh giới mẫu / chuyến cá nhân
 
 `TripItem.note` **sửa được ngay trên trang soạn** qua `InlineEdit` — trước đó nó chỉ có ở

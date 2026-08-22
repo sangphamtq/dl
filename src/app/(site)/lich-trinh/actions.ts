@@ -626,10 +626,21 @@ export async function moveItem(
     const at = Math.min(Math.max(0, Math.round(toIndex)), ids.length);
     ids.splice(at, 0, itemId);
 
-    await tx.tripItem.update({ where: { id: itemId }, data: { dayId } });
-    for (let i = 0; i < ids.length; i++) {
-      await tx.tripItem.update({ where: { id: ids[i] }, data: { order: i } });
-    }
+    // MỘT câu lệnh đánh số lại cả vùng, không phải một vòng lặp `update`.
+    // Bản trước chạy `tx.tripItem.update` cho TỪNG mục: một ngày 8 mục là 8
+    // lượt đi–về CSDL nối đuôi nhau bên trong transaction, cộng thêm chừng ấy
+    // nữa khi phải dồn lại ngày nguồn. Ở máy dev (Postgres localhost, ping
+    // 1ms) đó là ~24ms nên không ai để ý; trên CSDL đặt xa thì mỗi lượt là
+    // một vòng mạng, và cùng phép tính đó thành gần nửa giây.
+    // `dayId` set cho cả vùng cũng không sao: mọi mục trong danh sách này vốn
+    // đã thuộc đúng ngày đó, trừ mục vừa chuyển tới.
+    await tx.$executeRaw`
+      UPDATE "TripItem" AS t
+      SET "order" = v.ord, "dayId" = ${dayId}::text
+      FROM (VALUES ${Prisma.join(
+        ids.map((id, i) => Prisma.sql`(${id}::text, ${i}::int)`),
+      )}) AS v(id, ord)
+      WHERE t.id = v.id`;
 
     // Dồn lại danh sách nguồn nếu mục vừa rời khỏi đó.
     if (item.dayId !== dayId) {
@@ -638,8 +649,14 @@ export async function moveItem(
         orderBy: { order: "asc" },
         select: { id: true },
       });
-      for (let i = 0; i < source.length; i++) {
-        await tx.tripItem.update({ where: { id: source[i].id }, data: { order: i } });
+      if (source.length > 0) {
+        await tx.$executeRaw`
+          UPDATE "TripItem" AS t
+          SET "order" = v.ord
+          FROM (VALUES ${Prisma.join(
+            source.map((row, i) => Prisma.sql`(${row.id}::text, ${i}::int)`),
+          )}) AS v(id, ord)
+          WHERE t.id = v.id`;
       }
     }
 
