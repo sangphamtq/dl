@@ -52,12 +52,23 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
+  /* Thang bo góc — MỘT núm chỉnh duy nhất là --radius (12px), phần còn lại là
+     hệ số. Thang cố ý NỞ DẦN chứ không tuyến tính: đầu thang (chip, ô nhập, ảnh
+     nhỏ) phải gọn để không bị "tròn ủng", còn cuối thang (card, panel nổi) mới
+     là chỗ tạo cảm giác mềm của cả trang.
+       sm  8px   viền mảnh, ô nhỏ, badge vuông
+       md 10px   ô nhập, nút phụ
+       lg 12px   ảnh trong card, khối phụ  (= --radius)
+       xl 16px   KHUÔN CARD MẶC ĐỊNH — dùng nhiều nhất
+       2xl 22px  panel nổi, popup, khối bao nhiều card
+       3xl 28px  dải lớn tràn section
+     Nút bấm phần lớn là `rounded-full`, không lấy từ thang này. */
+  --radius-sm: calc(var(--radius) * 0.667);
+  --radius-md: calc(var(--radius) * 0.833);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-xl: calc(var(--radius) * 1.333);
+  --radius-2xl: calc(var(--radius) * 1.833);
+  --radius-3xl: calc(var(--radius) * 2.333);
 }
 
 :root {
@@ -111,7 +122,7 @@
   --border: #e8e6e1;
   --input: #e8e6e1;
   --ring: #2e871c;
-  --radius: 0.625rem;
+  --radius: 0.75rem; /* 12px — gốc của thang bo góc, xem @theme inline ở trên */
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-accent: oklch(0.97 0 0);

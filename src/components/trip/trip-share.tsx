@@ -180,7 +180,7 @@ export function TripShare({
           <button
             type="button"
             aria-label={`Chia sẻ ${title}`}
-            className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border/60 bg-background/70 px-4 text-sm font-medium backdrop-blur-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border/60 bg-background/70 px-4 text-sm font-medium backdrop-blur-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <Share2 className="size-4" aria-hidden />
             Chia sẻ

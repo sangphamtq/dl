@@ -385,7 +385,7 @@ export function AccommodationDetail({
                 href={zaloHref(data.zalo)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
               >
                 <MessageCircle className="size-4" aria-hidden />
                 Nhắn Zalo chính chủ
@@ -393,7 +393,7 @@ export function AccommodationDetail({
             ) : data.phone ? (
               <a
                 href={`tel:${data.phone}`}
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
               >
                 <Phone className="size-4" aria-hidden />
                 Gọi chính chủ

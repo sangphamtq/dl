@@ -363,7 +363,7 @@ export function DestinationFilter({
           <button
             type="button"
             onClick={() => setQuery("")}
-            className="mt-5 inline-flex h-9 items-center rounded-full border border-border px-4 text-sm font-medium transition-colors hover:border-primary/40 hover:text-primary"
+            className="mt-5 inline-flex h-9 items-center rounded-lg border border-border px-4 text-sm font-medium transition-colors hover:border-primary/40 hover:text-primary"
           >
             Xóa tìm kiếm
           </button>

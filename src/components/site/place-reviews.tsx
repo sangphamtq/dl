@@ -332,7 +332,7 @@ export function ReviewsSection({
           <button
             type="button"
             onClick={onWrite}
-            className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
             <PenLine className="size-4" aria-hidden />
             Đánh dấu đã đến & đánh giá

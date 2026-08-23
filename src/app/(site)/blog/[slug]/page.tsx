@@ -388,7 +388,7 @@ export default async function BlogPostPage({
               </h2>
               <Link
                 href="/blog"
-                className="hidden shrink-0 items-center rounded-full bg-[#2e871c] px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#5e9c58] sm:inline-flex"
+                className="hidden shrink-0 items-center rounded-lg bg-[#2e871c] px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#5e9c58] sm:inline-flex"
               >
                 Xem tất cả
               </Link>

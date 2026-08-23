@@ -44,7 +44,7 @@ export function NewTripButton() {
         })
       }
       disabled={pending}
-      className="rounded-full bg-warm text-warm-foreground hover:bg-warm/90"
+      className="rounded-lg bg-warm text-warm-foreground hover:bg-warm/90"
     >
       {pending ? (
         <Loader2 className="size-4 animate-spin" aria-hidden />

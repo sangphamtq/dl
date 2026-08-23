@@ -882,7 +882,7 @@ function BookButton({ href }: { href: string }) {
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex w-full items-center justify-center rounded-full bg-warm px-4 py-2.5 text-sm font-semibold text-warm-foreground transition-colors hover:bg-warm/90"
+      className="inline-flex w-full items-center justify-center rounded-lg bg-warm px-4 py-2.5 text-sm font-semibold text-warm-foreground transition-colors hover:bg-warm/90"
     >
       Đặt chỗ
     </a>

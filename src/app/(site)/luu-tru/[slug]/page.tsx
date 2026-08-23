@@ -566,7 +566,7 @@ function ContactRow({
         : {})}
       className={
         primary
-          ? "flex items-center justify-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+          ? "flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
           : "flex items-center gap-2.5 rounded-lg px-1 py-1.5 text-sm font-medium text-foreground/90 transition-colors hover:text-primary"
       }
     >

@@ -266,7 +266,7 @@ function SpotPanel({
 
       <Link
         href={`/dia-diem/${s.slug}`}
-        className="group mt-7 inline-flex h-12 w-fit items-center gap-2.5 rounded-full border border-white/35 px-6 text-base font-medium text-white transition-colors hover:border-white hover:bg-white/10"
+        className="group mt-7 inline-flex h-12 w-fit items-center gap-2.5 rounded-lg border border-white/35 px-6 text-base font-medium text-white transition-colors hover:border-white hover:bg-white/10"
       >
         Khám phá địa điểm
         <ArrowUpRight

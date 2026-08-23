@@ -126,7 +126,7 @@ export function MobileMenuSheet({
           <button
             type="button"
             onClick={onSearch}
-            className="mb-2 flex h-11 w-full items-center gap-2.5 rounded-full bg-muted px-4 text-sm text-muted-foreground ring-1 ring-inset ring-border/60 transition-colors hover:bg-muted/70 active:scale-[0.99]"
+            className="mb-2 flex h-11 w-full items-center gap-2.5 rounded-lg bg-muted px-4 text-sm text-muted-foreground ring-1 ring-inset ring-border/60 transition-colors hover:bg-muted/70 active:scale-[0.99]"
           >
             <Search className="size-4 shrink-0" aria-hidden />
             <span className="truncate">Tìm điểm đến, quán ăn, chỗ ở…</span>
@@ -236,7 +236,7 @@ export function MobileMenuSheet({
             <Link
               href="/login"
               onClick={close}
-              className="flex h-11 items-center justify-center rounded-full bg-warm text-sm font-semibold text-warm-foreground shadow-sm shadow-warm/25 transition hover:bg-warm/90"
+              className="flex h-11 items-center justify-center rounded-lg bg-warm text-sm font-semibold text-warm-foreground shadow-sm shadow-warm/25 transition hover:bg-warm/90"
             >
               Đăng nhập
             </Link>

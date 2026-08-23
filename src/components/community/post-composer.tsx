@@ -166,7 +166,7 @@ export function PostComposer({
           <button
             type="button"
             onClick={open}
-            className="h-10 flex-1 rounded-full bg-muted/50 px-4 text-left text-sm text-muted-foreground transition-colors hover:bg-muted"
+            className="h-10 flex-1 rounded-lg bg-muted/50 px-4 text-left text-sm text-muted-foreground transition-colors hover:bg-muted"
           >
             Chia sẻ trải nghiệm, hỏi đáp hay rủ nhau đi…
           </button>
@@ -377,7 +377,7 @@ export function PostComposer({
         <button
           type="button"
           onClick={reset}
-          className="rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
           Hủy
         </button>
@@ -385,7 +385,7 @@ export function PostComposer({
           type="button"
           onClick={submit}
           disabled={!canSubmit}
-          className="inline-flex items-center rounded-full bg-primary px-6 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+          className="inline-flex items-center rounded-lg bg-primary px-6 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
         >
           {pending ? "Đang đăng…" : "Đăng"}
         </button>

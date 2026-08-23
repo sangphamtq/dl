@@ -664,7 +664,7 @@ export function MapExplorer({
       <button
         type="button"
         onClick={() => setMobileView((v) => (v === "list" ? "map" : "list"))}
-        className="fixed bottom-5 left-1/2 z-[1000] -translate-x-1/2 rounded-full bg-foreground px-5 py-2.5 text-sm font-medium text-background shadow-lg lg:hidden"
+        className="fixed bottom-5 left-1/2 z-[1000] -translate-x-1/2 rounded-lg bg-foreground px-5 py-2.5 text-sm font-medium text-background shadow-lg lg:hidden"
       >
         {mobileView === "list" ? (
           <span className="inline-flex items-center gap-1.5">

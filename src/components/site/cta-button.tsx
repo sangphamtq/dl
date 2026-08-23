@@ -26,7 +26,7 @@ import { cn } from "@/lib/utils";
 // của trang chủ là mất dấu hoàn toàn.
 
 const BASE =
-  "group relative inline-flex h-12 select-none items-center gap-2.5 rounded-full px-6 " +
+  "group relative inline-flex h-12 select-none items-center gap-2.5 rounded-lg px-6 " +
   "font-[family-name:var(--font-display)] text-[0.95rem] font-semibold tracking-[-0.01em] " +
   "transition-[background-color,box-shadow,translate] duration-200 ease-out " +
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 " +

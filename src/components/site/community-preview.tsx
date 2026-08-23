@@ -98,7 +98,7 @@ export function CommunityPreview({
         </p>
         <Link
           href={href}
-          className="inline-flex shrink-0 items-center gap-2 rounded-full bg-warm px-5 py-2.5 text-sm font-semibold text-warm-foreground transition-colors hover:bg-warm/90"
+          className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-warm px-5 py-2.5 text-sm font-semibold text-warm-foreground transition-colors hover:bg-warm/90"
         >
           <Ic icon="message-circle" className="size-4" aria-hidden />
           Vào cộng đồng

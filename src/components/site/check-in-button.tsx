@@ -23,7 +23,7 @@ type TargetKind = "place" | "spot";
 // Pill mờ cho các nút chia sẻ ngoài hero (StaySeek, ShareMap…). Hero điểm đến
 // KHÔNG dùng nữa — ở đó nút là hành động editorial trần (xem className bên dưới).
 const PILL_BASE =
-  "inline-flex h-9 items-center gap-1.5 rounded-full border px-4 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-60";
+  "inline-flex h-9 items-center gap-1.5 rounded-lg border px-4 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-60";
 const PILL_SURFACE =
   "border-border/60 bg-background/70 text-foreground backdrop-blur-sm hover:bg-muted";
 

@@ -84,7 +84,7 @@ export default async function DiaDiemPage() {
               </p>
               <Link
                 href="/ban-do"
-                className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background px-4 py-2 text-sm font-semibold transition-colors hover:bg-muted"
+                className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-border/60 bg-background px-4 py-2 text-sm font-semibold transition-colors hover:bg-muted"
               >
                 <Ic icon="map-pin" className="size-4 text-primary" aria-hidden />
                 Xem trên bản đồ

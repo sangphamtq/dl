@@ -258,7 +258,7 @@ export function TripBrowser({ items }: { items: TripCard[] }) {
               setQuery("");
               setVisible(PAGE);
             }}
-            className="mt-5 inline-flex h-9 items-center rounded-full border border-border px-4 text-sm font-medium transition-colors hover:border-primary/40 hover:text-primary"
+            className="mt-5 inline-flex h-9 items-center rounded-lg border border-border px-4 text-sm font-medium transition-colors hover:border-primary/40 hover:text-primary"
           >
             Xóa bộ lọc
           </button>
@@ -288,7 +288,7 @@ export function TripBrowser({ items }: { items: TripCard[] }) {
           <button
             type="button"
             onClick={() => setVisible((v) => v + PAGE)}
-            className="inline-flex h-11 items-center gap-2 rounded-full border border-border px-6 text-sm font-semibold transition-colors hover:border-primary/40 hover:text-primary"
+            className="inline-flex h-11 items-center gap-2 rounded-lg border border-border px-6 text-sm font-semibold transition-colors hover:border-primary/40 hover:text-primary"
           >
             Tải thêm lịch trình
             <ChevronDown className="size-4" aria-hidden />
@@ -318,7 +318,7 @@ function Chip({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "inline-flex h-9 items-center rounded-full border px-4 text-sm font-medium transition-colors",
+        "inline-flex h-9 items-center rounded-lg border px-4 text-sm font-medium transition-colors",
         active
           ? "border-primary bg-primary text-primary-foreground"
           : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground",

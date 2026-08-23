@@ -128,7 +128,7 @@ export function PlanTripButton({
       <Button
         onClick={onClick}
         disabled={pending}
-        className={cn("rounded-full bg-warm text-warm-foreground hover:bg-warm/90", className)}
+        className={cn("rounded-lg bg-warm text-warm-foreground hover:bg-warm/90", className)}
       >
         {pending ? (
           <Loader2 className="size-4 animate-spin" aria-hidden />

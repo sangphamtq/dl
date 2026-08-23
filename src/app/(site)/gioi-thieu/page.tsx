@@ -462,7 +462,7 @@ export default async function GioiThieuPage() {
             {/* MỘT lối đi tiếp, và nó dẫn tới đúng thứ cả trang vừa nói về. */}
             <Link
               href="/diem-den"
-              className="group inline-flex shrink-0 items-center gap-3 self-start rounded-full bg-primary px-7 py-4 font-[family-name:var(--font-display)] text-base font-semibold text-primary-foreground transition-opacity hover:opacity-90 lg:self-auto"
+              className="group inline-flex shrink-0 items-center gap-3 self-start rounded-lg bg-primary px-7 py-4 font-[family-name:var(--font-display)] text-base font-semibold text-primary-foreground transition-opacity hover:opacity-90 lg:self-auto"
             >
               Chọn một điểm đến
               <ArrowRight

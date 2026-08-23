@@ -105,7 +105,7 @@ export function MobileNav({ links, isAuthed, provinces, homeProvince }: Props) {
             <Link
               href="/login"
               onClick={() => setOpen(false)}
-              className="mt-2 rounded-full bg-warm px-3 py-2.5 text-center text-sm font-semibold text-warm-foreground shadow-sm shadow-warm/25 transition hover:bg-warm/90"
+              className="mt-2 rounded-lg bg-warm px-3 py-2.5 text-center text-sm font-semibold text-warm-foreground shadow-sm shadow-warm/25 transition hover:bg-warm/90"
             >
               Đăng nhập
             </Link>

@@ -106,7 +106,7 @@ function VideoModal({
           href={tiktokSearchUrl(placeName)}
           target="_blank"
           rel="noopener noreferrer"
-          className="mx-auto mt-4 flex w-fit items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/20"
+          className="mx-auto mt-4 flex w-fit items-center gap-2 rounded-lg bg-white/10 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/20"
         >
           <TikTokGlyph className="size-4" />
           Thêm video du lịch {placeName} trên TikTok

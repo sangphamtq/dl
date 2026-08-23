@@ -56,7 +56,7 @@ export default async function PlaceMapPage({
               </p>
               <Link
                 href={`/diem-den/${place.slug}`}
-                className="mt-4 inline-flex rounded-full bg-primary/10 px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/15"
+                className="mt-4 inline-flex rounded-lg bg-primary/10 px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/15"
               >
                 Quay lại {place.name}
               </Link>
