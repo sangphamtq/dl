@@ -869,6 +869,174 @@ Lưu ý khi sửa:
   (`BackToTop`) chưa chừa `safe-area-inset`. Làm tràn viền thì làm cùng lúc.
   (`BottomNav` đã dùng `max(0.75rem, env(safe-area-inset-bottom))` nên sẵn sàng.)
 
+## Trang chủ — hero tràn viền + số liệu + hai lưới nội dung
+
+Thứ tự section hiện tại: **hero** (ảnh tràn viền) → **"Nội dung đang có"** (dải số liệu) →
+**"Điểm đến nổi bật"** (8 ảnh in nghiêng) → **"Mới trong Cẩm nang"**. Hết — không có CTA
+đóng trang.
+
+### Hero (`src/components/site/home-hero.tsx`)
+
+Ảnh **tràn viền**, đổi ảnh mỗi 7s (dừng khi rê chuột / tab bàn phím / tab trình duyệt ẩn,
+tắt theo `prefers-reduced-motion`) và **chuyển tay được** bằng cụm điều khiển góc dưới phải.
+**Chữ KHÔNG đổi theo ảnh**: h1 là lời hứa của site, ảnh chỉ là **không khí** — tên nơi trong
+ảnh ghi ngay trên cụm điều khiển, kèm link.
+
+- **TIÊU ĐỀ ĐỔI GIỮA BA BIẾN THỂ** (`TITLES` trong `page.tsx`), **cùng nhịp với ảnh** —
+  `titles[index % titles.length]`, không đẻ đồng hồ thứ hai: hai chu kỳ khác nhau thì hero
+  lúc nào cũng có một thứ đang động. Bấm vạch chuyển ảnh cũng đổi tiêu đề.
+  · **A11Y/SEO:** `<h1>` luôn chứa MỘT tên cố định (biến thể đầu, đọc bằng `sr-only`), phần
+    chạy chữ là trang trí nên `aria-hidden` — trình đọc màn hình và bộ thu thập không bao giờ
+    gặp một tiêu đề đổi mỗi bảy giây. Đổi thứ tự `TITLES` là đổi luôn h1 thật.
+  · Ba biến thể phải nói **cùng một lời hứa** bằng ba góc khác nhau; thêm biến thể chỉ để có
+    chữ chạy thì người đọc phải ngồi đối chiếu xem câu sau có mâu thuẫn câu trước không.
+  · Mỗi biến thể có `mark` — đoạn được gạch chân vẽ tay (`HeroMark` tìm chuỗi con trong dòng
+    hai; không khớp thì bỏ nét gạch, không vỡ).
+- **BA HIỆU ỨNG MỞ MÀN** (keyframes + class trong `globals.css`, mỗi cái có nhánh
+  `prefers-reduced-motion`):
+  · `.hero-line` — mỗi DÒNG h1 trồi lên từ một **khung cắt** (`overflow-hidden` ở thẻ cha),
+    lệch pha 120ms. Chữ bị KHUNG che chứ không bị làm mờ;
+  · `.hero-rise` — nhãn, câu dẫn, nút, dải câu hỏi nhích lên 14px, lệch pha bằng
+    `[animation-delay:…]` ngay tại chỗ dùng;
+  · `.hero-underline` — nét **gạch chân vẽ tay** dưới "mười tab" (SVG path,
+    `vectorEffect="non-scaling-stroke"`, `preserveAspectRatio="none"` để co theo bề rộng
+    chữ) tự vẽ từ trái sang phải;
+  · `.hero-pan` — ảnh trôi 7% trong 22s, `infinite alternate` nên không bao giờ đứng khựng.
+  ⚠️ **`hero-pan` đòi section phải `overflow-hidden`**: `<Image fill>` chỉ NEO theo section
+  chứ không bị nó cắt, nên ảnh phóng 1.07 sẽ tràn xuống dưới hero thành một dải ảnh lạc lõng
+  giữa hero và section kế tiếp — mà các lớp scrim `inset-0` không phủ tới đó nên nó còn sáng
+  nguyên.
+  **LUẬT:** không keyframe nào được đụng `opacity` — hiệu ứng KHÔNG được là điều kiện để chữ
+  nhìn thấy được (bản hero cũ từng ra một tấm ảnh trắng trơn khi chụp kiểm vì `fade-in`).
+  Khung cắt cần `pb`/`-mb` bù chỗ cho dấu và dấu phẩy tụt dưới đường chân chữ.
+- **Bốn vạch, không phải chấm tròn:** vạch nói được cả ba thứ trong một hình — có mấy ảnh,
+  đang ở ảnh nào (vạch dài ra), và bấm được. Vùng bấm cao 44px nhờ `py-3` dù vạch dày 3px.
+- **Phần giới thiệu nói bằng CÂU HỎI CỦA NGƯỜI ĐI**, không phải bằng lời tự giới thiệu:
+  trên là h1 + một câu + hai nút; dưới là **dải tràn ngang ba cột** — ba câu người ta vẫn
+  hỏi nhau trước chuyến ("Cuối tuần này đi đâu được?"…), mỗi câu kèm chỗ site trả lời. Dấu
+  mở ngoặc kép để rời, cỡ lớn, màu `warm-bright` — dấu hiệu "đây là lời người ta nói".
+  Ba câu cố ý **không trùng** bốn lợi ích ở section bên dưới (gom một trang · giờ mở cửa ·
+  xác minh chính chủ · giá đi lại): chúng nhắm vào phần lên kế hoạch — đi đâu, mấy ngày,
+  mùa nào.
+- **Đã thử và bỏ hai bản, đừng quay lại:**
+  · *đoạn văn bốn dòng + hàng nhãn trần* ("Địa điểm · Trải nghiệm · …") — nhãn nói TÊN mục
+    mà không nói mục đó chứa gì, còn nửa phải tấm ảnh thì trống trơn;
+  · *thẻ mục lục kính tối ở cột phải*, năm mục đánh số 01–05 — đọc được, nhưng đó là site
+    tự mô tả cấu trúc của mình bằng từ vựng nội bộ ("Nơi lưu trú", "Di chuyển"), trong khi
+    khách mang tới đây câu hỏi chứ không mang sơ đồ dữ liệu; và nó là khối thứ ba liên tiếp
+    có dạng "danh sách mục + chú thích nhỏ", ngay trên section số liệu và section lợi ích
+    vốn cũng cùng một hình.
+- **MÀU: hero được CHỈNH MÀU, không phải bị "dìm" bằng đen.** Bốn lớp, tất cả đều là chuyện
+  ánh sáng — không quả cầu mờ, không đốm sáng lơ lửng:
+  · scrim dọc & ngang bằng **xanh rừng rất sâu** (`rgba(8,22,15,…)`) thay cho đen thuần —
+    cùng độ tối nhưng vùng dưới hero có nhiệt độ màu, và ngả về phía màu thương hiệu;
+  · **vệt nắng cam hắt lên từ góc dưới trái**, `mix-blend-screen` nên nó hành xử như ÁNH
+    SÁNG (nâng vùng tối) chứ không như lớp sơn; neo vào một góc, tắt trước 68%;
+  · **vignette** rất nhẹ + **hạt phim 5.5%** (`feTurbulence` 160×160 lặp, `mix-blend-overlay`)
+    — không nhìn thấy, chỉ cảm thấy: hạt phá dải màu của gradient trên nền tối.
+- **Bốn điểm CAM giữ hero khỏi rơi về đen-trắng-xám**: vạch ở nhãn mở đầu · dấu mở ngoặc kép
+  của dải câu hỏi · vạch chỉ số ảnh đang xem · đường kẻ trên dải câu hỏi (1px chuyển từ cam
+  ở mép trái sang trắng mờ, không phải `border-t` trắng đều).
+- **MÀU CHỮ: dòng thứ hai của h1 là chỗ đặt màu** — `text-warm-bright`. Trước đó cả hero là
+  trắng ở năm độ mờ, đọc ra đen-trắng dù ảnh có màu; đổi vài mức sang trắng-ngả-ấm vẫn chưa
+  đủ vì mắt không bắt được chênh lệch đó. Một dòng tiêu đề CAM thì bắt được ngay, và nó rơi
+  đúng vào vế đau của câu ("khỏi mở mười tab") nên màu ở đây mang nghĩa.
+- Thang còn lại: câu hỏi = **trắng thuần**; câu dẫn & câu trả lời = **trắng ngả ấm**
+  (`#f8ece0` / `#f7e7d6`, cùng nhiệt độ với vệt nắng góc dưới trái) — riêng bốn danh từ
+  trong câu dẫn ("chỗ ghé, chỗ ăn, chỗ ở, đường đi") kéo lên **trắng thuần + đậm** cho câu
+  có nhịp; nhãn mở đầu = **cam** (`warm-bright`); toạ độ = cam rất mờ. Bảng màu này chỉ đúng
+  TRÊN ẢNH TỐI nên viết thẳng mã màu, không qua token (token phải lật theo theme, hero thì
+  tối ở cả hai theme).
+- **Toạ độ thật dưới dòng "Ảnh: …"** (`Place.lat/lng`, viết kiểu `22.336° B · 103.844° Đ`) —
+  chi tiết kiểu sổ tay thực địa, lấy từ dữ liệu chứ không bịa; nơi chưa có toạ độ thì ẩn.
+- **Chiều cao là `min-h-[min(86svh,52rem)]`, không phải `h-` cứng**: khối chữ trên điện
+  thoại hẹp cao hơn 86svh, mà ảnh `fill` neo theo section này nên section không được cắt.
+- **Số liệu site KHÔNG ở trong hero** — nén thành dòng nhỏ vắt ngang đáy ảnh thì nó đọc như
+  chú thích của tấm ảnh. Nay là section riêng ngay dưới hero (xem mục kế).
+
+### Section "Nội dung đang có" (trong `src/app/(site)/page.tsx`)
+
+Một câu quy mô với chữ số cỡ lớn ("**31** điểm đến, mỗi nơi một trang riêng") và **hàng bốn
+con số** của tầng nội dung (địa điểm · trải nghiệm · quán ăn · lưu trú). Hết — section này cố
+ý ngắn.
+
+- Hàng chân từng có hai dòng ("đếm thẳng từ nội dung đã xuất bản…" và "Vừa biên tập: <nơi> ·
+  <ngày>") — **đã bỏ** cùng truy vấn `Place` mới cập nhật nhất nuôi nó. Chú thích về cách đếm
+  là chuyện nội bộ, còn dòng "vừa biên tập" thì không đủ sức giữ chỗ một hàng riêng.
+
+- **LUẬT MÀU:** xanh (`text-brand`) = tầng nơi chốn, cam (`text-warm-ink`) = tầng nội dung bên
+  trong. KHÔNG dùng `primary`/`warm`: đây là CHỮ trên nền sáng, hai token kia không đủ tương
+  phản. `<Big>` không có dấu cách viết tay hai bên (khoảng cách do `me-2` của nó lo).
+- **CỐ Ý KHÔNG đếm số tỉnh**: đích đến là phủ đủ 63 tỉnh, mà "27/63" đọc ra như một thanh
+  tiến trình còn dang dở.
+- Lưới bốn mục khai `grid-cols-2` từ khổ nhỏ nhất (không chỉ `sm:`): lưới không khai cột thì
+  track co theo max-content và tràn ngang.
+- **Đây là một DẢI, không phải một section cao**: câu mở bên trái, bốn con số bên phải, đệm
+  dọc chỉ `py-12/14`. Từ khi hai section cuối trang bị gỡ, khối này còn mỗi câu mở + bốn số
+  mà vẫn ăn `py-20` — đọc ra như trang bị hụt nội dung.
+- **Lưới "Điểm đến nổi bật" lấy 8 tấm** (truy vấn `featured` `take: 12`, hero ăn 4 tấm đầu),
+  và `PRINTS` có **SÁU** góc nghiêng cho lưới BỐN cột — số lẻ so với số cột nên hàng thứ hai
+  không lặp lại y hệt hàng đầu, tránh nhìn ra một khuôn dập.
+- Nền có **vệt nắng ấm rất nhạt ở góc trên trái**, nối tiếp vệt nắng góc dưới trái của hero.
+- **ĐÃ THỬ VÀ BỎ — một loạt, đừng dựng lại mà không hỏi:** sáu ô phẳng bằng nhau · bốn thẻ
+  trắng có vạch kẻ · bốn thẻ ẢNH · và cuối cùng là cả một **bản đồ độ phủ 63 tỉnh** ở cột phải
+  (tô xanh tỉnh đã có điểm đến, rê vào thì mảnh nhấc lên kèm popup liệt kê điểm đến, có cả
+  danh sách chip / thẻ xem trước ở cột trái qua nhiều vòng). Bản đồ đẹp nhưng kéo cả section
+  thành một thứ để nghịch, và bộ đường viền ~58KB nằm thẳng trong HTML trang chủ chỉ để minh
+  hoạ mấy con số. Đường viền 63 tỉnh vẫn còn ở `components/account/vietnam-map-paths.ts`
+  (trang `/tai-khoan/da-den` dùng) nên dựng lại lúc nào cũng được.
+
+### Nút (`src/components/site/cta-button.tsx`) — một "vật liệu" dùng chung
+
+Ba tone: **`surface`** (nền brand, trên nền trang sáng) · **`photo`** (trắng, đặt trên ảnh) ·
+**`glass`** (kính mờ, nút PHỤ trên ảnh). Prop `arrow` tắt mũi tên cho nút phụ.
+
+Bản trước chỉ có một màu nền + đổi màu khi rê chuột — gọn tới mức thành cái mặc định của
+framework. Nay mỗi nút có đúng ba thứ, đều là **vật lý** chứ không phải trang trí:
+
+1. **Mép trên sáng 1px** + chuyển sắc trắng ~14% từ đỉnh — ánh sáng tới từ trên nên mép
+   trên của vật lồi phải sáng hơn thân.
+2. **Bóng hai tầng**: một bóng tiếp xúc 1px sát chân + một bóng khuếch tán **nhuộm màu
+   chính nó** (spread âm nên chỉ đọng dưới đáy).
+3. **Bấm thì lún** (`translate-y-px`, bóng co lại). KHÔNG nhấc lên khi rê chuột, và bóng lúc
+   nghỉ = bóng lúc hover — bản cũ hơn nữa có "bóng màu nở ra khi hover" và đã bị gỡ vì nút
+   thành thứ ồn ào nhất trang. Rê chuột chỉ đổi nền một nấc + mũi tên nhích 2px.
+
+Cộng `focus-visible` (bản cũ **không có gì cả**). Cùng vật liệu này dùng lại ở: nút "Đăng
+nhập" trên header và ô icon của hàng đang chọn trong section lợi ích.
+
+- Tone `photo` dùng `text-neutral-900`, KHÔNG `text-foreground`: viên nút trắng không đổi
+  theo theme, còn `foreground` lật thành gần trắng trong mọi scope `.dark`.
+- Tone `surface` dùng `bg-brand` chứ không `bg-primary` — cùng lý do đã ghi ở
+  `site-header.tsx`: `--primary` tự sáng lên trong `.dark`, nút đục sẽ ra hai sắc xanh.
+- ⚠️ **`bg-brand` + `bg-gradient-to-b` triệt tiêu nhau qua `cn()`**: tailwind-merge xếp màu
+  tự khai trong `@theme` và `bg-gradient-*` vào cùng nhóm `bg-`, cái sau nuốt cái trước →
+  nút ra nền TRẮNG với một cái bóng xanh dưới chân. Viết chuyển sắc bằng thuộc tính tuỳ ý
+  (`[background-image:linear-gradient(...)]`) là hết.
+
+### Đã gỡ khỏi trang chủ (đừng dựng lại mà không hỏi)
+
+- **Section lợi ích** (`benefits-showcase.tsx`): bốn lợi ích ở cột trái, cột phải là **ảnh
+  chụp đúng màn hình làm được điều đó**, rê/bấm một lợi ích thì đổi ảnh. Ảnh nằm ở
+  `public/hero/`, mỗi lợi ích hai bản (1440×900 khổ máy tính, 780×1120 chụp ở khổ 390px) và
+  hiển thị bằng `<picture>` + `<source media>` vì đó là **art direction** — ảnh desktop thu
+  về 350px thì chữ trong ảnh mịt mù. **Cả component lẫn thư mục ảnh đã xoá.**
+- **Khối kết** "Chọn một nơi, phần còn lại đã nằm sẵn ở đó" + nút "Xem tất cả điểm đến".
+  Trang chủ nay **kết thúc ở section Cẩm nang**, không có CTA đóng trang.
+
+Muốn dựng lại phần ảnh chụp thì chụp lại như sau (nguồn cũ là trang Phan Thiết):
+
+```bash
+chrome --headless --force-device-scale-factor=2 --window-size=1280,5000 \
+  --screenshot=out.png http://localhost:3000/diem-den/phan-thiet/am-thuc
+# rồi cắt bằng sharp (đã có sẵn trong node_modules):
+#   .extract({left:0, top:<y>*2, width:2560, height:1600})   // 16/10 cho desktop
+#   .resize({width:1440}).webp({quality:74})
+```
+
+Cửa sổ phải **cao hơn hẳn** vùng cần cắt: `TripDock` là nút cố định neo theo khung nhìn, cửa
+sổ thấp thì nó rơi ngay vào giữa ảnh. `PeerBar` ở đáy cũng vậy.
+
 ## Điều hướng header
 
 `src/components/site/site-header.tsx` giữ mảng `NAV` (nav ngang từ `lg`); menu hamburger ở

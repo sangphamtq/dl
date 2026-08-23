@@ -504,3 +504,84 @@
     animation: none;
   }
 }
+
+/* ─── HERO TRANG CHỦ: ba hiệu ứng mở màn ───────────────────────────────────
+   PHẢI khai báo qua class chứ đừng đặt `animation` bằng inline style: không có
+   CSS nào tham chiếu tới @keyframes thì Lightning CSS sẽ loại nó khi build.
+
+   LUẬT CHUNG (đã trả giá một lần, xem chú thích ở `hero-slideshow` cũ): hiệu
+   ứng KHÔNG được là điều kiện để chữ nhìn thấy được. Cả ba keyframe dưới đây
+   chỉ đụng tới `transform` / `stroke-dashoffset`, không đụng `opacity` — hỏng
+   animation thì cùng lắm chữ lệch vài px, không biến mất. */
+
+/* 1. Từng DÒNG tiêu đề trồi lên từ sau một khung cắt (`overflow-hidden` ở thẻ
+      cha). Đây là lý do không cần fade: chữ bị KHUNG che chứ không bị làm mờ,
+      nên lúc nghỉ nó vẫn là chữ đặc, đọc rõ. */
+@keyframes hero-line {
+  from {
+    transform: translateY(105%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+.hero-line {
+  animation: hero-line 0.85s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+/* 2. Các khối còn lại (nhãn, câu dẫn, nút, dải câu hỏi) nhích lên 14px, lệch
+      pha nhau bằng `[animation-delay:…]` ngay tại chỗ dùng. */
+@keyframes hero-rise {
+  from {
+    transform: translateY(14px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+.hero-rise {
+  animation: hero-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+/* 3. Nét gạch chân vẽ tay dưới "mười tab": vẽ từ trái sang phải một lần.
+      `stroke-dasharray` đặt sẵn 220 (dài hơn path) nên lúc chưa chạy là nét
+      rỗng; chạy xong `stroke-dashoffset` về 0 và nét nằm nguyên đó. */
+@keyframes hero-underline {
+  from {
+    stroke-dashoffset: 220;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.hero-underline {
+  stroke-dasharray: 220;
+  animation: hero-underline 0.9s 0.6s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+}
+
+/* 4. Ảnh hero trôi rất chậm (Ken Burns) — 7% trong 22 giây, đảo chiều liên tục
+      nên không bao giờ "hết phim" rồi đứng khựng. Đủ để tấm ảnh còn thở, chưa
+      đủ để ai kịp nhận ra nó đang chuyển động. */
+@keyframes hero-pan {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.07);
+  }
+}
+.hero-pan {
+  animation: hero-pan 22s ease-in-out infinite alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-line,
+  .hero-rise,
+  .hero-pan {
+    animation: none;
+  }
+  .hero-underline {
+    animation: none;
+    stroke-dasharray: none;
+  }
+}

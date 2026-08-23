@@ -203,9 +203,13 @@ export async function SiteHeader({
                khác hẳn giữa trang có hero và trang nền sáng. `--brand` cố ý
                không khai báo lại trong `.dark` — xem chú thích ở `globals.css`.
 
-               KHÔNG icon, không đĩa, không bóng đổ màu: nhãn hai chữ trên nền
+               KHÔNG icon, không đĩa, không bóng đổ MÀU: nhãn hai chữ trên nền
                đặc đã là tín hiệu đủ mạnh cạnh một ô tìm kiếm chỉ có hairline.
                Mọi thứ thêm vào đây đều là trang trí.
+               Ngoại lệ duy nhất là hai lớp trong `shadow`: một vệt sáng 1px mép
+               trên (ánh sáng tới từ trên ⇒ mép trên của vật lồi phải sáng hơn
+               thân) và một bóng tiếp xúc 1px màu ĐEN mờ — cùng vật liệu với
+               `CtaButton`, và cần thật khi nút này nằm đè lên ảnh hero.
 
                GÓC: `rounded-lg` = `--radius` của theme (10px), cùng radius
                với `Button` của shadcn. Trước đây là `rounded-full` với lập luận
@@ -229,7 +233,7 @@ export async function SiteHeader({
                làm nhãn bẩn. */
             <Link
               href="/login"
-              className="ml-1.5 inline-flex h-10 items-center rounded-lg bg-brand px-4.5 text-sm font-semibold text-brand-foreground transition-[background-color,transform] duration-200 [text-shadow:none] hover:bg-brand/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-transparent active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100"
+              className="ml-1.5 inline-flex h-10 items-center rounded-lg bg-brand px-4.5 text-sm font-semibold text-brand-foreground shadow-[inset_0_1px_0_rgb(255_255_255/0.22),0_1px_2px_rgb(0_0_0/0.18)] transition-[background-color,transform] duration-200 [text-shadow:none] hover:bg-brand/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-transparent active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100"
             >
               Đăng nhập
             </Link>
