@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowUpRight, MapPin, Search, Star, X } from "@/components/icons";
 import { cn } from "@/lib/utils";
+import { SectionTabs } from "@/components/site/section-tabs";
 import { coverUrl } from "@/lib/place-image";
 import { Rail } from "@/components/site/rail";
 
@@ -90,18 +91,13 @@ export function DestinationFilter({
   const [sort, setSort] = useState<SortKey>("featured");
   // -1 = chưa xác định (không tô miền nào) → tránh nháy về miền đầu trước khi
   // biết vị trí cuộn thật khi tải lại trang.
-  const [activeRegion, setActiveRegion] = useState(-1);
   // Khi bấm chọn miền, scroll mượt đi ngang qua các miền giữa → khóa scroll-spy
   // vào miền đích để nav không nhấp nháy qua miền trung gian.
-  const lockedRegion = useRef<number | null>(null);
 
   // Viên sáng trượt của nav miền: đo từ chính nút đang chọn thay vì ép mọi nút
   // bằng bề rộng nhau. `null` khi chưa đo được (lần render đầu, hoặc chưa xác
   // định miền) — lúc đó không vẽ viên nào, nên nó không bao giờ trượt từ mép
   // trái vào chỗ đúng khi mới tải trang.
-  const navRef = useRef<HTMLElement>(null);
-  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const [pill, setPill] = useState<{ x: number; w: number } | null>(null);
 
   const q = norm(query);
   const matches = (d: DestItem) =>
@@ -130,81 +126,6 @@ export function DestinationFilter({
     })
     .filter((g) => g.dests.length > 0 || g.provCount > 0);
 
-  // Scroll-spy: tô đậm miền đang xem trên nav.
-  useEffect(() => {
-    const els = sections
-      .map((_, i) => document.getElementById(`mien-${i}`))
-      .filter((el): el is HTMLElement => el !== null);
-    if (els.length === 0) return;
-
-    // Tìm miền đang ở mốc ~30% chiều cao viewport.
-    const measure = () => {
-      const line = window.innerHeight * 0.3;
-      let active = 0;
-      els.forEach((el) => {
-        if (el.getBoundingClientRect().top <= line)
-          active = Number(el.id.split("-")[1]);
-      });
-      return active;
-    };
-
-    // Hoãn lần đo đầu sang frame kế (sau khi trình duyệt khôi phục vị trí cuộn)
-    // và chặn observer tới khi đo xong → không nháy về miền đầu khi tải lại trang.
-    let ready = false;
-    const raf = requestAnimationFrame(() => {
-      setActiveRegion(measure());
-      ready = true;
-    });
-
-    const obs = new IntersectionObserver(
-      (entries) => {
-        if (!ready) return;
-        const vis = entries
-          .filter((e) => e.isIntersecting)
-          .sort(
-            (a, b) => a.boundingClientRect.top - b.boundingClientRect.top,
-          );
-        if (!vis[0]) return;
-        const top = Number(vis[0].target.id.split("-")[1]);
-        // Đang cuộn theo lệnh click: bỏ qua miền giữa, chỉ nhả khóa khi tới đích.
-        if (lockedRegion.current !== null) {
-          if (top === lockedRegion.current) lockedRegion.current = null;
-          else return;
-        }
-        setActiveRegion(top);
-      },
-      { rootMargin: "-25% 0px -65% 0px" },
-    );
-    els.forEach((el) => obs.observe(el));
-    // Nhả khóa khi cuộn mượt kết thúc (phòng khi không tới được đúng đỉnh đích).
-    const onScrollEnd = () => {
-      lockedRegion.current = null;
-    };
-    window.addEventListener("scrollend", onScrollEnd);
-    return () => {
-      cancelAnimationFrame(raf);
-      obs.disconnect();
-      window.removeEventListener("scrollend", onScrollEnd);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, sort, sections.length]);
-
-  // Đo lại viên sáng mỗi khi đổi miền đang xem, đổi số miền (lọc/tìm kiếm), hay
-  // nav đổi bề rộng (xoay máy, đổi khổ cửa sổ). `offsetLeft` tính theo `nav` vì
-  // nav là `relative` — tức là offsetParent của các nút.
-  useEffect(() => {
-    const nav = navRef.current;
-    const el = tabRefs.current[activeRegion];
-    if (!nav || !el || activeRegion < 0) {
-      setPill(null);
-      return;
-    }
-    const measure = () => setPill({ x: el.offsetLeft, w: el.offsetWidth });
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(nav);
-    return () => ro.disconnect();
-  }, [activeRegion, sections.length]);
 
   return (
     <div>
@@ -272,52 +193,12 @@ export function DestinationFilter({
                 Vẫn KHÁC hẳn nhóm sắp xếp bên phải (rãnh xám + viên trắng nổi):
                 bên này không có rãnh, chỉ một vệt màu — hai điều khiển cạnh
                 nhau không bị đọc nhầm thành một cặp sinh đôi. */}
-            {sections.length > 1 && (
-              <nav
-                ref={navRef}
-                aria-label="Chuyển nhanh theo miền"
-                className="relative flex shrink-0 items-center"
-              >
-                {pill && (
-                  <span
-                    aria-hidden
-                    style={{
-                      width: pill.w,
-                      transform: `translateX(${pill.x}px)`,
-                    }}
-                    className="pointer-events-none absolute inset-y-1 left-0 rounded-full bg-primary/10 transition-all duration-300 ease-out motion-reduce:transition-none"
-                  />
-                )}
-                {sections.map((g, i) => (
-                  <button
-                    key={g.label}
-                    type="button"
-                    ref={(el) => {
-                      tabRefs.current[i] = el;
-                    }}
-                    aria-current={activeRegion === i ? "true" : undefined}
-                    onClick={() => {
-                      setActiveRegion(i);
-                      lockedRegion.current = i;
-                      document
-                        .getElementById(`mien-${i}`)
-                        ?.scrollIntoView({ behavior: "smooth" });
-                    }}
-                    className={cn(
-                      // Đệm hẹp ở khổ base: 320px chỉ vừa đúng cho cả ba nhóm
-                      // của thanh, rộng thêm một chút là nhóm sắp xếp lòi khỏi
-                      // mép. Từ sm mới nới ra cho viên sáng có chỗ thở.
-                      "relative h-9 shrink-0 whitespace-nowrap rounded-full px-1.5 text-sm font-medium transition-colors sm:px-3.5",
-                      activeRegion === i
-                        ? "text-primary"
-                        : "text-muted-foreground hover:text-foreground",
-                    )}
-                  >
-                    {shortRegion(g.label)}
-                  </button>
-                ))}
-              </nav>
-            )}
+            <SectionTabs
+              labels={sections.map((g) => shortRegion(g.label))}
+              idPrefix="mien"
+              ariaLabel="Chuyển nhanh theo miền"
+              resetKey={`${query}|${sort}`}
+            />
 
             {/* Sắp xếp */}
             <div

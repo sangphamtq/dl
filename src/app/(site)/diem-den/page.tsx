@@ -22,7 +22,7 @@ const cover = {
 } as const;
 
 export default async function DiemDenPage() {
-  const [destinations, provinces] = await Promise.all([
+  const [destinations, provinces, spotCount] = await Promise.all([
     prisma.place.findMany({
       where: { kind: "destination", ...pub },
       orderBy: [{ isFeatured: "desc" }, { popularity: "desc" }, { name: "asc" }],
@@ -56,6 +56,7 @@ export default async function DiemDenPage() {
         },
       },
     }),
+    prisma.spot.count({ where: pub }),
   ]);
 
   const isEmpty = provinces.length === 0 && destinations.length === 0;
@@ -119,37 +120,54 @@ export default async function DiemDenPage() {
           </div>
         ) : (
           <div className="mx-auto max-w-7xl px-4 pb-16 pt-8 sm:px-6 sm:pb-24 sm:pt-10">
-            {/* Đầu trang: tên trang + MỘT CÂU. Không phải hero.
-                Bản trước ở đây là hai mảnh rời nhau và cả hai đều đọc ra như
-                khuôn mẫu dựng sẵn:
-                  · một dãy bốn con số ngăn bằng dấu chấm giữa ("31 điểm đến ·
-                    63 tỉnh thành · 18 địa điểm · 34 trải nghiệm"). Hai con số
-                    cuối còn chẳng phải thứ trang này liệt kê, và mọi con số ở
-                    đó đều không giúp ai quyết định gì — mỗi miền bên dưới đã
-                    tự khai số của mình rồi;
-                  · một viên nút viền treo lơ lửng ở góc đối diện tiêu đề. Mà
-                    `/ban-do` đã nằm sẵn trong menu "Khám phá" trên desktop VÀ
-                    là một tab của thanh dưới trên mobile — dựng thêm một nút
-                    thứ ba cho cùng một chỗ chỉ là chiếm chỗ.
-                Gộp cả hai vào một câu đọc được: con số nằm trong ngữ pháp thay
-                vì xếp thành hàng, và bản đồ được nhắc đúng lúc nói tới lý do
-                dùng nó (chọn theo vị trí) chứ không phải một nút không đầu
-                không đuôi ở góc. */}
-            <header className="mb-7 max-w-2xl">
-              <h1 className="font-[family-name:var(--font-display)] text-[clamp(1.75rem,3.4vw,2.5rem)] font-extrabold leading-[1.1] tracking-[-0.035em]">
-                Điểm đến Việt Nam
-              </h1>
-              <p className="mt-2.5 text-sm leading-relaxed text-muted-foreground sm:text-base">
-                <Num>{destinations.length}</Num> điểm đến ở{" "}
-                <Num>{provinceCount}</Num> tỉnh thành — hoặc{" "}
-                <Link
+            {/* Đầu trang: tên trang + một câu + HAI LỐI DUYỆT KHÁC.
+                Không phải hero.
+
+                Bản trước ở đây chỉ có tiêu đề và một câu, còn `/ban-do` được
+                nhắc bằng một link chìm trong câu ấy. Lý do ghi lại hồi đó:
+                "`/ban-do` đã nằm sẵn trong menu Khám phá trên desktop VÀ là một
+                tab của thanh dưới trên mobile — dựng thêm một nút thứ ba cho
+                cùng một chỗ chỉ là chiếm chỗ."
+
+                TIỀN ĐỀ ẤY KHÔNG CÒN ĐÚNG: "Địa điểm" và "Bản đồ" vừa được gỡ
+                khỏi nav header (xem `site-header.tsx`), nên đây là lối vào DUY
+                NHẤT của chúng trên desktop. Một link chìm trong câu văn không
+                gánh nổi vai trò đó.
+
+                Vẫn KHÔNG quay lại kiểu "viên nút viền treo lơ lửng ở góc đối
+                diện tiêu đề" từng bị bỏ. Hai mục này không phải hành động, chúng
+                là HAI CÁCH XEM KHÁC của cùng kho nội dung mà trang đang liệt kê
+                — nên chúng có hình của một cặp lối rẽ ngang hàng nhau: cùng
+                khuôn, cùng cỡ, đặt cạnh nhau, mỗi cái tự khai nó dẫn tới cái gì
+                bằng một con số hoặc một câu ngắn. */}
+            <header className="mb-8">
+              <div className="max-w-2xl">
+                <h1 className="font-[family-name:var(--font-display)] text-[clamp(1.75rem,3.4vw,2.5rem)] font-extrabold leading-[1.1] tracking-[-0.035em]">
+                  Điểm đến Việt Nam
+                </h1>
+                {/* Câu này KHÔNG còn nhắc bản đồ: bản đồ nay có ô riêng ngay
+                    dưới, mà hai link cùng đích trong một khối là thứ mắt phải
+                    đọc hai lần mới biết chúng trùng nhau. */}
+                <p className="mt-2.5 text-sm leading-relaxed text-muted-foreground sm:text-base">
+                  <Num>{destinations.length}</Num> điểm đến ở{" "}
+                  <Num>{provinceCount}</Num> tỉnh thành, xếp theo miền.
+                </p>
+              </div>
+
+              <div className="mt-6 grid gap-3 sm:max-w-2xl sm:grid-cols-2">
+                <BrowseLink
+                  href="/dia-diem"
+                  icon="map-pin"
+                  label="Địa điểm"
+                  desc={`${spotCount} chỗ đáng ghé, lọc theo loại hình`}
+                />
+                <BrowseLink
                   href="/ban-do"
-                  className="font-medium text-primary underline decoration-primary/30 underline-offset-4 transition-colors hover:decoration-primary"
-                >
-                  mở bản đồ
-                </Link>{" "}
-                để chọn theo vị trí.
-              </p>
+                  icon="map"
+                  label="Bản đồ du lịch"
+                  desc="Chọn theo vị trí, xem cái gì gần cái gì"
+                />
+              </div>
             </header>
 
             <DestinationFilter
@@ -162,6 +180,50 @@ export default async function DiemDenPage() {
       </main>
 
     </div>
+  );
+}
+
+// Một LỐI DUYỆT KHÁC của cùng kho nội dung (địa điểm cụ thể · bản đồ). Cố ý
+// KHÔNG mang hình của nút: nền `muted/40` không viền, icon trong ô bo góc, mũi
+// tên chỉ hiện khi rê — đọc ra là "đi tiếp sang một cách xem khác", không phải
+// "bấm để làm một việc". Hai ô cùng khuôn nên chúng ngang hàng nhau.
+//
+// Dùng THẺ (nền `card` + viền mảnh) chứ không phải nền `muted`: ngay bên dưới là
+// thanh lọc dính, mà mọi điều khiển trong đó đều là viên nền `muted`. Hai dải
+// xám xếp chồng nhau thì mắt đọc thành một khối điều khiển bốn hàng.
+function BrowseLink({
+  href,
+  icon,
+  label,
+  desc,
+}: {
+  href: string;
+  icon: string;
+  label: string;
+  desc: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="group flex items-center gap-3.5 rounded-xl border border-border/70 bg-card p-3.5 transition-colors hover:border-primary/40"
+    >
+      <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+        <Ic icon={icon} className="size-5" aria-hidden />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block font-[family-name:var(--font-display)] text-sm font-semibold tracking-tight transition-colors group-hover:text-primary">
+          {label}
+        </span>
+        <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+          {desc}
+        </span>
+      </span>
+      <Ic
+        icon="arrow-right"
+        className="size-4 shrink-0 -translate-x-1 text-primary opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100 motion-reduce:transition-none"
+        aria-hidden
+      />
+    </Link>
   );
 }
 

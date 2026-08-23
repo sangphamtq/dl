@@ -7,6 +7,7 @@ import { signOut } from "next-auth/react";
 import {
   Bell,
   BookOpen,
+  CalendarDays,
   ChevronRight,
   Info,
   LayoutDashboard,
@@ -46,7 +47,14 @@ type NavData = {
 // TẠM BỎ (khớp với nav desktop — trang vẫn còn, chỉ không có lối vào từ menu):
 // mục "Kiểm tra uy tín" (/kiem-tra) và bốn trang phụ của nhóm Thông tin
 // (/cau-hoi-thuong-gap, /lien-he, /dieu-khoan, /bao-mat — cả bốn đang "Sắp có").
+//
+// "Lịch trình mẫu" thêm vào khi nav desktop bỏ dropdown "Khám phá" — trước đó nó
+// CHỈ nằm trong dropdown ấy nên trên mobile không có lối vào nào.
+// KHÔNG có "Điểm đến" và "Bản đồ": hai mục đó đã nằm trên thanh tab dưới.
+// KHÔNG có "Địa điểm": nó nay là một lối duyệt nằm trong trang /diem-den, giống
+// hệt trên desktop — thêm ở đây thì mobile lại có lối vào mà desktop không có.
 const NAV = [
+  { href: "/lich-trinh", label: "Lịch trình mẫu", Icon: CalendarDays },
   { href: "/blog", label: "Cẩm nang", Icon: BookOpen },
   { href: "/gioi-thieu", label: "Giới thiệu", Icon: Info },
 ];

@@ -17,41 +17,47 @@ import { HeaderChrome } from "./header-chrome";
 import type { HeroLayout } from "@/generated/prisma/enums";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
-// Nav: 1 nhóm dropdown (click nhãn → `href`) + 2 link phẳng.
+// Nav: TOÀN LINK PHẲNG, không còn dropdown.
+//
+// Trước đây bốn mục Điểm đến / Địa điểm / Bản đồ / Lịch trình mẫu nằm trong một
+// nhóm "Khám phá ⌄". Gỡ dropdown vì nó bắt trả một cú bấm chỉ để nhìn thấy bốn
+// mục; nhãn nhóm lại tự nhận `/diem-den` làm đích nên "Khám phá" và mục con
+// "Điểm đến" dẫn về cùng một trang — một nhãn hai nghĩa.
+//
+// Rồi ĐỊA ĐIỂM và BẢN ĐỒ cũng rời khỏi đây: cả hai là LỐI DUYỆT KHÁC của cùng
+// một kho nội dung mà /diem-den đang liệt kê (theo địa điểm cụ thể, theo vị trí
+// trên bản đồ), không phải mục ngang hàng với nó. Nay chúng nằm ngay dưới tiêu
+// đề trang /diem-den — đúng chỗ người ta đang đứng khi nảy ra ý "hay là xem
+// kiểu khác". Xem `src/app/(site)/diem-den/page.tsx`.
 //
 // TẠM BỎ khỏi header (trang vẫn còn, chỉ không có lối vào từ nav):
-//  · Nhóm "Uy tín" → /sale (Cộng tác viên) và /kiem-tra (Kiểm tra uy tín).
+//  · "Uy tín" → /sale (Cộng tác viên) và /kiem-tra (Kiểm tra uy tín).
 //  · "Cộng đồng" → /cong-dong.
-//  · Danh sách con của nhóm thông tin → /cau-hoi-thuong-gap, /lien-he,
-//    /dieu-khoan, /bao-mat (cả bốn đều đang "Sắp có") — nay còn một link phẳng
-//    "Giới thiệu" đi thẳng tới /gioi-thieu, trang duy nhất có nội dung thật.
-// Bật lại thì thêm `items` trở lại là xong; `NavEntry` nhận cả link phẳng lẫn nhóm.
+//  · Nhóm thông tin → /cau-hoi-thuong-gap, /lien-he, /dieu-khoan, /bao-mat (cả
+//    bốn đều đang "Sắp có") — nay còn một link phẳng "Giới thiệu" đi thẳng tới
+//    /gioi-thieu, trang duy nhất có nội dung thật.
+// `NavEntry` vẫn nhận cả link phẳng lẫn nhóm, nên muốn dựng lại dropdown thì
+// thêm `items` vào một mục là xong.
 const NAV: NavEntry[] = [
   {
-    label: "Khám phá",
     href: "/diem-den",
-    items: [
-      { href: "/diem-den", label: "Điểm đến" },
-      { href: "/dia-diem", label: "Địa điểm" },
-      { href: "/ban-do", label: "Bản đồ du lịch" },
-      { href: "/lich-trinh", label: "Lịch trình mẫu" },
-    ],
+    label: "Điểm đến",
+    // Hai lối duyệt khác của cùng kho nội dung, vào từ chính trang /diem-den.
+    include: ["/dia-diem", "/ban-do"],
+  },
+  {
+    href: "/lich-trinh",
+    label: "Lịch trình mẫu",
+    // /lich-trinh/cua-toi là chuyến CỦA NGƯỜI DÙNG, không phải mẫu; /lich-trinh/s
+    // là bản chia sẻ của một chuyến như vậy. Cả hai không thuộc mục này.
+    exclude: ["/lich-trinh/cua-toi", "/lich-trinh/s"],
   },
   { href: "/blog", label: "Cẩm nang" },
   { href: "/gioi-thieu", label: "Giới thiệu" },
 ];
 
-// Mobile: sheet liệt kê phẳng toàn bộ (nhóm dropdown trải thành các mục con).
-const MOBILE_LINKS: NavLink[] = NAV.flatMap((e) => {
-  if ("columns" in e && e.columns)
-    return e.columns.map((c) => ({
-      href: c.href,
-      label: c.title,
-      badge: c.badge,
-    }));
-  if ("items" in e && e.items) return e.items;
-  return [e as NavLink];
-});
+// Mobile: sheet dùng chung đúng danh sách này — không còn nhóm nào để trải phẳng.
+const MOBILE_LINKS: NavLink[] = NAV as NavLink[];
 
 // Header giờ được render MỘT LẦN ở `src/app/(site)/layout.tsx`, không phải ở
 // từng trang. Vì vậy nó không nhận `overlay`/`tone` nữa — `HeaderChrome` tự tra

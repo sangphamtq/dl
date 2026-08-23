@@ -31,7 +31,7 @@ export default async function DiaDiemPage() {
         take: 1,
         select: { url: true, isCover: true },
       },
-      place: { select: { name: true } },
+      place: { select: { name: true, slug: true } },
     },
   });
 
@@ -44,6 +44,7 @@ export default async function DiaDiemPage() {
       ? (SPOT_CATEGORY_LABELS[s.category] ?? s.category)
       : null,
     placeName: s.place?.name ?? null,
+    placeSlug: s.place?.slug ?? null,
     isFeatured: s.isFeatured,
     popularity: s.popularity,
     tags: s.tags,
@@ -62,44 +63,23 @@ export default async function DiaDiemPage() {
     }))
     .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, "vi"));
 
+  // Điểm đến có địa điểm — giữ đúng thứ tự spot đã sắp (nổi bật → phổ biến),
+  // nên nơi có nội dung mạnh nhất đứng section đầu.
+  const places: { slug: string; name: string }[] = [];
+  const seen = new Set<string>();
+  for (const s of spots) {
+    const pl = s.place;
+    if (!pl?.slug || seen.has(pl.slug)) continue;
+    seen.add(pl.slug);
+    places.push({ slug: pl.slug, name: pl.name });
+  }
+
   const isEmpty = items.length === 0;
 
   return (
     <div className="flex flex-1 flex-col">
 
       <main className="flex-1">
-        <section className="border-b border-border/60 bg-gradient-to-b from-accent/40 to-background">
-          <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 sm:flex-row sm:items-end sm:justify-between sm:px-6 sm:py-10">
-            <div className="max-w-xl">
-              <p className="flex items-center gap-2 font-rounded text-xl font-medium text-primary">
-                <Ic icon="mountain" className="size-4" aria-hidden />
-                Đi khắp muôn nơi
-              </p>
-              <h1 className="mt-1 text-balance text-3xl font-extrabold tracking-tight sm:text-4xl">
-                Địa điểm tham quan
-              </h1>
-              <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground sm:text-base">
-                Mọi điểm đáng ghé trên khắp Việt Nam — lọc theo loại hình, tìm
-                theo tên hoặc nơi chốn.
-              </p>
-              <Link
-                href="/ban-do"
-                className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-border/60 bg-background px-4 py-2 text-sm font-semibold transition-colors hover:bg-muted"
-              >
-                <Ic icon="map-pin" className="size-4 text-primary" aria-hidden />
-                Xem trên bản đồ
-              </Link>
-            </div>
-
-            {!isEmpty && (
-              <dl className="flex flex-wrap gap-x-6 gap-y-3 sm:shrink-0 sm:justify-end sm:gap-x-8">
-                <Stat icon="map-pin" value={items.length} label="địa điểm" />
-                <Stat icon="layers" value={categories.length} label="loại hình" />
-              </dl>
-            )}
-          </div>
-        </section>
-
         {isEmpty ? (
           <div className="mx-auto max-w-7xl px-4 py-24 text-center sm:px-6">
             <Ic
@@ -113,7 +93,39 @@ export default async function DiaDiemPage() {
           </div>
         ) : (
           <div className="mx-auto max-w-7xl px-4 pb-16 pt-8 sm:px-6 sm:pb-24 sm:pt-10">
-            <SpotFilter items={items} categories={categories} />
+            {/* Đầu trang: tên trang + MỘT CÂU — cùng khuôn /diem-den, không hero.
+                Bản trước ở đây là một dải nền chuyển sắc chứa BỐN mảnh rời:
+                nhãn eyebrow ("Đi khắp muôn nơi"), tiêu đề, một đoạn mô tả, một
+                nút viền "Xem trên bản đồ", cộng hai con số dồn ở góc đối diện.
+                Cả bốn đều nói lại đúng thứ mà tiêu đề và hàng chip loại hình
+                ngay dưới đã nói, còn `/ban-do` thì đã nằm sẵn trong menu Khám
+                phá VÀ là một tab của thanh dưới trên mobile.
+                Gộp thành một câu đọc được: con số nằm trong ngữ pháp thay vì
+                xếp thành hàng, và bản đồ được nhắc đúng lúc nói tới lý do dùng
+                nó chứ không phải một nút không đầu không đuôi ở góc. */}
+            <header className="mb-7 max-w-2xl">
+              <h1 className="font-[family-name:var(--font-display)] text-[clamp(1.75rem,3.4vw,2.5rem)] font-extrabold leading-[1.1] tracking-[-0.035em]">
+                Địa điểm tham quan
+              </h1>
+              <p className="mt-2.5 text-sm leading-relaxed text-muted-foreground sm:text-base">
+                <Num>{items.length}</Num> địa điểm ở <Num>{places.length}</Num>{" "}
+                điểm đến, chia theo <Num>{categories.length}</Num> loại hình —
+                hoặc{" "}
+                <Link
+                  href="/ban-do"
+                  className="font-medium text-primary underline decoration-primary/30 underline-offset-4 transition-colors hover:decoration-primary"
+                >
+                  mở bản đồ
+                </Link>{" "}
+                để chọn theo vị trí.
+              </p>
+            </header>
+
+            <SpotFilter
+              items={items}
+              categories={categories}
+              places={places}
+            />
           </div>
         )}
       </main>
@@ -122,24 +134,12 @@ export default async function DiaDiemPage() {
   );
 }
 
-function Stat({
-  icon,
-  value,
-  label,
-}: {
-  icon: string;
-  value: number;
-  label: string;
-}) {
+// Con số trong câu: đậm hơn chữ xung quanh một bậc và về màu chữ chính, đủ để
+// mắt bắt được mà vẫn nằm trong dòng văn.
+function Num({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-2">
-      <Ic icon={icon} className="size-5 shrink-0 text-primary" aria-hidden />
-      <div>
-        <dd className="text-xl font-bold leading-none tracking-tight tabular-nums">
-          {value.toLocaleString("vi-VN")}
-        </dd>
-        <dt className="mt-0.5 text-xs text-muted-foreground">{label}</dt>
-      </div>
-    </div>
+    <strong className="font-semibold tabular-nums text-foreground">
+      {children}
+    </strong>
   );
 }

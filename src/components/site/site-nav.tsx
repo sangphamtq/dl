@@ -6,7 +6,29 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { NavGroupMenu, NavLabel } from "./nav-group-menu";
 
-export type NavLink = { href: string; label: string; badge?: string };
+export type NavLink = {
+  href: string;
+  label: string;
+  badge?: string;
+  /**
+   * Nhánh con KHÔNG thuộc mục này — bỏ qua khi tính trạng thái "đang ở đây".
+   *
+   * Mặc định một mục sáng lên khi `pathname` bắt đầu bằng `href`, đúng cho gần
+   * hết: ở /dia-diem/thac-ban-ba thì "Địa điểm" sáng là phải. Nhưng /lich-trinh
+   * có nhánh con là khu vực RIÊNG TƯ của người dùng (/lich-trinh/cua-toi) —
+   * mục công khai "Lịch trình mẫu" sáng ở đó là chỉ sai chỗ.
+   */
+  exclude?: string[];
+  /**
+   * Nhánh KHÁC cũng thuộc mục này dù không nằm dưới `href`.
+   *
+   * /dia-diem và /ban-do không còn là mục riêng trên nav — chúng là hai lối
+   * duyệt khác của cùng kho nội dung, và lối vào nằm ngay trong trang
+   * /diem-den. Đứng ở đó mà không mục nào sáng thì người dùng mất dấu mình
+   * đang ở đâu trong site.
+   */
+  include?: string[];
+};
 export type NavColumn = {
   href: string;
   title: string;
@@ -42,8 +64,11 @@ export function SiteNav({
               columns={e.columns}
             />
           );
+        const under = (h: string) =>
+          pathname === h || pathname.startsWith(`${h}/`);
         const active =
-          pathname === e.href || pathname.startsWith(`${e.href}/`);
+          (under(e.href) || (e.include?.some(under) ?? false)) &&
+          !e.exclude?.some(under);
         return (
           <Link
             key={e.href}
