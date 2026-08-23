@@ -15,7 +15,7 @@ export type ThreadTypeMeta = {
   accent: string;
 };
 
-export const THREAD_TYPE_META: Record<string, ThreadTypeMeta> = {
+const THREAD_TYPE_META: Record<string, ThreadTypeMeta> = {
   share: { Icon: Sparkles, accent: "text-warm" },
   question: { Icon: HelpCircle, accent: "text-sky-600 dark:text-sky-400" },
   trip: { Icon: Users, accent: "text-primary" },
@@ -23,7 +23,7 @@ export const THREAD_TYPE_META: Record<string, ThreadTypeMeta> = {
   sale: { Icon: Tag, accent: "text-primary" },
 };
 
-export const threadTypeMeta = (type: string): ThreadTypeMeta =>
+const threadTypeMeta = (type: string): ThreadTypeMeta =>
   THREAD_TYPE_META[type] ?? THREAD_TYPE_META.discussion;
 
 export const threadTypeIcon = (type: string): LucideIcon =>

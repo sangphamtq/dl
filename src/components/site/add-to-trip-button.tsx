@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { toast } from "sonner";
 import { Check, Loader2, Plus } from "@/components/icons";
@@ -252,14 +251,5 @@ export function AddToTripButton({
         description={`Đăng nhập rồi ${name} sẽ được thêm vào lịch trình ngay.`}
       />
     </>
-  );
-}
-
-// Link tiện cho toast/nơi khác muốn dẫn thẳng tới lịch trình.
-export function TripLink({ id, children }: { id: string; children: React.ReactNode }) {
-  return (
-    <Link href={`/lich-trinh/cua-toi/${id}`} className="font-medium text-primary hover:underline">
-      {children}
-    </Link>
   );
 }

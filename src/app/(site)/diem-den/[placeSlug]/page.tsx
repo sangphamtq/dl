@@ -847,8 +847,8 @@ export default async function PlaceDetailPage({
         )}
 
         {/* Hỏi đáp cộng đồng — TẠM ẨN cùng đợt gỡ Cộng đồng khỏi header và
-            thanh tab điểm đến. Bật lại: đổi `false &&` thành `community.total > 0 &&`
-            rồi bỏ comment lời gọi `getPlaceCommunityDigest` ở trên. */}
+            thanh tab điểm đến. Bật lại: đặt COMMUNITY_ENABLED = true rồi bỏ
+            comment lời gọi `getPlaceCommunityDigest` ở trên. */}
         {COMMUNITY_ENABLED && community.total > 0 && (
           <Band tint={tinted()}>
             <section id="hoi-dap" className="scroll-mt-32">

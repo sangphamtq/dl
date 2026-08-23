@@ -3,7 +3,7 @@
 // đáng có một bộ kiểm riêng.
 
 /** Không ai chuyển khoản 33.333đ. Mọi phần chia đều làm tròn LÊN bội số này. */
-export const UNIT = 1_000;
+const UNIT = 1_000;
 
 export const ceilTo = (n: number, unit = UNIT) => Math.ceil(n / unit) * unit;
 

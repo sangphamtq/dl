@@ -14,6 +14,9 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Prisma generated client.
     "src/generated/**",
+    // Agent skill scripts vendored into the repo — not project code.
+    ".agents/**",
+    ".impeccable/**",
   ]),
 ]);
 

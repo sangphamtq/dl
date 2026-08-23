@@ -845,7 +845,7 @@ Site là một PWA. Các mảnh ghép:
 | File | Vai trò |
 |---|---|
 | `src/app/manifest.ts` | Web app manifest (Next phục vụ ở `/manifest.webmanifest`, tự chèn `<link rel="manifest">`). Tên/mô tả lấy từ `getSettings()`, `revalidate = 3600` |
-| `src/lib/pwa.ts` | Hằng dùng chung: `THEME_COLOR`, `BACKGROUND_COLOR`, `OFFLINE_URL` |
+| `src/lib/pwa.ts` | Hằng dùng chung: `THEME_COLOR`, `BACKGROUND_COLOR` (trang `/offline` khai trong `sw.js`) |
 | `public/sw.js` | Service worker viết tay (không build tool) |
 | `public/icons/` | Icon 192/512 (`any` + `maskable`) + `apple-touch-icon.png` — sinh từ `public/logo_mark.png` |
 | `src/components/site/pwa-register.tsx` | Đăng ký SW; có bản mới thì hiện toast "Tải lại" |

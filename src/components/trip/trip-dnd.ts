@@ -23,7 +23,7 @@ export type Board = Record<string, string[]>;
 /** Giờ chưa tính được (mục vừa kéo từ danh sách chưa xếp sang) — RailItem hiện "···". */
 const NO_TIME = -1;
 
-export function toItemView(x: ItemView | ResolvedItem): ItemView {
+function toItemView(x: ItemView | ResolvedItem): ItemView {
   if ("arriveMin" in x) return x;
   return {
     ...x,

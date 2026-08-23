@@ -8,7 +8,7 @@ import { Prisma } from "@/generated/prisma/client";
 //   P1008 hết thời gian chờ thao tác · P1017 server đóng kết nối
 const CONNECTION_CODES = new Set(["P1000", "P1001", "P1002", "P1008", "P1017"]);
 
-export function isDbConnectionError(err: unknown): boolean {
+function isDbConnectionError(err: unknown): boolean {
   if (err instanceof Prisma.PrismaClientInitializationError) return true;
   if (
     err instanceof Prisma.PrismaClientKnownRequestError &&

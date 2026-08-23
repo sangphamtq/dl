@@ -1,5 +1,5 @@
 // Câu mô tả cho từng loại thông báo (thuần dữ liệu — dùng được ở client).
-export const NOTIF_MESSAGES: Record<string, string> = {
+const NOTIF_MESSAGES: Record<string, string> = {
   thread_comment: "đã bình luận bài viết của bạn",
   thread_reply: "đã trả lời bình luận của bạn",
   thread_like: "đã thích bài viết của bạn",

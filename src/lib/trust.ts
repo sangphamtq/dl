@@ -19,7 +19,7 @@ export function isTrustChannel(v: string): v is TrustChannel {
 }
 
 // SĐT VN: bỏ ký tự thừa, quy +84/84 về 0 đứng đầu. Trả "" nếu không hợp lệ.
-export function normalizePhone(v: string): string {
+function normalizePhone(v: string): string {
   let d = v.replace(/[^\d+]/g, "");
   d = d.replace(/^\+?84/, "0");
   d = d.replace(/\D/g, "");
@@ -28,7 +28,7 @@ export function normalizePhone(v: string): string {
 }
 
 // Facebook: rút gọn về "username" hoặc "profile.php?id=..." (best-effort).
-export function normalizeFacebook(v: string): string {
+function normalizeFacebook(v: string): string {
   let s = v.trim().toLowerCase();
   s = s.replace(/^https?:\/\//, "").replace(/^(www\.|m\.|web\.)/, "");
   if (s.startsWith("fb.com/")) s = "facebook.com/" + s.slice("fb.com/".length);
@@ -43,7 +43,7 @@ export function normalizeFacebook(v: string): string {
 }
 
 // Website: lấy hostname, bỏ www.
-export function normalizeWebsite(v: string): string {
+function normalizeWebsite(v: string): string {
   let s = v.trim().toLowerCase();
   s = s.replace(/^https?:\/\//, "").replace(/^www\./, "");
   s = s.split(/[/?#]/)[0];
@@ -51,7 +51,7 @@ export function normalizeWebsite(v: string): string {
 }
 
 // Số tài khoản: chỉ giữ chữ số.
-export function normalizeBank(v: string): string {
+function normalizeBank(v: string): string {
   return v.replace(/\D/g, "");
 }
 

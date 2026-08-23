@@ -341,8 +341,7 @@ export function PlaceHeroCanvas({
           {/* Cụm chuyển ảnh, ba hàng canh giữa: chú thích · đường + xe + cột
               mốc · điều khiển. Nguyên tắc: chỉ hàng ảnh được là khối nặng, hai
               hàng kia là chữ trần — thêm nền hay khung cho chúng nữa là cụm này
-              bắt đầu cạnh tranh với tên điểm đến ngay phía trên.
-              Các phương án đã dựng thử rồi bỏ nằm ở /hero-preview/dai-anh. */}
+              bắt đầu cạnh tranh với tên điểm đến ngay phía trên. */}
           <div
             className={cn(
               "shrink-0",

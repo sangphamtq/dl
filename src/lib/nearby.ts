@@ -23,7 +23,7 @@ export function distanceKm(
 }
 
 // "800 m" / "1,2 km" / "12 km".
-export function fmtKm(km: number): string {
+function fmtKm(km: number): string {
   if (km < 1) return `${Math.round(km * 1000)} m`;
   if (km < 10) return `${km.toFixed(1).replace(".", ",")} km`;
   return `${Math.round(km)} km`;
@@ -66,7 +66,7 @@ export type Nearby<T> = T & {
 };
 
 // Bán kính tối đa cho mục "gần đây" — xa hơn thì đừng gọi là gần (km đường đi).
-export const NEARBY_MAX_KM = 15;
+const NEARBY_MAX_KM = 15;
 
 // Gắn km đường đi từ drivingMap, bỏ mục xa quá NEARBY_MAX_KM, sắp gần→xa (ưu tiên
 // đường đi, fallback chim bay), rồi cắt còn `take`. Mục thiếu toạ độ giữ, dồn cuối.

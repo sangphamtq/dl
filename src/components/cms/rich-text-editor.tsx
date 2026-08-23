@@ -37,12 +37,6 @@ import {
 import { cn } from "@/lib/utils";
 import { proseClass } from "@/lib/prose";
 
-// Style chung cho nội dung rich text khi HIỂN THỊ (chi tiết CMS & công khai) —
-// và cũng dùng làm style cho vùng soạn thảo Tiptap (WYSIWYG khớp lúc xem).
-// proseClass đã chuyển sang @/lib/prose (server-safe). Import để dùng nội bộ và
-// re-export giữ tương thích cho các client component cũ đang import từ đây.
-export { proseClass };
-
 type GalleryImage = { src: string; alt: string };
 
 // Tải nhiều ảnh lên UploadThing (qua /api/editor-upload), trả về [{src,alt}].

@@ -45,7 +45,7 @@ const kebab = (s) =>
 // còn lại dùng chính tên kebab của lucide.
 const DICT = {
   "grip-vertical": "drag-indicator",
-  "clipboard-list": "assignment", "notebook-pen": "note-alt",
+  "notebook-pen": "note-alt",
   "alert-circle": "error", "align-center": "format-align-center",
   "align-left": "format-align-left", "align-right": "format-align-right",
   "arrow-down-wide-narrow": "sort", "arrow-left": "arrow-back",
@@ -53,7 +53,7 @@ const DICT = {
   "arrow-up-right": "arrow-outward", "badge-check": "verified",
   "bed-double": "king-bed", bell: "notifications", bike: "pedal-bike",
   bold: "format-bold", "book-open": "menu-book", "building-2": "apartment",
-  bus: "directions-bus", "calendar-clock": "event",
+  bus: "directions-bus",
   "calendar-days": "calendar-month", camera: "photo-camera",
   car: "directions-car", "car-taxi-front": "local-taxi", check: "check",
   "check-check": "done-all", "check-circle-2": "check-circle",
@@ -61,9 +61,9 @@ const DICT = {
   "chevron-left": "chevron-left", "chevron-right": "chevron-right",
   "chevron-up": "keyboard-arrow-up", "chevrons-up-down": "unfold-more",
   "circle-check": "check-circle", circle: "circle", clock: "schedule",
-  cloud: "cloud", coffee: "local-cafe", compass: "explore",
+  cloud: "cloud", compass: "explore",
   "concierge-bell": "room-service", sunrise: "wb-twilight",
-  construction: "construction", crosshair: "my-location", database: "database",
+  crosshair: "my-location", database: "database",
   "database-zap": "database", download: "download",
   "external-link": "open-in-new", eye: "visibility", "eye-off": "visibility-off",
   "file-text": "description", flag: "flag", footprints: "directions-walk",
@@ -93,7 +93,7 @@ const DICT = {
   "shield-check": "verified-user", "shield-question": "gpp-maybe",
   "shield-x": "gpp-bad", ship: "directions-boat", sliders: "tune",
   smile: "sentiment-satisfied", sparkles: "auto-awesome", star: "star",
-  store: "storefront", strikethrough: "format-strikethrough", tag: "sell",
+  strikethrough: "format-strikethrough", tag: "sell",
   "thumbs-up": "thumb-up", ticket: "confirmation-number", "train-front": "train",
   "trash-2": "delete", "triangle-alert": "warning", underline: "format-underlined",
   "undo-2": "undo", "upload-cloud": "cloud-upload", user: "person",
@@ -106,14 +106,10 @@ const DICT = {
 // Icon chỉ dùng qua <Ic> (không phải tên lucide) — key ngữ nghĩa → tên Material.
 const EXTRAS = {
   backpack: "backpack",
-  signpost: "signpost",
   calendar: "calendar-month",
   // Xe máy — KHÁC `bike` (Material "pedal-bike" = xe đạp).
-  "two-wheeler": "two-wheeler",
   // PWA: hướng dẫn "Thêm vào màn hình chính" (iOS Safari dùng nút Chia sẻ).
-  "install-mobile": "install-mobile",
   "ios-share": "ios-share",
-  "add-to-home-screen": "add-to-home-screen",
 };
 
 // Bản ĐẶC (filled) của vài icon. Các key này KHÔNG đi qua STYLE (đó mới là điểm

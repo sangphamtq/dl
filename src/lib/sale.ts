@@ -13,7 +13,7 @@ export const SALE_SERVICES = [
 
 export type SaleServiceValue = (typeof SALE_SERVICES)[number]["value"];
 
-export const SALE_SERVICE_LABELS: Record<string, string> = Object.fromEntries(
+const SALE_SERVICE_LABELS: Record<string, string> = Object.fromEntries(
   SALE_SERVICES.map((s) => [s.value, s.label]),
 );
 

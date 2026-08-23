@@ -27,15 +27,8 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -55,10 +48,6 @@
   --color-warm-bright: var(--warm-bright);
   --color-warm-ink: var(--warm-ink);
   --color-primary-ink: var(--primary-ink);
-  --color-wood: var(--wood);
-  --color-wood-light: var(--wood-light);
-  --color-wood-dark: var(--wood-dark);
-  --color-wood-foreground: var(--wood-foreground);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
@@ -69,7 +58,6 @@
   --radius-xl: calc(var(--radius) * 1.4);
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
 :root {
@@ -83,7 +71,7 @@
   --primary-foreground: #ffffff;
   /* Xanh THƯƠNG HIỆU cho vật thể ĐỤC — nút CTA trên header, huy hiệu đặt trên
      ảnh. Cùng sắc với --primary bản sáng, nhưng cố ý KHÔNG khai báo lại trong
-     .dark (giống --warm-bright và bộ --wood*): --primary tự sáng lên trong scope
+     .dark (giống --warm-bright): --primary tự sáng lên trong scope
      tối để chữ/nền xanh còn đọc được trên nền gần đen, còn một viên nút đục thì
      không cần — nó tự mang nền của nó đi. Dùng --primary ở đó chỉ khiến cùng một
      nút ra xanh bạc hà trên trang có hero và xanh rừng trên trang nền sáng.
@@ -113,12 +101,6 @@
      nên dải đêm không đổi một pixel nào. */
   --warm-ink: #a34c00;
   --primary-ink: #26701a;
-  /* Gỗ của biển chỉ đường trong hero. Cùng lý do với --warm-bright: vật thể này
-     luôn nằm trên ảnh tối nên KHÔNG khai báo lại trong .dark. */
-  --wood-light: #a9754a;
-  --wood: #8a5a33;
-  --wood-dark: #5f3d22;
-  --wood-foreground: #fbf3e8;
   --secondary: #edeae4;
   --secondary-foreground: #1f2226;
   --muted: #edeae4;
@@ -129,16 +111,9 @@
   --border: #e8e6e1;
   --input: #e8e6e1;
   --ring: #2e871c;
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
   --radius: 0.625rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.97 0 0);
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
@@ -194,15 +169,8 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.72 0.16 145);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
@@ -232,19 +200,6 @@
     background-color: color-mix(in oklch, var(--primary) 26%, transparent);
   }
 }
-/* Vân gỗ cho biển chỉ đường trong hero: nhiễu fractal của SVG (feTurbulence) kéo
-   dài theo trục ngang → ra thớ gỗ thật hơn nhiều so với gradient thuần. Nhân
-   (multiply) lên lớp gỗ bên dưới nên chỉ làm tối các thớ, không phủ màu. */
-/* Class THUẦN (không phải @utility): đây là style của một component cụ thể,
-   giống các class .dl-pin bên dưới — và không phụ thuộc việc Tailwind quét ra
-   tên class trong mã nguồn. */
-.wood-grain {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='48'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85 0.015' numOctaves='4' seed='9'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='48' filter='url(%23g)'/%3E%3C/svg%3E");
-  background-size: 160px 48px;
-  mix-blend-mode: multiply;
-  opacity: 0.28;
-}
-
 @utility hide-scrollbar {
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -320,20 +275,6 @@
 }
 .dl-trip-ghost:hover {
   transform: scale(1.2);
-}
-/* Chấm spot trên mini-map cục bộ (trang chi tiết điểm đến) */
-.dl-mini-spot {
-  display: block;
-  width: 14px;
-  height: 14px;
-  border-radius: 9999px;
-  background: var(--primary);
-  border: 2px solid #fff;
-  box-shadow: 0 1px 3px rgb(0 0 0 / 0.35);
-  transition: transform 0.15s ease;
-}
-.dl-mini-spot:hover {
-  transform: scale(1.25);
 }
 /* tuyến đường định tuyến — màu theo theme (CSS stroke nhận var, khác attribute) */
 .dl-route {
@@ -473,36 +414,6 @@
   animation-timing-function: linear;
   animation-fill-mode: forwards;
   transform-origin: left;
-}
-
-/* Gợi ý "kéo xuống" ở hero: một vệt sáng trượt dọc theo vạch rồi tan đi, lặp
-   lại. Cùng ngôn ngữ với chấm sáng của thanh tiến trình dải ảnh — chuyển động
-   nói "còn nữa ở phía dưới" mà không cần mũi tên nhấp nháy.
-   PHẢI khai báo qua class chứ đừng đặt `animation` bằng inline style: không có
-   CSS nào tham chiếu tới @keyframes thì Lightning CSS sẽ loại nó khi build. */
-@keyframes scroll-cue {
-  0% {
-    transform: translateY(-120%);
-    opacity: 0;
-  }
-  30% {
-    opacity: 1;
-  }
-  70% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(220%);
-    opacity: 0;
-  }
-}
-.scroll-cue {
-  animation: scroll-cue 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-}
-@media (prefers-reduced-motion: reduce) {
-  .scroll-cue {
-    animation: none;
-  }
 }
 
 /* ─── HERO TRANG CHỦ: ba hiệu ứng mở màn ───────────────────────────────────

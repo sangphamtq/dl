@@ -46,7 +46,7 @@ const DAY_MAX_LENGTH = 12 * 60; // tổng ngày quá 12 tiếng
 // ── Đọc `Activity.durationText` thành phút ───────────────────────────────
 // Văn bản tự do của biên tập: "~2 giờ", "nửa ngày", "2N1Đ", "90 phút", "3-4 giờ".
 // Đọc không ra → null (dùng mặc định). KHÔNG đoán bừa.
-export function parseDurationMin(text: string | null | undefined): number | null {
+function parseDurationMin(text: string | null | undefined): number | null {
   if (!text) return null;
   const s = text.toLowerCase().trim();
 
@@ -127,7 +127,7 @@ export function legKey(fromId: string, toId: string): string {
 }
 
 /** Thời gian ở lại thực tế của một mục. */
-export function stayMinOf(item: ScheduleItemInput): number {
+function stayMinOf(item: ScheduleItemInput): number {
   if (item.stayMin != null) return Math.max(0, item.stayMin);
   if (item.kind === "activity") {
     const parsed = parseDurationMin(item.durationText);

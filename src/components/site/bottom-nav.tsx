@@ -61,8 +61,6 @@ const ITEMS: Item[] = [
       "/diem-den",
       "/dia-diem",
       "/hoat-dong",
-      "/dac-san",
-      "/quan-an",
       "/luu-tru",
       "/trai-nghiem",
       "/tim-kiem",

@@ -17,7 +17,7 @@ export function getAblyRest(): Ably.Rest | null {
 export const ablyEnabled = () => !!process.env.ABLY_API_KEY;
 
 // Tên kênh.
-export const postChannel = (slug: string) => `post:${slug}`;
+const postChannel = (slug: string) => `post:${slug}`;
 export const threadChannel = (slug: string) => `thread:${slug}`;
 export const communityChannel = () => `cong-dong`;
 export const placeFeedChannel = (slug: string) => `place-feed:${slug}`;

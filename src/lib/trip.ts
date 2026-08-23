@@ -81,7 +81,7 @@ export type TripData = {
   updatedAt: Date;
 };
 
-export const TYPE_LABELS: Record<TripItemKind, string> = {
+const TYPE_LABELS: Record<TripItemKind, string> = {
   spot: "Địa điểm",
   eatery: "Quán ăn",
   accommodation: "Nơi ở",
@@ -364,7 +364,7 @@ function labelOfDate(d: Date | null): string | null {
 }
 
 /** Chuyển ResolvedItem sang đầu vào của máy tính giờ. */
-export function toScheduleInput(item: ResolvedItem): ScheduleItemInput {
+function toScheduleInput(item: ResolvedItem): ScheduleItemInput {
   return {
     id: item.id,
     kind: item.kind,
@@ -378,7 +378,7 @@ export function toScheduleInput(item: ResolvedItem): ScheduleItemInput {
 }
 
 /** Ngày thật của một ngày trong lịch (null nếu chuyến chưa định ngày). */
-export function dateOfDay(startDate: Date | null, index: number): Date | null {
+function dateOfDay(startDate: Date | null, index: number): Date | null {
   if (!startDate) return null;
   const d = new Date(startDate);
   d.setDate(d.getDate() + index);

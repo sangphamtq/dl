@@ -33,7 +33,7 @@ export const PROVINCE_NAMES = [
 export type ProvinceItem = { slug: string; name: string };
 
 // 63 tỉnh dạng { slug, name } — đã sắp theo tên.
-export const PROVINCES: ProvinceItem[] = PROVINCE_NAMES.map((name) => ({
+const PROVINCES: ProvinceItem[] = PROVINCE_NAMES.map((name) => ({
   slug: slugifyVi(name),
   name,
 }));

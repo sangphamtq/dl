@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 
 // Các loại thực thể đếm lượt xem. 'place' dùng viewCount all-time; các listing
 // dùng popularity như counter all-time (giữ nguyên hành vi sort hiện tại).
-export const VIEW_ENTITIES = [
+const VIEW_ENTITIES = [
   "place",
   "activity",
   "spot",
@@ -68,19 +68,6 @@ export async function recordView(
   await prisma.$transaction(ops as never);
 }
 
-// Tổng lượt xem trong N ngày gần nhất (gồm hôm nay) của một thực thể.
-export async function getViewsLastDays(
-  entityType: ViewEntity,
-  entityId: string,
-  days: number,
-): Promise<number> {
-  const agg = await prisma.viewStat.aggregate({
-    where: { entityType, entityId, date: { gte: daysAgoUTC(days - 1) } },
-    _sum: { count: true },
-  });
-  return agg._sum.count ?? 0;
-}
-
 // ── Thống kê tổng hợp cho dashboard traffic (CMS) ───────────────────────────
 
 function ymdUTC(d: Date): string {
@@ -95,10 +82,6 @@ const ENTITY_META: Record<ViewEntity, { label: string; cmsBase: string }> = {
   eatery: { label: "Quán ăn", cmsBase: "/cms/eateries" },
   accommodation: { label: "Lưu trú", cmsBase: "/cms/accommodations" },
 };
-
-export function entityLabel(entityType: string): string {
-  return ENTITY_META[entityType as ViewEntity]?.label ?? entityType;
-}
 
 export type DailyPoint = {
   date: string; // YYYY-MM-DD

@@ -23,7 +23,7 @@ export const REVIEW_STANCES = [
 }>;
 
 // 2 mức đầu được coi là "đáng đi" (dùng cho headline % tổng hợp).
-export const WORTH_GOING: ReviewStance[] = ["love", "worthOnce"];
+const WORTH_GOING: ReviewStance[] = ["love", "worthOnce"];
 
 // "Điểm đáng đi" (0–100) = trọng-số-dương / (dương + âm). Mỗi review luôn đẩy
 // điểm một hướng cố định (dương → tăng, âm → giảm), theo tỉ lệ trọng số.
@@ -75,7 +75,7 @@ const HIGHLIGHT_VALUES: Set<string> = new Set(
 );
 const CAVEAT_VALUES: Set<string> = new Set(REVIEW_CAVEATS.map((o) => o.value));
 
-export const MAX_ASPECTS = 8;
+const MAX_ASPECTS = 8;
 export const MAX_CONTENT = 2000;
 
 export function isStance(v: unknown): v is ReviewStance {

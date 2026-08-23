@@ -3,9 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { PlaceKind, PublishStatus } from "@/generated/prisma/enums";
 import { PROVINCE_NAMES, slugifyVi as slugify } from "@/lib/provinces";
 
-// Seed 63 tỉnh/thành (cấu trúc hành chính cũ) + vài điểm đến lớn mẫu, KHÔNG nội
-// dung chi tiết, để xem trang /diem-den. Ảnh fallback picsum theo slug.
+// Seed 63 tỉnh/thành (cấu trúc hành chính cũ), KHÔNG nội dung chi tiết, để xem
+// trang /diem-den. Ảnh fallback picsum theo slug.
 // Idempotent (upsert theo slug). Dùng: pnpm seed:places
+// Điểm đến lớn KHÔNG seed ở đây — mỗi nơi có seed riêng (seed-phan-thiet,
+// seed-ta-xua…) hoặc nhập bằng CMS.
 
 const now = new Date();
 const PUB = { status: PublishStatus.published, publishedAt: now } as const;
@@ -13,79 +15,7 @@ const PUB = { status: PublishStatus.published, publishedAt: now } as const;
 // Tỉnh nổi bật (slug) — hiện khác trên trang danh sách.
 const FEATURED_PROVINCES = new Set(["lao-cai", "quang-ninh", "lam-dong"]);
 
-// parent = slug tỉnh
-const DESTINATIONS = [
-  { slug: "sa-pa", name: "Sa Pa", parent: "lao-cai", featured: true, tagline: "Săn mây, ruộng bậc thang, đỉnh Fansipan." },
-  { slug: "ha-long", name: "Hạ Long", parent: "quang-ninh", featured: true, tagline: "Du thuyền giữa vịnh di sản." },
-  { slug: "hoi-an", name: "Hội An", parent: "quang-nam", featured: true, tagline: "Phố cổ đèn lồng bên sông Hoài." },
-  { slug: "da-lat", name: "Đà Lạt", parent: "lam-dong", tagline: "Thành phố ngàn hoa, sương và thông." },
-  { slug: "nha-trang", name: "Nha Trang", parent: "khanh-hoa", tagline: "Biển đảo, lặn ngắm san hô." },
-  { slug: "co-to", name: "Cô Tô", parent: "quang-ninh", tagline: "Đảo hoang sơ, biển trong vắt." },
-
-  // 23 điểm đến toàn quốc (không nội dung chi tiết)
-  { slug: "moc-chau", name: "Mộc Châu", parent: "son-la", tagline: "Đồi chè, mùa hoa mận trắng." },
-  { slug: "mai-chau", name: "Mai Châu", parent: "hoa-binh", tagline: "Thung lũng bản Thái, ruộng xanh." },
-  { slug: "tam-dao", name: "Tam Đảo", parent: "vinh-phuc", tagline: "Thị trấn mây mù trên núi." },
-  { slug: "trang-an", name: "Tràng An", parent: "ninh-binh", tagline: "Hang động, sông nước, núi đá vôi." },
-  { slug: "cat-ba", name: "Cát Bà", parent: "hai-phong", tagline: "Đảo ngọc vịnh Lan Hạ." },
-  { slug: "mu-cang-chai", name: "Mù Cang Chải", parent: "yen-bai", tagline: "Ruộng bậc thang mùa lúa chín." },
-  { slug: "dong-van", name: "Đồng Văn", parent: "ha-giang", featured: true, tagline: "Cao nguyên đá, đèo Mã Pí Lèng." },
-  { slug: "ba-vi", name: "Ba Vì", parent: "ha-noi", tagline: "Rừng thông, núi mát gần Hà Nội." },
-  { slug: "pu-luong", name: "Pù Luông", parent: "thanh-hoa", tagline: "Khu bảo tồn, ruộng bậc thang." },
-  { slug: "phong-nha", name: "Phong Nha", parent: "quang-binh", featured: true, tagline: "Vương quốc hang động kỳ vĩ." },
-  { slug: "ba-na-hills", name: "Bà Nà Hills", parent: "da-nang", tagline: "Cầu Vàng, làng Pháp trên mây." },
-  { slug: "ly-son", name: "Lý Sơn", parent: "quang-ngai", tagline: "Đảo tỏi, biển xanh núi lửa." },
-  { slug: "quy-nhon", name: "Quy Nhơn", parent: "binh-dinh", tagline: "Biển Kỳ Co, Eo Gió." },
-  { slug: "ganh-da-dia", name: "Gành Đá Đĩa", parent: "phu-yen", tagline: "Đá bazan xếp tổ ong ven biển." },
-  { slug: "mang-den", name: "Măng Đen", parent: "kon-tum", tagline: "Đà Lạt thu nhỏ giữa rừng thông." },
-  { slug: "bien-ho", name: "Biển Hồ", parent: "gia-lai", tagline: "Hồ nước trong xanh trên cao nguyên." },
-  { slug: "buon-ma-thuot", name: "Buôn Ma Thuột", parent: "dak-lak", tagline: "Thủ phủ cà phê, thác và buôn làng." },
-  { slug: "mui-ne", name: "Mũi Né", parent: "binh-thuan", tagline: "Đồi cát bay, biển nắng." },
-  { slug: "vung-tau", name: "Vũng Tàu", parent: "ba-ria-vung-tau", tagline: "Biển gần Sài Gòn, tượng Chúa." },
-  { slug: "con-dao", name: "Côn Đảo", parent: "ba-ria-vung-tau", tagline: "Đảo hoang sơ, biển và di tích." },
-  { slug: "phu-quoc", name: "Phú Quốc", parent: "kien-giang", featured: true, tagline: "Đảo ngọc, biển cát trắng." },
-  { slug: "chau-doc", name: "Châu Đốc", parent: "an-giang", tagline: "Núi Sam, rừng tràm Trà Sư." },
-  { slug: "can-gio", name: "Cần Giờ", parent: "ho-chi-minh", tagline: "Rừng ngập mặn, biển gần thành phố." },
-];
-
-// ẢNH ĐIỂM ĐẾN — ĐIỀN LINK Ở ĐÂY (key = slug). Ảnh đầu mảng là ảnh bìa.
-// Để trống [] → dùng ảnh fallback (picsum). Chỉ ghi đè ảnh khi có ≥1 link.
-const DEST_IMAGES: Record<string, string[]> = {
-  "sa-pa": ['https://bcp.cdnchinhphu.vn/344443456812359680/2026/1/8/sapa-1767859965743455932137.jpg'],
-  "ha-long": [],
-  "hoi-an": [],
-  "da-lat": [],
-  "nha-trang": [],
-  "co-to": [],
-  "moc-chau": [],
-  "mai-chau": [],
-  "tam-dao": [],
-  "trang-an": [],
-  "cat-ba": [],
-  "mu-cang-chai": [],
-  "dong-van": [],
-  "ba-vi": [],
-  "pu-luong": [],
-  "phong-nha": [],
-  "ba-na-hills": [],
-  "ly-son": [],
-  "quy-nhon": [],
-  "ganh-da-dia": [],
-  "mang-den": [],
-  "bien-ho": [],
-  "buon-ma-thuot": [],
-  "mui-ne": [],
-  "vung-tau": [],
-  "con-dao": [],
-  "phu-quoc": [],
-  "chau-doc": [],
-  "can-gio": [],
-};
-
 async function main() {
-  const idBySlug = new Map<string, string>();
-  let imageCount = 0;
-
   for (let i = 0; i < PROVINCE_NAMES.length; i++) {
     const name = PROVINCE_NAMES[i];
     const slug = slugify(name);
@@ -98,58 +28,14 @@ async function main() {
       order: i,
       ...PUB,
     };
-    const place = await prisma.place.upsert({
+    await prisma.place.upsert({
       where: { slug },
       create: { slug, ...data },
       update: data,
-      select: { id: true },
     });
-    idBySlug.set(slug, place.id);
   }
 
-  // for (let i = 0; i < DESTINATIONS.length; i++) {
-  //   const d = DESTINATIONS[i];
-  //   const parentId = idBySlug.get(d.parent);
-  //   if (!parentId) {
-  //     console.warn(`Bỏ qua ${d.slug}: không thấy tỉnh cha ${d.parent}`);
-  //     continue;
-  //   }
-  //   const data = {
-  //     name: d.name,
-  //     kind: PlaceKind.destination,
-  //     parentId,
-  //     tagline: d.tagline,
-  //     provinceName: PROVINCE_NAMES.find((n) => slugify(n) === d.parent) ?? null,
-  //     isFeatured: d.featured ?? false,
-  //     order: i,
-  //     ...PUB,
-  //   };
-  //   const dest = await prisma.place.upsert({
-  //     where: { slug: d.slug },
-  //     create: { slug: d.slug, ...data },
-  //     update: data,
-  //     select: { id: true },
-  //   });
-
-  //   // Ảnh: chỉ ghi đè khi có link trong DEST_IMAGES (để trống → giữ ảnh cũ/fallback).
-  //   const urls = DEST_IMAGES[d.slug] ?? [];
-  //   if (urls.length > 0) {
-  //     await prisma.image.deleteMany({ where: { placeId: dest.id } });
-  //     await prisma.image.createMany({
-  //       data: urls.map((url, idx) => ({
-  //         placeId: dest.id,
-  //         url,
-  //         isCover: idx === 0,
-  //         order: idx,
-  //       })),
-  //     });
-  //     imageCount += urls.length;
-  //   }
-  // }
-
-  console.log(
-    `Seeded ${PROVINCE_NAMES.length} tỉnh/thành + ${DESTINATIONS.length} điểm đến + ${imageCount} ảnh.`,
-  );
+  console.log(`Seeded ${PROVINCE_NAMES.length} tỉnh/thành.`);
 }
 
 main()
