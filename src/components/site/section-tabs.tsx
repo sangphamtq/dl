@@ -36,11 +36,19 @@ export function SectionTabs({
    * xếp) để hook đo lại từ đầu — nội dung đổi thì mốc cuộn cũng đổi.
    */
   resetKey,
+  /**
+   * Bo góc của viên sáng + vùng bấm. Mặc định `rounded-full` (viên thuốc, khớp
+   * với phần lớn điều khiển trong site). Trang nào chạy ngôn ngữ VUÔNG thì
+   * truyền `rounded-[3px]`/`rounded-none` để tab không thành thứ duy nhất còn
+   * bo tròn trong thanh lọc.
+   */
+  shapeClassName = "rounded-full",
 }: {
   labels: string[];
   idPrefix: string;
   ariaLabel: string;
   resetKey?: string;
+  shapeClassName?: string;
 }) {
   const [active, setActive] = useState(0);
   const [pill, setPill] = useState<{ x: number; w: number } | null>(null);
@@ -135,7 +143,10 @@ export function SectionTabs({
         <span
           aria-hidden
           style={{ width: pill.w, transform: `translateX(${pill.x}px)` }}
-          className="pointer-events-none absolute inset-y-1 left-0 rounded-full bg-primary/10 transition-all duration-300 ease-out motion-reduce:transition-none"
+          className={cn(
+            "pointer-events-none absolute inset-y-1 left-0 bg-primary/10 transition-all duration-300 ease-out motion-reduce:transition-none",
+            shapeClassName,
+          )}
         />
       )}
       {labels.map((label, i) => (
@@ -157,7 +168,8 @@ export function SectionTabs({
             // Đệm hẹp ở khổ base: 320px chỉ vừa đúng cho cả ba nhóm của thanh,
             // rộng thêm chút là nhóm sắp xếp lòi khỏi mép. Từ sm mới nới ra cho
             // viên sáng có chỗ thở.
-            "relative h-9 shrink-0 whitespace-nowrap rounded-full px-1.5 text-sm font-medium transition-colors sm:px-3.5",
+            "relative h-9 shrink-0 whitespace-nowrap px-1.5 text-sm font-medium transition-colors sm:px-3.5",
+            shapeClassName,
             active === i
               ? "text-primary"
               : "text-muted-foreground hover:text-foreground",
