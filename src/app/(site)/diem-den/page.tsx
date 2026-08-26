@@ -7,6 +7,8 @@ import {
 } from "@/components/site/destination-filter";
 import Link from "next/link";
 import Image from "next/image";
+import { cn } from "@/lib/utils";
+import { Curtain, Rise } from "@/components/site/reveal";
 import { Playfair_Display } from "next/font/google";
 import { REGION_LABELS, regionOf } from "@/lib/regions";
 
@@ -16,11 +18,17 @@ export const metadata = {
 };
 
 // Font serif DUY NHẤT của dự án, và cố ý khai ở ĐÂY chứ không ở `layout.tsx`:
-// nó chỉ phục vụ tên trang trong dải hero này, khai ở root là mọi trang khác
-// cũng gánh thêm một file font mà không dùng tới một chữ nào.
+// nó chỉ phục vụ trang này, khai ở root là mọi trang khác cũng gánh thêm một
+// file font mà không dùng tới một chữ nào.
+//
+// Phát qua BIẾN CSS (`--font-serif`) chứ không phải `serif.className`: tên miền
+// trong `destination-filter.tsx` cũng dùng nó, mà file đó là Client Component
+// nên không import được đối tượng font từ đây. Biến gắn một lần trên thẻ bọc
+// ngoài cùng, mọi thứ bên trong tra được.
 // Weight 400 — chính nét mảnh mới là lý do dùng nó; Playfair ở 700 thì đậm và
 // tương phản nét gắt, đọc ra là một font khác hẳn.
 const serif = Playfair_Display({
+  variable: "--font-serif",
   subsets: ["latin", "vietnamese"],
   weight: ["400"],
   display: "swap",
@@ -129,9 +137,25 @@ export default async function DiemDenPage() {
   );
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div className={cn("flex flex-1 flex-col", serif.variable)}>
 
-      <main className="flex-1">
+      {/* TRANG NÀY CHẠY FULL-BLEED — không có `max-w-7xl` như phần còn lại
+          của site. Mọi thứ (dải hero, thanh lọc, dải thẻ, danh sách tỉnh) dùng
+          hết bề ngang khung nhìn, chỉ chừa lề bằng `px` tăng dần theo khổ:
+          1rem → 1.5rem → 2.5rem → 3.5rem.
+          Lý do: nội dung ở đây là ẢNH xếp thành dải ngang, mà một cột 90rem
+          giữa màn 1600–2560px thì hai bên bỏ trống cả mấy trăm pixel trong khi
+          dải thẻ bị cắt cụt. Đổi lại, header (dùng chung cả site, vẫn
+          `max-w-7xl`) sẽ lệch vào trong so với nội dung ở màn rất rộng. */}
+      {/* `overflow-x-clip`: dải thẻ của mỗi miền NỞ RA quá cột nội dung khi rê
+          chuột (xem `destination-filter.tsx`), và nó tính bằng `100vw` — đơn vị
+          này gồm CẢ bề rộng thanh cuộn dọc, nên trên máy có thanh cuộn chiếm
+          chỗ (Windows) khối đó rộng hơn vùng nhìn thấy vài pixel và trang sinh
+          ra một thanh cuộn NGANG.
+          Dùng `clip` chứ KHÔNG phải `hidden`: `hidden` biến phần tử thành một
+          scroll container, và thanh lọc `sticky` bên trong sẽ dính theo nó thay
+          vì theo khung nhìn — tức là hỏng. `clip` chỉ cắt phần thừa. */}
+      <main className="flex-1 overflow-x-clip">
         {isEmpty ? (
           <div className="mx-auto max-w-7xl px-4 py-24 text-center sm:px-6">
             <Ic
@@ -156,22 +180,28 @@ export default async function DiemDenPage() {
               />
               <span
                 aria-hidden
-                className="absolute inset-0 bg-[radial-gradient(ellipse_84%_92%_at_50%_50%,rgba(8,22,15,0.42)_0%,rgba(8,22,15,0.33)_46%,rgba(8,22,15,0.16)_76%,rgba(8,22,15,0.03)_100%)]"
+                className="absolute inset-0 bg-[radial-gradient(ellipse_84%_92%_at_50%_50%,rgba(8,22,15,0.5)_0%,rgba(8,22,15,0.4)_46%,rgba(8,22,15,0.2)_76%,rgba(8,22,15,0.05)_100%)]"
               />
 
               <div className="relative mx-auto flex min-h-[clamp(15rem,22vw,18.5rem)] max-w-7xl flex-col items-center justify-center px-4 py-12 text-center sm:px-6 lg:min-h-[clamp(19rem,26vw,22.5rem)] lg:pb-12 lg:pt-[7rem]">
+                <Curtain>
                 <h1
-                  className={`${serif.className} text-[clamp(2.5rem,7.5vw,5.5rem)] font-normal uppercase leading-[1.15] tracking-[0.12em] text-white [text-shadow:0_2px_40px_rgba(0,0,0,0.62)] sm:tracking-[0.18em]`}
+                  className={`font-[family-name:var(--font-serif)] text-[clamp(2.5rem,7.5vw,5.5rem)] font-normal uppercase leading-[1.15] tracking-[0.12em] text-white [text-shadow:0_2px_40px_rgba(0,0,0,0.62)] sm:tracking-[0.18em]`}
                 >
                   Việt Nam
                 </h1>
-                <p className="mt-5 max-w-[40rem] text-[clamp(1.0625rem,2vw,1.5rem)] font-normal leading-snug text-white/90 [text-shadow:0_2px_20px_rgba(0,0,0,0.72)] sm:mt-6">
+                </Curtain>
+                <Rise delay={0.18} className="mt-5 sm:mt-6">
+                <p className="max-w-[40rem] text-[clamp(1.0625rem,2vw,1.5rem)] font-normal leading-snug text-white/90 [text-shadow:0_2px_20px_rgba(0,0,0,0.72)]">
                   Mỗi vùng đất, một hành trình để nhớ.
                 </p>
-                <div className="mt-8 flex flex-wrap items-center justify-center gap-3 sm:mt-10 sm:gap-4">
+                </Rise>
+                <Rise delay={0.32} className="mt-8 sm:mt-10">
+                <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
                   <BrowseLink href="/dia-diem" label={`Xem ${spotCount} địa điểm`} />
                   <BrowseLink href="/ban-do" label="Mở bản đồ du lịch" />
                 </div>
+                </Rise>
               </div>
             </section>
 

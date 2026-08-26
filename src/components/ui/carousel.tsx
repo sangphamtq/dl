@@ -133,13 +133,20 @@ function Carousel({
   )
 }
 
-function CarouselContent({ className, ...props }: React.ComponentProps<"div">) {
+function CarouselContent({
+  className,
+  viewportClassName,
+  ...props
+}: React.ComponentProps<"div"> & {
+  /** Class cho KHUNG CẮT (`overflow-hidden`) bọc ngoài hàng slide. */
+  viewportClassName?: string
+}) {
   const { carouselRef, orientation } = useCarousel()
 
   return (
     <div
       ref={carouselRef}
-      className="overflow-hidden"
+      className={cn("overflow-hidden", viewportClassName)}
       data-slot="carousel-content"
     >
       <div
@@ -234,6 +241,7 @@ function CarouselNext({
 
 export {
   type CarouselApi,
+  useCarousel,
   Carousel,
   CarouselContent,
   CarouselItem,

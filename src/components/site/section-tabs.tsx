@@ -43,12 +43,28 @@ export function SectionTabs({
    * bo tròn trong thanh lọc.
    */
   shapeClassName = "rounded-full",
+  /**
+   * Hình của dấu chỉ mục đang xem.
+   *  · `pill` (mặc định): viên nền `primary/10` ôm lấy nhãn — nổi, hợp thanh
+   *    lọc có nhiều điều khiển nền xám khác.
+   *  · `underline`: một nét 1.5px sát đáy nhãn — mảnh, hợp trang chạy ngôn ngữ
+   *    editorial (hairline + chữ hoa giãn ký tự).
+   *  · `solid`: một ô nền MỰC phủ kín nhãn, chữ lật sang màu nền — đậm nhất,
+   *    dùng khi tab là trục duyệt chính của trang và phải nhìn thấy từ xa.
+   * Cả hai đều TRƯỢT sang nhãn kế khi cuộn: chuyển động không phải trang trí,
+   * nó là chính scroll-spy hiện hình.
+   */
+  indicator = "pill",
+  /** Chữ của từng nhãn (cỡ, weight, letter-spacing). */
+  tabClassName,
 }: {
   labels: string[];
   idPrefix: string;
   ariaLabel: string;
   resetKey?: string;
   shapeClassName?: string;
+  indicator?: "pill" | "underline" | "solid";
+  tabClassName?: string;
 }) {
   const [active, setActive] = useState(0);
   const [pill, setPill] = useState<{ x: number; w: number } | null>(null);
@@ -144,8 +160,12 @@ export function SectionTabs({
           aria-hidden
           style={{ width: pill.w, transform: `translateX(${pill.x}px)` }}
           className={cn(
-            "pointer-events-none absolute inset-y-1 left-0 bg-primary/10 transition-all duration-300 ease-out motion-reduce:transition-none",
-            shapeClassName,
+            "pointer-events-none absolute left-0 transition-all duration-300 ease-out motion-reduce:transition-none",
+            indicator === "underline"
+              ? "bottom-0 h-[1.5px] bg-foreground"
+              : indicator === "solid"
+                ? cn("inset-y-0 bg-foreground", shapeClassName)
+                : cn("inset-y-1 bg-primary/10", shapeClassName),
           )}
         />
       )}
@@ -169,9 +189,14 @@ export function SectionTabs({
             // rộng thêm chút là nhóm sắp xếp lòi khỏi mép. Từ sm mới nới ra cho
             // viên sáng có chỗ thở.
             "relative h-9 shrink-0 whitespace-nowrap px-1.5 text-sm font-medium transition-colors sm:px-3.5",
-            shapeClassName,
+            indicator === "underline" ? null : shapeClassName,
+            tabClassName,
             active === i
-              ? "text-primary"
+              ? indicator === "underline"
+                ? "text-foreground"
+                : indicator === "solid"
+                  ? "text-background"
+                  : "text-primary"
               : "text-muted-foreground hover:text-foreground",
           )}
         >
