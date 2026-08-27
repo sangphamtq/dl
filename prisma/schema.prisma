@@ -379,6 +379,20 @@ model Place {
 
   tags String[] @default([])
 
+  // TỈNH TỰ NÓ LÀ MỘT ĐIỂM ĐẾN (Ninh Bình, Huế, Đà Nẵng…): người ta nói "đi
+  // Ninh Bình", không nói "đi một nơi nào đó trong Ninh Bình". Bật cờ này thì
+  // tỉnh được xếp ngang hàng với các `destination` ở những chỗ liệt kê nơi để
+  // đi — trước hết là dải thẻ trong `/diem-den`.
+  //
+  // Vì sao là một cờ RIÊNG, không mượn `isFeatured`: hai câu hỏi khác nhau.
+  // `isFeatured` = "có đề cử nơi này lên trước không"; cờ này = "nơi này có tự
+  // đứng thành một chuyến đi không". Quảng Ninh đang nổi bật vì nó CHỨA Hạ
+  // Long, chứ bản thân nó không phải nơi người ta đặt vé tới.
+  //
+  // Chỉ có nghĩa với `kind = province`. Với `destination` thì thừa — nó vốn đã
+  // là điểm đến; tầng app không đọc cờ này cho destination.
+  treatAsDestination Boolean @default(false)
+
   // "Thông tin chung": vài thông tin nổi bật {label, value} biên tập trong CMS
   // (hiển thị trong thẻ cạnh phần giới thiệu ở trang Place)
   quickInfo Json?

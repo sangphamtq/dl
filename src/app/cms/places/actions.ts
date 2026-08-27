@@ -214,6 +214,23 @@ export async function toggleFeatured(
   return { ok: true, id };
 }
 
+// Đổi nhanh cờ "tỉnh này tự nó là một điểm đến" — chỉ có nghĩa với province,
+// xem chú thích ở `Place.treatAsDestination` trong `schema.prisma`.
+export async function toggleTreatAsDestination(
+  id: string,
+  value: boolean,
+): Promise<ActionResult> {
+  await requireStaff();
+  await prisma.place.update({
+    where: { id },
+    data: { treatAsDestination: value },
+  });
+  revalidatePath("/cms/places");
+  revalidatePath(`/cms/places/${id}`);
+  revalidatePath("/diem-den");
+  return { ok: true, id };
+}
+
 // Cập nhật thứ tự sắp xếp thủ công (rỗng = bỏ đặt).
 export async function updateOrder(
   id: string,

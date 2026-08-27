@@ -30,6 +30,35 @@ Place {
 ```
 - **Tỉnh:** `kind='province'`, `parentId=null`.
 - **Điểm đến lớn** (Sa Pa, Hội An...): `kind='destination'`, `parentId=<id Tỉnh>`.
+- **`treatAsDestination`** (Boolean, chỉ có nghĩa với `province`): bật khi TỈNH
+  TỰ NÓ là một điểm đến — người ta nói "đi Ninh Bình", "đi Huế", không phải "đi
+  một nơi nào đó trong tỉnh. Khi bật, tỉnh được xếp **ngang hàng với
+  `destination`** ở những chỗ liệt kê nơi để đi (hiện là dải thẻ `/diem-den`;
+  thẻ ghi nhãn "Tỉnh" thay cho tên tỉnh cha, và số điểm đến con đứng đầu bảng
+  dữ kiện).
+  · **KHÔNG mượn `isFeatured` cho việc này** — đã thử và sai ngay trên dữ liệu
+    thật. Hai cờ trả lời hai câu khác nhau: `isFeatured` = "có đề cử nơi này lên
+    trước không", `treatAsDestination` = "nơi này có tự đứng thành một chuyến đi
+    không". Quảng Ninh nổi bật vì nó CHỨA Hạ Long, chứ bản thân nó không phải
+    nơi người ta đặt vé tới.
+  · Bật/tắt ở **trang chi tiết CMS** (`/cms/places/[id]`, khối "Quản trị") —
+    công tắc chỉ hiện với tỉnh.
+  · Tỉnh bật cờ mà VẪN CÒN điểm đến con thì **cả tỉnh lẫn các con cùng nằm
+    trong dải** (vd Sơn La đứng chung dải với Tà Xùa và Mộc Châu). Đã cân nhắc
+    và CHỌN GIỮ NGUYÊN: tỉnh là một cách đi, từng điểm đến là một cách khác —
+    ẩn con đi thì hai điểm đến thật mất chỗ đứng riêng. Đừng thêm luật ẩn/hiện
+    nào cho việc này.
+  · Cờ này KHÔNG quyết định thứ tự. Tỉnh bật cờ vẫn xếp theo đúng tiêu chí
+    chung (`isFeatured` → lượt xem → ABC), nên một tỉnh không nổi bật sẽ nằm
+    giữa dải và phải cuộn mới thấy — muốn nó lên đầu thì bật thêm
+    **`isFeatured`**, đó mới là cờ "đề cử lên trước".
+  · ⚠️ **Dữ liệu hiện còn một nhóm mô hình hoá sai chưa sửa**: 23/27 tỉnh có
+    ĐÚNG một điểm đến con, trong đó nhiều cặp thuộc kiểu "tỉnh mới là điểm đến,
+    con chỉ là một thắng cảnh" — Ninh Bình→Tràng An, Đà Nẵng→Bà Nà Hills, Hà
+    Nội→Ba Vì, TP.HCM→Cần Giờ, Gia Lai→Biển Hồ. Cách đúng cho nhóm này: gắn
+    listing thẳng vào tỉnh và hạ "điểm đến con" xuống thành `Spot`. Khác hẳn
+    nhóm Lào Cai→Sa Pa, Khánh Hòa→Nha Trang, Quảng Nam→Hội An (tên khác nhau,
+    người ta đi tới ĐIỂM ĐẾN) — nhóm đó đang đúng, đừng đụng vào.
 - Một `Place` kind=`province` có thể có 0..N `Place` con kind=`destination`.
 - **Ràng buộc cây (validate ở tầng app):** `province` ⇒ `parentId = null`; `destination`
   ⇒ `parentId` trỏ tới một `province` (KHÔNG cho destination lồng destination). Giữ đúng
@@ -301,7 +330,7 @@ Lọc theo loại hình
 
 | Tên tiếng Việt | Tên code (EN) | Vai trò / quan hệ |
 |---|---|---|
-| Tỉnh / Điểm đến lớn | `Place` | node phân cấp; `kind` ∈ {province, destination}, `parentId` tự tham chiếu |
+| Tỉnh / Điểm đến lớn | `Place` | node phân cấp; `kind` ∈ {province, destination}, `parentId` tự tham chiếu; `treatAsDestination` cho tỉnh tự nó là điểm đến |
 | Hoạt động/trải nghiệm | `Activity` | `placeId` bắt buộc; M:N với `Spot`; có trường đơn vị/đặt chỗ inline |
 | Địa điểm nhỏ | `Spot` | `placeId` bắt buộc; M:N với `Activity` |
 | Đặc sản | `Specialty` | ⚠️ **ĐANG TẮT** (ẩn khỏi trang công khai + khoá trong CMS; dữ liệu còn nguyên). `placeId` bắt buộc; M:N với `Eatery` |

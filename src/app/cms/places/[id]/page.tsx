@@ -66,6 +66,7 @@ export default async function PlaceDetailPage({
       tags: true,
       status: true,
       isFeatured: true,
+      treatAsDestination: true,
       order: true,
       popularity: true,
       viewCount: true,
@@ -387,6 +388,8 @@ export default async function PlaceDetailPage({
             status={place.status}
             isFeatured={place.isFeatured}
             order={place.order}
+            kind={place.kind}
+            treatAsDestination={place.treatAsDestination}
           />
 
           <div className="rounded-xl border p-4">

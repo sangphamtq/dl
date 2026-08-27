@@ -27,6 +27,14 @@ export type DestItem = {
   parentName: string | null;
   region: string;
   counts: { spot: number; eatery: number; stay: number; activity: number };
+  /** Chỉ có ở thẻ dựng từ một TỈNH — xem `provinceAsCard`. */
+  isProvince?: boolean;
+  /** Số điểm đến trong tỉnh (chỉ dùng cho thẻ tỉnh). */
+  childCount?: number;
+  /** Tên vài nơi trong tỉnh — điểm đến con trước, địa điểm sau. */
+  childNames?: string[];
+  /** Tổng số nơi trong tỉnh (để biết còn bao nhiêu cái chưa nêu tên). */
+  childTotal?: number;
 };
 
 export type ProvinceItem = {
@@ -34,9 +42,53 @@ export type ProvinceItem = {
   name: string;
   region: string;
   isFeatured: boolean;
+  /** "Tỉnh này tự nó là một điểm đến" — xem `Place.treatAsDestination`. */
+  treatAsDestination: boolean;
   childCount: number;
+  childNames: string[];
+  /** Tổng số điểm đến con + địa điểm trong tỉnh. */
+  childTotal: number;
   hasContent: boolean;
+  tagline: string | null;
+  viewCount: number;
+  images: { url: string; isCover: boolean }[];
+  counts: { spot: number; eatery: number; stay: number; activity: number };
 };
+
+// Một TỈNH được gắn cờ `treatAsDestination` cũng lên dải thẻ, đứng chung với
+// các điểm đến của miền.
+//
+// Cờ đó, KHÔNG PHẢI `isFeatured`, mới là câu trả lời đúng cho "tỉnh này có tự
+// đứng thành một chuyến đi không". Bản đầu mượn `isFeatured` và sai ngay ở dữ
+// liệu thật: Quảng Ninh đang nổi bật vì nó CHỨA Hạ Long, chứ bản thân nó không
+// phải nơi người ta đặt vé tới.
+//
+// Vì sao đứng chung mà không phải một dải riêng: với người đang chọn nơi đi,
+// "Hà Giang" và "Sa Pa" là hai lựa chọn NGANG HÀNG — cái nào cũng là một chuyến
+// đi. Ranh giới tỉnh/điểm đến là chuyện của mô hình dữ liệu, không phải chuyện
+// của họ. Thẻ tự nói mình là tỉnh bằng nhãn ở góc trên, thế là đủ.
+//
+// Tỉnh nổi bật VẪN CÒN trong dải chip bên dưới: chip là danh sách ĐẦY ĐỦ các
+// tỉnh của miền, thiếu một cái thì người đang dò theo bảng chữ cái sẽ tưởng nó
+// không tồn tại. Hai chỗ, hai việc — dải thẻ để mời, chip để tra.
+function provinceAsCard(p: ProvinceItem): DestItem {
+  return {
+    slug: p.slug,
+    name: p.name,
+    tagline: p.tagline,
+    isFeatured: p.isFeatured,
+    viewCount: p.viewCount,
+    images: p.images,
+    // Tỉnh là node gốc, không có nơi nào ở trên nó để ghi.
+    parentName: null,
+    region: p.region,
+    counts: p.counts,
+    isProvince: true,
+    childCount: p.childCount,
+    childNames: p.childNames,
+    childTotal: p.childTotal,
+  };
+}
 
 type SortKey = "featured" | "popular" | "az";
 
@@ -133,10 +185,14 @@ export function DestinationFilter({
   const sections = regions
     .map((r) => {
       const provs = q ? [] : provinces.filter((p) => p.region === r);
+      const provCards = provinces
+        .filter((p) => p.region === r && p.treatAsDestination)
+        .map(provinceAsCard)
+        .filter(matches);
       return {
         label: r,
         dests: sortItems(
-          items.filter((d) => d.region === r && matches(d)),
+          [...items.filter((d) => d.region === r && matches(d)), ...provCards],
           sort,
         ),
         provsOpen: provs.filter((p) => p.hasContent),
@@ -571,11 +627,86 @@ function DestCard({ d }: { d: DestItem }) {
   // Chỉ giữ ô có số, DỒN LÊN TRƯỚC — nếu để nguyên bốn khe cố định thì một nơi
   // có đúng "địa điểm" và "trải nghiệm" (Tà Xùa) sẽ ra hai ô nằm chéo góc nhau.
   const facts = FACTS.filter((f) => d.counts[f.key] > 0);
+  // Thẻ tỉnh: số điểm đến trong tỉnh đứng ĐẦU bảng — đó là thứ đầu tiên người
+  // ta muốn biết về một tỉnh ("trong đó có những đâu"), trước cả số quán ăn hay
+  // chỗ ở gắn thẳng vào tỉnh.
+  // BẢNG ĐÁY THẺ nói hai thứ khác nhau tuỳ loại nơi:
+  //   · ĐIỂM ĐẾN → bốn con số (địa điểm · quán ăn · chỗ ở · trải nghiệm), vì
+  //     một điểm đến là một nơi cụ thể, thứ đáng biết là trong đó có bao nhiêu
+  //     thứ để làm;
+  //   · TỈNH → TÊN các điểm đến bên trong, vì một tỉnh là một cái túi chứa
+  //     nhiều nơi, và câu hỏi đầu tiên đúng là "trong đó có những đâu". Đếm
+  //     "3 điểm đến" thì vẫn phải bấm vào mới biết là những đâu.
+  // Cả hai dùng CHUNG khuôn bảng hai cột có hairline, nên hai loại thẻ vẫn là
+  // một họ — chỉ nội dung trong ô đổi.
+  const names = d.isProvince ? (d.childNames ?? []) : [];
+  const total = d.childTotal ?? d.childCount ?? 0;
+  const SLOTS = FACTS.length; // bốn ô, bằng đúng hai hàng của bảng
+
+  // BA dòng là vừa đúng chiều cao của bảng hai hàng bên thẻ điểm đến, nên hai
+  // loại thẻ vẫn cao bằng nhau và tên nơi thẳng hàng. Quá ba thì dòng cuối gom
+  // phần còn lại.
+  const CHIP_SLOTS = 3;
+  const chips =
+    total > CHIP_SLOTS
+      ? [
+          ...names.slice(0, CHIP_SLOTS - 1),
+          `+${total - (CHIP_SLOTS - 1)} nơi`,
+        ]
+      : names.slice(0, CHIP_SLOTS);
+
+  const rows: { key: string; text: React.ReactNode }[] =
+    names.length > 0
+      ? // Quá bốn nơi thì ô cuối nhường cho phần còn lại, nếu không danh sách
+        // sẽ cụt lửng mà không ai biết là còn nữa.
+        (total > SLOTS
+          ? [
+              ...names.slice(0, SLOTS - 1),
+              `+${total - (SLOTS - 1)} nơi khác`,
+            ]
+          : names.slice(0, SLOTS)
+        ).map((n, i) => ({
+          key: `${i}-${n}`,
+          text:
+            total > SLOTS && i === SLOTS - 1 ? (
+              <span className="text-white/60">{n}</span>
+            ) : (
+              <span className="font-medium text-white">{n}</span>
+            ),
+        }))
+      : [
+          ...(d.isProvince && total
+            ? [
+                {
+                  key: "child",
+                  text: (
+                    <>
+                      <span className="font-semibold tabular-nums text-white">
+                        {total}
+                      </span>{" "}
+                      điểm đến
+                    </>
+                  ),
+                },
+              ]
+            : []),
+          ...facts.map((f) => ({
+            key: f.key,
+            text: (
+              <>
+                <span className="font-semibold tabular-nums text-white">
+                  {d.counts[f.key]}
+                </span>{" "}
+                {f.label}
+              </>
+            ),
+          })),
+        ].slice(0, SLOTS);
+
   // …rồi bù cho đủ BỐN khe bằng ô vô hình. Bảng đáy vì thế luôn cao đúng hai
-  // hàng, kể cả ở nơi chưa có nội dung nào (hiện là 29/31 điểm đến) — nhờ vậy
-  // tên nơi của mọi thẻ trong một hàng nằm trên cùng một đường. Bản đầu tiên
-  // ẩn hẳn bảng khi rỗng, và cả hàng ba thẻ ra ba độ cao tên khác nhau.
-  const blanks = FACTS.length - facts.length;
+  // hàng, kể cả ở nơi chưa có gì để liệt kê — nhờ vậy tên nơi của mọi thẻ trong
+  // một hàng nằm trên cùng một đường.
+  const blanks = SLOTS - rows.length;
 
   return (
     <Link
@@ -587,25 +718,48 @@ function DestCard({ d }: { d: DestItem }) {
         alt=""
         fill
         sizes="(min-width: 1280px) 31vw, (min-width: 1024px) 44vw, (min-width: 640px) 60vw, 86vw"
-        className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04] motion-reduce:transition-none"
+        className="object-cover"
       />
 
-      {/* Tối đều để chữ đọc được, đậm dần xuống đáy cho bảng dữ kiện.
-          LÚC NGHỈ CHỈ ĐỔ 72% lớp này (≈0.43 ở đáy, ≈0.32 ở đỉnh) — thẻ sáng,
-          ảnh gần như nguyên vẹn; RÊ VÀO thì lên 100% và thẻ tối lại. Chiều này
-          ngược với bản trước (nghỉ đậm, hover nhạt đi 10%), và đây mới là chiều
-          đúng: lúc lướt qua cả dải thì ảnh là thứ đáng xem, còn khi đã dừng ở
-          một thẻ thì chữ trên nó mới là thứ cần đọc.
+      {/* RÊ VÀO THÌ THẺ ĐỔI BA THỨ, không cái nào là phóng ảnh:
+            · vành trong sáng lên (white/12 → /55) — đường viền là ngôn ngữ của
+              cả trang này (thanh lọc, nút ‹ ›, chip tỉnh đều là nét), nên thẻ
+              cũng nên nói "đang chọn tôi" bằng một đường nét;
+            · tên nơi có gạch chân — quy ước link lâu đời nhất, và đúng thứ hai
+              lối rẽ trên hero đang dùng;
+            · lớp phủ đậm thêm MỘT NẤC (80% → 92%), không lên hết 100%: vừa đủ
+              để chữ nổi hơn mà ảnh không tối sập lại.
+          Đã bỏ `scale-[1.04]` của bản trước: ảnh gốc vốn đã phải phóng để phủ
+          khổ thẻ, phóng thêm 4% nữa là mất nét thấy rõ — mà nó cũng chẳng nói
+          được gì về việc thẻ này bấm được. */}
+
+      {/* BÓNG CHỮ Ở ĐÂY PHẢI MẢNH — chỉ một tầng, blur 2–3px.
+          Đã có một bản dùng bóng hai tầng (tầng rộng blur 12–16px, đậm 0.7–0.8)
+          để bù cho lớp phủ vừa hạ xuống, và nó tạo ra một QUẦNG TỐI thấy rõ
+          quanh mỗi dòng chữ — trên một tấm ảnh thì cái quầng đó đọc ra là vết
+          bẩn, không phải bóng. Chữ ở đây nằm trên vùng ĐÃ CÓ lớp phủ lo phần
+          nền rồi, nên bóng chỉ cần đủ tách nét chữ khỏi chi tiết ảnh ngay sát
+          nó. (Khác hero: ở đó lớp phủ rất nhạt nên bóng phải gánh nhiều hơn.)
+
+          Lớp phủ TẮT DẦN LÊN ĐỈNH, không phải tối đều.
+          Bản trước giữ tận 44% ở mép trên — tức một phần ba thẻ bị dằn tối mà
+          chẳng có chữ nào ở đó, và cả dải đọc ra là một hàng ảnh xám. Nay đỉnh
+          gần như trong (0.04), rồi đậm dần xuống: ~0.37 ở tầm tên nơi, 0.67 ở
+          đáy cho bảng dữ kiện. Chỗ nào có chữ mới có nền, chỗ nào không thì trả
+          lại cho ảnh.
+          LÚC NGHỈ đổ 80% lớp này; RÊ VÀO lên 100% và thẻ tối lại — lúc lướt qua
+          cả dải thì ảnh là thứ đáng xem, còn khi đã dừng ở một thẻ thì chữ trên
+          nó mới là thứ cần đọc.
           Giữ gradient ở mức đậm rồi hạ bằng `opacity` chứ không viết sẵn hai bộ
           màu: `opacity` chạy trên compositor nên chuyển mượt, mà `background`
           thì không transition được. */}
       <span
         aria-hidden
-        className="absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,0.8)_0%,rgba(0,0,0,0.6)_26%,rgba(0,0,0,0.5)_52%,rgba(0,0,0,0.44)_100%)] opacity-[0.72] transition-opacity duration-500 group-hover:opacity-100 motion-reduce:transition-none"
+        className="absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,0.84)_0%,rgba(0,0,0,0.7)_22%,rgba(0,0,0,0.54)_44%,rgba(0,0,0,0.32)_64%,rgba(0,0,0,0.1)_84%,rgba(0,0,0,0.04)_100%)] opacity-80 transition-opacity duration-300 group-hover:opacity-[0.92] motion-reduce:transition-none"
       />
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/12"
+        className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/12 transition-[box-shadow] duration-300 group-hover:ring-white/55 motion-reduce:transition-none"
       />
 
       {d.isFeatured && (
@@ -638,59 +792,90 @@ function DestCard({ d }: { d: DestItem }) {
               Mali (--font-rounded) chưa nạp bản nghiêng thật nên đây là nghiêng
               giả của trình duyệt — ở cỡ 13px trên nền tối thì không nhìn ra
               khác biệt, và nạp thêm 2 file font cho một dòng chú thì không đáng. */}
-          {d.parentName && (
-            <span className="max-w-full truncate font-[family-name:var(--font-rounded)] text-[0.8125rem] italic text-white/85 [text-shadow:0_1px_8px_rgba(0,0,0,0.7)]">
-              {d.parentName}
+          {/* Điểm đến ghi TỈNH CHA; tỉnh thì không có gì ở trên nó nên ghi
+              thẳng "Tỉnh" — vừa lấp đúng chỗ đó, vừa nói cho người đọc biết thẻ
+              này dẫn tới một trang tỉnh chứ không phải một điểm đến. */}
+          {(d.parentName ?? d.isProvince) && (
+            <span className="max-w-full truncate font-[family-name:var(--font-rounded)] text-[0.8125rem] italic text-white/85 [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]">
+              {d.parentName ?? "Tỉnh"}
             </span>
           )}
 
-          <span className="mt-1 line-clamp-2 font-[family-name:var(--font-display)] text-[1.35rem] font-normal leading-[1.18] tracking-[-0.015em] text-white [text-shadow:0_2px_14px_rgba(0,0,0,0.55)] sm:text-[1.5rem] lg:text-[1.7rem]">
+          <span className="mt-1 line-clamp-2 font-[family-name:var(--font-display)] text-[1.35rem] font-normal leading-[1.18] tracking-[-0.015em] text-white underline-offset-[6px] [text-shadow:0_1px_3px_rgba(0,0,0,0.45)] group-hover:underline sm:text-[1.5rem] lg:text-[1.7rem]">
             {d.name}
           </span>
 
           {d.tagline && (
-            // HAI dòng, 15px — thứ duy nhất trên thẻ mang giọng biên tập, nên
-            // nó phải đọc được chứ không chỉ có mặt. Bản trước là một dòng 13px
-            // `white/70`: hầu hết tagline dài hơn thế nên câu nào cũng cụt giữa
-            // chừng, mà cỡ ấy trên nền ảnh thì phải nhìn kỹ mới ra chữ.
-            // ẨN dưới `sm`: ở đó thẻ hẹp tới mức câu bị cắt ngay sau mấy chữ
-            // đầu ("Tạm rời xa nhịp sống vội vã để…") — không nói được gì mà
-            // vẫn ăn nguyên một dòng của khối chữ vốn đã chật.
-            <span className="mt-2 line-clamp-2 max-w-[94%] text-[0.9375rem] leading-snug text-white/80 [text-shadow:0_1px_8px_rgba(0,0,0,0.75)] max-sm:hidden">
+            <span className="mt-2 line-clamp-2 max-w-[94%] text-[0.9375rem] leading-snug text-white/85 [text-shadow:0_1px_2px_rgba(0,0,0,0.5)] max-sm:hidden">
               {d.tagline}
             </span>
           )}
         </span>
 
-        {/* Bảng dữ kiện: hai cột, mỗi ô có hairline TRÊN. Hairline (không phải
-            viền quanh ô) là thứ khiến bốn con số đọc ra thành một bảng chứ
-            không phải bốn viên chip rời. */}
-        <span className="grid grid-cols-2 gap-x-5 sm:gap-x-8">
-          {facts.map((f) => (
-            <span
-              key={f.key}
-              className="mt-2 border-t border-white/30 pt-1.5 text-[0.75rem] leading-tight text-white/75 [text-shadow:0_1px_6px_rgba(0,0,0,0.6)]"
-            >
-              <span className="font-semibold tabular-nums text-white">
-                {d.counts[f.key]}
-              </span>{" "}
-              {f.label}
-            </span>
-          ))}
-          {/* Ô giữ chỗ: `invisible` chiếm đúng chỗ trong lưới nhưng không vẽ gì
-              và cũng biến khỏi cây trợ năng — trình đọc màn hình không gặp một
-              ô rỗng nào. KHÔNG có hairline: một nét kẻ không có chữ dưới nó chỉ
-              là một vệt lửng lơ trên ảnh. */}
-          {Array.from({ length: blanks }, (_, i) => (
-            <span
-              key={`blank-${i}`}
-              aria-hidden
-              className="invisible mt-2 pt-1.5 text-[0.75rem] leading-tight"
-            >
-              &nbsp;
-            </span>
-          ))}
-        </span>
+        {/* ĐÁY THẺ nói hai thứ khác nhau tuỳ loại nơi, và mỗi thứ một HÌNH:
+              · ĐIỂM ĐẾN → bảng hai cột có hairline. Bốn con số so sánh được
+                giữa thẻ này với thẻ kia, mà muốn so thì chúng phải thẳng cột;
+              · TỈNH → hàng VIÊN KÍNH, mỗi tên một viên. Tên nơi không phải để
+                so sánh theo cột, nó là những mục RỜI — và một viên có mép rõ
+                ràng thì đọc ra ngay là "một cái tên", trong khi xếp tên vào ô
+                của bảng thì mắt cứ chờ một con số đi kèm.
+                Viên dùng kính mờ chứ không viền: trên ảnh, một đường viền mảnh
+                lúc rơi vào vùng sáng thì mất hẳn, còn kính thì luôn tự tách
+                mình khỏi nền. Cùng vật liệu với huy hiệu trên hero. */}
+        {names.length > 0 ? (
+          // Danh sách các nơi trong tỉnh, dựng lại ĐÚNG BẰNG VẬT LIỆU CỦA BẢNG
+          // bên thẻ điểm đến: cùng hairline trên mỗi ô, cùng cỡ chữ, cùng cách
+          // chia cột. Chỉ khác hai điều — ba cột thay vì hai, và trong ô là một
+          // cái TÊN thay vì một con số.
+          //
+          // Nhờ vậy hai loại thẻ đứng cạnh nhau đọc ra là một họ: nét kẻ ngang
+          // ở cùng độ cao, chữ cùng cỡ, chỉ nội dung khác. Ba cột cũng là thứ
+          // tự phân biệt: mắt thấy ba ô hẹp thay vì hai ô rộng là biết ngay bên
+          // này đang liệt kê chứ không đang đếm.
+          //
+          // Đã thử và bỏ: xếp tên vào đúng bảng HAI cột của thẻ kia (mắt cứ
+          // chờ một con số đi kèm mỗi ô); viên kính mỗi tên một viên (bốn mảng
+          // mờ rải trên ảnh, đọc ra là tag); dòng có nét dẫn cam (thành một
+          // danh sách gạch đầu dòng, lạc khỏi ngôn ngữ bảng của thẻ).
+          <span className="grid min-h-[3.5rem] grid-cols-3 content-start gap-x-3 sm:gap-x-4">
+            {chips.map((n, i) => (
+              <span
+                key={`${i}-${n}`}
+                className={cn(
+                  "mt-2 truncate border-t border-white/30 pt-1.5 text-[0.75rem] leading-tight [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]",
+                  total > CHIP_SLOTS && i === chips.length - 1
+                    ? "text-white/60"
+                    : "font-medium text-white",
+                )}
+              >
+                {n}
+              </span>
+            ))}
+          </span>
+        ) : (
+          <span className="grid grid-cols-2 gap-x-5 sm:gap-x-8">
+            {rows.map((r) => (
+              <span
+                key={r.key}
+                className="mt-2 truncate border-t border-white/30 pt-1.5 text-[0.75rem] leading-tight text-white/75 [text-shadow:0_1px_6px_rgba(0,0,0,0.6)]"
+              >
+                {r.text}
+              </span>
+            ))}
+            {/* Ô giữ chỗ: `invisible` chiếm đúng chỗ trong lưới nhưng không vẽ
+                gì và cũng biến khỏi cây trợ năng. KHÔNG có hairline: một nét kẻ
+                không có chữ dưới nó chỉ là một vệt lửng lơ trên ảnh. */}
+            {Array.from({ length: blanks }, (_, i) => (
+              <span
+                key={`blank-${i}`}
+                aria-hidden
+                className="invisible mt-2 pt-1.5 text-[0.75rem] leading-tight"
+              >
+                &nbsp;
+              </span>
+            ))}
+          </span>
+        )}
       </span>
     </Link>
   );

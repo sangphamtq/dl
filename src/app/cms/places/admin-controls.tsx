@@ -5,7 +5,12 @@ import { Loader2 } from "@/components/icons";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
-import { togglePublish, toggleFeatured, updateOrder } from "./actions";
+import {
+  togglePublish,
+  toggleFeatured,
+  toggleTreatAsDestination,
+  updateOrder,
+} from "./actions";
 
 // Điều khiển nhanh AdminFields ở trang chi tiết (không đụng nội dung):
 // trạng thái xuất bản · nổi bật · thứ tự. Mỗi thay đổi lưu ngay.
@@ -14,11 +19,15 @@ export function PlaceAdminControls({
   status,
   isFeatured,
   order,
+  kind,
+  treatAsDestination,
 }: {
   id: string;
   status: "draft" | "published";
   isFeatured: boolean;
   order: number | null;
+  kind: "province" | "destination";
+  treatAsDestination: boolean;
 }) {
   const [pending, startTransition] = useTransition();
   const [orderValue, setOrderValue] = useState(order?.toString() ?? "");
@@ -32,6 +41,12 @@ export function PlaceAdminControls({
   function onFeatured(next: boolean) {
     startTransition(async () => {
       await toggleFeatured(id, next);
+    });
+  }
+
+  function onTreatAsDestination(next: boolean) {
+    startTransition(async () => {
+      await toggleTreatAsDestination(id, next);
     });
   }
 
@@ -87,6 +102,30 @@ export function PlaceAdminControls({
             disabled={pending}
           />
         </div>
+
+        {/* Tự nó là điểm đến — CHỈ hiện với tỉnh. Với một điểm đến thì câu
+            hỏi này vô nghĩa, mà một công tắc luôn tắt và không bao giờ dùng tới
+            chỉ làm người biên tập phải đọc thêm một dòng. */}
+        {kind === "province" && (
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <Label htmlFor="adm-self" className="cursor-pointer text-sm">
+                Tự nó là điểm đến
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Bật khi người ta nói &quot;đi Ninh Bình&quot; chứ không phải đi
+                một nơi nào đó trong tỉnh. Tỉnh sẽ đứng chung dải thẻ với các
+                điểm đến.
+              </p>
+            </div>
+            <Switch
+              id="adm-self"
+              checked={treatAsDestination}
+              onCheckedChange={onTreatAsDestination}
+              disabled={pending}
+            />
+          </div>
+        )}
 
         {/* Thứ tự */}
         <div className="flex items-center justify-between gap-3">

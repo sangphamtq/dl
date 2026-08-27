@@ -76,6 +76,41 @@ export default async function DiemDenPage() {
         slug: true,
         name: true,
         isFeatured: true,
+        // Cờ "tỉnh này tự nó là một điểm đến" (Ninh Bình, Huế, Đà Nẵng…) — bật
+        // thì tỉnh lên dải thẻ, đứng ngang hàng với các điểm đến. Xem chú thích
+        // ở `Place.treatAsDestination` trong `schema.prisma`.
+        treatAsDestination: true,
+        // Ba trường dưới đây chỉ phục vụ những tỉnh như vậy.
+        tagline: true,
+        viewCount: true,
+        images: cover,
+        // Tên vài điểm đến trong tỉnh — thẻ tỉnh liệt kê thẳng ra thay vì chỉ
+        // ghi một con số. Cùng thứ tự với dải thẻ chính (nổi bật → phổ biến →
+        // ABC) nên cái được nêu tên là cái đáng nêu nhất.
+        children: {
+          where: pub,
+          orderBy: [
+            { isFeatured: "desc" },
+            { popularity: "desc" },
+            { name: "asc" },
+          ],
+          select: { name: true },
+          take: 5,
+        },
+        // …và cả ĐỊA ĐIỂM gắn thẳng vào tỉnh. Một tỉnh "tự nó là điểm đến"
+        // thường không có điểm đến con nào — thứ nằm trong nó là các `Spot`
+        // (xem quy tắc gắn listing trong CLAUDE.md), nên nếu chỉ liệt kê
+        // `children` thì đúng những tỉnh cần liệt kê nhất lại trống trơn.
+        spots: {
+          where: pub,
+          orderBy: [
+            { isFeatured: "desc" },
+            { popularity: "desc" },
+            { name: "asc" },
+          ],
+          select: { name: true },
+          take: 5,
+        },
         _count: {
           select: {
             children: { where: pub },
@@ -119,7 +154,23 @@ export default async function DiemDenPage() {
       name: p.name,
       region: regionOf(p.slug),
       isFeatured: p.isFeatured,
+      treatAsDestination: p.treatAsDestination,
       childCount: c.children,
+      // Điểm đến con đứng trước địa điểm: nơi lớn trước, chỗ cụ thể sau.
+      childNames: [
+        ...p.children.map((k) => k.name),
+        ...p.spots.map((k) => k.name),
+      ],
+      childTotal: c.children + c.spots,
+      tagline: p.tagline,
+      viewCount: p.viewCount,
+      images: p.images,
+      counts: {
+        spot: c.spots,
+        eatery: c.eateries,
+        stay: c.accommodations,
+        activity: c.activities,
+      },
       hasContent:
         c.children +
           c.spots +
