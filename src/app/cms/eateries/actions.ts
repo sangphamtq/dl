@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { revalidateListingPages } from "@/lib/revalidate-public";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
@@ -153,6 +154,7 @@ export async function createEatery(input: EateryFormInput): Promise<ActionResult
   if ("error" in res) return { ok: false, error: res.error };
   const eatery = await prisma.eatery.create({ data: res.data });
   revalidatePath("/cms/eateries");
+  revalidateListingPages();
   return { ok: true, id: eatery.id };
 }
 
@@ -165,6 +167,7 @@ export async function updateEatery(
   if ("error" in res) return { ok: false, error: res.error };
   await prisma.eatery.update({ where: { id }, data: res.data });
   revalidatePath("/cms/eateries");
+  revalidateListingPages();
   revalidatePath(`/cms/eateries/${id}`);
   revalidatePath(`/cms/eateries/${id}/edit`);
   return { ok: true, id };
@@ -174,6 +177,7 @@ export async function deleteEatery(id: string): Promise<ActionResult> {
   await requireStaff();
   await prisma.eatery.delete({ where: { id } });
   revalidatePath("/cms/eateries");
+  revalidateListingPages();
   return { ok: true, id };
 }
 
@@ -190,6 +194,7 @@ export async function togglePublish(
     },
   });
   revalidatePath("/cms/eateries");
+  revalidateListingPages();
   revalidatePath(`/cms/eateries/${id}`);
   return { ok: true, id };
 }
@@ -201,6 +206,7 @@ export async function toggleFeatured(
   await requireStaff();
   await prisma.eatery.update({ where: { id }, data: { isFeatured: featured } });
   revalidatePath("/cms/eateries");
+  revalidateListingPages();
   revalidatePath(`/cms/eateries/${id}`);
   return { ok: true, id };
 }
@@ -215,6 +221,7 @@ export async function updateOrder(
     return { ok: false, error: "Thứ tự phải là số." };
   await prisma.eatery.update({ where: { id }, data: { order: value } });
   revalidatePath("/cms/eateries");
+  revalidateListingPages();
   revalidatePath(`/cms/eateries/${id}`);
   return { ok: true, id };
 }

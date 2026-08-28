@@ -63,9 +63,33 @@ export async function updateSettings(input: SettingsInput): Promise<Result> {
   return { ok: true };
 }
 
+// Mọi route ĐỘNG công khai. `revalidatePath("/", "layout")` chỉ quét các đường
+// dẫn TĨNH — nó không chạm tới các trang sinh từ tham số, nên từng mẫu route
+// phải khai riêng ở đây (đó cũng là lý do `updateSettings` bên trên phải gọi
+// thêm một dòng cho `/diem-den/[placeSlug]`).
+//
+// Ba nhánh của lịch trình cố ý KHÔNG có mặt: `/lich-trinh/cua-toi/…` và
+// `/lich-trinh/s/…` là dữ liệu riêng của từng người, luôn đọc tươi.
+const PUBLIC_DYNAMIC_ROUTES = [
+  "/diem-den/[placeSlug]",
+  "/diem-den/[placeSlug]/[loai]",
+  "/dia-diem/[slug]",
+  "/hoat-dong/[slug]",
+  "/luu-tru/[slug]",
+  "/blog/[slug]",
+  "/lich-trinh/[slug]",
+  "/cong-dong/[slug]",
+  "/sale/[slug]",
+];
+
 // Công cụ: làm mới toàn bộ cache trang (header/footer/nội dung công khai).
+//
+// Dùng khi dữ liệu đổi mà KHÔNG đi qua CMS — chạy seed, sửa thẳng trong Prisma
+// Studio, đổi bằng script. Sửa qua CMS thì không cần bấm: các action đã tự xoá
+// cache đúng trang bị ảnh hưởng.
 export async function revalidateSite(): Promise<Result> {
   await requireAdmin();
   revalidatePath("/", "layout");
+  for (const route of PUBLIC_DYNAMIC_ROUTES) revalidatePath(route, "page");
   return { ok: true };
 }

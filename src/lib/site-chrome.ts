@@ -60,12 +60,14 @@ export function chromeFor(
   //   · trang chủ (ảnh bắt đầu từ y=0);
   //   · danh sách điểm đến `/diem-den` — dải ảnh ruộng bậc thang, KHÔNG gồm
   //     các màn con `/diem-den/<slug>/...` (chúng mở bằng nền sáng);
+  //   · danh sách địa điểm `/dia-diem` — dải ảnh vịnh Hạ Long;
   //   · trang chi tiết điểm đến khi hero cấu hình kiểu "center" (cũng từ y=0).
   // Trang lịch trình cụ thể không dính header nên không thể đè lên gì.
   const overlay =
     pinned &&
     (pathname === "/" ||
       pathname === "/diem-den" ||
+      pathname === "/dia-diem" ||
       (PLACE_DETAIL.test(pathname) && heroLayout === "center"));
 
   // Có ảnh ở dưới thì mới dùng chữ trắng. Mọi trang còn lại là nền sáng.

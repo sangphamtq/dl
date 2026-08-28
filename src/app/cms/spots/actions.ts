@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath, updateTag } from "next/cache";
+import { revalidateListingPages } from "@/lib/revalidate-public";
 import { auth } from "@/auth";
 import { ORS_CACHE_TAG } from "@/lib/routing";
 import { prisma } from "@/lib/prisma";
@@ -222,6 +223,7 @@ export async function createSpot(input: SpotFormInput): Promise<ActionResult> {
     data: { ...res.data, highlights: { create: res.highlights } },
   });
   revalidatePath("/cms/spots");
+  revalidateListingPages();
   updateTag(ORS_CACHE_TAG); // toạ độ mới → làm mới khoảng cách "quanh đây"
   return { ok: true, id: spot.id };
 }
@@ -254,6 +256,7 @@ export async function updateSpot(
     });
   }
   revalidatePath("/cms/spots");
+  revalidateListingPages();
   revalidatePath(`/cms/spots/${id}`);
   revalidatePath(`/cms/spots/${id}/edit`);
   updateTag(ORS_CACHE_TAG); // toạ độ có thể đổi → làm mới khoảng cách
@@ -264,6 +267,7 @@ export async function deleteSpot(id: string): Promise<ActionResult> {
   await requireStaff();
   await prisma.spot.delete({ where: { id } });
   revalidatePath("/cms/spots");
+  revalidateListingPages();
   return { ok: true, id };
 }
 
@@ -280,6 +284,7 @@ export async function togglePublish(
     },
   });
   revalidatePath("/cms/spots");
+  revalidateListingPages();
   revalidatePath(`/cms/spots/${id}`);
   return { ok: true, id };
 }
@@ -291,6 +296,7 @@ export async function toggleFeatured(
   await requireStaff();
   await prisma.spot.update({ where: { id }, data: { isFeatured: featured } });
   revalidatePath("/cms/spots");
+  revalidateListingPages();
   revalidatePath(`/cms/spots/${id}`);
   return { ok: true, id };
 }
@@ -305,6 +311,7 @@ export async function updateOrder(
     return { ok: false, error: "Thứ tự phải là số." };
   await prisma.spot.update({ where: { id }, data: { order: value } });
   revalidatePath("/cms/spots");
+  revalidateListingPages();
   revalidatePath(`/cms/spots/${id}`);
   return { ok: true, id };
 }

@@ -136,6 +136,19 @@ async function normalize(
   };
 }
 
+// Mọi thay đổi trên một Place đều ảnh hưởng các trang CÔNG KHAI, không chỉ CMS:
+// danh sách điểm đến, trang chi tiết của chính nó, và trang chi tiết của tỉnh
+// cha (thẻ con hiện ở đó). Các trang này chạy ISR — có cache — nên không xoá
+// cache thì biên tập sẽ gặp cảnh "sửa xong mà trang không đổi", kiểu lỗi rất
+// khó đoán ra nguyên nhân.
+//
+// Gom vào một chỗ thay vì rải `revalidatePath` trong từng action: thêm một
+// action mới mà quên một dòng là lại đúng cái lỗi đó.
+function revalidatePublic(slug?: string | null) {
+  revalidatePath("/diem-den");
+  if (slug) revalidatePath(`/diem-den/${slug}`);
+}
+
 export async function createPlace(input: PlaceFormInput): Promise<ActionResult> {
   await requireStaff();
   const res = await normalize(input);
@@ -143,6 +156,7 @@ export async function createPlace(input: PlaceFormInput): Promise<ActionResult> 
 
   const place = await prisma.place.create({ data: res.data });
   revalidatePath("/cms/places");
+  revalidatePublic(place.slug);
   return { ok: true, id: place.id };
 }
 
@@ -156,10 +170,15 @@ export async function updatePlace(
   const res = await normalize(input, id);
   if ("error" in res) return { ok: false, error: res.error };
 
-  await prisma.place.update({ where: { id }, data: res.data });
+  const updated = await prisma.place.update({
+    where: { id },
+    data: res.data,
+    select: { slug: true },
+  });
   revalidatePath("/cms/places");
   revalidatePath(`/cms/places/${id}`);
   revalidatePath(`/cms/places/${id}/edit`);
+  revalidatePublic(updated.slug);
   return { ok: true, id };
 }
 
@@ -174,8 +193,12 @@ export async function deletePlace(id: string): Promise<ActionResult> {
       error: `Không thể xóa: còn ${childCount} điểm đến con. Hãy xóa hoặc chuyển chúng trước.`,
     };
 
-  await prisma.place.delete({ where: { id } });
+  const removed = await prisma.place.delete({
+    where: { id },
+    select: { slug: true },
+  });
   revalidatePath("/cms/places");
+  revalidatePublic(removed.slug);
   return { ok: true, id };
 }
 
@@ -187,15 +210,17 @@ export async function togglePublish(
   publish: boolean,
 ): Promise<ActionResult> {
   await requireStaff();
-  await prisma.place.update({
+  const place = await prisma.place.update({
     where: { id },
     data: {
       status: publish ? PublishStatus.published : PublishStatus.draft,
       publishedAt: publish ? new Date() : null,
     },
+    select: { slug: true },
   });
   revalidatePath("/cms/places");
   revalidatePath(`/cms/places/${id}`);
+  revalidatePublic(place.slug);
   return { ok: true, id };
 }
 
@@ -205,12 +230,14 @@ export async function toggleFeatured(
   featured: boolean,
 ): Promise<ActionResult> {
   await requireStaff();
-  await prisma.place.update({
+  const place = await prisma.place.update({
     where: { id },
     data: { isFeatured: featured },
+    select: { slug: true },
   });
   revalidatePath("/cms/places");
   revalidatePath(`/cms/places/${id}`);
+  revalidatePublic(place.slug);
   return { ok: true, id };
 }
 
@@ -221,13 +248,14 @@ export async function toggleTreatAsDestination(
   value: boolean,
 ): Promise<ActionResult> {
   await requireStaff();
-  await prisma.place.update({
+  const place = await prisma.place.update({
     where: { id },
     data: { treatAsDestination: value },
+    select: { slug: true },
   });
   revalidatePath("/cms/places");
   revalidatePath(`/cms/places/${id}`);
-  revalidatePath("/diem-den");
+  revalidatePublic(place.slug);
   return { ok: true, id };
 }
 
@@ -241,8 +269,13 @@ export async function updateOrder(
   if (value !== null && !Number.isFinite(value))
     return { ok: false, error: "Thứ tự phải là số." };
 
-  await prisma.place.update({ where: { id }, data: { order: value } });
+  const place = await prisma.place.update({
+    where: { id },
+    data: { order: value },
+    select: { slug: true },
+  });
   revalidatePath("/cms/places");
   revalidatePath(`/cms/places/${id}`);
+  revalidatePublic(place.slug);
   return { ok: true, id };
 }

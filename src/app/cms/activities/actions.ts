@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { revalidateListingPages } from "@/lib/revalidate-public";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
@@ -137,6 +138,7 @@ export async function createActivity(
     },
   });
   revalidatePath("/cms/activities");
+  revalidateListingPages();
   return { ok: true, id: activity.id };
 }
 
@@ -171,6 +173,7 @@ export async function updateActivity(
     },
   });
   revalidatePath("/cms/activities");
+  revalidateListingPages();
   revalidatePath(`/cms/activities/${id}`);
   revalidatePath(`/cms/activities/${id}/edit`);
   return { ok: true, id };
@@ -180,6 +183,7 @@ export async function deleteActivity(id: string): Promise<ActionResult> {
   await requireStaff();
   await prisma.activity.delete({ where: { id } });
   revalidatePath("/cms/activities");
+  revalidateListingPages();
   return { ok: true, id };
 }
 
@@ -196,6 +200,7 @@ export async function togglePublish(
     },
   });
   revalidatePath("/cms/activities");
+  revalidateListingPages();
   revalidatePath(`/cms/activities/${id}`);
   return { ok: true, id };
 }
@@ -210,6 +215,7 @@ export async function toggleFeatured(
     data: { isFeatured: featured },
   });
   revalidatePath("/cms/activities");
+  revalidateListingPages();
   revalidatePath(`/cms/activities/${id}`);
   return { ok: true, id };
 }
@@ -224,6 +230,7 @@ export async function updateOrder(
     return { ok: false, error: "Thứ tự phải là số." };
   await prisma.activity.update({ where: { id }, data: { order: value } });
   revalidatePath("/cms/activities");
+  revalidateListingPages();
   revalidatePath(`/cms/activities/${id}`);
   return { ok: true, id };
 }

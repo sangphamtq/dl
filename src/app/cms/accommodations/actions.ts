@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { revalidateListingPages } from "@/lib/revalidate-public";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
@@ -125,6 +126,7 @@ export async function createAccommodation(
     data: { ...res.data, verifiedAt: res.data.isVerified ? new Date() : null },
   });
   revalidatePath("/cms/accommodations");
+  revalidateListingPages();
   return { ok: true, id: row.id };
 }
 
@@ -149,6 +151,7 @@ export async function updateAccommodation(
     data: { ...res.data, verifiedAt },
   });
   revalidatePath("/cms/accommodations");
+  revalidateListingPages();
   revalidatePath(`/cms/accommodations/${id}`);
   revalidatePath(`/cms/accommodations/${id}/edit`);
   return { ok: true, id };
@@ -158,6 +161,7 @@ export async function deleteAccommodation(id: string): Promise<ActionResult> {
   await requireStaff();
   await prisma.accommodation.delete({ where: { id } });
   revalidatePath("/cms/accommodations");
+  revalidateListingPages();
   return { ok: true, id };
 }
 
@@ -174,6 +178,7 @@ export async function togglePublish(
     },
   });
   revalidatePath("/cms/accommodations");
+  revalidateListingPages();
   revalidatePath(`/cms/accommodations/${id}`);
   return { ok: true, id };
 }
@@ -188,6 +193,7 @@ export async function toggleFeatured(
     data: { isFeatured: featured },
   });
   revalidatePath("/cms/accommodations");
+  revalidateListingPages();
   revalidatePath(`/cms/accommodations/${id}`);
   return { ok: true, id };
 }
@@ -202,6 +208,7 @@ export async function updateOrder(
     return { ok: false, error: "Thứ tự phải là số." };
   await prisma.accommodation.update({ where: { id }, data: { order: value } });
   revalidatePath("/cms/accommodations");
+  revalidateListingPages();
   revalidatePath(`/cms/accommodations/${id}`);
   return { ok: true, id };
 }
