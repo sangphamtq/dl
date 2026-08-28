@@ -101,12 +101,14 @@ export function Rail({
           <div className="hidden shrink-0 items-center gap-5 sm:flex">
             {meta}
             {progress && <RailProgress />}
-            <div className="flex items-center divide-x divide-border border border-border">
-              <CarouselPrevious className={cn(arrowBase, arrowClassName)} />
-              <CarouselNext
-                className={cn(arrowBase, "left-auto right-auto", arrowClassName)}
-              />
-            </div>
+            <ArrowPair
+              className={cn(arrowBase, arrowClassName)}
+              nextClassName={cn(
+                arrowBase,
+                "left-auto right-auto",
+                arrowClassName,
+              )}
+            />
           </div>
         </div>
       )}
@@ -135,6 +137,31 @@ export function Rail({
       </div>
       {progress && !heading && <RailProgress />}
     </Carousel>
+  );
+}
+
+// Cặp nút ‹ ›, TỰ BIẾN MẤT khi dải không có gì để cuộn.
+//
+// Miền nào mới có ba bốn điểm đến thì cả dải nằm gọn trong khung: hai nút lúc
+// đó vĩnh viễn mờ và bấm không ăn, mà một điều khiển chết nằm ngay cạnh tiêu đề
+// còn tệ hơn là không có nó. Thanh tiến trình cũng tự ẩn theo cùng lý do (xem
+// `RailProgress`), nên khi ít nội dung thì hàng tiêu đề chỉ còn tên miền và số
+// đếm — đúng thứ cần có ở đó.
+function ArrowPair({
+  className,
+  nextClassName,
+}: {
+  className?: string;
+  nextClassName?: string;
+}) {
+  const { canScrollPrev, canScrollNext } = useCarousel();
+  if (!canScrollPrev && !canScrollNext) return null;
+
+  return (
+    <div className="flex items-center divide-x divide-border border border-border">
+      <CarouselPrevious className={className} />
+      <CarouselNext className={nextClassName} />
+    </div>
   );
 }
 

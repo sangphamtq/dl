@@ -460,7 +460,23 @@ export function DestinationFilter({
                 <div
                   style={
                     {
-                      "--bleed": "max(0px, calc(50vw - 45rem - 0.5rem))",
+                      // Quãng nở của dải, chặn bởi HAI thứ:
+                      //   1. chỗ trống thật giữa cột nội dung và mép khung nhìn
+                      //      (`50vw - 45rem - 0.5rem`);
+                      //   2. lượng NỘI DUNG CÒN ẨN của chính dải này, chia đôi
+                      //      cho hai bên: `(số thẻ × 27rem − 90rem) / 2`.
+                      // Vế 2 mới là vế quan trọng ở màn rất rộng. Trước đó chỉ
+                      // có vế 1, nên trên màn 2560px dải nở ra 552px mỗi bên
+                      // trong khi một miền bốn thẻ chỉ có 288px nội dung thừa —
+                      // mở xong thì hở nguyên một mảng trắng bên phải. Nay nở
+                      // đúng bằng phần còn giấu được: bốn thẻ nở 144px mỗi bên,
+                      // ba thẻ (nội dung hẹp hơn cột) ra số âm → `max(0px, …)`
+                      // ghim về 0 và dải không nở gì cả, đúng như nó nên thế.
+                      // 27rem là bề rộng thẻ, 90rem là `max-w-7xl` của trang —
+                      // đổi một trong hai thì phải đổi ở đây.
+                      "--bleed":
+                        "max(0px, min(calc(50vw - 45rem - 0.5rem), calc((var(--items) * 27rem - 90rem) / 2)))",
+                      "--items": String(g.dests.length),
                     } as React.CSSProperties
                   }
                   className="group/bleed xl:mx-[calc(-1*var(--bleed))]"
@@ -506,6 +522,10 @@ export function DestinationFilter({
                   // khung sẽ tụt vào trong vùng đang nhìn và để hở một dải trống
                   // ở đó.
                   viewportClassName="transition-[clip-path,translate] duration-500 ease-out motion-reduce:transition-none xl:mr-[calc(-1*var(--bleed))] xl:[clip-path:inset(0_calc(2*var(--bleed))_0_var(--bleed))] xl:group-hover/mien:-translate-x-[var(--bleed)] xl:group-hover/mien:[clip-path:inset(0_0_0_var(--bleed))]"
+                  // Từ `xl` bề rộng thẻ là SỐ CỐ ĐỊNH (27rem), không phải
+                  // phần trăm. Đây là điều kiện để khối nở ra mà thẻ KHÔNG to
+                  // theo: bề rộng tính bằng phần trăm thì mỗi lần khối giãn là
+                  // mọi thẻ phình ra và người đọc vẫn thấy đúng bấy nhiêu thẻ.
                   itemClassName="basis-[86%] sm:basis-[60%] lg:basis-[44%] xl:basis-[27rem]"
                   // Miền có thể có tới 14 điểm đến, mà rail thì không nói gì
                   // về độ dài của chính nó — mũi tên ‹ › chỉ có trên máy có
@@ -801,7 +821,7 @@ function DestCard({ d }: { d: DestItem }) {
             </span>
           )}
 
-          <span className="mt-1 line-clamp-2 font-[family-name:var(--font-display)] text-[1.35rem] font-normal leading-[1.18] tracking-[-0.015em] text-white underline-offset-[6px] [text-shadow:0_1px_3px_rgba(0,0,0,0.45)] group-hover:underline sm:text-[1.5rem] lg:text-[1.7rem]">
+          <span className="mt-1 line-clamp-2 font-[family-name:var(--font-display)] text-[1.35rem] font-normal leading-[1.18] tracking-[-0.015em] text-white underline-offset-[6px] [text-shadow:0_1px_3px_rgba(0,0,0,0.45)] sm:text-[1.5rem] lg:text-[2rem]">
             {d.name}
           </span>
 
