@@ -1138,6 +1138,78 @@ hamburger.
 - Không đọc session (root layout **không** được gọi `auth()` — sẽ phá `force-static` của
   `/offline`). Mục Tài khoản trỏ `/tai-khoan/da-den`, trang đó tự redirect về `/login`.
 
+## Bản đồ du lịch toàn quốc (`/ban-do`)
+
+**Trang này trả lời câu hỏi KHÔNG GIAN, không phải là bản sao của `/diem-den`.** Bản đầu là
+danh sách + pin: ô tìm kiếm, chip lọc miền, lọc "Nổi bật", lưới thẻ — cả bốn đều đã có ở
+trang danh sách và làm tốt hơn ở đó, còn thứ chỉ bản đồ mới nói được (cái này cách cái kia
+bao xa, đi chung chuyến có nổi không) thì không có chỗ nào. Nay panel chỉ còn **hai chế độ**:
+
+| Chế độ | Câu hỏi | Cách làm |
+|---|---|---|
+| **Quanh đây** | "Từ đây lái 3 tiếng thì tới đâu?" | Chọn một nơi (hoặc bấm ◎) làm **mốc** → `getDistances()` (OSRM table, MỘT lượt cho cả bảng) → danh sách xếp theo **giờ lái**, lọc theo ngưỡng ≤2/4/6 giờ |
+| **Đo chuyến** | "Ba nơi này xếp một chuyến có nổi không?" | Bấm các nơi theo thứ tự → `getRoute()` vẽ tuyến thật + `legs[]` cho từng chặng → tổng km/giờ, nêu tên **chặng dài nhất** → nút tạo lịch trình |
+
+- **Ngưỡng lọc là GIỜ LÁI, không phải bán kính km — và không có vòng tròn.** Bản km + vòng
+  tròn nói dối ngay trên dữ liệu thật: lọc "200 km" (đường chim bay, đúng bằng vòng tròn vẽ
+  ra) nhưng hàng lại ghi "376 km · 4 giờ 31" vì đường núi. Người ta cũng không nghĩ bằng bán
+  kính. Thay vòng tròn: nơi ngoài ngưỡng **mờ đi** (`.dl-place-pin--far`) chứ không biến mất
+  — ẩn đi thì bản đồ bảo rằng phía bên kia không có gì.
+- **OSRM là dịch vụ ngoài tầm tay** (máy chủ demo, không SLA). Hỏng hoặc đang chờ thì
+  **không lọc**, chỉ xếp theo đường chim bay và nói thẳng ra ở dòng đếm. Đừng để một trang
+  trống vì một API của người khác.
+- **Nút "Tạo lịch trình N ngày" → `startTripFromRoute(slugs)`** (`lich-trinh/actions.ts`):
+  mỗi nơi thành MỘT NGÀY, đúng thứ tự đã xếp. **Không phải mỗi nơi một `TripItem`** — một
+  `Place` là nơi CHỨA điểm dừng nên `TripItem` cố tình không có `placeId`
+  ([`docs/lich-trinh.md`](docs/lich-trinh.md) §6b). Nhãn nơi hiện ghi ở `TripDay.title`;
+  cần liên kết thật thì nâng lên `TripDay.placeId` như §6b đã chốt.
+- **Pin của chặng nằm NGOÀI cluster** và dùng `.dl-trip-pin` — cùng pin đánh số với bản đồ
+  lịch trình (`trip-map-inner.tsx`), vì nói đúng một chuyện: thứ tự đi. Gom cụm chúng thì
+  đúng thứ người dùng vừa chọn lại biến mất sau một bong bóng "2".
+- **Trạng thái pin (mốc / ngoài ngưỡng) NƯỚNG vào icon**, không `classList.toggle` sau khi
+  dựng: markercluster tự tạo lại phần tử marker mỗi lần gom/tách cụm (tức mỗi lần đổi zoom)
+  nên class gắn sau biến mất mà không effect nào chạy lại.
+- **Khung nhìn do PANEL quyết định**, bản đồ chỉ thi hành — một prop `focus` kèm `token`,
+  cùng token thì không đụng vào khung nhìn. Nhờ vậy bản đồ không giật khỏi chỗ đang xem mỗi
+  lần state đổi. ⚠️ Đừng dùng `L.circle(...).getBounds()` để canh khung: hàm đó đọc
+  `this._map`, circle chưa gắn vào bản đồ sẽ ném `layerPointToLatLng` của `undefined`.
+- **Đã bỏ, đừng thêm lại:** ô tìm kiếm (22 mục thì cuộn nhanh hơn gõ, site đã có tìm kiếm
+  toàn cục) · chip lọc miền (trên bản đồ, miền là thứ NHÌN THẤY — mà chip cũ còn không đưa
+  bản đồ về vùng đó) · lọc "Nổi bật" · lớp "Địa điểm chi tiết" (18 điểm cho cả nước, ở mức
+  zoom toàn quốc là bụi, còn zoom vào một nơi thì `/diem-den/[slug]/ban-do` làm tốt hơn) ·
+  **chỉ đường A→B từ GPS** (Google Maps làm tốt hơn hẳn, và "1.720 km · 28 giờ" là con số
+  vô dụng).
+- Tham số URL chia sẻ được: `?tu=<slug|toi>` mốc · `?gio=<2|4|6>` ngưỡng · `?lo=<slug,slug>`
+  lộ trình (mở thẳng chế độ Đo chuyến). `?at=` là tên cũ của `tu`, vẫn nhận.
+
+**Ngôn ngữ hình khối lấy nguyên từ `/diem-den`** (`destination-filter.tsx`) — hai trang nói
+về cùng một tập nội dung, người dùng đi qua lại giữa chúng:
+
+- **Vuông hết, không `rounded-full`/`rounded-xl`**: chip lọc vuông (bật = `bg-foreground
+  text-background`), nút điều khiển bản đồ vuông, nút zoom của Leaflet ép vuông trong
+  `globals.css`. Nhãn nhỏ dùng **cùng hằng `MICRO`**; tiêu đề `VIỆT NAM` dùng **Playfair**
+  (`--font-serif` khai ngay ở `ban-do/page.tsx` vì nó không có trong root layout).
+- **Hàng trong panel có HAI đích, tách bằng vị trí** (như thẻ lưu trú): thân hàng làm việc
+  của chế độ đang bật (đặt mốc / thêm chặng), ô mũi tên bên phải mới rời sang
+  `/diem-den/[slug]`. Hai phần tử anh em trong một `<li>`, KHÔNG lồng `<a>` trong `<button>`.
+  Hàng đang chọn vẽ vạch bằng `shadow-[inset_2px_0_0_…]` chứ không `border-l` — border thật
+  đẩy cả hàng dịch 2px.
+- **Popup điểm đến = thẻ ở `/diem-den` thu nhỏ**: ảnh 3/2 + lớp phủ tối, tên trên ảnh, huy
+  hiệu "Nổi bật" vuông, hàng dữ kiện, dòng "Xem điểm đến →". Popup dựng bằng `innerHTML` nên
+  **chữ nghĩa nằm ở `.dl-pop*` trong `globals.css`, KHÔNG viết class Tailwind trong template
+  string**.
+- **Pin điểm đến VUÔNG và luôn có ẢNH** (52×36, `.dl-place-pin`): nơi chưa có ảnh bìa vẫn
+  lấy `coverUrl([], slug, 240, 160)` — cùng hàm, cùng kích thước với hàng trong panel, nên
+  pin và hàng của một nơi là một tấm ảnh giống hệt. Bản trước rơi về ô chữ cái nền xanh và
+  vì phần lớn điểm đến chưa có ảnh bìa, mặt bản đồ đầy ô "Đ", "N", "C". Cụm gom cũng vuông,
+  nền `--foreground`.
+
+> ⚠️ **Bản đồ chỉ thấy nơi CÓ toạ độ — hiện là 22, trong khi `/diem-den` có 37.** 15 nơi
+> vắng mặt đều là **tỉnh** (Hà Nội, Hà Giang, Lào Cai, Quảng Ninh, Sơn La, Bình Thuận…):
+> `PLACE_COORDS` chỉ phủ điểm đến, tỉnh chỉ lên bản đồ khi có listing gắn toạ độ để suy
+> trọng tâm. Muốn hai trang cùng một vũ trụ thì phải điền toạ độ cho tỉnh trước — nhất là
+> tỉnh `treatAsDestination`.
+
 ## Nút "Lịch trình" (nút nổi kéo thả được, ở mọi trang)
 
 `src/components/trip/trip-dock.tsx` — nút nổi **kéo thả được** trên **mọi trang công khai**,
@@ -1148,7 +1220,9 @@ kéo–thả (nhân đôi trình soạn thì hai chỗ sớm muộn lệch nhau)
 dựng ở `(site)/layout.tsx`; nút "Thêm vào lịch trình" ở các trang chi tiết báo cho nó qua
 `trip-bag-events.ts`. Thiết kế đầy đủ: [`docs/lich-trinh.md`](docs/lich-trinh.md) §6f.
 
-- **Ẩn ở** `/lich-trinh`, `/cms`, `/sale`, `/login`, `/offline` (`HIDDEN_ON` trong file đó).
+- **Ẩn ở** `/lich-trinh`, `/ban-do`, `/cms`, `/sale`, `/login`, `/offline` (`HIDDEN_ON`
+  trong file đó). Riêng `/ban-do`: chế độ "Đo chuyến" ở đó đã là một cửa tạo lịch trình, và
+  nút nổi neo giữa cạnh phải thì dưới `lg` nó đè đúng lên cụm nút ▲▼✕ của từng chặng.
 - **Nút là một viên tròn 44px ở GIỮA cạnh phải** — cố ý tránh dải đáy vốn đã đông
   (`BottomNav` · `PeerBar` · `BackToTop` · `InstallPrompt`); nhờ vậy **không thanh nào phải
   chừa chỗ cho nó**. Đã thử rồi bỏ: viên chữ "Lịch trình" (chiếm chỗ vĩnh viễn trên mọi

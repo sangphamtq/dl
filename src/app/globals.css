@@ -291,36 +291,203 @@
 .dl-route {
   stroke: var(--primary);
 }
+
 /* divIcon dùng className "dl-marker" → tự bỏ nền/viền mặc định */
 .dl-marker,
 .leaflet-div-icon {
   background: transparent;
   border: none;
 }
-/* Popup: bỏ padding mặc định để card ảnh tràn viền, bo góc lớn */
+/* Popup: bỏ padding mặc định để ảnh tràn viền. GÓC VUÔNG (3px) chứ không bo
+   lớn — popup là bản thu nhỏ của thẻ điểm đến ở /diem-den, mà cả hệ đó vuông. */
 .leaflet-popup-content-wrapper {
-  border-radius: 1rem;
+  border-radius: 3px;
   padding: 0;
   overflow: hidden;
-  box-shadow: 0 10px 30px rgb(0 0 0 / 0.15);
+  box-shadow: 0 18px 40px -18px rgb(0 0 0 / 0.45);
 }
 .leaflet-popup-content {
   margin: 0;
-  width: 13rem !important;
+  width: 15.5rem !important;
 }
 .leaflet-popup-tip {
-  box-shadow: 0 10px 30px rgb(0 0 0 / 0.15);
+  box-shadow: 0 18px 40px -18px rgb(0 0 0 / 0.45);
+}
+/* Nút zoom mặc định của Leaflet: vuông, viền mảnh — cùng vật liệu với cụm nút
+   trái (xem `btn` trong vietnam-map-inner.tsx). */
+.leaflet-bar,
+.leaflet-bar a {
+  border-radius: 0 !important;
+  border-color: var(--border);
+}
+.leaflet-touch .leaflet-bar {
+  border: 1px solid var(--border);
 }
 
-/* Pin ảnh tròn cho bản đồ điểm đến toàn quốc (/ban-do). */
-.dl-place-pin {
-  width: 46px;
-  height: 46px;
-  border-radius: 9999px;
+/* ── Popup điểm đến: thẻ ở /diem-den thu nhỏ ──────────────────────
+   Dựng bằng innerHTML nên KHÔNG dùng class Tailwind (lớp quét class không đi
+   vào template string một cách chắc chắn) — mọi thứ nằm ở đây. */
+.dl-pop {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  background: var(--card);
+}
+.dl-pop-media {
+  position: relative;
+  display: block;
+  aspect-ratio: 3 / 2;
   overflow: hidden;
-  border: 3px solid #fff;
   background: var(--muted);
-  box-shadow: 0 2px 8px rgb(0 0 0 / 0.3);
+}
+.dl-pop-media > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.dl-pop-blank {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  background: var(--primary);
+  color: #fff;
+  font-family: var(--font-display), var(--font-sans);
+  font-size: 2rem;
+}
+.dl-pop-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgb(0 0 0 / 0.84) 0%,
+    rgb(0 0 0 / 0.7) 22%,
+    rgb(0 0 0 / 0.54) 44%,
+    rgb(0 0 0 / 0.32) 64%,
+    rgb(0 0 0 / 0.1) 84%,
+    rgb(0 0 0 / 0.04) 100%
+  );
+  opacity: 0.86;
+}
+.dl-pop-body {
+  position: absolute;
+  inset: auto 0 0 0;
+  display: block;
+  padding: 0.75rem 0.875rem 0.8125rem;
+  color: #fff;
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.5);
+}
+.dl-pop-eyebrow {
+  display: block;
+  font-family: var(--font-rounded), var(--font-sans);
+  font-size: 0.75rem;
+  font-style: italic;
+  color: rgb(255 255 255 / 0.85);
+}
+.dl-pop-title {
+  display: block;
+  margin-top: 0.125rem;
+  font-family: var(--font-display), var(--font-sans);
+  font-size: 1.25rem;
+  line-height: 1.18;
+  letter-spacing: -0.015em;
+}
+.dl-pop-tagline {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: rgb(255 255 255 / 0.85);
+}
+/* Huy hiệu "Nổi bật": khối trắng vuông góc trên phải — y như trên thẻ. */
+.dl-pop-badge {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.2rem 0.4rem;
+  background: rgb(255 255 255 / 0.95);
+  color: #171717;
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+.dl-pop-facts {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.625rem 0.875rem 0;
+}
+.dl-pop-fact {
+  flex: 1;
+  border-top: 1px solid var(--border);
+  padding-top: 0.3rem;
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+}
+.dl-pop-fact > b {
+  font-variant-numeric: tabular-nums;
+  color: var(--foreground);
+}
+.dl-pop-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.625rem;
+  padding: 0.5rem 0.875rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--foreground);
+  transition: background-color 0.15s ease;
+}
+.dl-pop:hover .dl-pop-cta {
+  background: var(--foreground);
+  color: var(--background);
+}
+/* Bản rút gọn cho lớp địa điểm chi tiết: không ảnh, chỉ ba dòng chữ. */
+.dl-pop--mini .dl-pop-eyebrow,
+.dl-pop--mini .dl-pop-title {
+  color: inherit;
+  text-shadow: none;
+}
+.dl-pop--mini .dl-pop-eyebrow {
+  padding: 0.75rem 0.875rem 0;
+  font-family: var(--font-sans);
+  font-style: normal;
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--muted-foreground);
+}
+.dl-pop--mini .dl-pop-title {
+  padding: 0 0.875rem;
+  font-size: 1rem;
+}
+
+/* Pin ảnh cho bản đồ điểm đến toàn quốc (/ban-do). VUÔNG chứ không tròn: pin
+   này là thẻ điểm đến thu về 46px, mà thẻ ở /diem-den vuông và cắt ảnh 3/2 —
+   pin tròn đọc ra là "chấm bản đồ của một app khác". Pin chấm nhỏ của lớp
+   listing (.dl-pin) vẫn tròn, nhờ vậy hai lớp phân biệt được ngay bằng HÌNH. */
+.dl-place-pin {
+  width: 52px;
+  height: 36px;
+  border-radius: 2px;
+  overflow: hidden;
+  border: 2px solid #fff;
+  background: var(--muted);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.35);
   transition:
     transform 0.15s ease,
     box-shadow 0.2s ease;
@@ -331,20 +498,18 @@
   object-fit: cover;
   display: block;
 }
-.dl-place-pin--fallback {
-  display: grid;
-  place-items: center;
-  background: var(--primary);
-  color: #fff;
-  font-weight: 700;
-  font-size: 15px;
+/* Ngoài ngưỡng giờ lái: mờ + xám. KHÔNG ẩn — ẩn đi thì bản đồ nói rằng phía
+   bên kia không có gì, trong khi sự thật chỉ là "xa hơn mức bạn vừa chọn". */
+.dl-place-pin--far {
+  opacity: 0.32;
+  filter: grayscale(0.85);
 }
 .dl-place-pin:hover,
 .dl-place-pin--active {
-  transform: scale(1.12);
+  transform: scale(1.1);
   box-shadow:
-    0 0 0 4px color-mix(in oklch, var(--primary) 35%, transparent),
-    0 4px 12px rgb(0 0 0 / 0.35);
+    0 0 0 3px var(--foreground),
+    0 6px 14px rgb(0 0 0 / 0.4);
 }
 
 /* Chấm "vị trí của bạn" trên bản đồ. */
@@ -361,15 +526,17 @@
 .dl-cluster {
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 9999px;
-  background: var(--primary);
-  color: var(--primary-foreground);
-  border: 3px solid #fff;
-  box-shadow: 0 2px 8px rgb(0 0 0 / 0.3);
-  font-weight: 700;
-  font-size: 14px;
+  width: 38px;
+  height: 30px;
+  border-radius: 2px;
+  background: var(--foreground);
+  color: var(--background);
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.35);
+  font-weight: 600;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
 }
 
 /* Placeholder cho trình soạn thảo Tiptap (node rỗng đầu tiên). */

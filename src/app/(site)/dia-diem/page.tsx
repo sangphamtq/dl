@@ -160,7 +160,7 @@ export default async function DiaDiemPage({
       <main className="flex-1">
         <section className="relative isolate overflow-hidden">
           <Image
-            src="/halong.jpg"
+            src="/halong1.jpg"
             alt=""
             fill
             priority

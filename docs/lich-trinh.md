@@ -379,6 +379,18 @@ Ngữ cảnh được đặt **trước** khi gom, thay vì đoán **sau** khi g
 > Nếu sau này cần chuyến nhiều điểm đến ("3 ngày Phan Thiết, 3 ngày Đà Lạt"), chỗ đúng là
 > **`TripDay.placeId`** — một *nhãn cấp ngày* — chứ không phải hồi sinh `TripItem.placeId`.
 
+**Cửa thứ hai: bản đồ toàn quốc.** `/ban-do` chế độ *Đo chuyến* cho xếp nhiều điểm đến theo
+thứ tự (đo km/giờ lái từng chặng bằng OSRM) rồi bấm "Tạo lịch trình N ngày" →
+`startTripFromRoute(slugs)`: **mỗi nơi một NGÀY**, đúng thứ tự đã xếp, `Trip.placeId` =
+nơi đầu, rồi đặt làm chuyến đang lên lịch trình như luồng §6b. Đây chính là ca "chuyến
+nhiều điểm đến" nói ở trên: nhãn nơi hiện ghi tạm ở **`TripDay.title`** (không cần
+migration); khi nào trình soạn cần LÀM GÌ ĐÓ với liên kết đó — đếm mục theo nơi, link ngược
+"Xem địa điểm ở Sa Pa →" cho từng ngày — thì nâng lên **`TripDay.placeId`**, và chỗ phải
+sửa là đúng dòng `days: { create: … }` trong `startTripFromRoute`.
+
+Cố ý **một ngày một nơi**: đó là khung khởi đầu, không phải phán quyết. Thêm/bớt ngày là
+việc của trình soạn, còn đoán hộ "Sa Pa 2 ngày, Hà Giang 3 ngày" thì sai nhiều hơn đúng.
+
 ## 6c. Kéo–thả
 
 `@dnd-kit` (core + sortable + utilities). Bài toán là **sortable nhiều vùng chứa**: cột Chưa xếp ngày

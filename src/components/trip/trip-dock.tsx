@@ -92,7 +92,20 @@ import {
 // Chỉ chặn NHÁNH riêng tư: `/lich-trinh` (danh sách mẫu) là trang công khai, ở
 // đó nút vẫn có ích — khách xem mẫu rồi mở túi của mình ra so.
 // Giữ đồng bộ với `HIDDEN_ON` của bottom-nav & install-prompt.
-const HIDDEN_ON = ["/lich-trinh/cua-toi", "/cms", "/sale", "/login", "/offline"];
+//
+// `/ban-do` nằm trong danh sách vì hai lý do, không phải một: (1) chế độ "Đo
+// chuyến" của bản đồ đã là một cửa tạo lịch trình ngay trên màn hình đó — hai
+// lối vào cạnh nhau thì người dùng phải chọn giữa hai thứ na ná; (2) nút nổi
+// neo ở giữa cạnh phải, mà dưới `lg` panel chiếm hết bề ngang nên nó đè đúng
+// lên cụm nút ▲▼✕ của từng chặng.
+const HIDDEN_ON = [
+  "/lich-trinh/cua-toi",
+  "/ban-do",
+  "/cms",
+  "/sale",
+  "/login",
+  "/offline",
+];
 
 // Số ngày là thứ ĐỊNH VỊ, tên tự đặt chỉ là phụ đề. Bản đầu lấy `title` thay
 // cho cả nhãn, nên một ngày đặt tên "Ngày ra đảo" là mất luôn dấu hiệu nó là

@@ -1271,6 +1271,75 @@ export async function startTripForPlace(
   return { ok: true, data: { id: trip.id } };
 }
 
+/**
+ * Tạo KHUNG chuyến từ một lộ trình đo trên bản đồ toàn quốc: mỗi nơi một ngày,
+ * đúng thứ tự người dùng đã xếp.
+ *
+ * Vì sao là NGÀY chứ không phải mục: một `Place` là nơi CHỨA các điểm dừng, nên
+ * `TripItem` cố tình không nhận `placeId` (xem chú thích ở model và
+ * `docs/lich-trinh.md` §6b). Nhãn cấp ngày mới là chỗ đúng cho "ngày này ở đâu".
+ * Hiện ghi bằng `TripDay.title`; khi nào cần liên kết thật (đếm mục theo nơi,
+ * link ngược về điểm đến) thì nâng lên `TripDay.placeId` như §6b đã chốt — chỗ
+ * phải sửa là đúng dòng `days: { create: … }` bên dưới.
+ *
+ * MỘT NGÀY MỘT NƠI là khung khởi đầu, không phải phán quyết: thêm/bớt ngày là
+ * việc của trình soạn, và đoán hộ "Sa Pa 2 ngày, Hà Giang 3 ngày" thì sai nhiều
+ * hơn đúng.
+ */
+export async function startTripFromRoute(
+  slugs: string[],
+): Promise<ActionResult<{ id: string }>> {
+  let userId: string;
+  try {
+    userId = await requireUserId();
+  } catch {
+    return { ok: false, error: "Bạn cần đăng nhập để lưu chuyến." };
+  }
+
+  const clean = [...new Set(slugs)].slice(0, 12);
+  if (clean.length < 2) {
+    return { ok: false, error: "Chọn ít nhất hai nơi để tạo chuyến." };
+  }
+
+  const found = await prisma.place.findMany({
+    where: { slug: { in: clean }, status: "published" },
+    select: { id: true, slug: true, name: true },
+  });
+  // Giữ ĐÚNG thứ tự đã xếp trên bản đồ — thứ tự chặng chính là nội dung của
+  // chuyến, mà `findMany` không hứa trả về theo thứ tự của mảng `in`.
+  const bySlug = new Map(found.map((p) => [p.slug, p] as const));
+  const ordered = clean
+    .map((s) => bySlug.get(s))
+    .filter((p): p is NonNullable<typeof p> => !!p);
+  if (ordered.length < 2) {
+    return { ok: false, error: "Không tìm thấy điểm đến." };
+  }
+
+  const names = ordered.map((p) => p.name);
+  const title =
+    names.length <= 3
+      ? `Đi ${names.join(" – ")}`
+      : `Đi ${names[0]} và ${names.length - 1} nơi khác`;
+
+  const trip = await prisma.trip.create({
+    data: {
+      ownerId: userId,
+      // Nơi ĐẦU TIÊN của lộ trình — `Trip.placeId` chỉ là gợi ý & đường quay
+      // lại, không phải chân lý về phạm vi chuyến (docs §3 điểm 3b).
+      placeId: ordered[0].id,
+      title,
+      days: {
+        create: ordered.map((p, i) => ({ index: i, title: p.name })),
+      },
+    },
+    select: { id: true },
+  });
+
+  await rememberPlanning(trip.id);
+  revalidatePath("/lich-trinh/cua-toi");
+  return { ok: true, data: { id: trip.id } };
+}
+
 // ── Thành viên cùng sửa ──────────────────────────────────────────────────
 // Mời bằng EMAIL. Site chỉ đăng nhập bằng OAuth nên không gửi mail xác thực
 // riêng: nếu email đã có tài khoản thì thành thành viên ngay; chưa có thì giữ
