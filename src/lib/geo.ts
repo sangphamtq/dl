@@ -1,15 +1,17 @@
 // Gom các Listing có toạ độ (Spot, Eatery, Accommodation) của một Place về một
-// mảng GeoPoint phẳng để chấm pin lên bản đồ. Place không có lat/lng riêng nên
-// tâm bản đồ được suy ra bằng fitBounds ở client (xem destination-map-inner.tsx).
+// mảng GeoPoint phẳng để chấm pin lên bản đồ. Tâm bản đồ của MỘT điểm đến vẫn
+// suy bằng fitBounds ở client (xem destination-map-inner.tsx).
 import { prisma } from "@/lib/prisma";
 import { regionOf } from "@/lib/regions";
 import { PLACE_COORDS } from "@/lib/place-coords";
 
 export type GeoType = "spot" | "eatery" | "accommodation";
 
-// Một điểm đến (Place) trên bản đồ toàn quốc. Toạ độ suy ra bằng TRỌNG TÂM các
-// listing (spot/quán/lưu trú) CÓ toạ độ gắn TRỰC TIẾP vào place đó — vì Place
-// không có lat/lng riêng. Place chưa có listing toạ độ nào sẽ không xuất hiện.
+// Một điểm đến (Place) trên bản đồ toàn quốc. Toạ độ lấy theo thứ tự:
+//   1. `Place.lat/lng` — nguồn chân lý, sửa được trong CMS;
+//   2. bảng tra `PLACE_COORDS`;
+//   3. TRỌNG TÂM các listing có toạ độ gắn trực tiếp vào nơi đó.
+// Không có nguồn nào thì nơi đó không lên bản đồ.
 export type MapPlacePoint = {
   slug: string;
   name: string;
@@ -52,6 +54,8 @@ export async function getDestinationMapPoints(): Promise<MapPlacePoint[]> {
         tagline: true,
         isFeatured: true,
         provinceName: true,
+        lat: true,
+        lng: true,
         parent: { select: { slug: true } },
         images: { where: { isCover: true }, take: 1, select: { url: true } },
         _count: {
@@ -83,10 +87,17 @@ export async function getDestinationMapPoints(): Promise<MapPlacePoint[]> {
   for (const pl of places) {
     const a = acc.get(pl.id);
     const fixed = PLACE_COORDS[pl.slug];
-    // Ưu tiên toạ độ tra cứu (tâm nơi đó); nếu không có thì suy trọng tâm listing.
+    // `Place.lat/lng` ĐỨNG TRƯỚC bảng tra: trường đó thêm cùng đợt làm Lịch
+    // trình (docs/lich-trinh.md §9.2), có ô nhập trong CMS và đã backfill —
+    // nhưng hàm này viết trước đó nên vẫn bỏ qua, khiến toạ độ biên tập tự nhập
+    // KHÔNG đưa được nơi đó lên bản đồ. Bảng tra và trọng tâm lùi xuống làm dự
+    // phòng cho nơi chưa có toạ độ trong CSDL.
     let lat: number;
     let lng: number;
-    if (fixed) {
+    if (pl.lat != null && pl.lng != null) {
+      lat = pl.lat;
+      lng = pl.lng;
+    } else if (fixed) {
       [lat, lng] = fixed;
     } else if (a && a.n > 0) {
       lat = a.lat / a.n;

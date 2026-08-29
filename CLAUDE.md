@@ -1204,11 +1204,14 @@ về cùng một tập nội dung, người dùng đi qua lại giữa chúng:
   vì phần lớn điểm đến chưa có ảnh bìa, mặt bản đồ đầy ô "Đ", "N", "C". Cụm gom cũng vuông,
   nền `--foreground`.
 
-> ⚠️ **Bản đồ chỉ thấy nơi CÓ toạ độ — hiện là 22, trong khi `/diem-den` có 37.** 15 nơi
-> vắng mặt đều là **tỉnh** (Hà Nội, Hà Giang, Lào Cai, Quảng Ninh, Sơn La, Bình Thuận…):
-> `PLACE_COORDS` chỉ phủ điểm đến, tỉnh chỉ lên bản đồ khi có listing gắn toạ độ để suy
-> trọng tâm. Muốn hai trang cùng một vũ trụ thì phải điền toạ độ cho tỉnh trước — nhất là
-> tỉnh `treatAsDestination`.
+> ⚠️ **Bản đồ chỉ thấy nơi CÓ toạ độ — hiện 23, trong khi `/diem-den` có 37.** Số vắng mặt
+> đều là **tỉnh** (Hà Nội, Hà Giang, Lào Cai, Quảng Ninh, Sơn La, Bình Thuận…). Cách sửa là
+> **điền `lat/lng` cho tỉnh trong CMS** — nhất là tỉnh `treatAsDestination`.
+>
+> `getDestinationMapPoints()` lấy toạ độ theo thứ tự **`Place.lat/lng` → bảng tra
+> `PLACE_COORDS` → trọng tâm listing**. Trước 2026-08-29 nó bỏ qua hẳn nấc đầu (hàm viết
+> trước khi `Place.lat/lng` ra đời, chú thích trong file còn ghi "Place không có lat/lng
+> riêng") — nên toạ độ biên tập tự nhập trong CMS **không** đưa được nơi đó lên bản đồ.
 
 ## Nút "Lịch trình" (nút nổi kéo thả được, ở mọi trang)
 

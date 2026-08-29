@@ -40,12 +40,20 @@ export function PlanTripButton({
   placeName,
   isAuthed,
   className,
+  children,
 }: {
   placeId: string;
   placeName: string;
   /** Bỏ trống = chưa biết; bấm rồi server báo mới mở cửa đăng nhập. */
   isAuthed?: boolean;
   className?: string;
+  /**
+   * Nội dung trigger tuỳ biến (vd một THẺ ẢNH điểm đến ở `/lich-trinh`). Bỏ
+   * trống thì vẫn là nút cam "Lên lịch trình đi X" như ở trang điểm đến.
+   * Có prop này để chỗ khác dùng lại NGUYÊN hộp thoại + cửa đăng nhập bên dưới,
+   * thay vì chép lại luồng "tiếp tục chuyến / bắt đầu từ mẫu / tạo mới".
+   */
+  children?: React.ReactNode;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -123,6 +131,148 @@ export function PlanTripButton({
     open();
   }
 
+  // Hộp thoại + cửa đăng nhập DÙNG CHUNG cho cả hai kiểu trigger (nút cam mặc
+  // định và trigger tuỳ biến) — tách ra hằng để khỏi chép luồng làm hai bản.
+  const dialogs = (
+    <>
+        <Dialog open={options !== null} onOpenChange={(o) => !o && setOptions(null)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Lên lịch trình đi {placeName}</DialogTitle>
+              <DialogDescription>
+                Chọn nơi bắt đầu — chuyến bạn chọn sẽ thành chuyến đang lên lịch trình.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="max-h-[60vh] space-y-4 overflow-y-auto">
+              {options && options.trips.length > 0 && (
+                <section>
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Tiếp tục chuyến đang có
+                  </h3>
+                  <ul className="mt-2 space-y-1">
+                    {options.trips.map((t) => (
+                      <li key={t.id}>
+                        <button
+                          type="button"
+                          disabled={pending}
+                          onClick={() =>
+                            start(async () => {
+                              const res = await setPlanningTrip(t.id);
+                              if (!res.ok) {
+                                toast.error(res.error);
+                                return;
+                              }
+                              go(t.id);
+                            })
+                          }
+                          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-muted disabled:opacity-50"
+                        >
+                          <Route className="size-4 shrink-0 text-primary" aria-hidden />
+                          <span className="min-w-0">
+                            <span className="block truncate text-sm font-medium">{t.title}</span>
+                            <span className="block text-xs text-muted-foreground">
+                              {t.count} mục
+                            </span>
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {options && options.templates.length > 0 && (
+                <section>
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Bắt đầu từ lịch trình mẫu
+                  </h3>
+                  <ul className="mt-2 space-y-1">
+                    {options.templates.map((t) => (
+                      <li key={t.id}>
+                        <button
+                          type="button"
+                          disabled={pending}
+                          onClick={() =>
+                            start(async () => {
+                              const res = await cloneTrip(t.id);
+                              if (!res.ok) {
+                                toast.error(res.error);
+                                return;
+                              }
+                              toast.success(`Đã sao “${t.title}” về lịch trình của bạn`);
+                              go(res.data.id);
+                            })
+                          }
+                          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-muted disabled:opacity-50"
+                        >
+                          <Sparkles className="size-4 shrink-0 text-warm" aria-hidden />
+                          <span className="min-w-0">
+                            <span className="block truncate text-sm font-medium">{t.title}</span>
+                            <span className="block text-xs text-muted-foreground">
+                              {t.days} ngày · sao về rồi sửa thoải mái
+                            </span>
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() =>
+                  start(async () => {
+                    const res = await startTripForPlace(placeId);
+                    if (!res.ok) {
+                      toast.error(res.error);
+                      return;
+                    }
+                    go(res.data.id);
+                  })
+                }
+                className="flex w-full items-center gap-3 rounded-xl border border-dashed px-3 py-2.5 text-left transition-colors hover:bg-muted disabled:opacity-50"
+              >
+                <CalendarDays className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                <span>
+                  <span className="block text-sm font-medium">Tạo chuyến mới</span>
+                  <span className="block text-xs text-muted-foreground">
+                    Bắt đầu từ trang trắng cho {placeName}
+                  </span>
+                </span>
+              </button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <LoginDrawer
+          open={loginOpen}
+          onOpenChange={setLoginOpen}
+          redirectTo={pathname ?? "/"}
+          title={`Đăng nhập để lên lịch trình đi ${placeName}`}
+          description="Đăng nhập rồi bạn quay lại đúng trang này và tiếp tục ngay."
+        />
+    </>
+  );
+
+  if (children) {
+    return (
+      <>
+        <button
+          type="button"
+          onClick={onClick}
+          disabled={pending}
+          className={cn("text-left disabled:opacity-60", className)}
+        >
+          {children}
+        </button>
+        {dialogs}
+      </>
+    );
+  }
+
   return (
     <>
       <Button
@@ -143,125 +293,7 @@ export function PlanTripButton({
         </span>
       </Button>
 
-      <Dialog open={options !== null} onOpenChange={(o) => !o && setOptions(null)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Lên lịch trình đi {placeName}</DialogTitle>
-            <DialogDescription>
-              Chọn nơi bắt đầu — chuyến bạn chọn sẽ thành chuyến đang lên lịch trình.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="max-h-[60vh] space-y-4 overflow-y-auto">
-            {options && options.trips.length > 0 && (
-              <section>
-                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Tiếp tục chuyến đang có
-                </h3>
-                <ul className="mt-2 space-y-1">
-                  {options.trips.map((t) => (
-                    <li key={t.id}>
-                      <button
-                        type="button"
-                        disabled={pending}
-                        onClick={() =>
-                          start(async () => {
-                            const res = await setPlanningTrip(t.id);
-                            if (!res.ok) {
-                              toast.error(res.error);
-                              return;
-                            }
-                            go(t.id);
-                          })
-                        }
-                        className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-muted disabled:opacity-50"
-                      >
-                        <Route className="size-4 shrink-0 text-primary" aria-hidden />
-                        <span className="min-w-0">
-                          <span className="block truncate text-sm font-medium">{t.title}</span>
-                          <span className="block text-xs text-muted-foreground">
-                            {t.count} mục
-                          </span>
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-
-            {options && options.templates.length > 0 && (
-              <section>
-                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Bắt đầu từ lịch trình mẫu
-                </h3>
-                <ul className="mt-2 space-y-1">
-                  {options.templates.map((t) => (
-                    <li key={t.id}>
-                      <button
-                        type="button"
-                        disabled={pending}
-                        onClick={() =>
-                          start(async () => {
-                            const res = await cloneTrip(t.id);
-                            if (!res.ok) {
-                              toast.error(res.error);
-                              return;
-                            }
-                            toast.success(`Đã sao “${t.title}” về lịch trình của bạn`);
-                            go(res.data.id);
-                          })
-                        }
-                        className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-muted disabled:opacity-50"
-                      >
-                        <Sparkles className="size-4 shrink-0 text-warm" aria-hidden />
-                        <span className="min-w-0">
-                          <span className="block truncate text-sm font-medium">{t.title}</span>
-                          <span className="block text-xs text-muted-foreground">
-                            {t.days} ngày · sao về rồi sửa thoải mái
-                          </span>
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-
-            <button
-              type="button"
-              disabled={pending}
-              onClick={() =>
-                start(async () => {
-                  const res = await startTripForPlace(placeId);
-                  if (!res.ok) {
-                    toast.error(res.error);
-                    return;
-                  }
-                  go(res.data.id);
-                })
-              }
-              className="flex w-full items-center gap-3 rounded-xl border border-dashed px-3 py-2.5 text-left transition-colors hover:bg-muted disabled:opacity-50"
-            >
-              <CalendarDays className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-              <span>
-                <span className="block text-sm font-medium">Tạo chuyến mới</span>
-                <span className="block text-xs text-muted-foreground">
-                  Bắt đầu từ trang trắng cho {placeName}
-                </span>
-              </span>
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <LoginDrawer
-        open={loginOpen}
-        onOpenChange={setLoginOpen}
-        redirectTo={pathname ?? "/"}
-        title={`Đăng nhập để lên lịch trình đi ${placeName}`}
-        description="Đăng nhập rồi bạn quay lại đúng trang này và tiếp tục ngay."
-      />
+      {dialogs}
     </>
   );
 }

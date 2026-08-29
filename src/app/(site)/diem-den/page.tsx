@@ -5,7 +5,7 @@ import {
   type DestItem,
   type ProvinceItem,
 } from "@/components/site/destination-filter";
-import Link from "next/link";
+import { HeroLink } from "@/components/site/hero-link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Curtain, Rise } from "@/components/site/reveal";
@@ -229,8 +229,8 @@ export default async function DiemDenPage() {
                 </Rise>
                 <Rise delay={0.32} className="mt-8 sm:mt-10">
                 <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
-                  <BrowseLink href="/dia-diem" label={`Xem ${spotCount} địa điểm`} />
-                  <BrowseLink href="/ban-do" label="Mở bản đồ du lịch" />
+                  <HeroLink href="/dia-diem" label={`Xem ${spotCount} địa điểm`} />
+                  <HeroLink href="/ban-do" label="Mở bản đồ du lịch" />
                 </div>
                 </Rise>
               </div>
@@ -251,21 +251,3 @@ export default async function DiemDenPage() {
   );
 }
 
-function BrowseLink({ href, label }: { href: string; label: string }) {
-  return (
-    <Link
-      href={href}
-      className="group relative inline-flex h-12 items-center px-6 text-xs font-semibold uppercase tracking-[0.16em] text-white shadow-[0_10px_28px_-10px_rgba(8,22,15,0.75)] backdrop-blur-[2px] backdrop-saturate-[1.3] [text-shadow:0_1px_3px_rgba(8,22,15,0.6),0_2px_16px_rgba(8,22,15,0.8)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 sm:text-[0.8125rem]"
-    >
-      <span
-        aria-hidden
-        className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/[0.22] via-white/[0.07] to-white/[0.02] transition-colors duration-200 group-hover:from-white/40 group-hover:via-white/20 group-hover:to-white/10 motion-reduce:transition-none"
-      />
-      <span
-        aria-hidden
-        className="pointer-events-none absolute inset-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),inset_0_-1px_0_rgba(255,255,255,0.18)] ring-1 ring-inset ring-white/40 transition-shadow duration-200 group-hover:ring-white/75 motion-reduce:transition-none"
-      />
-      <span className="relative">{label}</span>
-    </Link>
-  );
-}
