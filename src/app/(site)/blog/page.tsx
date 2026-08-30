@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { Playfair_Display } from "next/font/google";
 import {
   BedDouble,
   BookOpen,
@@ -9,7 +10,7 @@ import {
   LayoutGrid,
   MapPin,
   Newspaper,
-  Sparkles,
+  Star,
   UtensilsCrossed,
   type LucideIcon,
 } from "@/components/icons";
@@ -22,11 +23,21 @@ import { Pagination } from "@/components/pagination";
 import { PostStats } from "@/components/blog/post-stats";
 import { SortSelect } from "@/components/blog/sort-select";
 import { BlogFilters, type FilterOption } from "@/components/blog/blog-filters";
+import { RiseInView } from "@/components/site/reveal";
 
 export const metadata = {
   title: "Cẩm nang du lịch · Halivivu",
   description: "Kinh nghiệm, lịch trình gợi ý và review điểm đến khắp Việt Nam.",
 };
+
+// Cùng họ chữ tiêu đề với `/diem-den` và `/dia-diem` — khai TẠI TRANG vì
+// `--font-serif` không có trong root layout.
+const serif = Playfair_Display({
+  variable: "--font-serif",
+  subsets: ["latin", "vietnamese"],
+  weight: ["400"],
+  display: "swap",
+});
 
 const dateFmt = new Intl.DateTimeFormat("vi-VN", {
   day: "2-digit",
@@ -34,20 +45,25 @@ const dateFmt = new Intl.DateTimeFormat("vi-VN", {
   year: "numeric",
 });
 
-// Nhãn nhỏ đầu khối — MỘT khuôn cho cả trang (danh mục, chủ đề, bài nổi bật,
-// tất cả bài viết). Trước đây mỗi nhãn tự khai lại cỡ chữ và giãn ký tự riêng.
-const MICRO = "text-[0.7rem] font-semibold uppercase tracking-[0.14em]";
+// Nhãn nhỏ đầu khối — MỘT khuôn cho cả trang. Cỡ 0.6rem là hằng `MICRO` dùng
+// chung với `/diem-den` (`destination-filter.tsx`) và `/dia-diem`; bản trước ở
+// đây là 0.7rem, tức cùng một vai nhưng to hơn nửa bậc so với hai trang kia.
+const MICRO = "text-[0.6rem] font-semibold uppercase tracking-[0.14em]";
 
-// Bo góc ảnh dùng chung, cùng ngôn ngữ với thẻ ở các trang khác của site.
-const SHOT = "overflow-hidden rounded-2xl bg-muted";
-// Vành mực nhạt vẽ bên trong mép ảnh: ảnh trời sáng đặt trên nền be nhạt thì
-// cạnh trên gần như biến mất nếu không có nó.
+// Khung ảnh dùng chung. MÉP VUÔNG — cùng hình khối với thẻ ở `/diem-den` và
+// `/dia-diem`; bản trước bo `rounded-2xl`/`rounded-3xl`.
+const SHOT = "overflow-hidden bg-muted";
+// Vành sáng mảnh vẽ bên trong mép ảnh, đậm lên khi rê chuột — đúng vành của thẻ
+// điểm đến (`ring-white/12` → `ring-white/55`), thay cho vành mực tĩnh.
 const RING =
-  "pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-black/10";
-// Lớp phủ đáy cho ảnh có chữ đè lên: đậm ở đáy rồi TẮT HẲN ở 72% chiều cao,
-// nên phần trên của ảnh không bị đụng tới. Cùng công thức với thẻ điểm đến.
+  "pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/12 transition-[box-shadow] duration-300 group-hover:ring-white/55 motion-reduce:transition-none";
+// Vành cho ảnh KHÔNG có chữ đè lên (thẻ trong lưới): vẫn cần một nét ngăn ảnh
+// trời sáng với nền trang trắng.
+const RING_PLAIN =
+  "pointer-events-none absolute inset-0 ring-1 ring-inset ring-black/10";
+// Lớp phủ đáy cho ảnh có chữ đè lên — cùng công thức với thẻ điểm đến.
 const SCRIM =
-  "absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,0.88)_0%,rgba(0,0,0,0.72)_18%,rgba(0,0,0,0.4)_38%,rgba(0,0,0,0.12)_56%,rgba(0,0,0,0)_74%)]";
+  "absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,0.84)_0%,rgba(0,0,0,0.7)_22%,rgba(0,0,0,0.54)_44%,rgba(0,0,0,0.32)_64%,rgba(0,0,0,0.1)_84%,rgba(0,0,0,0.04)_100%)] opacity-80 transition-opacity duration-300 group-hover:opacity-[0.92] motion-reduce:transition-none";
 
 const CATEGORIES: { value: string; label: string; Icon: LucideIcon }[] = [
   { value: "all", label: "Tất cả bài viết", Icon: LayoutGrid },
@@ -261,14 +277,14 @@ export default async function BlogPage({
   const featRest = featured.slice(1);
 
   return (
-    // Nền be rất nhạt để trang đọc ra như một ấn phẩm tách khỏi phần tra cứu.
-    // `muted/40` chứ không phải một mã màu viết cứng — cùng sắc với nền phụ của
-    // cả site, và dark mode tự đúng.
-    // Nền be chuyển xuống <main>: nó từng nằm trên khối bọc cả header, mà
-    // header đã ra layout dùng chung nên khối này chỉ còn bọc phần nội dung.
-    <div className="flex flex-1 flex-col">
+    // Nền TRẮNG như `/diem-den` và `/dia-diem`. Bản trước dùng nền be `muted/40`
+    // để "đọc ra như một ấn phẩm tách khỏi phần tra cứu" — nhưng ba trang danh
+    // sách này giờ dùng chung một bộ vật liệu, mà nền là thứ đầu tiên mắt nhận
+    // ra: một trang be giữa hai trang trắng thì đọc ra là site khác, không phải
+    // mục khác.
+    <div className={cn("flex flex-1 flex-col", serif.variable)}>
 
-      <main className="flex-1 bg-muted/40">
+      <main className="flex-1">
         {/* Container ĐÚNG BẰNG container của header: `max-w-7xl px-4 sm:px-6`.
             Trước đây trang này dùng `max-w-[81.25rem]` + `lg:px-8` riêng, nên ở
             màn rộng logo/nav lại thụt vào một khoảng khác nội dung bên dưới —
@@ -296,7 +312,7 @@ export default async function BlogPage({
               Bỏ ảnh thì đầu trang còn ~180px thay vì ~380px: lưới chủ đề và bài
               nổi bật — vốn đã đầy ảnh thật, đúng ngữ cảnh — lên thẳng tầm mắt. */}
           <section className="mt-5 max-w-3xl">
-            <h1 className="text-balance font-[family-name:var(--font-display)] text-[clamp(1.75rem,3.6vw,2.75rem)] font-extrabold leading-[1.05] tracking-[-0.035em]">
+            <h1 className="text-balance font-[family-name:var(--font-serif)] text-[clamp(1.75rem,4.4vw,3.25rem)] font-normal uppercase leading-[1.15] tracking-[0.1em] sm:tracking-[0.14em]">
               Kinh nghiệm cho mọi hành trình
             </h1>
             {/* `max-w-2xl`: ở `max-w-xl` câu này rớt đúng hai chữ cuối xuống
@@ -309,14 +325,24 @@ export default async function BlogPage({
                 hàng tuần" và "Nội dung chọn lọc" — không ai kiểm được, và cái
                 đầu còn có thể sai bất cứ lúc nào. Ngày bài mới nhất thì luôn
                 đúng vì nó đọc thẳng từ dữ liệu. */}
-            <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
-              <Fact Icon={Newspaper} text={`${totalPublished} bài viết`} />
-              <Fact Icon={LayoutGrid} text={`${liveTopics.length} chủ đề`} />
+            {/* Hàng dữ kiện: nhãn nhỏ in hoa, SỐ về màu chữ chính — cùng cách
+                `/diem-den` viết meta ("16 điểm đến"). Bỏ ba icon: ở cỡ chữ này
+                chúng to ngang chữ và không thêm nghĩa nào. */}
+            <div
+              className={cn(
+                MICRO,
+                "mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-muted-foreground",
+              )}
+            >
+              <Fact n={totalPublished} unit="bài viết" />
+              <Fact n={liveTopics.length} unit="chủ đề" />
               {newestAt && (
-                <Fact
-                  Icon={CalendarDays}
-                  text={`Mới nhất ${dateFmt.format(newestAt)}`}
-                />
+                <span>
+                  Mới nhất{" "}
+                  <span className="tabular-nums text-foreground">
+                    {dateFmt.format(newestAt)}
+                  </span>
+                </span>
               )}
             </div>
           </section>
@@ -330,29 +356,39 @@ export default async function BlogPage({
                 <h2 className={cn(MICRO, "mb-3 text-muted-foreground")}>
                   Danh mục
                 </h2>
-                <ul className="flex flex-col">
+                {/* Mục đang chọn tô MỰC (`foreground`), không phải xanh
+                    `primary`: cả hệ thẻ ở ba trang danh sách chỉ dùng mực và
+                    trắng, xanh để dành cho hành động. Bỏ icon từng mục — sáu
+                    icon xếp dọc thành một cột hình vẽ chạy song song cột chữ,
+                    trong khi tên mục đã đủ. */}
+                <ul className="flex flex-col border-t border-border">
                   {CATEGORIES.map((c) => {
                     const active = category === c.value;
-                    const Icon = c.Icon;
                     return (
                       <li key={c.value}>
                         <Link
                           href={buildHref({ category: c.value })}
                           className={cn(
-                            "flex items-center gap-2.5 border-l-2 py-2 pl-3 text-sm transition-colors",
+                            "flex items-center gap-3 border-b border-border py-2.5 text-sm transition-colors",
                             active
-                              ? "border-primary font-semibold text-primary"
-                              : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground",
+                              ? "font-semibold text-foreground"
+                              : "text-muted-foreground hover:text-foreground",
                           )}
                         >
-                          <Icon className="size-4 shrink-0" aria-hidden />
+                          <span
+                            aria-hidden
+                            className={cn(
+                              "h-4 w-0.5 shrink-0 transition-colors",
+                              active ? "bg-foreground" : "bg-transparent",
+                            )}
+                          />
                           <span className="min-w-0 flex-1 truncate">
                             {c.label}
                           </span>
                           <span
                             className={cn(
                               "shrink-0 text-xs tabular-nums",
-                              active ? "text-primary/70" : "text-muted-foreground/60",
+                              active ? "text-foreground" : "text-muted-foreground/60",
                             )}
                           >
                             {countOf(c.value)}
@@ -379,9 +415,7 @@ export default async function BlogPage({
             {/* Chủ đề nổi bật */}
             {liveTopics.length > 0 && (
               <section>
-                <h2 className={cn(MICRO, "text-muted-foreground")}>
-                  Chủ đề nổi bật
-                </h2>
+                <SectionHead title="Chủ đề nổi bật" />
                 <div className="mt-4 flex gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                   {liveTopics.map((c) => {
                     const cover = catCover.get(c.value);
@@ -411,7 +445,7 @@ export default async function BlogPage({
                         <span aria-hidden className={SCRIM} />
                         <span aria-hidden className={RING} />
                         <span className="absolute inset-x-3.5 bottom-3">
-                          <span className="block font-[family-name:var(--font-display)] text-sm font-semibold text-white">
+                          <span className="block font-[family-name:var(--font-display)] text-sm font-semibold text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.45)]">
                             {c.label}
                           </span>
                           <span className="mt-0.5 block text-[11px] tabular-nums text-white/75">
@@ -428,13 +462,11 @@ export default async function BlogPage({
             {/* Bài viết nổi bật */}
             {lead && (
               <section className="mt-12">
-                <h2 className={cn(MICRO, "text-muted-foreground")}>
-                  Bài viết nổi bật
-                </h2>
+                <SectionHead title="Bài viết nổi bật" />
                 <div className="mt-4 grid gap-5 lg:grid-cols-[1.4fr_1fr]">
                   <Link
                     href={`/blog/${lead.slug}`}
-                    className={cn(SHOT, "group relative block rounded-3xl")}
+                    className={cn(SHOT, "group relative block")}
                   >
                     <div className="relative aspect-[16/11]">
                       <Image
@@ -444,23 +476,24 @@ export default async function BlogPage({
                         sizes="(min-width: 1024px) 44rem, 100vw"
                         className="object-cover"
                       />
-                      <span aria-hidden className={cn(SCRIM, "rounded-3xl")} />
+                      <span aria-hidden className={SCRIM} />
                     </div>
-                    <span aria-hidden className={cn(RING, "rounded-3xl")} />
-                    {/* Huy hiệu: viên bo tròn màu cam của theme, cùng hình dạng
-                        với huy hiệu ở các thẻ khác trong site — bản cũ là một ô
-                        vuông màu #ff8800 viết cứng. */}
-                    <span className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-warm px-3 py-1 text-[0.7rem] font-semibold uppercase tracking-wide text-warm-foreground">
-                      <Sparkles className="size-3.5" aria-hidden />
+                    <span aria-hidden className={RING} />
+                    {/* Huy hiệu "Nổi bật" y hệt thẻ điểm đến: khối TRẮNG vuông,
+                        chữ mực, ngôi sao cam đậm — thay cho viên cam bo tròn.
+                        Trên một tấm ảnh, khối trắng đọc rõ hơn mà không giành
+                        vai với chính tấm ảnh. */}
+                    <span className="absolute right-3 top-3 inline-flex items-center gap-1.5 bg-white/95 py-1 pl-2 pr-2.5 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-neutral-900 shadow-sm backdrop-blur-sm">
+                      <Star className="size-3 shrink-0 text-[#a34c00]" aria-hidden />
                       Nổi bật
                     </span>
                     <div className="absolute inset-x-5 bottom-5">
                       {lead.category && (
-                        <span className={cn(MICRO, "text-warm-bright")}>
+                        <span className={cn(MICRO, "text-white/85")}>
                           {label(POST_CATEGORY_LABELS, lead.category)}
                         </span>
                       )}
-                      <h3 className="mt-2 font-[family-name:var(--font-display)] text-xl font-bold leading-snug tracking-tight text-white sm:text-2xl">
+                      <h3 className="mt-2 font-[family-name:var(--font-display)] text-xl font-normal leading-[1.18] tracking-[-0.015em] text-white underline-offset-[6px] [text-shadow:0_1px_3px_rgba(0,0,0,0.45)] group-hover:underline sm:text-2xl">
                         {lead.title}
                       </h3>
                       {lead.excerpt && (
@@ -484,7 +517,7 @@ export default async function BlogPage({
                         // là bằng đúng chiều cao thẻ lead bên trái. Để chúng tự
                         // cao theo nội dung thì cột phải hụt gần 200px so với
                         // ảnh lớn bên cạnh, hở một mảng trống ở đáy.
-                        className="group grid flex-1 grid-cols-[8rem_1fr] gap-4 overflow-hidden rounded-2xl border border-border/60 bg-card transition-all duration-200 hover:border-transparent hover:shadow-lg hover:shadow-black/5"
+                        className="group grid flex-1 grid-cols-[8rem_1fr] gap-4 overflow-hidden border border-border transition-colors duration-200 hover:border-foreground"
                       >
                         <div className="relative min-h-[6.5rem] overflow-hidden bg-muted">
                           <Image
@@ -497,11 +530,11 @@ export default async function BlogPage({
                         </div>
                         <div className="flex min-w-0 flex-col justify-center pr-3">
                           {p.category && (
-                            <span className={cn(MICRO, "mb-1.5 text-warm")}>
+                            <span className={cn(MICRO, "mb-1.5 text-warm-ink")}>
                               {label(POST_CATEGORY_LABELS, p.category)}
                             </span>
                           )}
-                          <h3 className="line-clamp-2 font-[family-name:var(--font-display)] text-sm font-semibold leading-snug tracking-tight transition-colors group-hover:text-primary">
+                          <h3 className="line-clamp-2 font-[family-name:var(--font-display)] text-sm font-semibold leading-snug tracking-tight underline-offset-4 group-hover:underline">
                             {p.title}
                           </h3>
                           <DateMeta
@@ -518,22 +551,17 @@ export default async function BlogPage({
 
             {/* Tất cả bài viết */}
             <section className="mt-12">
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
-                <h2 className={cn(MICRO, "text-muted-foreground")}>
-                  Tất cả bài viết
-                </h2>
-                <SortSelect value={sort} />
-              </div>
+              <SectionHead title="Tất cả bài viết" right={<SortSelect value={sort} />} />
 
               {posts.length > 0 ? (
                 <div className="mt-8 grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
-                  {posts.map((p) => (
+                  {posts.map((p, i) => (
+                    <RiseInView key={p.slug} delay={Math.min(i, 5) * 0.05}>
                     <Link
-                      key={p.slug}
                       href={`/blog/${p.slug}`}
                       className="group flex flex-col"
                     >
-                      <div className={cn(SHOT, "relative aspect-[16/10]")}>
+                      <div className={cn(SHOT, "relative aspect-[3/2]")}>
                         <Image
                           src={coverUrl(p.images, p.slug, 640, 400)}
                           alt=""
@@ -541,15 +569,19 @@ export default async function BlogPage({
                           sizes="(min-width: 1024px) 24rem, (min-width: 640px) 45vw, 100vw"
                           className="object-cover"
                         />
-                        <span aria-hidden className={RING} />
+                        <span aria-hidden className={RING_PLAIN} />
                       </div>
                       <div className="mt-4 flex min-w-0 flex-col">
+                        {/* `warm-ink` chứ không `warm`: đây là CHỮ trên nền
+                            sáng, và luật màu của dự án là nền/huy hiệu đặc dùng
+                            `--warm`, chữ trên nền sáng dùng bản ink (4.87:1 thay
+                            vì ~2:1). */}
                         {p.category && (
-                          <span className={cn(MICRO, "mb-2 text-warm")}>
+                          <span className={cn(MICRO, "mb-2 text-warm-ink")}>
                             {label(POST_CATEGORY_LABELS, p.category)}
                           </span>
                         )}
-                        <h3 className="line-clamp-2 font-[family-name:var(--font-display)] text-lg font-semibold leading-snug tracking-tight transition-colors group-hover:text-primary">
+                        <h3 className="line-clamp-2 font-[family-name:var(--font-display)] text-lg font-semibold leading-snug tracking-tight underline-offset-4 group-hover:underline">
                           {p.title}
                         </h3>
                         {p.excerpt && (
@@ -566,10 +598,11 @@ export default async function BlogPage({
                         </div>
                       </div>
                     </Link>
+                    </RiseInView>
                   ))}
                 </div>
               ) : (
-                <div className="mt-8 rounded-2xl border border-dashed border-border py-16 text-center">
+                <div className="mt-8 border border-dashed border-border py-16 text-center">
                   <MapPin
                     className="mx-auto size-8 text-muted-foreground/60"
                     aria-hidden
@@ -597,11 +630,32 @@ export default async function BlogPage({
   );
 }
 
-function Fact({ Icon, text }: { Icon: LucideIcon; text: string }) {
+/**
+ * Tiêu đề một mục — serif in hoa giãn chữ trên một đường kẻ mảnh, đúng khuôn
+ * tiêu đề miền ở `/diem-den`. Bản trước ba tiêu đề này là nhãn `MICRO` xám, tức
+ * cùng cỡ với chú thích bên dưới chúng: không có tầng nào cả.
+ */
+function SectionHead({
+  title,
+  right,
+}: {
+  title: string;
+  right?: React.ReactNode;
+}) {
   return (
-    <span className="inline-flex items-center gap-1.5">
-      <Icon className="size-4 shrink-0 text-primary" aria-hidden />
-      {text}
+    <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-b border-border pb-3">
+      <h2 className="font-[family-name:var(--font-serif)] text-[clamp(1.125rem,2.2vw,1.5rem)] font-normal uppercase leading-[1.2] tracking-[0.1em] sm:tracking-[0.14em]">
+        {title}
+      </h2>
+      {right}
+    </div>
+  );
+}
+
+function Fact({ n, unit }: { n: number; unit: string }) {
+  return (
+    <span>
+      <span className="tabular-nums text-foreground">{n}</span> {unit}
     </span>
   );
 }

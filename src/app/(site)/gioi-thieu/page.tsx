@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { Playfair_Display } from "next/font/google";
 import { ArrowRight, BadgeCheck, Mail, MapPin } from "@/components/icons";
 import { prisma } from "@/lib/prisma";
 import { coverUrl } from "@/lib/place-image";
@@ -12,6 +13,18 @@ export const metadata = {
   description:
     "Halivivu là trang tra cứu du lịch Việt Nam: ăn gì, chơi gì, ở đâu, đi lại thế nào cho từng nơi — cộng danh bạ chỗ ở đã xác minh chính chủ.",
 };
+
+// Cùng họ chữ tiêu đề với `/diem-den`, `/dia-diem`, `/blog` — khai TẠI TRANG vì
+// `--font-serif` không có trong root layout.
+const serif = Playfair_Display({
+  variable: "--font-serif",
+  subsets: ["latin", "vietnamese"],
+  weight: ["400"],
+  display: "swap",
+});
+
+// Nhãn nhỏ in hoa — CÙNG hằng với `destination-filter.tsx`.
+const MICRO = "text-[0.6rem] font-semibold uppercase tracking-[0.14em]";
 
 const pub = { status: "published" as const };
 
@@ -134,7 +147,7 @@ export default async function GioiThieuPage() {
     ).find(Boolean) ?? verifiedPool[0];
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div className={cn("flex flex-1 flex-col", serif.variable)}>
 
       <main className="flex-1">
         {/* ── MỞ ĐẦU ────────────────────────────────────────────────────────
@@ -146,11 +159,13 @@ export default async function GioiThieuPage() {
             (xem CLAUDE.md), nên nó vừa là khẩu hiệu vừa là mô tả kỹ thuật. */}
         <section className="bg-gradient-to-b from-accent via-accent/40 to-background">
           <div className="mx-auto max-w-7xl px-4 pb-16 pt-14 sm:px-6 sm:pb-20 sm:pt-20">
-            <h1 className="max-w-4xl text-balance font-[family-name:var(--font-display)] text-[clamp(2.25rem,5.6vw,4.25rem)] font-extrabold leading-[1.03] tracking-[-0.04em]">
+            {/* Serif nhưng KHÔNG in hoa. Tiêu đề ở `/diem-den` là một tên
+                riêng ngắn ("VIỆT NAM") nên in hoa giãn chữ hợp; đây là một CÂU
+                bốn vế — in hoa cỡ 4rem thì thành khẩu hiệu quảng cáo và đọc
+                chậm hẳn. Giữ đúng giọng serif, bỏ phần hét. */}
+            <h1 className="max-w-4xl text-balance font-[family-name:var(--font-serif)] text-[clamp(2.25rem,5.6vw,4rem)] font-normal leading-[1.12] tracking-[-0.01em]">
               Ăn gì, chơi gì, ở đâu, đi lại thế nào —{" "}
-              <span className="font-semibold text-muted-foreground">
-                cho từng nơi một.
-              </span>
+              <span className="text-muted-foreground">cho từng nơi một.</span>
             </h1>
 
             <div className="mt-8 max-w-2xl space-y-4 text-base leading-relaxed text-muted-foreground sm:text-lg">
@@ -190,7 +205,7 @@ export default async function GioiThieuPage() {
                     <div
                       key={d.slug}
                       className={cn(
-                        "relative flex-1 overflow-hidden rounded-xl bg-muted sm:rounded-2xl",
+                        "relative flex-1 overflow-hidden bg-muted",
                         stripShow(i, "block"),
                       )}
                     >
@@ -203,7 +218,7 @@ export default async function GioiThieuPage() {
                       />
                       <span
                         aria-hidden
-                        className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-inset ring-black/10 sm:rounded-2xl"
+                        className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-black/10"
                       />
                     </div>
                   ))}
@@ -213,7 +228,7 @@ export default async function GioiThieuPage() {
                     tấm mà dưới lại đề tên sáu nơi — một dòng chú thích sai. Dấu
                     `·` nằm TRONG span của tên phía sau nó nên ẩn tên là ẩn luôn
                     dấu ngăn, không để lại dấu chấm mồ côi. */}
-                <p className="mt-3 text-xs text-muted-foreground">
+                <p className={cn(MICRO, "mt-3 text-muted-foreground")}>
                   Ảnh:{" "}
                   {strip.map((d, i) => (
                     <span key={d.slug} className={cn(stripShow(i, "inline"))}>
@@ -240,7 +255,9 @@ export default async function GioiThieuPage() {
               <li key={p.label} className="flex gap-5 sm:gap-7">
                 <span
                   aria-hidden
-                  className="shrink-0 pt-1 font-[family-name:var(--font-display)] text-sm font-bold tabular-nums text-warm"
+                  // `warm-ink` chứ không `warm`: chữ trên nền sáng thì phải
+                  // dùng bản ink (luật màu ở globals.css) — `warm` chỉ đạt ~2:1.
+                  className={cn(MICRO, "shrink-0 pt-2 tabular-nums text-warm-ink")}
                 >
                   {String(i + 1).padStart(2, "0")}
                 </span>
@@ -258,7 +275,10 @@ export default async function GioiThieuPage() {
 
           <Link
             href="/diem-den"
-            className="group mt-10 inline-flex items-center gap-2 font-medium text-primary underline decoration-primary/30 underline-offset-4 transition-colors hover:decoration-primary"
+            className={cn(
+              MICRO,
+              "group mt-10 inline-flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground",
+            )}
           >
             Xem thử một điểm đến
             <ArrowRight
@@ -277,11 +297,16 @@ export default async function GioiThieuPage() {
           <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24">
             <div className="grid gap-10 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16">
               <div>
-                <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-                  <BadgeCheck className="size-4" aria-hidden />
+                <span
+                  className={cn(
+                    MICRO,
+                    "inline-flex items-center gap-2 border border-border bg-background px-3 py-1.5 text-primary-ink",
+                  )}
+                >
+                  <BadgeCheck className="size-3.5" aria-hidden />
                   Đã xác minh chính chủ
                 </span>
-                <h2 className="mt-4 max-w-md text-balance font-[family-name:var(--font-display)] text-[clamp(1.6rem,3.2vw,2.5rem)] font-bold leading-[1.1] tracking-[-0.035em]">
+                <h2 className="mt-4 max-w-md text-balance font-[family-name:var(--font-serif)] text-[clamp(1.375rem,2.8vw,2rem)] font-normal uppercase leading-[1.2] tracking-[0.1em] sm:tracking-[0.14em]">
                   Chỗ ở là phần chúng tôi làm khác
                 </h2>
 
@@ -296,9 +321,9 @@ export default async function GioiThieuPage() {
                   <figure className="mt-8 max-w-sm">
                     <Link
                       href={`/luu-tru/${sampleStay.slug}`}
-                      className="group flex flex-col rounded-[1.5rem] border border-border/60 bg-card p-2 transition-all duration-200 hover:border-transparent hover:shadow-lg hover:shadow-black/5"
+                      className="group flex flex-col border border-border bg-card p-2 transition-colors duration-200 hover:border-foreground"
                     >
-                      <span className="relative block aspect-[4/3] overflow-hidden rounded-[1.05rem] bg-muted">
+                      <span className="relative block aspect-[4/3] overflow-hidden bg-muted">
                         <Image
                           src={coverUrl(sampleStay.images, sampleStay.slug, 640, 480)}
                           alt=""
@@ -306,21 +331,29 @@ export default async function GioiThieuPage() {
                           sizes="(min-width: 1024px) 24rem, 100vw"
                           className="object-cover"
                         />
-                        <span className="absolute left-2.5 top-2.5 inline-flex items-center gap-1 rounded-full bg-black/35 py-1 pl-1.5 pr-2.5 text-[0.7rem] font-semibold text-white backdrop-blur-md">
-                          <BadgeCheck className="size-4 shrink-0" aria-hidden />
+                        {/* Huy hiệu TRẮNG vuông, chữ mực — đúng khuôn huy hiệu
+                            "Nổi bật" của thẻ điểm đến, thay cho viên kính tối
+                            bo tròn. */}
+                        <span
+                          className={cn(
+                            MICRO,
+                            "absolute right-2.5 top-2.5 inline-flex items-center gap-1.5 bg-white/95 py-1 pl-2 pr-2.5 text-neutral-900 shadow-sm backdrop-blur-sm",
+                          )}
+                        >
+                          <BadgeCheck className="size-3 shrink-0 text-[#26701a]" aria-hidden />
                           Đã xác minh
                         </span>
                       </span>
                       <span className="flex flex-col px-1.5 pb-1 pt-3">
                         {sampleStay.category && (
-                          <span className="text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-warm">
+                          <span className={cn(MICRO, "text-warm-ink")}>
                             {label(
                               ACCOMMODATION_CATEGORY_LABELS,
                               sampleStay.category,
                             )}
                           </span>
                         )}
-                        <span className="mt-1 font-[family-name:var(--font-display)] text-lg font-semibold leading-snug tracking-tight transition-colors group-hover:text-primary">
+                        <span className="mt-1 font-[family-name:var(--font-display)] text-lg font-semibold leading-snug tracking-tight underline-offset-4 group-hover:underline">
                           {sampleStay.name}
                         </span>
                         {sampleStay.place?.name && (
@@ -331,7 +364,7 @@ export default async function GioiThieuPage() {
                         )}
                       </span>
                     </Link>
-                    <figcaption className="mt-3 text-xs text-muted-foreground">
+                    <figcaption className={cn(MICRO, "mt-3 text-muted-foreground")}>
                       Một chỗ ở thật trên {settings.siteName} — bấm vào xem trang
                       đầy đủ.
                     </figcaption>
@@ -424,7 +457,7 @@ export default async function GioiThieuPage() {
                   chúng tôi một câu" thì đó là một lời hứa dẫn vào ngõ cụt —
                   đúng loại chữ mà cả trang này đang cố tránh. Không có kênh nào
                   thì đóng lại bằng một câu tự nó đứng được. */}
-              <h2 className="mt-5 max-w-md text-balance font-[family-name:var(--font-display)] text-[clamp(1.5rem,3vw,2.25rem)] font-bold leading-[1.15] tracking-[-0.035em]">
+              <h2 className="mt-5 max-w-md text-balance font-[family-name:var(--font-serif)] text-[clamp(1.25rem,2.6vw,1.875rem)] font-normal uppercase leading-[1.2] tracking-[0.1em] sm:tracking-[0.14em]">
                 {hasContact
                   ? "Thấy chỗ nào sai, thiếu, hoặc đã đóng cửa?"
                   : "Danh sách dài thêm sau mỗi chuyến đi"}
@@ -462,11 +495,14 @@ export default async function GioiThieuPage() {
             {/* MỘT lối đi tiếp, và nó dẫn tới đúng thứ cả trang vừa nói về. */}
             <Link
               href="/diem-den"
-              className="group inline-flex shrink-0 items-center gap-3 self-start rounded-lg bg-primary px-7 py-4 font-[family-name:var(--font-display)] text-base font-semibold text-primary-foreground transition-opacity hover:opacity-90 lg:self-auto"
+              className={cn(
+                MICRO,
+                "group inline-flex h-12 shrink-0 items-center gap-3 self-start bg-primary px-7 text-primary-foreground transition-opacity hover:opacity-90 lg:self-auto",
+              )}
             >
               Chọn một điểm đến
               <ArrowRight
-                className="size-5 transition-transform group-hover:translate-x-0.5"
+                className="size-4 transition-transform group-hover:translate-x-0.5"
                 aria-hidden
               />
             </Link>
@@ -495,7 +531,7 @@ function Section({
   return (
     <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24">
       <div className="grid gap-8 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16">
-        <h2 className="text-balance font-[family-name:var(--font-display)] text-[clamp(1.6rem,3.2vw,2.5rem)] font-bold leading-[1.1] tracking-[-0.035em] lg:sticky lg:top-24 lg:self-start">
+        <h2 className="text-balance font-[family-name:var(--font-serif)] text-[clamp(1.375rem,2.8vw,2rem)] font-normal uppercase leading-[1.2] tracking-[0.1em] sm:tracking-[0.14em] lg:sticky lg:top-24 lg:self-start">
           {title}
         </h2>
         <div>{children}</div>

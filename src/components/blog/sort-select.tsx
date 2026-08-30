@@ -23,14 +23,18 @@ export function SortSelect({ value }: { value: string }) {
     router.push(qs ? `${pathname}?${qs}` : pathname);
   };
 
+  // Ô VUÔNG viền mảnh, sáng lên bằng mực khi rê/focus — cùng vật liệu với ô sắp
+  // xếp của `/dia-diem` và `/diem-den`; bản trước bo góc + vòng sáng xanh.
   return (
-    <label className="inline-flex items-center gap-2 text-sm">
-      <span className="text-muted-foreground">Sắp xếp</span>
+    <label className="inline-flex items-center gap-2 text-[0.8125rem]">
+      <span className="text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+        Sắp xếp
+      </span>
       <span className="relative">
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="appearance-none rounded-md border border-border bg-card py-1.5 pl-3.5 pr-8 text-sm font-medium text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
+          className="h-9 appearance-none border border-border bg-transparent pl-3 pr-8 text-[0.8125rem] font-medium text-foreground outline-none transition-colors hover:border-foreground focus:border-foreground"
         >
           {OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>
@@ -39,7 +43,7 @@ export function SortSelect({ value }: { value: string }) {
           ))}
         </select>
         <ChevronDown
-          className="pointer-events-none absolute right-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+          className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
           aria-hidden
         />
       </span>

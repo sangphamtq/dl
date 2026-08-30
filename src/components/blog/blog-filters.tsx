@@ -77,14 +77,14 @@ export function BlogFilters({
   return (
     <div className="border-t border-border pt-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-[0.8rem] font-semibold uppercase tracking-[0.12em] text-foreground">
+        <h2 className="text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-foreground">
           Bộ lọc
         </h2>
         {hasActive && (
           <button
             type="button"
             onClick={clearAll}
-            className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-primary"
+            className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
             <RotateCcw className="size-3" aria-hidden />
             Xóa lọc
@@ -108,7 +108,7 @@ export function BlogFilters({
               value={destQuery}
               onChange={(e) => setDestQuery(e.target.value)}
               placeholder="Tìm điểm đến"
-              className="h-8 w-full rounded-md border border-border bg-card pl-8 pr-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-primary"
+              className="h-9 w-full border border-border bg-transparent pl-8 pr-2 text-[0.8125rem] text-foreground outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-foreground"
             />
           </div>
           <ul className="flex flex-col">
@@ -126,7 +126,7 @@ export function BlogFilters({
             <button
               type="button"
               onClick={() => setShowAllDest((v) => !v)}
-              className="mt-2 text-xs font-medium text-primary hover:underline"
+              className="mt-2 text-xs font-medium text-foreground underline underline-offset-4"
             >
               {showAllDest ? "Thu gọn" : "Xem thêm"}
             </button>
@@ -173,13 +173,13 @@ export function BlogFilters({
                 >
                   <span
                     className={cn(
-                      "grid size-4 shrink-0 place-items-center rounded-full border",
+                      "grid size-4 shrink-0 place-items-center rounded-[3px] border",
                       active
-                        ? "border-primary"
+                        ? "border-foreground"
                         : "border-muted-foreground/40",
                     )}
                   >
-                    {active && <span className="size-2 rounded-full bg-primary" />}
+                    {active && <span className="size-1.5 bg-foreground" />}
                   </span>
                   <span
                     className={cn(
@@ -254,7 +254,7 @@ function CheckRow({
           className={cn(
             "grid size-4 shrink-0 place-items-center rounded-[3px] border transition-colors",
             checked
-              ? "border-primary bg-primary text-white"
+              ? "border-foreground bg-foreground text-background"
               : "border-muted-foreground/40",
           )}
         >
