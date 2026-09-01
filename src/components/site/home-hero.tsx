@@ -240,7 +240,15 @@ export function HomeHero({
                 `key={i}` để React tháo-lắp lại hai dòng ⇒ animation khung cắt
                 chạy lại từ đầu ở mỗi lượt. Không cần animation THOÁT: khung cắt
                 đã che chỗ chữ cũ biến mất. */}
-            <h1 className="font-[family-name:var(--font-display)] text-[clamp(2.4rem,5.6vw,4rem)] font-bold leading-[1.05] tracking-tight [text-shadow:0_2px_28px_rgba(0,0,0,0.5)]">
+            {/* Serif nhưng GIỮ CHỮ THƯỜNG: ba biến thể tiêu đề là những CÂU
+                ("Đi một chuyến, khỏi mở mười tab"), mà in hoa cả câu ở cỡ 4rem
+                thì thành khẩu hiệu và đọc chậm hẳn — cùng lý do đã chốt ở
+                `/gioi-thieu`. Chỉ tên riêng ngắn mới in hoa (`/diem-den`).
+                `font-normal` vì bộ serif của dự án chỉ nạp weight 400; để
+                `font-bold` thì trình duyệt tự bơm đậm và nét bị bè.
+                Nét gạch tay (`HeroMark`) và khung cắt của `.hero-line` đều đo
+                bằng `em` nên tự khớp với họ chữ mới, không phải chỉnh. */}
+            <h1 className="font-[family-name:var(--font-serif)] text-[clamp(2.4rem,5.6vw,4rem)] font-normal leading-[1.12] tracking-[-0.005em] [text-shadow:0_2px_28px_rgba(0,0,0,0.5)]">
               <span className="sr-only">
                 {titles[0]?.a} {titles[0]?.b}
               </span>

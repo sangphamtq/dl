@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Playfair_Display } from "next/font/google";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
@@ -26,6 +27,15 @@ const dateFmt = new Intl.DateTimeFormat("vi-VN", {
 });
 
 // Nhãn nhỏ dùng chung — cùng khuôn với thẻ ở Điểm đến / Lưu trú / Ẩm thực.
+// Cùng họ chữ tiêu đề với các trang đã chuyển giọng — khai TẠI TRANG vì
+// `--font-serif` không có trong root layout.
+const serif = Playfair_Display({
+  variable: "--font-serif",
+  subsets: ["latin", "vietnamese"],
+  weight: ["400"],
+  display: "swap",
+});
+
 const MICRO = "text-[0.6rem] font-semibold uppercase tracking-[0.14em]";
 
 // BA BƯỚC dùng site — mỗi bước ứng đúng một nhánh route thật, không phải ba lời
@@ -196,7 +206,7 @@ export default async function Home() {
   ];
 
   return (
-    <main className="flex-1">
+    <main className={cn("flex-1", serif.variable)}>
       {/* ── HERO — ẢNH TRÀN VIỀN, CHỮ LÀ LỜI HỨA CỦA SITE ──────────────
           Ảnh chỉ là KHÔNG KHÍ: nơi trong ảnh ghi tên ở cụm điều khiển bên phải
           (kèm link), chứ không làm chữ to nhất màn hình — trang chủ không phải
@@ -345,7 +355,7 @@ export default async function Home() {
               {inside.map((item) => (
                 <li
                   key={item.unit}
-                  className="rounded-xl border border-border/70 bg-card px-4 py-4"
+                  className="border border-border px-4 py-4"
                 >
                   <p className="font-[family-name:var(--font-display)] text-[clamp(1.5rem,2.4vw,1.9rem)] font-bold leading-none tabular-nums text-warm-ink">
                     {item.n}
@@ -381,7 +391,7 @@ export default async function Home() {
               như mọi section khác, mà cả eyebrow ("Đi đâu bây giờ") lẫn câu dẫn
               đều chỉ diễn đạt lại đúng bốn chữ "Điểm đến nổi bật" nằm giữa
               chúng. Nút "Xem tất cả" ở cuối section gánh nốt phần dẫn. */}
-          <h2 className="text-balance text-center font-[family-name:var(--font-display)] text-[clamp(1.75rem,3.4vw,2.5rem)] font-semibold leading-[1.15] tracking-tight">
+          <h2 className="text-balance text-center font-[family-name:var(--font-serif)] text-[clamp(1.375rem,2.8vw,2rem)] font-normal uppercase leading-[1.2] tracking-[0.1em] sm:tracking-[0.14em]">
             Điểm đến nổi bật
           </h2>
 
@@ -423,7 +433,7 @@ export default async function Home() {
               tới lịch trình, ba bước") — mà tiêu đề ấy không mang tin gì, còn
               câu dẫn thì mang. Gộp lại thì mất một dòng và tiêu đề có việc. */}
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-balance font-[family-name:var(--font-display)] text-[clamp(1.75rem,3.4vw,2.5rem)] font-semibold leading-[1.15] tracking-tight">
+            <h2 className="text-balance font-[family-name:var(--font-serif)] text-[clamp(1.375rem,2.8vw,2rem)] font-normal uppercase leading-[1.2] tracking-[0.1em] sm:tracking-[0.14em]">
               Ba bước, không cần đăng nhập
             </h2>
             <p className="mt-4 text-pretty text-sm leading-relaxed text-muted-foreground">
@@ -435,9 +445,9 @@ export default async function Home() {
             {STEPS.map((s, i) => (
               <li
                 key={s.title}
-                className="rounded-2xl border border-border/70 bg-card p-6 text-center sm:p-7"
+                className="border border-border bg-card p-6 text-center sm:p-7"
               >
-                <span className="mx-auto grid size-14 place-items-center rounded-full bg-primary/10 text-primary">
+                <span className="mx-auto grid size-14 place-items-center border border-border text-primary-ink">
                   <Ic icon={s.icon} className="size-6" />
                 </span>
                 <p className={cn(MICRO, "mt-5 text-muted-foreground")}>
@@ -463,6 +473,7 @@ export default async function Home() {
       {trips.length > 0 && (
         <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20">
           <SectionHeading
+            serif
             title="Lịch trình mẫu"
             href="/lich-trinh"
             count={trips.length}
@@ -493,7 +504,7 @@ export default async function Home() {
       {/* ── CẨM NANG ───────────────────────────────────────────────────── */}
       {posts.length > 0 && (
         <section className="mx-auto max-w-7xl px-4 pb-16 pt-4 sm:px-6 sm:pb-20 sm:pt-8">
-          <SectionHeading title="Mới trong Cẩm nang" href="/blog" />
+          <SectionHeading serif title="Mới trong Cẩm nang" href="/blog" />
           <ul className="mt-8 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
             {posts.map((p) => (
               <li key={p.slug}>
@@ -513,7 +524,7 @@ export default async function Home() {
           đi tiếp tự nhiên là "chọn một nơi". */}
       {closing && (
         <section className="mx-auto max-w-7xl px-4 pb-20 sm:px-6 sm:pb-24">
-          <div className="relative isolate overflow-hidden rounded-2xl">
+          <div className="relative isolate overflow-hidden">
             <Image
               src={coverUrl(closing.images, closing.slug, 1600, 700)}
               alt=""
@@ -535,7 +546,7 @@ export default async function Home() {
                     một lần, còn câu dưới nó thì lặp NGUYÊN VĂN "xem xong là
                     chốt được nơi" ở hero. Bản mới nói thứ chưa chỗ nào nói:
                     quyết định thật mà người ta cần là ĐI HAY KHÔNG. */}
-                <h2 className="text-balance font-[family-name:var(--font-display)] text-[clamp(1.5rem,3.2vw,2.4rem)] font-semibold leading-[1.15] tracking-tight text-white">
+                <h2 className="text-balance font-[family-name:var(--font-serif)] text-[clamp(1.375rem,2.8vw,2.125rem)] font-normal uppercase leading-[1.2] tracking-[0.1em] text-white sm:tracking-[0.14em]">
                   Chọn một nơi rồi tính tiếp
                 </h2>
                 <p className="mt-4 max-w-md text-pretty text-sm leading-relaxed text-[#f7e7d6] sm:text-base">
@@ -587,9 +598,9 @@ type Tile = {
 function Collage({ items }: { items: Tile[] }) {
   const [a, b, c] = items;
   const cell =
-    "relative block overflow-hidden rounded-lg bg-muted ring-1 ring-black/5";
+    "relative block overflow-hidden bg-muted ring-1 ring-black/5";
   const frame =
-    "rounded-xl bg-card p-1.5 shadow-[0_14px_30px_-18px_rgba(0,0,0,0.45)]";
+    "bg-card p-1.5 shadow-[0_14px_30px_-18px_rgba(0,0,0,0.45)]";
 
   return (
     <div className="relative">
@@ -674,9 +685,9 @@ function PlaceTile({ p }: { p: Tile }) {
   return (
     <Link
       href={`/diem-den/${p.slug}`}
-      className="group flex h-full flex-col rounded-xl border border-border/60 bg-card p-2 transition-all duration-200 hover:border-transparent hover:shadow-lg hover:shadow-black/5"
+      className="group flex h-full flex-col border border-border bg-card p-2 transition-colors duration-200 hover:border-foreground"
     >
-      <span className="relative block aspect-[4/3] overflow-hidden rounded-lg bg-muted">
+      <span className="relative block aspect-[4/3] overflow-hidden bg-muted">
         <Image
           src={coverUrl(p.images, p.slug, 560, 420)}
           alt=""
@@ -687,11 +698,11 @@ function PlaceTile({ p }: { p: Tile }) {
       </span>
       <span className="flex min-w-0 flex-1 flex-col px-2 pb-1.5 pt-3">
         {p.parent?.name && (
-          <span className={cn(MICRO, "mb-1.5 truncate text-warm")}>
+          <span className={cn(MICRO, "mb-1.5 truncate text-warm-ink")}>
             {p.parent.name}
           </span>
         )}
-        <span className="truncate font-[family-name:var(--font-display)] text-base font-semibold tracking-tight transition-colors group-hover:text-primary">
+        <span className="truncate font-[family-name:var(--font-display)] text-base font-semibold tracking-tight underline-offset-4 group-hover:underline">
           {p.name}
         </span>
         {p.tagline && (
@@ -713,7 +724,7 @@ function LeadTile({ p, thumbs }: { p: Tile; thumbs: Tile[] }) {
   return (
     <Link
       href={`/diem-den/${p.slug}`}
-      className="group relative isolate flex min-h-[22rem] flex-col justify-end overflow-hidden rounded-xl bg-muted p-6 sm:min-h-[26rem] sm:p-8 lg:min-h-full"
+      className="group relative isolate flex min-h-[22rem] flex-col justify-end overflow-hidden bg-muted p-6 sm:min-h-[26rem] sm:p-8 lg:min-h-full"
     >
       <Image
         src={coverUrl(p.images, p.slug, 1200, 900)}
@@ -735,7 +746,7 @@ function LeadTile({ p, thumbs }: { p: Tile; thumbs: Tile[] }) {
           {thumbs.map((t) => (
             <span
               key={t.slug}
-              className="relative block size-14 overflow-hidden rounded-lg bg-card/20 ring-2 ring-white/70"
+              className="relative block size-14 overflow-hidden bg-card/20 ring-2 ring-white/70"
             >
               <Image
                 src={coverUrl(t.images, t.slug, 160, 160)}
@@ -793,7 +804,7 @@ function TripTile({ t, wide }: { t: TripRow; wide?: boolean }) {
     <Link
       href={`/lich-trinh/${t.slug}`}
       className={cn(
-        "group relative isolate flex flex-col justify-end overflow-hidden rounded-xl bg-muted p-5",
+        "group relative isolate flex flex-col justify-end overflow-hidden bg-muted p-5",
         wide ? "min-h-[18rem] sm:min-h-[20rem]" : "min-h-[18rem]",
       )}
     >
@@ -809,7 +820,7 @@ function TripTile({ t, wide }: { t: TripRow; wide?: boolean }) {
         className="absolute inset-0 -z-10 bg-[linear-gradient(to_top,rgba(8,22,15,0.88)_0%,rgba(8,22,15,0.45)_45%,rgba(8,22,15,0.05)_78%)]"
       />
 
-      <span className="absolute right-4 top-4 rounded-lg bg-card px-3 py-1.5 text-xs font-semibold tabular-nums shadow-sm">
+      <span className="absolute right-4 top-4 bg-white/95 px-2.5 py-1 text-[0.6rem] font-semibold uppercase tracking-[0.14em] tabular-nums text-neutral-900 shadow-sm">
         {t._count.days} ngày{nights > 0 && ` ${nights} đêm`}
       </span>
 
@@ -847,7 +858,7 @@ type PostRow = {
 function PostTile({ p }: { p: PostRow }) {
   return (
     <Link href={`/blog/${p.slug}`} className="group flex flex-col">
-      <span className="relative block aspect-[16/10] overflow-hidden rounded-2xl bg-muted">
+      <span className="relative block aspect-[16/10] overflow-hidden bg-muted">
         <Image
           src={coverUrl(p.images, p.slug, 640, 400)}
           alt=""
@@ -857,16 +868,16 @@ function PostTile({ p }: { p: PostRow }) {
         />
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-black/10"
+          className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-black/10"
         />
       </span>
       <span className="mt-4 flex min-w-0 flex-col">
         {p.category && (
-          <span className={cn(MICRO, "mb-2 text-warm")}>
+          <span className={cn(MICRO, "mb-2 text-warm-ink")}>
             {label(POST_CATEGORY_LABELS, p.category)}
           </span>
         )}
-        <span className="line-clamp-2 font-[family-name:var(--font-display)] text-lg font-semibold leading-snug tracking-tight transition-colors group-hover:text-primary">
+        <span className="line-clamp-2 font-[family-name:var(--font-display)] text-lg font-semibold leading-snug tracking-tight underline-offset-4 group-hover:underline">
           {p.title}
         </span>
         {p.excerpt && (
