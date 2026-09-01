@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { Playfair_Display } from "next/font/google";
 import { notFound } from "next/navigation";
 import { Ic } from "@/components/icon";
 import { auth } from "@/auth";
@@ -32,6 +33,17 @@ import { ReviewsSection, type ReviewListItem } from "@/components/site/place-rev
 import { summarizeReviews } from "@/lib/review-meta";
 import { PeerBar } from "@/components/site/peer-bar";
 import { PlainProse } from "@/components/site/plain-prose";
+
+// Cùng họ chữ tiêu đề với `/diem-den`, `/dia-diem`, `/blog`, `/gioi-thieu` —
+// khai TẠI TRANG vì `--font-serif` không có trong root layout. Biến này chảy
+// xuống mọi component con qua CSS custom property, nên `SectionHeading serif`
+// bên trong `FoodMenu`/`SpotSpotlight`… dùng được ngay.
+const serifFont = Playfair_Display({
+  variable: "--font-serif",
+  subsets: ["latin", "vietnamese"],
+  weight: ["400"],
+  display: "swap",
+});
 import { getDestinationPeerGroups } from "@/lib/peers";
 import {
   getPlaceCounts,
@@ -480,7 +492,7 @@ export default async function PlaceDetailPage({
   const tinted = () => bandIndex++ % 2 === 0;
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div className={cn("flex flex-1 flex-col", serifFont.variable)}>
       <PlaceViewTracker
         placeId={place.id}
         name={place.name}
@@ -633,7 +645,7 @@ export default async function PlaceDetailPage({
           {/* Điểm đến con (chỉ tỉnh) — lưới (là Place, cấp khác) */}
           {showChildren && (
             <section id="diem-den-con" className="scroll-mt-32">
-              <SectionHeading title={`Điểm đến ở ${place.name}`} />
+              <SectionHeading serif title={`Điểm đến ở ${place.name}`} />
               <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
                 {place.children.map((c) => (
                   <PlaceCard key={c.slug} place={c} />
@@ -761,6 +773,7 @@ export default async function PlaceDetailPage({
                   Nhãn riêng vì mục này hiện HẾT số bản ghi — "xem tất cả" là
                   câu sai; thứ còn ở màn hình kia là hướng dẫn bằng lời. */}
               <SectionHeading
+                serif
                 title={`Đi lại ở ${place.name}`}
                 href={`/diem-den/${place.slug}/di-chuyen`}
                 linkLabel="Xem hướng dẫn đầy đủ"
@@ -783,6 +796,7 @@ export default async function PlaceDetailPage({
                   — con số đó là số thẻ ĐANG HIỆN, nên câu link tự mâu thuẫn.
                   Link vẫn giữ vì /lich-trinh còn lịch trình của nơi khác. */}
               <SectionHeading
+                serif
                 title={`Gợi ý lịch trình ở ${place.name}`}
                 href="/lich-trinh"
                 size="minor"
@@ -853,6 +867,7 @@ export default async function PlaceDetailPage({
           <Band tint={tinted()}>
             <section id="hoi-dap" className="scroll-mt-32">
               <SectionHeading
+                serif
                 title="Hỏi đáp cộng đồng"
                 href={`/diem-den/${place.slug}/cong-dong`}
                 count={community.total}
@@ -871,6 +886,7 @@ export default async function PlaceDetailPage({
         {isDestination && (
           <Band tint={tinted()}>
             <ReviewsSection
+              serif
               target={{
                 kind: "place",
                 id: place.id,
@@ -887,7 +903,7 @@ export default async function PlaceDetailPage({
         )}
 
         {/* Cẩm nang — tự dựng container riêng nên đứng ngoài Band */}
-        <RelatedPosts type="place" id={place.id} />
+        <RelatedPosts serif type="place" id={place.id} />
       </main>
 
       <PeerBar

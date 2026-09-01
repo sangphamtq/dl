@@ -17,9 +17,9 @@ export function PlaceCard({ place }: { place: PlaceCardData }) {
   return (
     <Link
       href={`/diem-den/${place.slug}`}
-      className="group flex flex-col rounded-xl border border-border bg-card p-3 transition-colors hover:border-primary/40"
+      className="group flex flex-col border border-border bg-card p-3 transition-colors hover:border-foreground"
     >
-      <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-muted">
+      <div className="relative aspect-[4/3] overflow-hidden bg-muted">
         <Image
           src={coverUrl(place.images, place.slug)}
           alt={place.name}
@@ -37,7 +37,7 @@ export function PlaceCard({ place }: { place: PlaceCardData }) {
           />
           {isProvince ? "Tỉnh / Thành phố" : "Điểm đến"}
         </div>
-        <h3 className="mt-1 font-semibold tracking-tight transition-colors group-hover:text-primary">
+        <h3 className="mt-1 font-semibold tracking-tight underline-offset-4 group-hover:underline">
           {place.name}
         </h3>
         {place.description && (

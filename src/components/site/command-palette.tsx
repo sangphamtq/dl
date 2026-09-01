@@ -55,7 +55,7 @@ function HitItem({ h, onSelect }: { h: SearchHit; onSelect: () => void }) {
     <CommandItem
       value={h.href}
       onSelect={onSelect}
-      className="gap-3 rounded-lg px-3 py-2.5"
+      className="gap-3 rounded-none px-3 py-2.5"
     >
       {createElement(iconFor(h), {
         className: "size-5 shrink-0 text-muted-foreground",
@@ -70,7 +70,7 @@ function HitItem({ h, onSelect }: { h: SearchHit; onSelect: () => void }) {
           </span>
         )}
       </span>
-      <span className="ml-auto shrink-0 self-center pl-3 text-xs text-muted-foreground">
+      <span className={cn(MICRO, "ml-auto shrink-0 self-center pl-3 text-muted-foreground")}>
         {h.label}
       </span>
     </CommandItem>
@@ -83,9 +83,9 @@ function PlaceHitItem({ h, onSelect }: { h: SearchHit; onSelect: () => void }) {
     <CommandItem
       value={h.href}
       onSelect={onSelect}
-      className="gap-3 rounded-lg px-2 py-2"
+      className="gap-3 rounded-none px-2 py-2"
     >
-      <span className="relative size-11 shrink-0 overflow-hidden rounded-xl bg-muted ring-1 ring-inset ring-border/60">
+      <span className="relative size-11 shrink-0 overflow-hidden bg-muted ring-1 ring-inset ring-border">
         {h.image ? (
           <Image src={h.image} alt="" fill sizes="44px" className="object-cover" />
         ) : (
@@ -104,14 +104,18 @@ function PlaceHitItem({ h, onSelect }: { h: SearchHit; onSelect: () => void }) {
           </span>
         )}
       </span>
-      <span className="ml-auto shrink-0 self-center pl-3 text-xs text-muted-foreground">
+      <span className={cn(MICRO, "ml-auto shrink-0 self-center pl-3 text-muted-foreground")}>
         {h.label}
       </span>
     </CommandItem>
   );
 }
 
-// Gợi ý điểm đến: ảnh tròn + tên.
+// Gợi ý điểm đến: ô ảnh vuông + tên.
+//
+// Ảnh TRÒN đã bỏ: cả hệ thẻ của site (điểm đến, địa điểm, bài viết) cắt ảnh
+// theo khung chữ nhật 3/2, còn hình tròn ở đây đọc ra là avatar người — sai
+// loại nội dung. Cùng lý do với việc bỏ pin tròn ở bản đồ toàn quốc.
 function SuggestionCard({
   h,
   onSelect,
@@ -123,9 +127,12 @@ function SuggestionCard({
     <CommandItem
       value={h.href}
       onSelect={onSelect}
-      className="gap-3 rounded-lg px-2 py-1.5"
+      className="gap-3 rounded-none px-2 py-1.5"
     >
-      <span className="relative size-10 shrink-0 overflow-hidden rounded-full bg-muted ring-1 ring-inset ring-border/60">
+      {/* Ô VUÔNG 40px, đúng bằng dấu chân của ảnh tròn cũ. Đã thử khung 3/2
+          rộng 56px: phần lớn điểm đến chưa có ảnh bìa nên lưới sáu gợi ý thành
+          sáu mảng xám to hơn hẳn, trông như ảnh hỏng chứ không phải chỗ trống. */}
+      <span className="relative size-10 shrink-0 overflow-hidden bg-muted ring-1 ring-inset ring-border">
         {h.image ? (
           <Image src={h.image} alt="" fill sizes="40px" className="object-cover" />
         ) : (
@@ -141,14 +148,21 @@ function SuggestionCard({
   );
 }
 
+const MICRO = "text-[0.6rem] font-semibold uppercase tracking-[0.14em]";
+
 const COMMAND_CLASS = cn(
   // Ô nhập: cao, rõ (sửa selector wrapper = data-slot, không phải cmdk-*).
   "[&_[data-slot=command-input-wrapper]]:h-16 [&_[data-slot=command-input-wrapper]]:gap-3 [&_[data-slot=command-input-wrapper]]:px-5",
   "[&_[data-slot=command-input-wrapper]_svg]:size-5 [&_[data-slot=command-input-wrapper]_svg]:opacity-60",
   "[&_[data-slot=command-input]]:text-base",
-  // Tiêu đề nhóm: nhỏ, chữ hoa nhẹ, giãn chữ.
-  "[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:pb-1.5 [&_[cmdk-group-heading]]:text-[0.68rem] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-muted-foreground/80",
+  // Tiêu đề nhóm: đúng thang `MICRO` dùng chung với các trang danh sách, và có
+  // một gạch chân mảnh — cùng cách `SectionHeading serif` phân tầng.
+  "[&_[cmdk-group-heading]]:mb-1.5 [&_[cmdk-group-heading]]:border-b [&_[cmdk-group-heading]]:border-border [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:pb-2 [&_[cmdk-group-heading]]:text-[0.6rem] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.14em] [&_[cmdk-group-heading]]:text-muted-foreground",
   "[&_[cmdk-group]]:px-2 [&_[cmdk-group]]:py-2",
+  // Hàng đang chọn: nền MỰC nhạt, không phải nền xanh brand. Trên trang này
+  // xanh nghĩa là "bấm được"; cả một hàng tô xanh khi mới chỉ di chuột/phím là
+  // nói dối bảng từ vựng đó.
+  "[&_[cmdk-item][data-selected=true]]:bg-muted [&_[cmdk-item][data-selected=true]]:text-foreground",
 );
 
 export function CommandPalette({
@@ -220,7 +234,7 @@ export function CommandPalette({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="top-[10vh] w-[calc(100%-1.5rem)] max-w-[calc(100%-1.5rem)] translate-y-0 gap-0 overflow-hidden rounded-2xl border-border/70 p-0 shadow-2xl sm:max-w-2xl"
+        className="top-[10vh] w-[calc(100%-1.5rem)] max-w-[calc(100%-1.5rem)] translate-y-0 gap-0 overflow-hidden rounded-none border-border p-0 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.45)] sm:max-w-2xl"
       >
         <DialogTitle className="sr-only">Tìm kiếm</DialogTitle>
         <DialogDescription className="sr-only">
@@ -234,7 +248,7 @@ export function CommandPalette({
             // Gợi ý phím tắt chuyển từ nút ở header vào đây — nút header nhờ vậy
             // gọn hẳn, còn người dùng vẫn học được phím mở nhanh khi đang dùng.
             trailing={
-              <kbd className="pointer-events-none hidden shrink-0 items-center rounded-full border bg-muted/40 px-2 py-0.5 font-mono text-[0.65rem] text-muted-foreground sm:inline-flex">
+              <kbd className="pointer-events-none hidden shrink-0 items-center border border-border bg-muted/40 px-2 py-0.5 font-mono text-[0.65rem] text-muted-foreground sm:inline-flex">
                 ⌘K
               </kbd>
             }
@@ -285,27 +299,27 @@ export function CommandPalette({
                 <CommandItem
                   value="__xem-tat-ca__"
                   onSelect={() => go(`/tim-kiem?q=${encodeURIComponent(term)}`)}
-                  className="gap-3 rounded-lg px-3 py-2.5 text-primary"
+                  className="mt-1 gap-3 rounded-none border-t border-border px-3 py-3 text-foreground"
                 >
-                  <Search className="size-4 text-primary" />
-                  <span className="text-sm font-medium">
+                  <Search className="size-4" />
+                  <span className={cn(MICRO)}>
                     Xem tất cả kết quả cho “{term}”
                   </span>
-                  <ArrowUpRight className="ml-auto size-4 text-primary" />
+                  <ArrowUpRight className="ml-auto size-4" />
                 </CommandItem>
               </CommandGroup>
             )}
           </CommandList>
 
           {/* Thanh gợi ý phím */}
-          <div className="flex items-center justify-between gap-3 border-t border-border/60 bg-muted/30 px-4 py-2 text-[0.7rem] text-muted-foreground">
-            <span className="font-medium">halivivu</span>
+          <div className="flex items-center justify-between gap-3 border-t border-border bg-muted/30 px-4 py-2 text-[0.7rem] text-muted-foreground">
+            <span className={cn(MICRO)}>halivivu</span>
             <span className="flex items-center gap-1.5">
-              <kbd className="grid h-5 min-w-5 place-items-center rounded border bg-background px-1 font-sans">
+              <kbd className="grid h-5 min-w-5 place-items-center border border-border bg-background px-1 font-sans">
                 ↵
               </kbd>
               <span>chọn</span>
-              <kbd className="ml-1 grid h-5 min-w-5 place-items-center rounded border bg-background px-1 font-sans">
+              <kbd className="ml-1 grid h-5 min-w-5 place-items-center border border-border bg-background px-1 font-sans">
                 esc
               </kbd>
               <span>đóng</span>

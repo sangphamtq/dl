@@ -73,7 +73,7 @@ function SpotRow({
     // bấm của mình.
     <div
       className={cn(
-        "group relative flex items-center rounded-xl transition-colors",
+        "group relative flex items-center transition-colors",
         on ? "bg-muted" : "hover:bg-muted/40",
       )}
     >
@@ -88,7 +88,7 @@ function SpotRow({
         // là widget phức tạp nhất trang — nhưng nó là control DUY NHẤT ở đây
         // không tự vẽ vòng focus, nên người dùng bàn phím chỉ được vòng mặc định
         // của trình duyệt trong khi mọi nút khác quanh nó đều có ring riêng.
-        className="absolute inset-0 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        className="absolute inset-0 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       />
 
       {/* Hover và active nằm trên CÙNG MỘT THANG: nền hàng. Rỗng → chạm vào →
@@ -116,7 +116,7 @@ function SpotRow({
 
         <span
           className={cn(
-            "relative h-[4.75rem] w-24 shrink-0 overflow-hidden rounded-lg bg-muted transition-opacity lg:h-[5.5rem] lg:w-32",
+            "relative h-[4.75rem] w-24 shrink-0 overflow-hidden bg-muted transition-opacity lg:h-[5.5rem] lg:w-32",
             on ? "opacity-100" : "opacity-90",
           )}
         >
@@ -266,7 +266,7 @@ function SpotPanel({
 
       <Link
         href={`/dia-diem/${s.slug}`}
-        className="group mt-7 inline-flex h-12 w-fit items-center gap-2.5 rounded-lg border border-white/35 px-6 text-base font-medium text-white transition-colors hover:border-white hover:bg-white/10"
+        className="group mt-7 inline-flex h-12 w-fit items-center gap-2.5 border border-white/40 px-6 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-white transition-colors hover:border-white hover:bg-white/10"
       >
         Khám phá địa điểm
         <ArrowUpRight
@@ -385,6 +385,7 @@ export function SpotSpotlight({
             đường bay" này đã được đưa vào component để mọi section trên trang
             cùng một giọng. */}
         <SectionHeading
+        serif
           title={title}
           href={allHref}
           count={count}
@@ -429,7 +430,7 @@ export function SpotSpotlight({
                           hết bề ngang, bo hay không cũng không ai thấy. Phần bo
                           nằm ở MIỆNG KHOÉT — tức chính bức ảnh. */}
                       <div className="relative aspect-[3/4] bg-background p-2.5 ring-1 ring-border sm:p-3">
-                        <div className="absolute inset-2.5 overflow-hidden rounded-2xl sm:inset-3">
+                        <div className="absolute inset-2.5 overflow-hidden sm:inset-3">
                           <Image
                             src={s.image}
                             alt=""
@@ -441,7 +442,7 @@ export function SpotSpotlight({
                           <div className="absolute inset-0 bg-[radial-gradient(125%_115%_at_0%_100%,rgba(0,0,0,0.85)_0%,rgba(0,0,0,0.6)_30%,rgba(0,0,0,0.2)_64%,rgba(0,0,0,0.02)_100%)]" />
                           <span
                             aria-hidden
-                            className="pointer-events-none absolute inset-0 rounded-2xl shadow-[inset_0_2px_6px_rgba(0,0,0,0.22)] ring-1 ring-black/15"
+                            className="pointer-events-none absolute inset-0 shadow-[inset_0_2px_6px_rgba(0,0,0,0.22)] ring-1 ring-black/15"
                           />
                         </div>
                         <div className="absolute inset-x-5 bottom-5 sm:inset-x-6 sm:bottom-6">
@@ -499,7 +500,7 @@ export function SpotSpotlight({
                 ngay là một vệt xám bị xén. */}
             <div
               aria-hidden
-              className="absolute inset-y-0 right-0 hidden overflow-hidden rounded-r-3xl bg-background p-3.5 pb-7 shadow-[0_6px_18px_-10px_rgba(0,0,0,0.35)] ring-1 ring-border lg:block lg:-left-[calc((100vw-min(100vw,80rem))/2+1.5rem)]"
+              className="absolute inset-y-0 right-0 hidden overflow-hidden bg-background p-3.5 pb-7 shadow-[0_6px_18px_-10px_rgba(0,0,0,0.35)] ring-1 ring-border lg:block lg:-left-[calc((100vw-min(100vw,80rem))/2+1.5rem)]"
             >
               {/* Ghi chú trong dải mat đáy: số thứ tự + loại địa điểm, cỡ rất
                   nhỏ, màu nhạt — đúng chỗ và đúng cách người ta ghi chú dưới một
@@ -519,7 +520,7 @@ export function SpotSpotlight({
                   không có nó thì mat chỉ là một dải trắng viền ngoài. */}
               <span
                 aria-hidden
-                className="pointer-events-none absolute inset-3.5 bottom-7 z-10 rounded-2xl shadow-[inset_0_2px_6px_rgba(0,0,0,0.22)] ring-1 ring-black/15"
+                className="pointer-events-none absolute inset-3.5 bottom-7 z-10 shadow-[inset_0_2px_6px_rgba(0,0,0,0.22)] ring-1 ring-black/15"
               />
 
               {/* Lớp trong: đây mới là vùng ảnh thật (nằm trong khung). */}
@@ -527,7 +528,7 @@ export function SpotSpotlight({
                 <div
                   key={s.slug}
                   className={cn(
-                    "absolute inset-3.5 bottom-7 overflow-hidden rounded-2xl transition-opacity duration-700 ease-out",
+                    "absolute inset-3.5 bottom-7 overflow-hidden transition-opacity duration-700 ease-out",
                     i === index ? "opacity-100" : "opacity-0",
                   )}
                 >
@@ -549,7 +550,7 @@ export function SpotSpotlight({
                   đặt chữ rồi tan nhanh ra ngoài. Trước đây là hai lớp gradient
                   thẳng chồng nhau — cộng dồn nên chỗ nào cũng bị tối, kể cả
                   phần ảnh không có chữ nào. */}
-              <div className="absolute inset-3.5 bottom-7 rounded-2xl bg-[radial-gradient(125%_115%_at_0%_100%,rgba(0,0,0,0.85)_0%,rgba(0,0,0,0.6)_30%,rgba(0,0,0,0.2)_64%,rgba(0,0,0,0.02)_100%)]" />
+              <div className="absolute inset-3.5 bottom-7 bg-[radial-gradient(125%_115%_at_0%_100%,rgba(0,0,0,0.85)_0%,rgba(0,0,0,0.6)_30%,rgba(0,0,0,0.2)_64%,rgba(0,0,0,0.02)_100%)]" />
             </div>
 
             {/* MỌI khối chữ đều được render và xếp CHỒNG lên nhau trong cùng một
@@ -656,7 +657,7 @@ export function SpotSpotlight({
               // hàng thứ bảy" — mà dưới lg danh sách không còn (xem chú thích ở cột
               // chọn), nên nó chỉ còn là bản sao của link trên tiêu đề, đặt cách đó
               // đúng một thẻ carousel.
-              className="group mt-4 hidden w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border/70 py-3 text-sm font-medium text-muted-foreground transition-colors hover:border-primary/50 hover:bg-muted/40 hover:text-foreground lg:flex"
+              className="group mt-4 hidden w-full items-center justify-center gap-2 border border-dashed border-border py-3 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-foreground hover:text-foreground lg:flex"
             >
               Xem tất cả{count != null ? ` ${count}` : ""} địa điểm
               <ArrowUpRight

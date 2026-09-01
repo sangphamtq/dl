@@ -57,6 +57,7 @@ export function ExperienceGrid({
   return (
     <div>
       <SectionHeading
+        serif
         title={title}
         href={href}
         count={count}
@@ -88,7 +89,7 @@ function Card({ it }: { it: ExperienceItem }) {
   return (
     <li>
       <Link href={`/hoat-dong/${it.slug}`} className="group block">
-        <span className="relative block aspect-[4/5] overflow-hidden rounded-2xl bg-muted">
+        <span className="relative block aspect-[4/5] overflow-hidden bg-muted">
           <Image
             src={it.image}
             alt=""
@@ -105,7 +106,7 @@ function Card({ it }: { it: ExperienceItem }) {
         {/* Chiều cao tối thiểu cho khối tên: tên một dòng và tên hai dòng nằm
             cạnh nhau thì các hàng fact bên dưới vẫn thẳng hàng. */}
         <span className="mt-1.5 flex min-h-[3.5rem] items-start">
-          <span className="line-clamp-2 font-[family-name:var(--font-display)] text-lg font-semibold leading-snug tracking-tight transition-colors group-hover:text-primary">
+          <span className="line-clamp-2 font-[family-name:var(--font-display)] text-lg font-semibold leading-snug tracking-tight underline-offset-4 group-hover:underline">
             {it.name}
           </span>
         </span>

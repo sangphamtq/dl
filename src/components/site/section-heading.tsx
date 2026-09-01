@@ -27,6 +27,7 @@ export function SectionHeading({
   linkLabel,
   actions,
   size = "lead",
+  serif = false,
 }: {
   title: string;
   href?: string;
@@ -61,11 +62,29 @@ export function SectionHeading({
    *              đòi ngang hàng với bốn mục trên.
    */
   size?: "lead" | "minor";
+  /**
+   * Giọng chữ của tiêu đề.
+   *
+   * `false` (mặc định) — font display đậm, tracking âm: giọng cũ, vẫn dùng ở
+   * trang chủ và các trang chi tiết listing.
+   * `true` — **serif in hoa giãn chữ**, cùng giọng với `/diem-den`, `/dia-diem`,
+   * `/blog`, `/gioi-thieu`.
+   *
+   * Là THAM SỐ chứ không đổi thẳng mặc định: component này dùng ở 8 chỗ, trong
+   * đó có trang chủ và ba trang chi tiết listing chưa chuyển giọng. Đổi mặc định
+   * là lặng lẽ restyle luôn những trang không ai yêu cầu.
+   */
+  serif?: boolean;
 }) {
   const link = href && (
     <Link
       href={href}
-      className="group inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-primary transition-colors hover:text-primary/80"
+      className={cn(
+        "group inline-flex shrink-0 items-center gap-1.5 transition-colors",
+        serif
+          ? "text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground hover:text-foreground"
+          : "text-sm font-medium text-primary hover:text-primary/80",
+      )}
     >
       <span>
         {linkLabel ?? "Xem tất cả"}
@@ -108,10 +127,17 @@ export function SectionHeading({
           min-w-0: tiêu đề dài thì XUỐNG DÒNG, không đẩy link lòi khỏi mép. */}
       <h2
         className={cn(
-          "min-w-0 font-[family-name:var(--font-display)] font-bold leading-[1.15] tracking-[-0.03em] text-foreground",
+          "min-w-0 text-foreground",
+          serif
+            ? "font-[family-name:var(--font-serif)] font-normal uppercase leading-[1.2] tracking-[0.1em] sm:tracking-[0.14em]"
+            : "font-[family-name:var(--font-display)] font-bold leading-[1.15] tracking-[-0.03em]",
           size === "lead"
-            ? "text-[clamp(1.75rem,3.2vw,2.5rem)]"
-            : "text-xl sm:text-2xl",
+            ? serif
+              ? "text-[clamp(1.375rem,2.8vw,2rem)]"
+              : "text-[clamp(1.75rem,3.2vw,2.5rem)]"
+            : serif
+              ? "text-lg sm:text-xl"
+              : "text-xl sm:text-2xl",
         )}
       >
         {title}

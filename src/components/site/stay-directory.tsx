@@ -33,7 +33,7 @@ const MICRO = "text-[0.6rem] font-semibold uppercase tracking-[0.14em]";
 // định của cả mục: nó tồn tại để chống lừa cọc.
 // Nền đặc theo token thì tương phản không còn phụ thuộc vào bức ảnh nằm dưới.
 const VERIFIED_BADGE =
-  "rounded-full bg-primary text-primary-foreground shadow-sm shadow-black/25";
+  "bg-white/95 text-neutral-900 shadow-sm backdrop-blur-sm";
 
 // Section "Nơi lưu trú" của trang Place — MỘT HÀNG BỐN THẺ.
 //
@@ -75,6 +75,7 @@ export function StayDirectory({
   return (
     <div>
       <SectionHeading
+        serif
         title={`Nơi lưu trú ở ${placeName}`}
         href={href}
         count={total}
@@ -88,16 +89,16 @@ export function StayDirectory({
           BA lớp chữ nói đúng một điều, bao quanh bốn tấm ảnh trong một bản xem
           trước. Nay còn hai NHÃN — mỗi nhãn một dữ kiện tra được. */}
       <div className="mt-6 flex flex-wrap items-center gap-2">
-        <span className="rounded-md bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+        <span className="bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
           Danh bạ liên hệ chính chủ
         </span>
         {verifiedTotal > 0 ? (
-          <span className="inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+          <span className="inline-flex items-center gap-1.5 border border-border px-2.5 py-1 text-xs font-semibold text-primary-ink">
             <BadgeCheck className="size-3.5 shrink-0" aria-hidden />
             {`${verifiedTotal}${total ? `/${total}` : ""} đã xác minh chính chủ`}
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5 bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
             <ShieldCheck className="size-3.5 shrink-0" aria-hidden />
             Chưa chỗ nào được xác minh
           </span>
@@ -148,9 +149,9 @@ function StayTile({ s, priority }: { s: StayEntry; priority: boolean }) {
     <li className="h-full">
       <Link
         href={`/luu-tru/${s.slug}`}
-        className="group flex h-full flex-col rounded-[1.5rem] border border-border/60 bg-card p-2 transition-all duration-200 hover:border-transparent hover:shadow-lg hover:shadow-black/5"
+        className="group flex h-full flex-col border border-border bg-card p-2 transition-colors duration-200 hover:border-foreground"
       >
-        <span className="relative block aspect-[4/3] overflow-hidden rounded-[1.05rem] bg-muted">
+        <span className="relative block aspect-[4/3] overflow-hidden bg-muted">
           <Image
             src={coverUrl(s.images, s.slug, 800, 600)}
             alt=""
@@ -184,7 +185,7 @@ function StayTile({ s, priority }: { s: StayEntry; priority: boolean }) {
 
           <span className="mt-1 flex items-start gap-2">
             {/* line-clamp-2: thẻ hẹp ~300px ở lg nên tên dài phải có điểm dừng. */}
-            <span className="line-clamp-2 min-w-0 flex-1 font-[family-name:var(--font-display)] text-base font-semibold leading-snug tracking-tight transition-colors group-hover:text-primary sm:text-lg">
+            <span className="line-clamp-2 min-w-0 flex-1 font-[family-name:var(--font-display)] text-base font-semibold leading-snug tracking-tight underline-offset-4 group-hover:underline sm:text-lg">
               {s.name}
             </span>
             <ArrowUpRight

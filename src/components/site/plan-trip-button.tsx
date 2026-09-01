@@ -278,7 +278,13 @@ export function PlanTripButton({
       <Button
         onClick={onClick}
         disabled={pending}
-        className={cn("rounded-lg bg-warm text-warm-foreground hover:bg-warm/90", className)}
+        // MÉP VUÔNG như mọi nút khác trong bộ vật liệu biên tập. Giữ nền CAM:
+        // đây vẫn là CTA cam duy nhất của trang điểm đến (quy ước ở
+        // docs/lich-trinh.md §6b) — đổi hình, không đổi vai.
+        className={cn(
+          "rounded-none bg-warm text-warm-foreground hover:bg-warm/90",
+          className,
+        )}
       >
         {pending ? (
           <Loader2 className="size-4 animate-spin" aria-hidden />

@@ -116,7 +116,10 @@ export function PlaceHeroCenter({
                 isAuthed={checkIn.isAuthed}
                 reviewable={place.kind === "destination"}
                 tone="onDark"
-                className="h-9 gap-2 rounded-full border border-white/30 px-4 hover:border-white/70"
+                // Nút CÓ CHỮ thì vuông; nút chỉ-icon (chia sẻ, cuộn) giữ hình
+                // tròn — ranh giới này áp cho cả trang: chữ = khối, điều khiển
+                // = viên tròn.
+                className="h-9 gap-2 rounded-none border border-white/30 px-4 text-[0.6rem] font-semibold uppercase tracking-[0.14em] hover:border-white/70"
               />
             )}
             <ShareButton
@@ -135,12 +138,12 @@ export function PlaceHeroCenter({
           {place.parent ? (
             <Link
               href={`/diem-den/${place.parent.slug}`}
-              className="font-[family-name:var(--font-display)] text-xl font-bold leading-tight tracking-tight text-warm-bright drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)] transition-opacity hover:opacity-80 sm:text-2xl"
+              className="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-warm-bright drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)] transition-opacity hover:opacity-80 sm:text-xs"
             >
               {place.parent.name}
             </Link>
           ) : (
-            <span className="font-[family-name:var(--font-display)] text-xl font-bold leading-tight tracking-tight text-warm-bright drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)] sm:text-2xl">
+            <span className="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-warm-bright drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)] sm:text-xs">
               {place.kind === "province" ? "Tỉnh · Thành phố" : "Điểm đến"}
             </span>
           )}
@@ -163,7 +166,12 @@ export function PlaceHeroCenter({
             font-extrabold (800): Be Vietnam Pro ở 700 hơi nhẹ so với cỡ chữ này.
             Sans hình học nên siết tracking sâu hơn serif; không đặt
             font-variation-settings vì đây là font tĩnh, không có trục nào. */}
-        <h1 className="mt-4 text-balance font-[family-name:var(--font-display)] text-[clamp(3.25rem,10vw,8.5rem)] font-extrabold leading-[0.88] tracking-[-0.045em] text-white [text-shadow:0_2px_28px_rgba(0,0,0,0.45)]">
+        {/* Serif IN HOA giãn chữ — đúng giọng tiêu đề của `/diem-den` ("VIỆT
+            NAM"), `/dia-diem`, `/blog`. Tên một nơi là danh từ riêng ngắn nên
+            in hoa hợp; cỡ hạ một bậc vì chữ serif in hoa choán chỗ hơn hẳn chữ
+            display nén, để nguyên 8.5rem thì tên dài như "Phan Thiết" tràn hai
+            dòng ở khổ vừa. */}
+        <h1 className="mt-4 text-balance font-[family-name:var(--font-serif)] text-[clamp(2.5rem,7.5vw,6rem)] font-normal uppercase leading-[1.05] tracking-[0.06em] text-white [text-shadow:0_2px_28px_rgba(0,0,0,0.45)] sm:tracking-[0.1em]">
           {place.name}
         </h1>
 

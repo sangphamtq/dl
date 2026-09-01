@@ -54,7 +54,16 @@ const dateFmt = new Intl.DateTimeFormat("vi-VN", {
 // Tiêu đề mục dùng `SectionHeading` như mọi mục khác, và container `max-w-7xl`
 // cho khớp mọi trang gọi nó — cả bốn trang (điểm đến, địa điểm, hoạt động, lưu
 // trú) đều dựng nội dung ở `max-w-7xl`.
-export async function RelatedPosts({ type, id }: { type: RefType; id: string }) {
+export async function RelatedPosts({
+  type,
+  id,
+  serif = false,
+}: {
+  type: RefType;
+  id: string;
+  /** Dùng giọng tiêu đề serif của trang điểm đến (xem `SectionHeading`). */
+  serif?: boolean;
+}) {
   const where = {
     status: "published" as const,
     refs: { some: { [FK[type]]: id } as Prisma.PostRefWhereInput },
@@ -92,6 +101,7 @@ export async function RelatedPosts({ type, id }: { type: RefType; id: string }) 
     // giữa hai mục là 80px nhạt + 80px trắng, đúng nhịp như mọi cặp dải khác.
     <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20">
       <SectionHeading
+        serif={serif}
         title="Bài viết liên quan"
         href="/blog"
         count={total}

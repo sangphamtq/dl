@@ -151,12 +151,15 @@ export function ReviewsSection({
   reviews,
   myReview,
   isAuthed,
+  serif = false,
 }: {
   target: ReviewTarget;
   summary: ReviewSummary;
   reviews: ReviewListItem[];
   myReview: MyReview | null;
   isAuthed: boolean;
+  /** Dùng giọng tiêu đề serif của trang điểm đến (xem `SectionHeading`). */
+  serif?: boolean;
 }) {
   const [loginOpen, setLoginOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
@@ -220,6 +223,7 @@ export function ReviewsSection({
           tự ý dùng biến thể khác. Không truyền `href`: đánh giá không có trang
           danh mục riêng, chỗ đó dành cho nút viết đánh giá. */}
       <SectionHeading
+        serif={serif}
         title={`Vivu-er nói gì về ${target.name}`}
         count={hasReviews ? summary.total : undefined}
         unit="đánh giá"

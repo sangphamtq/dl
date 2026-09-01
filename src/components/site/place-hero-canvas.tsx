@@ -373,7 +373,7 @@ export function PlaceHeroCanvas({
                         // KHÔNG `shrink-0`: 5 ô × 56px + khe = 312px, vượt bề
                         // ngang khả dụng của màn 320px. Cho phép co thì ô tự hẹp
                         // lại ở máy nhỏ nhất mà `aspect-[3/4]` vẫn giữ tỉ lệ.
-                        "group relative aspect-[3/4] w-14 cursor-pointer overflow-hidden rounded-lg transition-all duration-500 sm:w-24 sm:rounded-xl",
+                        "group relative aspect-[3/4] w-14 cursor-pointer overflow-hidden transition-all duration-500 sm:w-24",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black/50",
                         i === index
                           ? "shadow-[0_0_0_1px_rgba(255,255,255,0.75),0_10px_24px_-6px_rgba(0,0,0,0.7)]"

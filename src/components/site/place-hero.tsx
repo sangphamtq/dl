@@ -86,18 +86,18 @@ export function PlaceHero({
               {place.parent ? (
                 <Link
                   href={`/diem-den/${place.parent.slug}`}
-                  className="font-[family-name:var(--font-display)] text-lg font-bold leading-tight tracking-tight text-warm transition-opacity hover:opacity-90 sm:text-xl"
+                  className="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-warm-bright transition-opacity hover:opacity-90 sm:text-xs"
                 >
                   {place.parent.name}
                 </Link>
               ) : (
-                <span className="font-[family-name:var(--font-display)] text-lg font-bold leading-tight tracking-tight text-warm sm:text-xl">
+                <span className="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-warm-bright sm:text-xs">
                   {place.kind === "province" ? "Tỉnh · Thành phố" : "Điểm đến"}
                 </span>
               )}
             </div>
 
-            <h1 className="mt-2 text-balance text-4xl font-extrabold leading-[1.05] tracking-tight text-primary sm:text-5xl">
+            <h1 className="mt-2 text-balance font-[family-name:var(--font-serif)] text-[clamp(1.875rem,5vw,3rem)] font-normal uppercase leading-[1.1] tracking-[0.06em] text-foreground sm:tracking-[0.1em]">
               {place.name}
             </h1>
             {place.tagline && (

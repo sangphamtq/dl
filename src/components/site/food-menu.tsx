@@ -28,7 +28,9 @@ const MICRO = "text-[0.6rem] font-semibold uppercase tracking-[0.14em]";
 
 // Kính mờ trên ảnh — cùng chất liệu với huy hiệu của StayDirectory, để hai
 // section cạnh nhau đọc như một hệ.
-const GLASS = "rounded-full bg-black/35 text-white backdrop-blur-md";
+// Huy hiệu trên ảnh: khối TRẮNG vuông, chữ mực — cùng huy hiệu "Nổi bật"
+// của thẻ điểm đến, thay cho viên kính tối bo tròn.
+const GLASS = "bg-white/95 text-neutral-900 shadow-sm backdrop-blur-sm";
 
 // Số ô của cả section (một hàng ở lg) và số ô tối đa nhường cho quán nước.
 const SLOTS = 4;
@@ -83,6 +85,7 @@ export function FoodMenu({
   return (
     <div>
       <SectionHeading
+        serif
         title={`Ăn uống ở ${placeName}`}
         href={href}
         count={count}
@@ -163,9 +166,9 @@ function VenueTile({
     <li className="h-full">
       <Link
         href={`${href}#eatery-${v.slug}`}
-        className="group flex h-full flex-col rounded-[1.5rem] border border-border/60 bg-card p-2 transition-all duration-200 hover:border-transparent hover:shadow-lg hover:shadow-black/5"
+        className="group flex h-full flex-col border border-border bg-card p-2 transition-colors duration-200 hover:border-foreground"
       >
-        <span className="relative block aspect-[4/3] overflow-hidden rounded-[1.05rem] bg-muted">
+        <span className="relative block aspect-[4/3] overflow-hidden bg-muted">
           <Image
             src={coverUrl(v.images, v.slug, 800, 600)}
             alt=""
@@ -193,7 +196,7 @@ function VenueTile({
           <span className={cn(MICRO, "text-warm-ink")}>{kicker}</span>
 
           <span className="mt-1 flex items-start gap-2">
-            <span className="line-clamp-2 min-w-0 flex-1 font-[family-name:var(--font-display)] text-base font-semibold leading-snug tracking-tight transition-colors group-hover:text-primary sm:text-lg">
+            <span className="line-clamp-2 min-w-0 flex-1 font-[family-name:var(--font-display)] text-base font-semibold leading-snug tracking-tight underline-offset-4 group-hover:underline sm:text-lg">
               {v.name}
             </span>
             <ArrowUpRight
@@ -219,7 +222,7 @@ function VenueTile({
               {facts.map((f) => (
                 <span
                   key={f}
-                  className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
+                  className="bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
                 >
                   {f}
                 </span>
