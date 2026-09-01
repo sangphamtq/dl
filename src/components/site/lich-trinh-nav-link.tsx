@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Route } from "@/components/icons";
+import { NavIcon } from "./nav-icons";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -28,7 +28,7 @@ export function LichTrinhNavLink() {
               : "text-foreground hover:bg-muted",
           )}
         >
-          <Route className="size-4" aria-hidden />
+          <NavIcon name="route" active={active} className="size-[1.15rem]" />
         </Link>
       </TooltipTrigger>
       <TooltipContent>Lịch trình của tôi</TooltipContent>

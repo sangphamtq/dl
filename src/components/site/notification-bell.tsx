@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bell, CheckCheck } from "@/components/icons";
+import { CheckCheck } from "@/components/icons";
+import { NavIcon } from "./nav-icons";
 import { cn } from "@/lib/utils";
 import { initials, timeAgo } from "@/lib/format";
 import { notifMessage } from "@/lib/notification-labels";
@@ -158,7 +159,7 @@ export function NotificationBell({
                   : "text-foreground hover:bg-muted",
               )}
             >
-              <Bell className="size-4" aria-hidden />
+              <NavIcon name="bell" active={open} className="size-[1.15rem]" />
               {unread > 0 && (
                 <span className="absolute -right-0.5 -top-0.5 grid min-w-4 place-items-center rounded-full bg-warm px-1 text-[0.625rem] font-semibold leading-4 text-warm-foreground ring-2 ring-background">
                   {unread > 9 ? "9+" : unread}

@@ -1,34 +1,45 @@
-// Bộ icon RIÊNG cho thanh tab dưới (BottomNav) — không dùng chung với `Ic`
-// (Material Symbols) như phần còn lại của site.
+// Bộ icon của HAI thanh điều hướng — thanh tab dưới (`BottomNav`) và cụm icon
+// bên phải header (tìm kiếm · nơi đã đến · lịch trình · chuông). KHÔNG dùng
+// chung với `Ic` (Material Symbols) như phần còn lại của site.
 //
 // Lý do tách: Material Symbols rounded có nét dày, hình khối đặc và kín, đặt
-// cạnh nhau ở cỡ 25px thì thanh tab trông "nặng" và lệch hẳn so với tab bar của
-// app iOS. Bộ này vẽ theo ngôn ngữ SF Symbols: nét MẢNH (1.7 trên khung 24), đầu
-// nét và góc BO TRÒN, hình mở, nhiều khoảng thở. Chỉ 5 icon nên tự vẽ rẻ hơn
-// nhiều so với kéo thêm một bộ icon thứ hai vào bundle.
+// cạnh nhau ở cỡ nhỏ thì thanh trông "nặng" và lệch hẳn so với thanh điều hướng
+// của app iOS. Bộ này vẽ theo ngôn ngữ SF Symbols: nét MẢNH (1.7 trên khung
+// 24), đầu nét và góc BO TRÒN, hình mở, nhiều khoảng thở. Ít icon nên tự vẽ rẻ
+// hơn nhiều so với kéo thêm một bộ icon thứ hai vào bundle.
 //
 // (Không phải SF Symbols thật — bộ đó Apple chỉ cấp phép cho app trên nền tảng
 // của họ. Đây là hình tự vẽ theo cùng nguyên tắc thị giác.)
 //
-// Mỗi icon có HAI bản, đúng cách tab bar iOS báo trạng thái:
+// Mỗi icon có HAI bản, đúng cách thanh tab iOS báo trạng thái:
 // - viền (mục không mở): chỉ stroke, không tô;
 // - đặc (mục đang mở): tô kín cùng bóng dáng. Vài bản đặc dùng `fill-rule
-//   evenodd` để khoét lỗ (kim la bàn, chấm hội thoại) — giữ chi tiết bên trong
-//   mà không cần vẽ đè màu nền, vốn không làm được trên nền trong mờ.
+//   evenodd` để khoét lỗ (kim la bàn, chấm hội thoại, dấu tick trong ghim) —
+//   giữ chi tiết bên trong mà không cần vẽ đè màu nền, vốn không làm được trên
+//   nền trong mờ. Bản đặc nào cần một NÉT (dây nối của `route`) thì khai
+//   `fill="none" stroke="currentColor"` ngay trên phần tử đó, vì `NavIcon` chỉ
+//   đặt `fill` ở tầng <svg>.
 //
 // Mọi hình dựng từ đường thẳng + cung tròn, KHÔNG bezier tự do: dễ soi lại toạ
 // độ khi cần chỉnh, và không bị méo ở cỡ nhỏ.
+//
+// Header dùng đúng cặp viền/đặc này để báo trang đang mở, y như thanh tab —
+// trước đó cụm icon header là Material Symbols và đọc ra nặng hơn hẳn phần chữ
+// bên cạnh.
 
-export type TabIconName =
+export type NavIconName =
   | "home"
   | "compass"
   | "map"
   | "community"
   | "account"
   | "search"
-  | "menu";
+  | "menu"
+  | "bell"
+  | "checkin"
+  | "route";
 
-const OUTLINE: Record<TabIconName, React.ReactNode> = {
+const OUTLINE: Record<NavIconName, React.ReactNode> = {
   // Mái nhà + thân, hai nét rời — đúng kiểu `house` của SF.
   home: (
     <>
@@ -82,9 +93,35 @@ const OUTLINE: Record<TabIconName, React.ReactNode> = {
       <path d="M4 16.8h16" />
     </>
   ),
+  // Chuông: thân LOE ra ở đáy (vành rộng hơn thân) + quả lắc là một cung hở.
+  bell: (
+    <>
+      <path d="M6.4 16.1V9.9a5.6 5.6 0 0 1 11.2 0v6.2" />
+      <path d="M4.7 16.1h14.6" />
+      <path d="M10.1 18.9a2.05 2.05 0 0 0 3.8 0" />
+    </>
+  ),
+  // Ghim bản đồ + dấu tick: hai vai THẲNG chạy từ mũi ghim lên cung tròn —
+  // đúng dáng ghim của Apple Maps, không phải giọt nước bo đều.
+  checkin: (
+    <>
+      <path d="M12 20.6 6.6 14.2a6.6 6.6 0 1 1 10.8 0L12 20.6Z" />
+      <path d="m9.4 10.4 1.9 1.9 3.3-3.5" />
+    </>
+  ),
+  // Lộ trình: hai điểm đầu–cuối + một nét chữ S nối chúng (hai cung ngược
+  // chiều). Đã cân nhắc bản một khuỷu bo tròn: đọc rõ hơn ở cỡ nhỏ nhưng nó ra
+  // nghĩa "rẽ", còn chữ S mới ra "đi qua nhiều chặng".
+  route: (
+    <>
+      <circle cx="6.4" cy="6.5" r="2.3" />
+      <circle cx="17.6" cy="17.5" r="2.3" />
+      <path d="M8.7 6.5h3.1a2.75 2.75 0 0 1 0 5.5h-1.7a2.75 2.75 0 0 0 0 5.5h5.2" />
+    </>
+  ),
 };
 
-const FILLED: Record<TabIconName, React.ReactNode> = {
+const FILLED: Record<NavIconName, React.ReactNode> = {
   home: (
     <path d="M11.06 3.28a1.5 1.5 0 0 1 1.88 0l8.4 6.7a1 1 0 0 1-1.12 1.4l-.42-.33v7.35a2.7 2.7 0 0 1-2.7 2.7H6.9a2.7 2.7 0 0 1-2.7-2.7v-7.35l-.42.33a1 1 0 0 1-1.12-1.4l8.4-6.7Z" />
   ),
@@ -130,14 +167,41 @@ const FILLED: Record<TabIconName, React.ReactNode> = {
       <rect x="4" y="15.8" width="16" height="2" rx="1" />
     </>
   ),
+  bell: (
+    <>
+      <path d="M12 3.5a6.2 6.2 0 0 0-6.2 6.2v5.45H4.9a.95.95 0 0 0 0 1.9h14.2a.95.95 0 0 0 0-1.9h-.9V9.7A6.2 6.2 0 0 0 12 3.5Z" />
+      <path d="M9.9 19.05a2.1 2.1 0 0 0 4.2 0Z" />
+    </>
+  ),
+  // Dấu tick KHOÉT LỖ khỏi thân ghim (`evenodd`) — vẽ đè màu nền lên hình đặc
+  // không khả thi trên nền trong mờ của header.
+  checkin: (
+    <path
+      fillRule="evenodd"
+      d="M12 20.6 6.6 14.2a6.6 6.6 0 1 1 10.8 0L12 20.6Zm2.03-12.57a.95.95 0 0 1 1.34 1.34l-4.05 4.05a.95.95 0 0 1-1.34 0l-1.9-1.9a.95.95 0 0 1 1.34-1.34l1.23 1.23 3.38-3.38Z"
+    />
+  ),
+  route: (
+    <>
+      <circle cx="6.4" cy="6.5" r="2.7" />
+      <circle cx="17.6" cy="17.5" r="2.7" />
+      <path
+        d="M8.7 6.5h3.1a2.75 2.75 0 0 1 0 5.5h-1.7a2.75 2.75 0 0 0 0 5.5h5.2"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
+    </>
+  ),
 };
 
-export function TabIcon({
+export function NavIcon({
   name,
   active,
   className,
 }: {
-  name: TabIconName;
+  name: NavIconName;
   active: boolean;
   className?: string;
 }) {

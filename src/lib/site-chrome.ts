@@ -8,23 +8,16 @@ import type { HeroLayout } from "@/generated/prisma/enums";
 // `src/app/(site)/layout.tsx`) thì layout server không biết mình đang ở route
 // nào, nên quyết định phải chuyển sang phía client và tra theo `usePathname()`.
 //
-// LUẬT MÀU: `tone` ĐI THEO `overlay`, không phải một danh sách khai riêng.
-// Bản `dark` là chữ TRẮNG trên kính — nó chỉ đọc được khi bên dưới header là
-// ẢNH. Không có ảnh thì phải là `light` (chữ mực). Vậy nên chỉ cần trả lời một
-// câu hỏi: trang này có hero ảnh tràn viền chạy từ y=0 không?
+// KHÔNG còn `tone`. Header chỉ có MỘT vật liệu — kính trắng, chữ mực, ở mọi
+// trang — nên bảng này chỉ còn trả lời hai câu về VỊ TRÍ TRONG LUỒNG: header
+// dính hay cuộn đi (`pinned`), và có nằm đè lên một hero ảnh tràn viền hay
+// không (`overlay`, quyết định `fixed` vs `sticky` và độ đục lúc chưa cuộn).
 //
-// TRƯỚC ĐÂY đây là một danh sách CHO PHÉP (`LIGHT_ROUTES`) với mặc định là
-// `dark`, kèm đúng cảnh báo này ngay tại đây: "thêm một trang mở bằng nền sáng
-// thì phải nhớ khai ở đây, không thì header trông sai". Cảnh báo đã thành sự
-// thật — quét lại toàn bộ route công khai thì 13 trang quên khai
-// (/dia-diem, /ban-do, /cong-dong, /tim-kiem, /kiem-tra, /sale, /luu-tru, các
-// màn con của trang điểm đến, và mọi trang chi tiết listing lẫn bài blog). Tất
-// cả đang hiện một vệt xám ~#cacaca vắt ngang đầu trang với chữ trắng chỉ
-// ~1.7:1 trên đó.
-//
-// Nay mặc định là `light`, và chỉ trang CÓ ảnh mới được nâng lên `dark`. Quên
-// khai một trang mới thì tệ nhất là header sáng trên nền sáng — vẫn đọc được;
-// còn kiểu hỏng cũ thì không.
+// Bản cũ có thêm hai bản màu và chúng là nguồn của gần như mọi lỗi ở thanh
+// này: một danh sách CHO PHÉP `LIGHT_ROUTES` bỏ sót 13 route (mỗi trang một
+// vệt xám ~#cacaca vắt ngang đầu trang), rồi đảo thành mặc định `light` vẫn
+// còn sai ở nửa dưới các trang overlay (cuộn qua hero là kính tối rơi xuống
+// nền trắng). Lý do bỏ hẳn bản kính tối: xem `components/site/header-chrome.tsx`.
 
 /** Trang bản đồ: cao đúng một màn hình, không có chân trang. */
 const MAP_ROUTES = /^\/ban-do$|^\/diem-den\/[^/]+\/ban-do$/;
@@ -52,7 +45,7 @@ export function isMapRoute(pathname: string): boolean {
 export function chromeFor(
   pathname: string,
   heroLayout: HeroLayout,
-): { tone: "dark" | "light"; overlay: boolean; pinned: boolean } {
+): { overlay: boolean; pinned: boolean } {
   // `pinned = false` ⇒ header nằm trong luồng và CUỘN ĐI cùng nội dung.
   const pinned = !TRIP_DETAIL.test(pathname);
 
@@ -66,10 +59,9 @@ export function chromeFor(
   //     trang lịch trình cụ thể (chúng rơi vào `TRIP_DETAIL`, không dính header);
   //   · trang chi tiết điểm đến khi hero cấu hình kiểu "center" (cũng từ y=0).
   //
-  // ⚠ Ba trang danh sách trên dùng CHUNG một khuôn hero (ảnh tràn viền + lớp
-  // phủ + serif in hoa, xem `components/site/hero-link.tsx`). Đổi khuôn đó ở
-  // trang nào thì kiểm lại dòng này: hero mất ảnh mà route còn ở đây thì chữ
-  // trắng của header rơi xuống nền sáng.
+  // Quên khai một trang mới ở đây thì tệ nhất là header dính kiểu `sticky` và
+  // đục sẵn từ đầu trang — vẫn đọc được, chỉ mất hiệu ứng ảnh chạy lên tận mép
+  // trên. Không còn kiểu hỏng nào nặng hơn thế.
   const overlay =
     pinned &&
     (pathname === "/" ||
@@ -78,6 +70,5 @@ export function chromeFor(
       pathname === "/lich-trinh" ||
       (PLACE_DETAIL.test(pathname) && heroLayout === "center"));
 
-  // Có ảnh ở dưới thì mới dùng chữ trắng. Mọi trang còn lại là nền sáng.
-  return { tone: overlay ? "dark" : "light", overlay, pinned };
+  return { overlay, pinned };
 }

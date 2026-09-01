@@ -1,18 +1,8 @@
-import Image from "next/image";
+import { PageLoading } from "@/components/site/page-loading";
 
-// Fallback Suspense khi điều hướng giữa các trang public (CMS có loading riêng).
+// Boundary ở ROOT: `/login`, `/offline` và lần đầu vào một trang công khai.
+// Điều hướng GIỮA các trang công khai dùng boundary riêng ở `(site)/loading.tsx`
+// — lý do ở trong `PageLoading`. (CMS có loading riêng.)
 export default function Loading() {
-  return (
-    <div className="flex min-h-[70vh] flex-1 items-center justify-center bg-background">
-      <Image
-        src="/loading_page.gif"
-        alt="Đang tải…"
-        width={320}
-        height={236}
-        priority
-        unoptimized
-        className="h-auto w-44 sm:w-52"
-      />
-    </div>
-  );
+  return <PageLoading />;
 }

@@ -60,11 +60,16 @@ const NAV: NavEntry[] = [
 const MOBILE_LINKS: NavLink[] = NAV as NavLink[];
 
 // Header giờ được render MỘT LẦN ở `src/app/(site)/layout.tsx`, không phải ở
-// từng trang. Vì vậy nó không nhận `overlay`/`tone` nữa — `HeaderChrome` tự tra
-// theo đường dẫn (xem `@/lib/site-chrome`) rồi công bố kết quả qua `data-tone`
-// trên thẻ <header>. Mọi thứ trong này cần biết bản màu thì đọc qua biến thể
-// `group-data-[tone=light]/header:` — không thể nhận prop, vì giá trị đó tính ở
-// client còn đây là Server Component.
+// từng trang. Vì vậy nó không nhận `overlay`/`tone` nữa — `HeaderChrome` tự
+// tính rồi công bố kết quả qua `data-tone` trên thẻ <header>. Mọi thứ trong
+// này cần biết bản màu thì đọc qua biến thể `group-data-[tone=light]/header:`
+// — không thể nhận prop, vì giá trị đó tính ở client còn đây là Server
+// Component.
+//
+// `tone` chỉ có MỘT nguồn: kính đang trong hay đã đục (`deep` trong
+// `header-chrome.tsx`). Kính trong ⇒ sau lưng là ẢNH hero ⇒ bản `dark` (chữ
+// trắng, bóng chữ, wordmark đảo trắng). Kính đục ⇒ bản `light` (chữ mực,
+// wordmark màu gốc). Không còn danh sách route nào phải nhớ khai.
 export async function SiteHeader({
   heroLayout,
 }: {

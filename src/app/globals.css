@@ -594,6 +594,35 @@
   transform-origin: left;
 }
 
+/* Màn chờ điều hướng (`PageLoading`): HOÃN rồi mới hiện.
+   PHẢI khai qua class, không đặt `animation` bằng inline style: không có CSS
+   nào tham chiếu tới @keyframes thì Lightning CSS sẽ loại nó khi build.
+
+   Suspense fallback bật lên NGAY khi bấm link, mà phần lớn cú chuyển trang xong
+   dưới ngưỡng này — hiện luôn thì thành một hình nháy lên rồi tắt, giật hơn cả
+   không có gì. `backwards` giữ opacity 0 trong lúc còn hoãn.
+
+   Đây là NGOẠI LỆ có chủ ý của luật "keyframe không đụng opacity" ghi ở khối
+   hero ngay dưới: ở đó opacity quyết định chữ có đọc được không, còn ở đây nó
+   CHÍNH LÀ nội dung của hiệu ứng — và tắt animation (reduced-motion) thì màn
+   chờ hiện ngay, không mất. */
+@keyframes page-loading-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.page-loading {
+  animation: page-loading-in 0.2s ease-out 0.12s backwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-loading {
+    animation: none;
+  }
+}
+
 /* ─── HERO TRANG CHỦ: ba hiệu ứng mở màn ───────────────────────────────────
    PHẢI khai báo qua class chứ đừng đặt `animation` bằng inline style: không có
    CSS nào tham chiếu tới @keyframes thì Lightning CSS sẽ loại nó khi build.

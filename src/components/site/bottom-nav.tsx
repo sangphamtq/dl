@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { TabIcon, type TabIconName } from "./tab-icons";
+import { NavIcon, type NavIconName } from "./nav-icons";
 import { CommandPalette } from "./command-palette";
 import { MobileMenuSheet } from "./mobile-menu-sheet";
 import { cn } from "@/lib/utils";
@@ -14,8 +14,8 @@ const HIDDEN_ON = ["/cms", "/sale", "/login", "/offline"];
 
 type Item = {
   label: string;
-  /** Icon riêng của thanh tab (xem tab-icons.tsx) — tự có bản viền & bản đặc. */
-  icon: TabIconName;
+  /** Icon riêng của hai thanh điều hướng (xem nav-icons.tsx) — tự có bản viền & bản đặc. */
+  icon: NavIconName;
 } & (
   | {
       /** Mục điều hướng: mở một trang. */
@@ -206,7 +206,7 @@ export function BottomNav() {
             const active = it.action ? menu : isActive(pathname, it);
             const inner = (
               <>
-                <TabIcon
+                <NavIcon
                   name={it.icon}
                   active={active}
                   className="size-[1.5625rem] shrink-0"

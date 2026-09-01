@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Search } from "@/components/icons";
+import { NavIcon } from "./nav-icons";
 import {
   Tooltip,
   TooltipContent,
@@ -54,7 +54,7 @@ export function HeaderSearch() {
             // kiếm lúc nào cũng trông như đang bật.
             //
             // Phân biệt với nhóm kia bằng hai thứ KHÔNG phải trang trí:
-            //   · NÉT LỚN HƠN MỘT BẬC — `size-5` so với `size-4` của nhóm.
+            //   · NÉT LỚN HƠN MỘT BẬC — 1.35rem so với 1.15rem của nhóm.
             //   · VẠCH NGĂN đứng giữa (dựng ở `site-header`, chỉ khi đã đăng
             //     nhập — lúc chưa đăng nhập nhóm kia không tồn tại nên không có
             //     gì để mà ngăn).
@@ -62,7 +62,7 @@ export function HeaderSearch() {
             // vẫn chỉ có ĐÚNG MỘT hình khối đặc: nút "Đăng nhập".
             className="grid size-10 shrink-0 place-items-center rounded-full text-foreground transition-colors hover:bg-foreground/10"
           >
-            <Search className="size-5" aria-hidden />
+            <NavIcon name="search" active={open} className="size-[1.35rem]" />
           </button>
         </TooltipTrigger>
         <TooltipContent>Tìm kiếm</TooltipContent>

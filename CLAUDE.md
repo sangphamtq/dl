@@ -1108,14 +1108,20 @@ hamburger.
   `backdrop-saturate` (rơi về nền gần đục khi máy không hỗ trợ `backdrop-filter`); cao
   **49pt** + đệm đáy. Mục đang mở chỉ đổi **icon viền → icon đặc** +
   màu tint — không viên nền, không gạch chân. Chạm thì mờ đi, không gợn sóng.
-- **Icon vẽ riêng, KHÔNG dùng `Ic`/Material Symbols:** `src/components/site/tab-icons.tsx`
-  (`TabIcon`) — 5 icon × 2 bản (viền/đặc), vẽ theo ngôn ngữ SF Symbols: nét mảnh 1.7
+- **Icon vẽ riêng, KHÔNG dùng `Ic`/Material Symbols:** `src/components/site/nav-icons.tsx`
+  (`NavIcon`) — 8 icon × 2 bản (viền/đặc), vẽ theo ngôn ngữ SF Symbols: nét mảnh 1.7
   trên khung 24, đầu nét & góc bo tròn, hình mở. Material Symbols nét dày và khối
   đặc, xếp cạnh nhau ở cỡ 25px thì thanh tab trông nặng, lệch hẳn so với app iOS.
   Chỉ dựng từ đường thẳng + cung tròn (không bezier tự do) để còn soi lại toạ độ;
-  vài bản đặc khoét lỗ bằng `fill-rule="evenodd"` (kim la bàn, chấm hội thoại) vì
-  không thể vẽ đè màu nền lên nền trong mờ. Thêm tab mới thì thêm hình vào hai map
-  `OUTLINE`/`FILLED` trong file đó — không đụng `scripts/build-icons.mjs` nữa.
+  vài bản đặc khoét lỗ bằng `fill-rule="evenodd"` (kim la bàn, chấm hội thoại, dấu
+  tick trong ghim) vì không thể vẽ đè màu nền lên nền trong mờ. Thêm mục mới thì
+  thêm hình vào hai map `OUTLINE`/`FILLED` trong file đó — không đụng
+  `scripts/build-icons.mjs` nữa.
+  · **Bộ này dùng CHUNG với cụm icon bên phải header** (tìm kiếm · nơi đã đến ·
+    lịch trình · chuông) — file tên `nav-icons` chứ không phải `tab-icons` là vì
+    vậy. Header cũng đổi **viền → đặc** khi đang ở đúng trang đó, y như thanh tab.
+    Cỡ: nhóm ba icon `size-[1.15rem]`, nút tìm kiếm `size-[1.35rem]` — giữ đúng
+    nhịp "lớn hơn một bậc" đã có từ bản Material Symbols.
 - **Né thanh công cụ trình duyệt (Safari iOS, Chrome Android):** thanh địa chỉ dưới ĐÈ lên
   đáy khung nhìn bố cục, nên `fixed bottom-0` bị khuất. `BottomNav` đo phần bị che bằng
   `visualViewport` (`clientHeight − vv.height − vv.offsetTop`) rồi ghi vào
