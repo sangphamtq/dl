@@ -1,11 +1,25 @@
 import Link from "next/link";
 import Image from "next/image";
+import { Playfair_Display } from "next/font/google";
 import { redirect } from "next/navigation";
 import { CalendarDays, MapPin, Route, Sparkles } from "@/components/icons";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getPlanningTripId } from "../actions";
 import { NewTripButton, TripCardMenu } from "@/components/trip/trip-list-actions";
+import { cn } from "@/lib/utils";
+
+// Cùng họ chữ tiêu đề với các trang đã chuyển giọng — khai TẠI TRANG vì
+// `--font-serif` không có trong root layout.
+const serif = Playfair_Display({
+  variable: "--font-serif",
+  subsets: ["latin", "vietnamese"],
+  weight: ["400"],
+  display: "swap",
+});
+
+// Nhãn nhỏ in hoa — CÙNG hằng với `destination-filter.tsx`.
+const MICRO = "text-[0.6rem] font-semibold uppercase tracking-[0.14em]";
 
 export const metadata = {
   title: "Lịch trình của tôi · Halivivu",
@@ -78,22 +92,17 @@ export default async function LichTrinhPage() {
   ]);
 
   return (
-    <div className="flex flex-1 flex-col">
-      <main className="relative flex-1 bg-gradient-to-b from-sky-100/70 via-sky-50/40 to-background dark:from-muted/30 dark:via-muted/10">
-        {/* Hoạ tiết vòng tròn đồng tâm — sau nội dung */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -right-40 top-4 -z-10 size-[34rem] rounded-full border border-primary/10 [mask-image:radial-gradient(circle,black,transparent_70%)]"
-        >
-          <div className="absolute inset-12 rounded-full border border-primary/10" />
-          <div className="absolute inset-28 rounded-full border border-warm/10" />
-        </div>
-
+    // Nền TRẮNG, không hoạ tiết. Bản trước có dải chuyển sắc xanh da trời cộng
+    // ba vòng tròn đồng tâm ở góc phải — hai thứ trang trí thuần tuý, mà bộ vật
+    // liệu biên tập (`/diem-den`, `/dia-diem`, `/blog`…) không dùng nền màu lẫn
+    // hoạ tiết: phân tầng ở đó do chữ và khoảng trắng lo.
+    <div className={cn("flex flex-1 flex-col", serif.variable)}>
+      <main className="flex-1">
         <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
-          <p className="text-sm font-medium text-warm">Chuyến đi của bạn</p>
-          <div className="mt-1 flex flex-wrap items-end justify-between gap-4">
+          <p className={cn(MICRO, "text-warm-ink")}>Chuyến đi của bạn</p>
+          <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+              <h1 className="font-[family-name:var(--font-serif)] text-[clamp(1.75rem,4.4vw,3rem)] font-normal uppercase leading-[1.15] tracking-[0.1em] sm:tracking-[0.14em]">
                 Lịch trình
               </h1>
               <p className="mt-2 max-w-prose leading-relaxed text-muted-foreground">
@@ -114,7 +123,7 @@ export default async function LichTrinhPage() {
                   null;
                 return (
                   <li key={trip.id} className="group relative">
-                    <div className="h-full overflow-hidden rounded-2xl bg-card shadow-lg shadow-black/5 transition-shadow hover:shadow-xl">
+                    <div className="h-full overflow-hidden border border-border bg-card transition-colors hover:border-foreground">
                       <div className="relative aspect-[4/3] bg-muted">
                         {cover ? (
                           <Image
@@ -130,14 +139,24 @@ export default async function LichTrinhPage() {
                           </div>
                         )}
                         {trip.id === planningId && (
-                          <span className="absolute left-3 top-3 rounded-full bg-background/90 px-2.5 py-1 text-xs font-medium text-primary backdrop-blur-sm">
+                          <span
+                            className={cn(
+                              MICRO,
+                              "absolute left-3 top-3 bg-white/95 px-2 py-1 text-neutral-900 shadow-sm backdrop-blur-sm",
+                            )}
+                          >
                             Đang lên lịch trình
                           </span>
                         )}
                         {/* Chuyến của người khác mời mình vào — không đánh dấu
                             thì danh sách trộn lẫn mà không biết cái nào của ai. */}
                         {trip.ownerId !== userId && (
-                          <span className="absolute bottom-3 left-3 rounded-full bg-background/90 px-2.5 py-1 text-xs font-medium backdrop-blur-sm">
+                          <span
+                            className={cn(
+                              MICRO,
+                              "absolute bottom-3 left-3 bg-white/95 px-2 py-1 text-neutral-900 shadow-sm backdrop-blur-sm",
+                            )}
+                          >
                             {trip.owner?.name
                               ? `Chuyến của ${trip.owner.name.split(" ").slice(-1)[0]}`
                               : "Được mời cùng sửa"}
@@ -154,12 +173,12 @@ export default async function LichTrinhPage() {
                         <h2 className="font-semibold leading-snug tracking-tight">
                           <Link
                             href={`/lich-trinh/cua-toi/${trip.id}`}
-                            className="after:absolute after:inset-0 hover:text-primary"
+                            className="underline-offset-4 after:absolute after:inset-0 hover:underline"
                           >
                             {trip.title}
                           </Link>
                         </h2>
-                        <p className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-muted-foreground">
+                        <p className={cn(MICRO, "mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-muted-foreground")}>
                           <span className="inline-flex items-center gap-1">
                             <CalendarDays className="size-3.5" aria-hidden />
                             {trip._count.days} ngày
@@ -187,9 +206,9 @@ export default async function LichTrinhPage() {
               })}
             </ul>
           ) : (
-            <div className="mt-8 rounded-2xl border border-dashed border-border bg-card/50 px-6 py-14 text-center">
+            <div className="mt-8 border border-dashed border-border px-6 py-14 text-center">
               <Route className="mx-auto size-10 text-muted-foreground/40" aria-hidden />
-              <p className="mt-4 font-semibold tracking-tight">
+              <p className="mt-4 font-[family-name:var(--font-display)] text-lg tracking-tight">
                 Bạn chưa có lịch trình nào
               </p>
               <p className="mx-auto mt-1.5 max-w-sm text-sm leading-relaxed text-muted-foreground">
@@ -205,23 +224,27 @@ export default async function LichTrinhPage() {
           {/* ── Lịch trình mẫu ─────────────────────────────────── */}
           {templates.length > 0 && (
             <section className="mt-14">
-              <div className="flex items-center gap-2">
-                <Sparkles className="size-4 text-warm" aria-hidden />
-                <h2 className="text-xl font-bold tracking-tight sm:text-2xl">
+              {/* Bỏ icon tia lấp lánh cạnh tiêu đề: tiêu đề mục ở bộ vật liệu
+                  này chỉ có chữ và một đường kẻ. */}
+              <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-b border-border pb-3">
+                <h2 className="font-[family-name:var(--font-serif)] text-[clamp(1.125rem,2.2vw,1.5rem)] font-normal uppercase leading-[1.2] tracking-[0.1em] sm:tracking-[0.14em]">
                   Lịch trình gợi ý
                 </h2>
-              </div>
-              <p className="mt-1.5 text-sm text-muted-foreground">
-                Do biên tập soạn — bấm để nhân bản thành chuyến của riêng bạn rồi sửa thoải mái.{" "}
-                <Link href="/lich-trinh" className="font-medium text-primary hover:underline">
+                <Link
+                  href="/lich-trinh"
+                  className={cn(MICRO, "text-muted-foreground transition-colors hover:text-foreground")}
+                >
                   Xem tất cả →
                 </Link>
+              </div>
+              <p className="mt-3 text-sm text-muted-foreground">
+                Do biên tập soạn — bấm để nhân bản thành chuyến của riêng bạn rồi sửa thoải mái.
               </p>
 
               <ul className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {templates.map((t) => (
                   <li key={t.id} className="group relative">
-                    <div className="h-full overflow-hidden rounded-2xl bg-card shadow-lg shadow-black/5 transition-shadow hover:shadow-xl">
+                    <div className="h-full overflow-hidden border border-border bg-card transition-colors hover:border-foreground">
                       <div className="relative aspect-[4/3] bg-muted">
                         {t.images[0] ? (
                           <Image
@@ -241,7 +264,7 @@ export default async function LichTrinhPage() {
                         <h3 className="font-semibold leading-snug tracking-tight">
                           <Link
                             href={`/lich-trinh/${t.slug}`}
-                            className="after:absolute after:inset-0 hover:text-primary"
+                            className="underline-offset-4 after:absolute after:inset-0 hover:underline"
                           >
                             {t.title}
                           </Link>
@@ -251,7 +274,7 @@ export default async function LichTrinhPage() {
                             {t.summary}
                           </p>
                         )}
-                        <p className="mt-2 flex items-center gap-2.5 text-xs text-muted-foreground">
+                        <p className={cn(MICRO, "mt-2.5 flex items-center gap-2.5 text-muted-foreground")}>
                           <span className="inline-flex items-center gap-1">
                             <CalendarDays className="size-3.5" aria-hidden />
                             {t._count.days} ngày

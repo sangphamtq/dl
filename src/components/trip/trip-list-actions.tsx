@@ -44,7 +44,9 @@ export function NewTripButton() {
         })
       }
       disabled={pending}
-      className="rounded-lg bg-warm text-warm-foreground hover:bg-warm/90"
+      // Mép vuông + nhãn nhỏ in hoa, cùng vật liệu nút của bộ biên tập. Giữ
+      // nền CAM: đây vẫn là hành động chính duy nhất của trang.
+      className="h-11 rounded-none bg-warm px-5 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-warm-foreground hover:bg-warm/90"
     >
       {pending ? (
         <Loader2 className="size-4 animate-spin" aria-hidden />
@@ -78,6 +80,8 @@ export function TripCardMenu({
           <button
             type="button"
             aria-label={`Tuỳ chọn cho ${title}`}
+            // Nút chỉ-ICON nên giữ hình tròn — cùng ranh giới đã dùng ở trang
+            // điểm đến: nút có chữ thì vuông, nút chỉ icon thì tròn.
             className="absolute right-2 top-2 z-10 grid size-8 place-items-center rounded-full bg-background/85 text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-background"
           >
             <MoreHorizontal className="size-4" aria-hidden />
