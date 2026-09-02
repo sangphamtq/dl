@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { PlaceKind, PublishStatus } from "@/generated/prisma/enums";
 import { PROVINCE_NAMES, slugifyVi as slugify } from "@/lib/provinces";
 
-// Seed 63 tỉnh/thành (cấu trúc hành chính cũ), KHÔNG nội dung chi tiết, để xem
+// Seed 34 tỉnh/thành (đơn vị hành chính từ 1/7/2025), KHÔNG nội dung chi tiết, để xem
 // trang /diem-den. Ảnh fallback picsum theo slug.
 // Idempotent (upsert theo slug). Dùng: pnpm seed:places
 // Điểm đến lớn KHÔNG seed ở đây — mỗi nơi có seed riêng (seed-phan-thiet,

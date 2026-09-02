@@ -1,32 +1,31 @@
-// Nhóm 63 tỉnh theo miền (slug theo seed). Dùng chung cho trang danh sách
-// điểm đến và thanh chuyển nhanh.
+// Nhóm 34 tỉnh (đơn vị hành chính từ 1/7/2025) theo miền — slug theo seed.
+// Dùng chung cho trang danh sách điểm đến và thanh chuyển nhanh.
+//
+// Sau sáp nhập, MIỀN là trục duyệt bền hơn TỈNH: một tỉnh mới có thể ôm hai kiểu
+// chuyến khác hẳn nhau (Lâm Đồng gồm cả Đà Lạt cao nguyên lẫn Mũi Né biển; Gia
+// Lai gồm cả Pleiku lẫn Quy Nhơn), còn miền thì không đổi nghĩa.
 export const REGIONS = [
   {
     label: "Miền Bắc",
     slugs: [
-      "ha-noi", "hai-phong", "bac-giang", "bac-kan", "bac-ninh", "cao-bang",
-      "dien-bien", "ha-giang", "ha-nam", "hai-duong", "hoa-binh", "hung-yen",
-      "lai-chau", "lang-son", "lao-cai", "nam-dinh", "ninh-binh", "phu-tho",
-      "quang-ninh", "son-la", "thai-binh", "thai-nguyen", "tuyen-quang",
-      "vinh-phuc", "yen-bai",
+      "ha-noi", "hai-phong", "bac-ninh", "cao-bang", "dien-bien",
+      "hung-yen", "lai-chau", "lang-son", "lao-cai", "ninh-binh",
+      "phu-tho", "quang-ninh", "son-la", "thai-nguyen", "tuyen-quang",
     ],
   },
   {
     label: "Miền Trung & Tây Nguyên",
     slugs: [
-      "thanh-hoa", "nghe-an", "ha-tinh", "quang-binh", "quang-tri",
-      "thua-thien-hue", "da-nang", "quang-nam", "quang-ngai", "binh-dinh",
-      "phu-yen", "khanh-hoa", "ninh-thuan", "binh-thuan", "kon-tum", "gia-lai",
-      "dak-lak", "dak-nong", "lam-dong",
+      "thanh-hoa", "nghe-an", "ha-tinh", "quang-tri", "hue",
+      "da-nang", "quang-ngai", "gia-lai", "dak-lak", "khanh-hoa",
+      "lam-dong",
     ],
   },
   {
     label: "Miền Nam",
     slugs: [
-      "ho-chi-minh", "ba-ria-vung-tau", "binh-duong", "binh-phuoc", "dong-nai",
-      "tay-ninh", "an-giang", "bac-lieu", "ben-tre", "ca-mau", "can-tho",
-      "dong-thap", "hau-giang", "kien-giang", "long-an", "soc-trang",
-      "tien-giang", "tra-vinh", "vinh-long",
+      "ho-chi-minh", "dong-nai", "tay-ninh", "an-giang", "ca-mau",
+      "can-tho", "dong-thap", "vinh-long",
     ],
   },
 ] as const;

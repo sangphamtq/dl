@@ -20,7 +20,6 @@ export type FoodVenue = {
   bestTime: string | null;
   meals: string[];
   wardName: string | null;
-  districtName: string | null;
   images: { url: string; isCover: boolean }[];
 };
 
@@ -159,7 +158,7 @@ function VenueTile({
       .map((m) => label(MEAL_LABELS, m))
       .filter((m): m is string => Boolean(m))
       .slice(0, 2)),
-    [v.wardName, v.districtName].filter(Boolean)[0] ?? null,
+    v.wardName,
   ].filter((f): f is string => Boolean(f));
 
   return (

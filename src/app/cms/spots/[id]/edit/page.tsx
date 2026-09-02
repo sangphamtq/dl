@@ -62,8 +62,6 @@ export default async function EditSpotPage({
         tags: true,
         provinceCode: true,
         provinceName: true,
-        districtCode: true,
-        districtName: true,
         wardCode: true,
         wardName: true,
       },
@@ -133,8 +131,6 @@ export default async function EditSpotPage({
     tags: spot.tags.join(", "),
     provinceCode: spot.provinceCode?.toString() ?? "",
     provinceName: spot.provinceName ?? "",
-    districtCode: spot.districtCode?.toString() ?? "",
-    districtName: spot.districtName ?? "",
     wardCode: spot.wardCode?.toString() ?? "",
     wardName: spot.wardName ?? "",
   };

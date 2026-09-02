@@ -8,8 +8,8 @@ import { slugify } from "@/lib/slug";
 import { cn } from "@/lib/utils";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { MapLinkField } from "@/components/cms/map-link-field";
-import type { Province, District, Ward } from "@/lib/locations";
-import { loadDistricts, loadWards } from "../places/location-client";
+import type { Province, Ward } from "@/lib/locations";
+import { loadWards } from "../places/location-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -52,8 +52,6 @@ const EMPTY: EateryFormValues = {
   tags: "",
   provinceCode: "",
   provinceName: "",
-  districtCode: "",
-  districtName: "",
   wardCode: "",
   wardName: "",
 };
@@ -82,10 +80,8 @@ export function EateryForm({
     mode === "edit" && Boolean(initial?.slug),
   );
 
-  // Huyện/xã của cấp trên đang chọn (nạp qua cache client → server action).
-  const [districts, setDistricts] = useState<District[]>([]);
+  // Xã/phường của tỉnh đang chọn (nạp qua cache client → server action).
   const [wards, setWards] = useState<Ward[]>([]);
-  const [districtsLoading, setDistrictsLoading] = useState(false);
   const [wardsLoading, setWardsLoading] = useState(false);
 
   const slugPreview = slugTouched ? values.slug : slugify(values.name);
@@ -94,29 +90,10 @@ export function EateryForm({
     setValues((p) => ({ ...p, [key]: v }));
   }
 
-  // Nạp huyện mỗi khi provinceCode đổi (gồm cả lần đầu khi sửa).
+  // Nạp xã/phường mỗi khi provinceCode đổi (gồm cả lần đầu khi sửa).
   useEffect(() => {
     const c = Number(values.provinceCode);
     if (!values.provinceCode || !Number.isFinite(c)) return;
-    let active = true;
-    void (async () => {
-      setDistrictsLoading(true);
-      try {
-        const d = await loadDistricts(c);
-        if (active) setDistricts(d);
-      } finally {
-        if (active) setDistrictsLoading(false);
-      }
-    })();
-    return () => {
-      active = false;
-    };
-  }, [values.provinceCode]);
-
-  // Nạp xã mỗi khi districtCode đổi.
-  useEffect(() => {
-    const c = Number(values.districtCode);
-    if (!values.districtCode || !Number.isFinite(c)) return;
     let active = true;
     void (async () => {
       setWardsLoading(true);
@@ -130,20 +107,17 @@ export function EateryForm({
     return () => {
       active = false;
     };
-  }, [values.districtCode]);
+  }, [values.provinceCode]);
 
   // Chọn Nơi chứa → tự điền vị trí hành chính theo địa điểm cha (vẫn sửa được).
   function onPlaceChange(placeId: string) {
     const p = places.find((x) => x.id === placeId);
-    setDistricts([]);
     setWards([]);
     setValues((prev) => ({
       ...prev,
       placeId,
       provinceCode: p?.provinceCode != null ? String(p.provinceCode) : "",
       provinceName: p?.provinceName ?? "",
-      districtCode: p?.districtCode != null ? String(p.districtCode) : "",
-      districtName: p?.districtName ?? "",
       wardCode: p?.wardCode != null ? String(p.wardCode) : "",
       wardName: p?.wardName ?? "",
     }));
@@ -151,26 +125,11 @@ export function EateryForm({
 
   function onProvinceChange(c: string) {
     const p = adminProvinces.find((x) => String(x.code) === c);
-    setDistricts([]);
     setWards([]);
     setValues((prev) => ({
       ...prev,
       provinceCode: c,
       provinceName: p?.name ?? "",
-      districtCode: "",
-      districtName: "",
-      wardCode: "",
-      wardName: "",
-    }));
-  }
-
-  function onDistrictChange(c: string) {
-    const d = districts.find((x) => String(x.code) === c);
-    setWards([]);
-    setValues((prev) => ({
-      ...prev,
-      districtCode: c,
-      districtName: d?.name ?? "",
       wardCode: "",
       wardName: "",
     }));
@@ -419,7 +378,7 @@ export function EateryForm({
           title="Vị trí & thông tin thực địa"
           description="Địa chỉ hành chính (tự điền theo nơi chứa), địa chỉ chi tiết, toạ độ, giờ/giá và lưu ý. Tùy chọn."
         >
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Tỉnh / Thành phố</Label>
               <Combobox
@@ -439,27 +398,7 @@ export function EateryForm({
               />
             </div>
             <div className="space-y-2">
-              <Label>Quận / Huyện</Label>
-              <Combobox
-                options={districts.map((d) => ({
-                  value: String(d.code),
-                  label: d.name,
-                }))}
-                value={values.districtCode}
-                onChange={onDistrictChange}
-                disabled={!values.provinceCode || districtsLoading}
-                placeholder={
-                  districtsLoading
-                    ? "Đang tải…"
-                    : !values.provinceCode
-                      ? "Chọn tỉnh trước"
-                      : "Chọn quận/huyện…"
-                }
-                searchPlaceholder="Tìm quận/huyện…"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Phường / Xã</Label>
+              <Label>Phường / Xã / Đặc khu</Label>
               <Combobox
                 options={wards.map((w) => ({
                   value: String(w.code),
@@ -467,12 +406,12 @@ export function EateryForm({
                 }))}
                 value={values.wardCode}
                 onChange={onWardChange}
-                disabled={!values.districtCode || wardsLoading}
+                disabled={!values.provinceCode || wardsLoading}
                 placeholder={
                   wardsLoading
                     ? "Đang tải…"
-                    : !values.districtCode
-                      ? "Chọn huyện trước"
+                    : !values.provinceCode
+                      ? "Chọn tỉnh trước"
                       : "Chọn phường/xã…"
                 }
                 searchPlaceholder="Tìm phường/xã…"

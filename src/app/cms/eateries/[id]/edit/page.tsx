@@ -41,8 +41,6 @@ export default async function EditEateryPage({
         tags: true,
         provinceCode: true,
         provinceName: true,
-        districtCode: true,
-        districtName: true,
         wardCode: true,
         wardName: true,
       },
@@ -86,8 +84,6 @@ export default async function EditEateryPage({
     tags: eatery.tags.join(", "),
     provinceCode: eatery.provinceCode?.toString() ?? "",
     provinceName: eatery.provinceName ?? "",
-    districtCode: eatery.districtCode?.toString() ?? "",
-    districtName: eatery.districtName ?? "",
     wardCode: eatery.wardCode?.toString() ?? "",
     wardName: eatery.wardName ?? "",
   };

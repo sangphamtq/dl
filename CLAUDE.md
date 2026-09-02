@@ -52,17 +52,52 @@ Place {
     chung (`isFeatured` → lượt xem → ABC), nên một tỉnh không nổi bật sẽ nằm
     giữa dải và phải cuộn mới thấy — muốn nó lên đầu thì bật thêm
     **`isFeatured`**, đó mới là cờ "đề cử lên trước".
-  · ⚠️ **Dữ liệu hiện còn một nhóm mô hình hoá sai chưa sửa**: 23/27 tỉnh có
-    ĐÚNG một điểm đến con, trong đó nhiều cặp thuộc kiểu "tỉnh mới là điểm đến,
-    con chỉ là một thắng cảnh" — Ninh Bình→Tràng An, Đà Nẵng→Bà Nà Hills, Hà
-    Nội→Ba Vì, TP.HCM→Cần Giờ, Gia Lai→Biển Hồ. Cách đúng cho nhóm này: gắn
-    listing thẳng vào tỉnh và hạ "điểm đến con" xuống thành `Spot`. Khác hẳn
-    nhóm Lào Cai→Sa Pa, Khánh Hòa→Nha Trang, Quảng Nam→Hội An (tên khác nhau,
-    người ta đi tới ĐIỂM ĐẾN) — nhóm đó đang đúng, đừng đụng vào.
+  · ⚠️ **Coi chừng nhóm mô hình hoá sai**: tỉnh có ĐÚNG một điểm đến con, kiểu
+    "tỉnh mới là điểm đến, con chỉ là một thắng cảnh" — Ninh Bình→Tràng An, Đà
+    Nẵng→Bà Nà Hills, Hà Nội→Ba Vì, TP.HCM→Cần Giờ, Gia Lai→Biển Hồ. Cách đúng
+    cho nhóm này: gắn listing thẳng vào tỉnh và hạ "điểm đến con" xuống thành
+    `Spot`. Khác hẳn nhóm Lào Cai→Sa Pa, Khánh Hòa→Nha Trang, Đà Nẵng→Hội An
+    (tên khác nhau, người ta đi tới ĐIỂM ĐẾN) — nhóm đó đúng, đừng đụng vào.
 - Một `Place` kind=`province` có thể có 0..N `Place` con kind=`destination`.
 - **Ràng buộc cây (validate ở tầng app):** `province` ⇒ `parentId = null`; `destination`
   ⇒ `parentId` trỏ tới một `province` (KHÔNG cho destination lồng destination). Giữ đúng
   **2 mức**. `parentId` để kiểu đệ quy chỉ nhằm linh hoạt schema, không dùng quá 2 mức.
+
+### Địa lý hành chính — HAI LỚP, đừng trộn (đọc trước khi động vào tỉnh/địa chỉ)
+
+Từ **1/7/2025** Việt Nam sáp nhập **63 → 34 tỉnh/thành** và **bãi bỏ hẳn cấp huyện**
+(nay chỉ 2 cấp: tỉnh → xã/phường/đặc khu). Dự án đã chuyển sang bộ mới hoàn toàn — không
+còn dấu vết nào của bộ 63/3 cấp. Nhưng phải giữ đúng ranh giới giữa hai lớp:
+
+| | Lớp **HÀNH CHÍNH** | Lớp **DU LỊCH** |
+|---|---|---|
+| Là gì | `provinceCode/Name`, `wardCode/Name`, địa chỉ, bộ lọc, bản đồ tỉnh | `Place.name` / `slug` / SEO / breadcrumb |
+| Nguồn | `provinces.open-api.vn` **v2** (`lib/locations.ts`) + `lib/provinces.ts` (34 tên) | Biên tập tự đặt |
+| Luật | **Luôn theo đơn vị mới.** Đổi khi nhà nước đổi | **Theo tên dân gian.** Slug đã xuất bản KHÔNG đổi |
+
+- ⚠️ **KHÔNG quay lại API v1.** Không phải chuyện "endpoint cũ vẫn chạy": v1 là bộ 63 tỉnh
+  kèm **cấp huyện** — một cấp chính quyền đã bị bãi bỏ. v2 thậm chí không có khoá
+  `districts`, nên `getDistricts()` không port được, đã xoá. Với mục **Lưu trú** (định vị
+  "danh bạ đã xác minh chính chủ") thì địa chỉ sai chuẩn là tự phá đúng thứ mình đang bán.
+- **29 tên tỉnh cũ đã mất** nhưng nhiều tên là thương hiệu du lịch mạnh (Hà Giang, Mũi Né,
+  Hội An, Phú Yên…). Chúng sống tiếp thành **`Place` kind=`destination`** thuộc tỉnh mới,
+  **giữ nguyên slug/URL** — không ai gõ "du lịch Tuyên Quang" để tìm cung Hà Giang, và
+  `/luu-tru/[slug]` chính là link chủ homestay in ra gửi khách.
+  · Vì vậy đợt sáp nhập làm **`treatAsDestination` càng đúng**, không phải càng sai.
+- **Sau sáp nhập, TỈNH là trục duyệt kém hơn cho du lịch** — Lâm Đồng ôm cả Đà Lạt (cao
+  nguyên) lẫn Mũi Né (biển); Gia Lai ôm cả Pleiku lẫn Quy Nhơn. Nên `Place` mới là trục
+  chính, tỉnh chỉ là metadata; và `lib/regions.ts` (3 miền) giờ bền hơn tỉnh.
+- **`wardName` mất nhiều sức phân biệt**: TP Phan Thiết cũ ~14 phường nay gộp còn 2
+  (`Phan Thiết`, `Mũi Né`), nên "khu vực" trên thẻ quán ăn gần như giống nhau hết. Thứ
+  phân biệt thật là `address` (số nhà/đường/mốc) — thẻ Lưu trú vốn đã dùng `areaOf(address)`
+  thay vì `wardName`, đúng hướng.
+- Tên xã/phường lưu **KHÔNG kèm tiền tố** ("Phan Thiết", không phải "Phường Phan Thiết") —
+  `stripPrefix` trong `lib/locations.ts` cắt sẵn, seed phải theo đúng quy ước đó.
+- **`vietnam-map-paths.ts` (34 đường viền) dựng bằng DISSOLVE**, không phải geodata mới:
+  đợt sáp nhập gộp NGUYÊN tỉnh nên tỉnh mới = hợp của các tỉnh cũ; script khử các cạnh xuất
+  hiện ở đúng 2 tỉnh thành phần rồi khâu lại thành vòng kín (đã kiểm: diện tích lệch
+  0,013%, bbox y hệt). **Đừng nối chuỗi `d` suông** — `share-map-button.tsx` có `stroke`
+  nên ranh giới tỉnh cũ sẽ hiện ra thành vệt. Bộ 63 cũ nằm trong lịch sử git nếu cần dựng lại.
 
 ### `Listing` — các mục tầng dưới (gắn vào một `Place` bất kỳ)
 
@@ -998,7 +1033,7 @@ con số** của tầng nội dung (địa điểm · trải nghiệm · quán �
 - **LUẬT MÀU:** xanh (`text-brand`) = tầng nơi chốn, cam (`text-warm-ink`) = tầng nội dung bên
   trong. KHÔNG dùng `primary`/`warm`: đây là CHỮ trên nền sáng, hai token kia không đủ tương
   phản. `<Big>` không có dấu cách viết tay hai bên (khoảng cách do `me-2` của nó lo).
-- **CỐ Ý KHÔNG đếm số tỉnh**: đích đến là phủ đủ 63 tỉnh, mà "27/63" đọc ra như một thanh
+- **CỐ Ý KHÔNG đếm số tỉnh**: đích đến là phủ đủ 34 tỉnh, mà "18/34" đọc ra như một thanh
   tiến trình còn dang dở.
 - Lưới bốn mục khai `grid-cols-2` từ khổ nhỏ nhất (không chỉ `sm:`): lưới không khai cột thì
   track co theo max-content và tràn ngang.
@@ -1010,11 +1045,11 @@ con số** của tầng nội dung (địa điểm · trải nghiệm · quán �
   không lặp lại y hệt hàng đầu, tránh nhìn ra một khuôn dập.
 - Nền có **vệt nắng ấm rất nhạt ở góc trên trái**, nối tiếp vệt nắng góc dưới trái của hero.
 - **ĐÃ THỬ VÀ BỎ — một loạt, đừng dựng lại mà không hỏi:** sáu ô phẳng bằng nhau · bốn thẻ
-  trắng có vạch kẻ · bốn thẻ ẢNH · và cuối cùng là cả một **bản đồ độ phủ 63 tỉnh** ở cột phải
+  trắng có vạch kẻ · bốn thẻ ẢNH · và cuối cùng là cả một **bản đồ độ phủ 34 tỉnh** ở cột phải
   (tô xanh tỉnh đã có điểm đến, rê vào thì mảnh nhấc lên kèm popup liệt kê điểm đến, có cả
   danh sách chip / thẻ xem trước ở cột trái qua nhiều vòng). Bản đồ đẹp nhưng kéo cả section
   thành một thứ để nghịch, và bộ đường viền ~58KB nằm thẳng trong HTML trang chủ chỉ để minh
-  hoạ mấy con số. Đường viền 63 tỉnh vẫn còn ở `components/account/vietnam-map-paths.ts`
+  hoạ mấy con số. Đường viền 34 tỉnh vẫn còn ở `components/account/vietnam-map-paths.ts`
   (trang `/tai-khoan/da-den` dùng) nên dựng lại lúc nào cũng được.
 
 ### Nút (`src/components/site/cta-button.tsx`) — một "vật liệu" dùng chung
@@ -1212,9 +1247,9 @@ về cùng một tập nội dung, người dùng đi qua lại giữa chúng:
   vì phần lớn điểm đến chưa có ảnh bìa, mặt bản đồ đầy ô "Đ", "N", "C". Cụm gom cũng vuông,
   nền `--foreground`.
 
-> ⚠️ **Bản đồ chỉ thấy nơi CÓ toạ độ — hiện 23, trong khi `/diem-den` có 37.** Số vắng mặt
-> đều là **tỉnh** (Hà Nội, Hà Giang, Lào Cai, Quảng Ninh, Sơn La, Bình Thuận…). Cách sửa là
-> **điền `lat/lng` cho tỉnh trong CMS** — nhất là tỉnh `treatAsDestination`.
+> ⚠️ **Bản đồ chỉ thấy nơi CÓ toạ độ.** Số vắng mặt gần như toàn là **tỉnh** (seed
+> `seed-places.ts` không đặt `lat/lng`). Cách sửa là **điền `lat/lng` cho tỉnh trong CMS**
+> — nhất là tỉnh `treatAsDestination`.
 >
 > `getDestinationMapPoints()` lấy toạ độ theo thứ tự **`Place.lat/lng` → bảng tra
 > `PLACE_COORDS` → trọng tâm listing**. Trước 2026-08-29 nó bỏ qua hẳn nấc đầu (hàm viết
@@ -1318,5 +1353,5 @@ một số lối vào nav đang tạm ẩn (xem "Điều hướng header").
 
 **Lịch trình đã dựng xong v1.** Việc còn treo của nó liệt kê ở
 [`docs/lich-trinh.md`](docs/lich-trinh.md) §13 — đáng làm nhất: **kéo–thả** thay cho nút
-▲▼, **lưu offline**, và điền toạ độ cho 62 tỉnh còn thiếu (`pnpm backfill:place-coords`
+▲▼, **lưu offline**, và điền toạ độ cho các tỉnh còn thiếu (`pnpm backfill:place-coords`
 chỉ phủ được điểm đến).

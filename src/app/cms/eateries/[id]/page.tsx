@@ -61,7 +61,6 @@ export default async function EateryDetailPage({
       notice: true,
       tags: true,
       provinceName: true,
-      districtName: true,
       wardName: true,
       createdAt: true,
       updatedAt: true,
@@ -91,7 +90,7 @@ export default async function EateryDetailPage({
     {
       label: "Khu vực",
       value:
-        [eatery.wardName, eatery.districtName, eatery.provinceName]
+        [eatery.wardName, eatery.provinceName]
           .filter(Boolean)
           .join(", ") || null,
     },

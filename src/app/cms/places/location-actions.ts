@@ -1,21 +1,10 @@
 "use server";
 
-import {
-  getDistricts,
-  getWards,
-  type District,
-  type Ward,
-} from "@/lib/locations";
+import { getWards, type Ward } from "@/lib/locations";
 
-// Bọc thành server action để form (client) gọi khi đổi tỉnh / huyện.
-export async function fetchDistricts(
-  provinceCode: number,
-): Promise<District[]> {
+// Bọc thành server action để form (client) gọi khi đổi tỉnh.
+// Không còn cấp huyện — xã/phường treo thẳng vào tỉnh (xem lib/locations.ts).
+export async function fetchWards(provinceCode: number): Promise<Ward[]> {
   if (!Number.isFinite(provinceCode)) return [];
-  return getDistricts(provinceCode);
-}
-
-export async function fetchWards(districtCode: number): Promise<Ward[]> {
-  if (!Number.isFinite(districtCode)) return [];
-  return getWards(districtCode);
+  return getWards(provinceCode);
 }

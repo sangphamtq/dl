@@ -18,7 +18,8 @@ import {
   UserRole,
 } from "@/generated/prisma/enums";
 
-// Seed điểm đến Phan Thiết (Bình Thuận): Place + Spot + Activity + Eatery + Specialty.
+// Seed điểm đến Phan Thiết (Lâm Đồng — Bình Thuận đã sáp nhập vào Lâm Đồng từ
+// 1/7/2025): Place + Spot + Activity + Eatery + Specialty.
 // Idempotent: upsert theo slug; ảnh demo (picsum) tạo lại mỗi lần chạy.
 // Dùng: pnpm seed:phan-thiet
 
@@ -109,7 +110,7 @@ const STAY = {
 
 const IMAGES: Record<string, ImageInput[]> = {
   // Place
-  "binh-thuan": [],
+  "lam-dong": [],
   "phan-thiet": [],
 
   // Địa điểm (Spot)
@@ -282,21 +283,22 @@ const IMAGES: Record<string, ImageInput[]> = {
 };
 
 async function main() {
-  // 1) Tỉnh Bình Thuận
-  const binhThuan = await prisma.place.upsert({
-    where: { slug: "binh-thuan" },
+  // 1) Tỉnh Lâm Đồng — từ 1/7/2025 gồm cả Bình Thuận cũ (Phan Thiết, Mũi Né)
+  // và Đắk Nông cũ, nên trải từ cao nguyên Đà Lạt xuống tận biển.
+  const lamDong = await prisma.place.upsert({
+    where: { slug: "lam-dong" },
     update: {},
     create: {
-      slug: "binh-thuan",
-      name: "Bình Thuận",
+      slug: "lam-dong",
+      name: "Lâm Đồng",
       kind: PlaceKind.province,
-      provinceName: "Bình Thuận",
+      provinceName: "Lâm Đồng",
       description:
-        "Tỉnh duyên hải Nam Trung Bộ với bờ biển dài, đồi cát và nắng gió quanh năm.",
+        "Tỉnh trải dài từ cao nguyên Đà Lạt mát lạnh xuống dải biển Mũi Né nắng gió — hiếm nơi nào đi một chuyến gặp được cả rừng thông lẫn đồi cát.",
       ...PUB,
     },
   });
-  await setImages({ placeId: binhThuan.id }, IMAGES["binh-thuan"] ?? [], "Bình Thuận");
+  await setImages({ placeId: lamDong.id }, IMAGES["lam-dong"] ?? [], "Lâm Đồng");
 
   // 2) Điểm đến Phan Thiết
   // Câu đầu là lede (đoạn dẫn) — trang sẽ tách & phóng to.
@@ -305,18 +307,18 @@ async function main() {
   const phanThiet = await prisma.place.upsert({
     where: { slug: "phan-thiet" },
     update: {
-      parentId: binhThuan.id,
-      provinceName: "Bình Thuận",
+      parentId: lamDong.id,
+      provinceName: "Lâm Đồng",
       description: phanThietDesc,
     },
     create: {
       slug: "phan-thiet",
       name: "Phan Thiết",
       kind: PlaceKind.destination,
-      parentId: binhThuan.id,
+      parentId: lamDong.id,
       tagline: "Tạm rời xa nhịp sống vội vã để tận hưởng những ngày bình yên bên biển xanh, nắng vàng và làn gió mát lành.",
       description: phanThietDesc,
-      provinceName: "Bình Thuận",
+      provinceName: "Lâm Đồng",
       tags: ["biển", "đồi cát", "resort", "hải sản"],
       isFeatured: true,
       ...PUB,
@@ -882,9 +884,8 @@ async function main() {
       category: EateryCategory.local,
       meals: [Meal.breakfast, Meal.snack],
       address: "Góc Trần Hưng Đạo, cạnh cây phượng già",
-      wardName: "Phường Đức Nghĩa",
-      districtName: "TP. Phan Thiết",
-      provinceName: "Bình Thuận",
+      wardName: "Phan Thiết",
+      provinceName: "Lâm Đồng",
       lat: 10.9302,
       lng: 108.1018,
       phone: "0252 3821 456",
@@ -899,9 +900,8 @@ async function main() {
       category: EateryCategory.seafood,
       meals: [Meal.lunch, Meal.dinner],
       address: "Đường Trần Hưng Đạo",
-      wardName: "Phường Hưng Long",
-      districtName: "TP. Phan Thiết",
-      provinceName: "Bình Thuận",
+      wardName: "Phan Thiết",
+      provinceName: "Lâm Đồng",
       lat: 10.9276,
       lng: 108.1064,
       phone: "0252 3838 279",
@@ -920,9 +920,8 @@ async function main() {
       bestTime: "Chập tối, khi vừa lên đèn dọc bờ kè",
       meals: [Meal.dinner, Meal.latenight],
       address: "Đường Phạm Văn Đồng (khu Bờ Kè)",
-      wardName: "Phường Phú Thủy",
-      districtName: "TP. Phan Thiết",
-      provinceName: "Bình Thuận",
+      wardName: "Phan Thiết",
+      provinceName: "Lâm Đồng",
       lat: 10.9335,
       lng: 108.1093,
       phone: "0908 245 124",
@@ -938,9 +937,8 @@ async function main() {
       category: EateryCategory.streetfood,
       meals: [Meal.snack, Meal.dinner],
       address: "Đường Tuyên Quang",
-      wardName: "Phường Bình Hưng",
-      districtName: "TP. Phan Thiết",
-      provinceName: "Bình Thuận",
+      wardName: "Phan Thiết",
+      provinceName: "Lâm Đồng",
       lat: 10.9268,
       lng: 108.1001,
       phone: "0252 3812 770",
@@ -955,9 +953,8 @@ async function main() {
       category: EateryCategory.local,
       meals: [Meal.breakfast, Meal.lunch],
       address: "Đường Kim Đồng",
-      wardName: "Phường Lạc Đạo",
-      districtName: "TP. Phan Thiết",
-      provinceName: "Bình Thuận",
+      wardName: "Phan Thiết",
+      provinceName: "Lâm Đồng",
       lat: 10.9259,
       lng: 108.1027,
       phone: "0167 884 552",
@@ -973,9 +970,8 @@ async function main() {
       category: EateryCategory.streetfood,
       meals: [Meal.snack, Meal.dinner, Meal.latenight],
       address: "Khu Cây Bàng, đường Thủ Khoa Huân",
-      wardName: "Phường Thanh Hải",
-      districtName: "TP. Phan Thiết",
-      provinceName: "Bình Thuận",
+      wardName: "Phan Thiết",
+      provinceName: "Lâm Đồng",
       lat: 10.9331,
       lng: 108.1108,
       phone: "0934 771 209",
@@ -991,9 +987,8 @@ async function main() {
       category: EateryCategory.seafood,
       meals: [Meal.lunch, Meal.dinner],
       address: "Đường Huỳnh Thúc Kháng",
-      wardName: "Phường Mũi Né",
-      districtName: "TP. Phan Thiết",
-      provinceName: "Bình Thuận",
+      wardName: "Mũi Né",
+      provinceName: "Lâm Đồng",
       lat: 10.9521,
       lng: 108.2473,
       phone: "0918 367 145",
@@ -1012,9 +1007,8 @@ async function main() {
       bestTime: "Sáng sớm hoặc chiều mát",
       meals: [Meal.breakfast, Meal.snack, Meal.cafe],
       address: "Đường Nguyễn Đình Chiểu",
-      wardName: "Phường Hàm Tiến",
-      districtName: "TP. Phan Thiết",
-      provinceName: "Bình Thuận",
+      wardName: "Mũi Né",
+      provinceName: "Lâm Đồng",
       lat: 10.9462,
       lng: 108.2381,
       phone: "0252 3741 988",
@@ -1030,9 +1024,8 @@ async function main() {
       category: EateryCategory.local,
       meals: [Meal.lunch, Meal.dinner],
       address: "Đường Nguyễn Tất Thành",
-      wardName: "Phường Phú Trinh",
-      districtName: "TP. Phan Thiết",
-      provinceName: "Bình Thuận",
+      wardName: "Phan Thiết",
+      provinceName: "Lâm Đồng",
       lat: 10.9288,
       lng: 108.1041,
       phone: "0252 3833 121",
@@ -1047,9 +1040,8 @@ async function main() {
       category: EateryCategory.vegetarian,
       meals: [Meal.lunch, Meal.dinner],
       address: "Đường Lê Hồng Phong",
-      wardName: "Phường Phú Trinh",
-      districtName: "TP. Phan Thiết",
-      provinceName: "Bình Thuận",
+      wardName: "Phan Thiết",
+      provinceName: "Lâm Đồng",
       lat: 10.9264,
       lng: 108.1032,
       phone: "0123 456 789",
@@ -1064,9 +1056,8 @@ async function main() {
       category: EateryCategory.streetfood,
       meals: [Meal.breakfast, Meal.snack],
       address: "Đường Trần Phú",
-      wardName: "Phường Đức Nghĩa",
-      districtName: "TP. Phan Thiết",
-      provinceName: "Bình Thuận",
+      wardName: "Phan Thiết",
+      provinceName: "Lâm Đồng",
       lat: 10.9293,
       lng: 108.1015,
       phone: "0905 552 318",
@@ -1082,9 +1073,8 @@ async function main() {
       viewType: ViewType.sea,
       meals: [Meal.dinner, Meal.latenight],
       address: "Đường Phạm Văn Đồng (khu Bờ Kè)",
-      wardName: "Phường Phú Thủy",
-      districtName: "TP. Phan Thiết",
-      provinceName: "Bình Thuận",
+      wardName: "Phan Thiết",
+      provinceName: "Lâm Đồng",
       lat: 10.9342,
       lng: 108.1098,
       phone: "0399 218 770",
@@ -1100,9 +1090,8 @@ async function main() {
       venueKind: VenueKind.drink,
       meals: [Meal.snack, Meal.cafe],
       address: "Đường Huỳnh Thúc Kháng",
-      wardName: "Phường Mũi Né",
-      districtName: "TP. Phan Thiết",
-      provinceName: "Bình Thuận",
+      wardName: "Mũi Né",
+      provinceName: "Lâm Đồng",
       lat: 10.9508,
       lng: 108.2602,
       phone: "0888 904 233",
@@ -1120,9 +1109,8 @@ async function main() {
       bestTime: "17:00 – 18:30 lúc thuyền về, hoặc sau 19:00 khi cầu lên đèn",
       meals: [Meal.cafe],
       address: "Đường Trưng Trắc, đoạn nhìn sang cầu Lê Hồng Phong",
-      wardName: "Phường Đức Nghĩa",
-      districtName: "TP. Phan Thiết",
-      provinceName: "Bình Thuận",
+      wardName: "Phan Thiết",
+      provinceName: "Lâm Đồng",
       lat: 10.9285,
       lng: 108.1053,
       openingHours: "6:30 – 22:30",
@@ -1139,9 +1127,8 @@ async function main() {
       bestTime: "16:30 – 18:30, trong nhất vào mùa khô tháng 11 – tháng 4",
       meals: [Meal.cafe, Meal.snack],
       address: "Đường Nguyễn Đình Chiểu, tầng thượng",
-      wardName: "Phường Hàm Tiến",
-      districtName: "TP. Phan Thiết",
-      provinceName: "Bình Thuận",
+      wardName: "Mũi Né",
+      provinceName: "Lâm Đồng",
       lat: 10.9475,
       lng: 108.2295,
       phone: "0252 3847 210",
@@ -1160,9 +1147,8 @@ async function main() {
       bestTime: "Sáng sớm 6:00 – 8:00 hoặc từ 16:00 — giữa trưa đồi cát nắng gắt",
       meals: [Meal.cafe, Meal.snack],
       address: "Ven hồ Bàu Trắng, xã Hòa Thắng",
-      wardName: "Xã Hòa Thắng",
-      districtName: "Huyện Bắc Bình",
-      provinceName: "Bình Thuận",
+      wardName: "Hòa Thắng",
+      provinceName: "Lâm Đồng",
       lat: 11.1836,
       lng: 108.4142,
       openingHours: "5:30 – 18:00",
@@ -1635,7 +1621,7 @@ async function main() {
       authorId: author.id,
       isFeatured: true,
       content: [
-        "<p>Phan Thiết là thành phố biển của tỉnh Bình Thuận, nổi tiếng với bãi biển Mũi Né, những đồi cát đổi màu và nền ẩm thực đậm vị miền biển. Chỉ cách TP.HCM khoảng 200km, đây là điểm đến quen thuộc cho những kỳ nghỉ cuối tuần.</p>",
+        "<p>Phan Thiết là thành phố biển của tỉnh Lâm Đồng, nổi tiếng với bãi biển Mũi Né, những đồi cát đổi màu và nền ẩm thực đậm vị miền biển. Chỉ cách TP.HCM khoảng 200km, đây là điểm đến quen thuộc cho những kỳ nghỉ cuối tuần.</p>",
         "<h2>Nên đi khi nào?</h2>",
         "<p>Đẹp nhất là khoảng tháng 11 đến tháng 4, trời khô ráo, nắng đẹp, thích hợp tắm biển và chơi các môn thể thao trên cát. Mùa gió (tháng 11–3) cũng là lúc Mũi Né hút dân lướt ván diều khắp nơi đổ về.</p>",
         "<h2>Chơi gì ở Phan Thiết?</h2>",

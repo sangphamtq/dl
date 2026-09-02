@@ -1,6 +1,12 @@
-// Danh sách 63 tỉnh/thành (cấu trúc hành chính cũ) — nguồn chân lý dùng chung cho
-// seed (prisma/seed-places.ts), lưới "Đã đến" (/tai-khoan/da-den) và bản đồ VN.
-// slug = slugify(name); khớp với các slug nhóm theo miền trong lib/regions.ts.
+// Danh sách 34 tỉnh/thành — đơn vị hành chính có hiệu lực từ 1/7/2025 (sáp nhập
+// 63 → 34, đồng thời BỎ HẲN cấp huyện: nay chỉ còn tỉnh → xã/phường/đặc khu).
+// Nguồn chân lý dùng chung cho seed (prisma/seed-places.ts), lưới "Đã đến"
+// (/tai-khoan/da-den) và bản đồ VN (components/account/vietnam-map-paths.ts).
+//
+// LƯU Ý — đây là danh sách HÀNH CHÍNH, không phải danh sách điểm đến. Nhiều tên
+// tỉnh cũ đã mất (Hà Giang, Bình Thuận, Quảng Nam…) nhưng vẫn là thương hiệu du
+// lịch mạnh; chúng sống tiếp dưới dạng `Place` kind=destination thuộc tỉnh mới,
+// giữ nguyên slug/URL. Đừng đồng nhất hai lớp này.
 
 // Slug tiếng Việt không dấu, nối bằng "-".
 export function slugifyVi(s: string): string {
@@ -15,30 +21,24 @@ export function slugifyVi(s: string): string {
 }
 
 export const PROVINCE_NAMES = [
-  "An Giang", "Bà Rịa - Vũng Tàu", "Bạc Liêu", "Bắc Giang", "Bắc Kạn",
-  "Bắc Ninh", "Bến Tre", "Bình Dương", "Bình Định", "Bình Phước",
-  "Bình Thuận", "Cà Mau", "Cao Bằng", "Cần Thơ", "Đà Nẵng",
-  "Đắk Lắk", "Đắk Nông", "Điện Biên", "Đồng Nai", "Đồng Tháp",
-  "Gia Lai", "Hà Giang", "Hà Nam", "Hà Nội", "Hà Tĩnh",
-  "Hải Dương", "Hải Phòng", "Hậu Giang", "Hòa Bình", "Hưng Yên",
-  "Khánh Hòa", "Kiên Giang", "Kon Tum", "Lai Châu", "Lạng Sơn",
-  "Lào Cai", "Lâm Đồng", "Long An", "Nam Định", "Nghệ An",
-  "Ninh Bình", "Ninh Thuận", "Phú Thọ", "Phú Yên", "Quảng Bình",
-  "Quảng Nam", "Quảng Ngãi", "Quảng Ninh", "Quảng Trị", "Sóc Trăng",
-  "Sơn La", "Tây Ninh", "Thái Bình", "Thái Nguyên", "Thanh Hóa",
-  "Thừa Thiên Huế", "Tiền Giang", "Hồ Chí Minh", "Trà Vinh", "Tuyên Quang",
-  "Vĩnh Long", "Vĩnh Phúc", "Yên Bái",
+  "An Giang", "Bắc Ninh", "Cà Mau", "Cao Bằng", "Cần Thơ",
+  "Đà Nẵng", "Đắk Lắk", "Điện Biên", "Đồng Nai", "Đồng Tháp",
+  "Gia Lai", "Hà Nội", "Hà Tĩnh", "Hải Phòng", "Hồ Chí Minh",
+  "Huế", "Hưng Yên", "Khánh Hòa", "Lai Châu", "Lạng Sơn",
+  "Lào Cai", "Lâm Đồng", "Nghệ An", "Ninh Bình", "Phú Thọ",
+  "Quảng Ngãi", "Quảng Ninh", "Quảng Trị", "Sơn La", "Tây Ninh",
+  "Thái Nguyên", "Thanh Hóa", "Tuyên Quang", "Vĩnh Long",
 ] as const;
 
 export type ProvinceItem = { slug: string; name: string };
 
-// 63 tỉnh dạng { slug, name } — đã sắp theo tên.
+// 34 tỉnh dạng { slug, name } — đã sắp theo tên.
 const PROVINCES: ProvinceItem[] = PROVINCE_NAMES.map((name) => ({
   slug: slugifyVi(name),
   name,
 }));
 
-export const PROVINCE_COUNT = PROVINCES.length; // 63
+export const PROVINCE_COUNT = PROVINCES.length; // 34
 
 // Tra tên hiển thị theo slug (cho lưới/bản đồ).
 export const PROVINCE_NAME_BY_SLUG: Record<string, string> = Object.fromEntries(

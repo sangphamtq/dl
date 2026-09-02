@@ -21,8 +21,6 @@ export type PlaceFormInput = {
   description: string;
   provinceCode: string; // code dạng text ("" nếu chưa chọn)
   provinceName: string;
-  districtCode: string;
-  districtName: string;
   wardCode: string;
   wardName: string;
   lat: string; // toạ độ trung tâm ("" = chưa có)
@@ -90,12 +88,9 @@ async function normalize(
 
   const provinceCode =
     input.provinceCode.trim() === "" ? null : Number(input.provinceCode);
-  const districtCode =
-    input.districtCode.trim() === "" ? null : Number(input.districtCode);
   const wardCode = input.wardCode.trim() === "" ? null : Number(input.wardCode);
   if (
     (provinceCode !== null && !Number.isFinite(provinceCode)) ||
-    (districtCode !== null && !Number.isFinite(districtCode)) ||
     (wardCode !== null && !Number.isFinite(wardCode))
   )
     return { error: "Mã vị trí không hợp lệ." };
@@ -122,8 +117,6 @@ async function normalize(
       description: input.description.trim() || null,
       provinceCode,
       provinceName: provinceCode ? input.provinceName.trim() || null : null,
-      districtCode,
-      districtName: districtCode ? input.districtName.trim() || null : null,
       wardCode,
       wardName: wardCode ? input.wardName.trim() || null : null,
       lat: coord(input.lat),

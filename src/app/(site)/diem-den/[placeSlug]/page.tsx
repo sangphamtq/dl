@@ -209,7 +209,6 @@ export default async function PlaceDetailPage({
           description: true,
           category: true,
           wardName: true,
-          districtName: true,
           images: listingImages,
           // Phần "thực tế" cho dải Spotlight: giờ mở cửa, điểm nhấn và số
           // Vivu-er đã đến.
@@ -243,7 +242,6 @@ export default async function PlaceDetailPage({
           bestTime: true,
           meals: true,
           wardName: true,
-          districtName: true,
           images: listingImages,
         },
       },
@@ -413,7 +411,6 @@ export default async function PlaceDetailPage({
             bestTime: true,
             meals: true,
             wardName: true,
-            districtName: true,
             images: listingImages,
           },
         })
@@ -671,7 +668,7 @@ export default async function PlaceDetailPage({
                 category: s.category
                   ? label(SPOT_CATEGORY_LABELS, s.category)
                   : null,
-                location: s.wardName ?? s.districtName ?? null,
+                location: s.wardName ?? null,
                 image: coverUrl(s.images, s.slug),
                 tagline: s.tagline,
                 description: s.description,

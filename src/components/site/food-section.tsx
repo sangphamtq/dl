@@ -447,7 +447,7 @@ function EateryCard({
   status: OpeningStatus | null;
   onOpen: (tab: "anh" | "menu") => void;
 }) {
-  const area = [e.wardName, e.districtName].filter(Boolean).join(", ") || null;
+  const area = e.wardName || null;
   const category = e.category ? label(EATERY_CATEGORY_LABELS, e.category) : null;
   const viewLabel = label(VIEW_TYPE_LABELS, e.viewType);
   const dimmed = status?.kind === "opensLater" || status?.kind === "closed";

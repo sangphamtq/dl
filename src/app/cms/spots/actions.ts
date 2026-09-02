@@ -67,8 +67,6 @@ export type SpotFormInput = {
   tags: string;
   provinceCode: string; // "" = none
   provinceName: string;
-  districtCode: string;
-  districtName: string;
   wardCode: string;
   wardName: string;
 };
@@ -207,8 +205,6 @@ async function normalize(
       tags,
       provinceCode: code(input.provinceCode),
       provinceName: input.provinceName.trim() || null,
-      districtCode: code(input.districtCode),
-      districtName: input.districtName.trim() || null,
       wardCode: code(input.wardCode),
       wardName: input.wardName.trim() || null,
     },

@@ -15,7 +15,7 @@ import {
   TransportMode,
 } from "@/generated/prisma/enums";
 
-// Seed điểm đến Tà Xùa (Bắc Yên, Sơn La): Place + Spot + Activity + Eatery +
+// Seed điểm đến Tà Xùa (xã Tà Xùa, Sơn La): Place + Spot + Activity + Eatery +
 // Specialty + Transport.
 // Idempotent: upsert theo slug; ảnh ghi đè mỗi lần chạy (xem IMAGES bên dưới).
 // Dùng: pnpm seed:ta-xua
@@ -143,7 +143,7 @@ async function main() {
   // mở sang góc khác. Cũng tránh nhắc lại số liệu đã có trong quickInfo
   // (độ cao 1.600m, khoảng cách 240km): người đọc thấy ngay bên dưới.
   const taXuaDesc = [
-    "Tà Xùa là một xã người Mông vắt trên sống núi huyện Bắc Yên, nơi mọi buổi sáng đẹp trời đều bắt đầu bằng việc dậy từ 4h30 và chạy xe trong bóng tối.",
+    "Tà Xùa là một xã người Mông vắt trên sống núi Bắc Yên, nơi mọi buổi sáng đẹp trời đều bắt đầu bằng việc dậy từ 4h30 và chạy xe trong bóng tối.",
     "Phần thưởng cho sự dậy sớm ấy là cả thung lũng chìm dưới lớp mây trắng dày, chỉ còn vài chỏm núi nhô lên như đảo — nhìn rõ nhất từ sống lưng khủng long, dải sống núi hẹp vắt giữa hai vực.",
     "Cũng vì thế mà một ngày ở đây chia làm hai nhịp rõ rệt: buổi sáng dành cho mây, phần còn lại trôi rất chậm. Người ta ngủ bù, ngồi ở hiên homestay nhìn sương kéo qua thung lũng, rồi chiều muộn chạy xe lang thang qua mấy bản chè.",
     "Nhưng nơi này không chỉ có mây: rừng nguyên sinh phủ rêu trên đường lên đỉnh 2.865m, những gốc chè Shan tuyết vài trăm tuổi phải trèo mới hái được búp, và nhịp sống người Mông còn gần như nguyên vẹn. Đổi lại, đừng chờ đợi dịch vụ chỉn chu: quán xá thưa, đường lên là mười ba cây số đèo dốc liên tục. Hai ngày một đêm là vừa đủ.",
@@ -151,7 +151,7 @@ async function main() {
   // "Thông tin chung" — vài fact nổi bật nhận diện nơi này, KHÔNG phải
   // checklist chuẩn bị. Giữ mỗi dòng ngắn gọn một ý.
   const taXuaQuickInfo = [
-    { label: "Vị trí", value: "Xã Tà Xùa, huyện Bắc Yên, Sơn La" },
+    { label: "Vị trí", value: "Xã Tà Xùa, Sơn La" },
     { label: "Nổi tiếng với", value: "Biển mây, sống lưng khủng long, chè Shan tuyết" },
     { label: "Độ cao", value: "Bản ~1.600m · đỉnh Tà Xùa 2.865m" },
     { label: "Mùa đẹp nhất", value: "Tháng 10 – 4, mây dày nhất 11–2" },
@@ -165,8 +165,7 @@ async function main() {
       parentId: sonLa.id,
       quickInfo: taXuaQuickInfo,
       provinceName: "Sơn La",
-      districtName: "Huyện Bắc Yên",
-      wardName: "Xã Tà Xùa",
+      wardName: "Tà Xùa",
       description: taXuaDesc,
       tags: [], // xóa tag cũ còn sót trong DB từ lần seed trước
     },
@@ -178,8 +177,7 @@ async function main() {
       tagline: "Thiên đường săn mây Tây Bắc — nơi bạn đứng trên mây, không phải nhìn lên mây.",
       description: taXuaDesc,
       provinceName: "Sơn La",
-      districtName: "Huyện Bắc Yên",
-      wardName: "Xã Tà Xùa",
+      wardName: "Tà Xùa",
       // KHÔNG gắn tag cho Place: trang Place không còn hiển thị tag của điểm
       // đến nữa (xem mục "Đôi nét"). Tag của Listing thì vẫn giữ — chúng dùng
       // để lọc ở các trang danh sách.
@@ -225,7 +223,7 @@ async function main() {
       category: SpotCategory.viewpoint,
       lat: 21.2503,
       lng: 104.4519,
-      address: "Bản Tà Xùa, xã Tà Xùa, huyện Bắc Yên, Sơn La",
+      address: "Bản Tà Xùa, xã Tà Xùa, Sơn La",
       description:
         "Biểu tượng của Tà Xùa: một dải sống núi hẹp chỉ vừa lối đi, hai bên là vực sâu hun hút, uốn lượn nhấp nhô đúng như tấm lưng của một con khủng long khổng lồ. Sáng sớm mây dâng đầy hai bên vực, người đi trên sống núi như bước giữa hai biển mây — cảnh tượng khiến nơi đây thành điểm check-in được săn đón bậc nhất Tây Bắc.",
       bestTime: "5h – 8h sáng",
@@ -276,7 +274,7 @@ async function main() {
       category: SpotCategory.viewpoint,
       lat: 21.2564,
       lng: 104.4462,
-      address: "Bản Tà Xùa, xã Tà Xùa, huyện Bắc Yên, Sơn La",
+      address: "Bản Tà Xùa, xã Tà Xùa, Sơn La",
       description:
         "Một mỏm đá nhô hẳn ra khỏi vách núi, dáng thon vút lên đúng như chiếc đầu cá heo đang rẽ sóng — chỉ khác là 'sóng' ở đây là biển mây. Đứng trên mỏm nhìn xuống là thung lũng sâu hút, phía xa là những dãy núi trùng điệp của Bắc Yên. Đây là điểm ngắm mây và chụp ảnh được yêu thích thứ nhì sau sống lưng khủng long.",
       bestTime: "Bình minh",
@@ -317,7 +315,7 @@ async function main() {
       category: SpotCategory.mountain,
       lat: 21.3128,
       lng: 104.4766,
-      address: "Ranh giới huyện Bắc Yên (Sơn La) – huyện Trạm Tấu (Yên Bái)",
+      address: "Ranh giới xã Tà Xùa (Sơn La) – xã Trạm Tấu (Lào Cai)",
       description:
         "Cao 2.865m và nằm trong nhóm mười đỉnh cao nhất Việt Nam, đỉnh Tà Xùa là cung trekking khét tiếng với ba mỏm nhấp nhô mà dân leo núi quen gọi là 'sống lưng khủng long thật'. Đường lên xuyên qua rừng nguyên sinh phủ rêu, những vạt trúc lùn và các đoạn sống núi hẹp lộng gió — vất vả nhưng đổi lại là biển mây mênh mông ngay dưới chân khi bình minh lên.",
       bestTime: "Tháng 10 – 4",
@@ -362,7 +360,7 @@ async function main() {
         "Đăng ký lịch trình với homestay/người dẫn để có người biết bạn ở đâu.",
       ],
       gettingThere:
-        "Điểm xuất phát phổ biến là bản Tà Xùa hoặc Xím Vàng (huyện Bắc Yên), nơi đoàn tập kết và thuê porter. Nhiều nhóm cũng leo từ phía Trạm Tấu (Yên Bái) rồi xuống Bắc Yên hoặc ngược lại.",
+        "Điểm xuất phát phổ biến là bản Tà Xùa hoặc Xím Vàng (Bắc Yên), nơi đoàn tập kết và thuê porter. Nhiều nhóm cũng leo từ phía Trạm Tấu (Yên Bái) rồi xuống Bắc Yên hoặc ngược lại.",
       tags: ["trekking", "leo núi", "săn mây", "cắm trại"],
     },
     {
@@ -372,7 +370,7 @@ async function main() {
       category: SpotCategory.park,
       lat: 21.2932,
       lng: 104.4661,
-      address: "Trên cung trekking đỉnh Tà Xùa, huyện Bắc Yên, Sơn La",
+      address: "Trên cung trekking đỉnh Tà Xùa, xã Tà Xùa, Sơn La",
       description:
         "Ở độ cao trên 2.000m, hơi ẩm quanh năm biến cả cánh rừng nguyên sinh thành một thế giới xanh mướt: rêu bám kín thân cây, phủ lên đá, rủ xuống từ những cành khô như tấm màn. Ánh sáng lọt qua tán lá mờ ảo trong sương khiến nhiều người ví nơi đây là 'khu rừng cổ tích' đẹp nhất Tây Bắc.",
       bestTime: "Sáng sớm, mùa khô",
@@ -413,7 +411,7 @@ async function main() {
       category: SpotCategory.viewpoint,
       lat: 21.2588,
       lng: 104.4501,
-      address: "Bản Tà Xùa, xã Tà Xùa, huyện Bắc Yên, Sơn La",
+      address: "Bản Tà Xùa, xã Tà Xùa, Sơn La",
       description:
         "Một gốc cây già đứng đơn độc trên mỏm đồi trọc, phía sau chỉ có mây và núi — hình ảnh giản dị mà lại thành biểu tượng lãng mạn của Tà Xùa. Sáng sớm khi mây tràn qua, cây như nổi trên mặt biển trắng; chiều muộn thì in bóng đen tuyền trên nền hoàng hôn.",
       bestTime: "Bình minh & hoàng hôn",
@@ -453,7 +451,7 @@ async function main() {
       category: SpotCategory.other,
       lat: 21.2649,
       lng: 104.4413,
-      address: "Bản Bẹ – bản Chung Chinh, xã Tà Xùa, huyện Bắc Yên, Sơn La",
+      address: "Bản Bẹ – bản Chung Chinh, xã Tà Xùa, Sơn La",
       description:
         "Trên những sườn núi quanh năm mây phủ là các gốc chè Shan tuyết cổ thụ hàng trăm năm tuổi, thân xù xì rêu mốc, cao quá đầu người đến mức phải trèo lên hái. Búp chè phủ lớp lông trắng như tuyết cho thứ nước vàng sánh, chát nhẹ rồi ngọt hậu — đặc sản làm nên tên tuổi Tà Xùa bên cạnh biển mây.",
       bestTime: "Vụ chè xuân (tháng 3 – 5)",
@@ -492,7 +490,7 @@ async function main() {
       category: SpotCategory.cave,
       lat: 21.1867,
       lng: 104.4083,
-      address: "Xã Hồng Ngài, huyện Bắc Yên, Sơn La",
+      address: "Bản Hồng Ngài, xã Bắc Yên, Sơn La",
       description:
         "Hồng Ngài chính là bản người Mông đã đi vào trang văn 'Vợ chồng A Phủ' của Tô Hoài. Ngoài những nếp nhà gỗ pơ mu, ruộng bậc thang và nhịp sống còn rất nguyên bản, nơi đây có hang A Phủ (hang Thẳm Cốp) với vòm đá rộng và hệ thạch nhũ đẹp — điểm dừng thú vị cho ai muốn ghép thêm chút văn hóa và lịch sử vào chuyến săn mây.",
       bestTime: "Tháng 9 – 12",
@@ -520,10 +518,10 @@ async function main() {
       tips: [
         "Mang đèn pin/đèn đội đầu, giày chống trơn khi vào hang.",
         "Xin phép trước khi chụp ảnh người dân, nhất là trẻ nhỏ và trong nhà.",
-        "Kết hợp ghé Hồng Ngài trên đường từ thị trấn Bắc Yên lên Tà Xùa.",
+        "Kết hợp ghé Hồng Ngài trên đường từ trung tâm Bắc Yên lên Tà Xùa.",
       ],
       gettingThere:
-        "Từ thị trấn Bắc Yên đi khoảng 10–15km theo hướng Hồng Ngài, đường đèo nhỏ. Có thể ghép làm điểm dừng khi di chuyển giữa thị trấn và xã Tà Xùa.",
+        "Từ trung tâm Bắc Yên đi khoảng 10–15km theo hướng Hồng Ngài, đường đèo nhỏ. Có thể ghép làm điểm dừng khi di chuyển giữa thị trấn và xã Tà Xùa.",
       tags: ["văn hóa", "bản làng", "hang động", "người Mông"],
     },
     {
@@ -533,7 +531,7 @@ async function main() {
       category: SpotCategory.village,
       lat: 21.3009,
       lng: 104.4258,
-      address: "Xã Xím Vàng, huyện Bắc Yên, Sơn La",
+      address: "Xã Xím Vàng, Sơn La",
       description:
         "Cách bản Tà Xùa chừng 15km, Xím Vàng là nơi những thửa ruộng bậc thang xếp tầng tầng lớp lớp quanh sườn núi — mùa nước đổ thì loang loáng như gương, mùa lúa chín thì vàng rực cả thung lũng. Ít khách du lịch hơn hẳn Tà Xùa nên khung cảnh còn nguyên vẻ mộc mạc, và đây cũng là một điểm xuất phát quen thuộc của cung trekking đỉnh Tà Xùa.",
       bestTime: "Mùa lúa chín (tháng 9 – 10)",
@@ -572,9 +570,9 @@ async function main() {
       category: SpotCategory.waterfall,
       lat: 21.2382,
       lng: 104.4325,
-      address: "Xã Tà Xùa, huyện Bắc Yên, Sơn La",
+      address: "Xã Tà Xùa, Sơn La",
       description:
-        "Nằm ngay bên cung đường đèo từ thị trấn Bắc Yên lên bản Tà Xùa, thác Rồng đổ trắng xóa giữa vách đá phủ cây rừng. Không quá hùng vĩ nhưng là chỗ dừng chân mát rượi lý tưởng để duỗi chân, rửa mặt và chụp vài tấm ảnh trước khi tiếp tục leo dốc.",
+        "Nằm ngay bên cung đường đèo từ trung tâm Bắc Yên lên bản Tà Xùa, thác Rồng đổ trắng xóa giữa vách đá phủ cây rừng. Không quá hùng vĩ nhưng là chỗ dừng chân mát rượi lý tưởng để duỗi chân, rửa mặt và chụp vài tấm ảnh trước khi tiếp tục leo dốc.",
       bestTime: "Sau mùa mưa (tháng 8 – 10)",
       bestTimeNote:
         "Nước nhiều và đẹp nhất sau mùa mưa, khoảng tháng 8–10. Mùa khô thác nhỏ lại nhưng đường đi dễ và an toàn hơn.",
@@ -584,7 +582,7 @@ async function main() {
         {
           title: "Điểm dừng chân giữa cung đèo",
           body: [
-            "Đoạn 13km từ thị trấn Bắc Yên lên bản Tà Xùa là chuỗi cua tay áo và dốc đứng liên tục, đủ để tay lái mỏi và động cơ nóng ran. Thác Rồng nằm đúng vào giữa chặng ấy, ngay ven đường, nên gần như thành trạm nghỉ mặc định của dân phượt: tấp xe vào lề, tắt máy, và ngay lập tức nghe tiếng nước đổ cùng luồng khí mát lạnh phả ra từ vách núi.",
+            "Đoạn 13km từ trung tâm Bắc Yên lên bản Tà Xùa là chuỗi cua tay áo và dốc đứng liên tục, đủ để tay lái mỏi và động cơ nóng ran. Thác Rồng nằm đúng vào giữa chặng ấy, ngay ven đường, nên gần như thành trạm nghỉ mặc định của dân phượt: tấp xe vào lề, tắt máy, và ngay lập tức nghe tiếng nước đổ cùng luồng khí mát lạnh phả ra từ vách núi.",
             "Thác không lớn và cũng không hùng vĩ như những cái tên nổi tiếng khác ở Tây Bắc — dòng nước trắng xóa đổ giữa vách đá phủ cây rừng, cao vừa phải. Nhưng đúng vào lúc bạn cần nghỉ, nó lại là thứ hợp lý nhất: rửa mặt cho tỉnh táo, duỗi chân vài phút, chụp một tấm ảnh rồi lên xe đi tiếp phần đèo còn lại với tinh thần khác hẳn.",
           ],
         },
@@ -601,7 +599,7 @@ async function main() {
         "Không xuống lòng suối khi trời vừa mưa to ở thượng nguồn.",
       ],
       gettingThere:
-        "Nằm ven đường tỉnh từ thị trấn Bắc Yên lên xã Tà Xùa, cách bản Tà Xùa khoảng 6–8km. Có chỗ dừng xe ngay ven đường.",
+        "Nằm ven đường tỉnh từ trung tâm Bắc Yên lên xã Tà Xùa, cách bản Tà Xùa khoảng 6–8km. Có chỗ dừng xe ngay ven đường.",
       tags: ["thác nước", "dừng chân", "chụp ảnh"],
     },
   ];
@@ -823,18 +821,18 @@ async function main() {
         { label: "Xe ôm bản địa / lượt", price: 100000, note: "chặng ngắn quanh bản" },
       ],
       description:
-        "Cung 13km từ thị trấn Bắc Yên lên bản Tà Xùa rồi chạy tiếp sang Xím Vàng là một trong những đoạn đèo đẹp nhất Tây Bắc: đường vắt trên sống núi, một bên là vực mây, cua tay áo nối nhau và sương có thể ập xuống bất cứ lúc nào. Chạy chậm, dừng nhiều — mỗi khúc cua lại là một khung cảnh khác.",
+        "Cung 13km từ trung tâm Bắc Yên lên bản Tà Xùa rồi chạy tiếp sang Xím Vàng là một trong những đoạn đèo đẹp nhất Tây Bắc: đường vắt trên sống núi, một bên là vực mây, cua tay áo nối nhau và sương có thể ập xuống bất cứ lúc nào. Chạy chậm, dừng nhiều — mỗi khúc cua lại là một khung cảnh khác.",
       content: [
-        "<p>Ở Tà Xùa, đường đi không phải phần phải chịu đựng để tới nơi — nó là một nửa lý do người ta lên đây. Mười ba cây số từ thị trấn Bắc Yên lên bản là chuỗi cua tay áo vắt trên sống núi, một bên vách đá một bên vực sâu, và cứ vài khúc cua thì cảnh lại đổi hoàn toàn: đang nắng chói bỗng chui vào một dải sương trắng đục, ra khỏi sương lại thấy cả thung lũng trải dưới chân.</p>",
+        "<p>Ở Tà Xùa, đường đi không phải phần phải chịu đựng để tới nơi — nó là một nửa lý do người ta lên đây. Mười ba cây số từ trung tâm Bắc Yên lên bản là chuỗi cua tay áo vắt trên sống núi, một bên vách đá một bên vực sâu, và cứ vài khúc cua thì cảnh lại đổi hoàn toàn: đang nắng chói bỗng chui vào một dải sương trắng đục, ra khỏi sương lại thấy cả thung lũng trải dưới chân.</p>",
         "<h2>Cung đường có gì</h2>",
         "<h3>Bắc Yên → bản Tà Xùa (13km)</h3>",
         "<p>Đoạn kinh điển. Đường bê tông và nhựa xen kẽ, mặt đường nhìn chung ổn nhưng độ dốc lớn và cua gấp liên tục, có những khúc cua tay áo phải về số 2 mới bò lên nổi. Càng lên cao càng dễ gặp sương: có hôm giữa trưa vẫn mù đặc, tầm nhìn chỉ chừng chục mét. Giữa chặng có thác Rồng ngay ven đường — chỗ dừng chân quen thuộc để nghỉ tay và làm nguội máy.</p>",
         "<h3>Bản Tà Xùa → Xím Vàng (15km)</h3>",
         "<p>Ít người chạy hơn nhưng cảnh thì xứng đáng: đường men theo sống núi, nhìn xuống là những thửa ruộng bậc thang xếp tầng của Xím Vàng, đẹp nhất mùa nước đổ tháng 5–6 và mùa lúa chín tháng 9–10. Đường hẹp và dốc hơn đoạn dưới, vài chỗ có vệt sạt lở sau mưa.</p>",
         "<h3>Cung dài từ Hà Nội (240km)</h3>",
-        "<p>Dân phượt thường chạy Hà Nội – Sơn Tây – Thanh Sơn – Thu Cúc – Phù Yên – Bắc Yên, mất khoảng 7–9 giờ kể cả nghỉ. Đường tới thị trấn Bắc Yên nhìn chung dễ đi; toàn bộ phần khó dồn vào 13km cuối.</p>",
+        "<p>Dân phượt thường chạy Hà Nội – Sơn Tây – Thanh Sơn – Thu Cúc – Phù Yên – Bắc Yên, mất khoảng 7–9 giờ kể cả nghỉ. Đường tới trung tâm Bắc Yên nhìn chung dễ đi; toàn bộ phần khó dồn vào 13km cuối.</p>",
         "<h2>Chuẩn bị xe và người</h2>",
-        "<ul><li><strong>Chọn xe số</strong> nếu thuê tại bản. Dốc đứng và liên tục khiến xe tay ga vừa yếu vừa nóng phanh; xe số cho phép ghì số để hãm khi xuống dốc.</li><li><strong>Kiểm tra phanh trước khi nhận xe</strong> — đây là thứ quan trọng nhất trên cung này, quan trọng hơn cả động cơ.</li><li><strong>Đổ đầy xăng ở thị trấn Bắc Yên.</strong> Trên bản rất ít chỗ bán xăng, có cũng thường là xăng chai giá cao.</li><li>Áo mưa và áo gió luôn để sẵn trong cốp: thời tiết trên núi đổi trong mười phút.</li></ul>",
+        "<ul><li><strong>Chọn xe số</strong> nếu thuê tại bản. Dốc đứng và liên tục khiến xe tay ga vừa yếu vừa nóng phanh; xe số cho phép ghì số để hãm khi xuống dốc.</li><li><strong>Kiểm tra phanh trước khi nhận xe</strong> — đây là thứ quan trọng nhất trên cung này, quan trọng hơn cả động cơ.</li><li><strong>Đổ đầy xăng ở trung tâm Bắc Yên.</strong> Trên bản rất ít chỗ bán xăng, có cũng thường là xăng chai giá cao.</li><li>Áo mưa và áo gió luôn để sẵn trong cốp: thời tiết trên núi đổi trong mười phút.</li></ul>",
         "<h2>Chạy sao cho an toàn</h2>",
         "<p>Nguyên tắc số một: <strong>không chạy đoạn đèo sau khi trời tối.</strong> Không đèn đường, sương dày và cua khuất khiến đèn xe gần như vô dụng. Nếu xe khách của bạn tới Bắc Yên lúc rạng sáng, hãy đợi trời hửng rồi mới lên bản, hoặc bắt xe ôm bản địa.</p>",
         "<p>Khi xuống dốc, dùng số thấp để ghì máy thay vì rà phanh liên tục — phanh nóng sẽ mất tác dụng đúng lúc bạn cần nhất. Vào cua thì giảm tốc trước khi vào, bám lề phải, bấm còi ở những khúc khuất tầm nhìn vì xe tải và xe máy dân bản chạy khá nhanh. Gặp sương mù dày thì bật đèn, giảm hẳn tốc độ và tấp vào chỗ rộng đợi tan bớt.</p>",
@@ -935,7 +933,7 @@ async function main() {
         "<p>Nhà gỗ pơ mu lợp ván, ám khói bếp qua nhiều năm. Hàng rào đá xếp tay chạy dọc lối đi, thứ mà người Mông làm từ chính đá nhặt trên nương. Ngô treo lủng lẳng dưới mái hiên để dành cho mùa giáp hạt. Phụ nữ ngồi thêu hoặc se lanh bên cửa, trẻ con chạy chân đất, và ở đâu đó luôn có tiếng lợn, tiếng gà.</p>",
         "<p>Nhịp sống ấy đổi theo mùa rõ rệt: vụ hái chè xuân tháng 3–5 thì cả bản lên đồi, mùa gặt tháng 9–10 thì ra ruộng bậc thang, còn quanh Tết Mông (khoảng tháng 12 âm lịch) là lúc rộn ràng nhất trong năm với hội, với những bộ váy áo thêu rực rỡ mang ra mặc.</p>",
         "<h2>Đi đâu</h2>",
-        "<p><strong>Bản Hồng Ngài</strong> — bản người Mông trong 'Vợ chồng A Phủ' của Tô Hoài, kèm hang A Phủ (Thẳm Cốp) gần đó. Nằm trên đường từ thị trấn Bắc Yên lên bản Tà Xùa nên rất tiện ghép làm điểm dừng.</p>",
+        "<p><strong>Bản Hồng Ngài</strong> — bản người Mông trong 'Vợ chồng A Phủ' của Tô Hoài, kèm hang A Phủ (Thẳm Cốp) gần đó. Nằm trên đường từ trung tâm Bắc Yên lên bản Tà Xùa nên rất tiện ghép làm điểm dừng.</p>",
         "<p><strong>Xím Vàng</strong> — cách bản Tà Xùa 15km, ít khách du lịch hơn hẳn, ruộng bậc thang và nhịp canh tác còn nguyên bản.</p>",
         "<p><strong>Bản Bẹ, bản Chung Chinh</strong> — các bản làm chè Shan tuyết, nơi dễ bắt chuyện nhất vì bà con quen tiếp khách tới thăm vườn.</p>",
         "<h2>Đi cùng ai</h2>",
@@ -1067,8 +1065,7 @@ async function main() {
   // ──────────────────────────────────────────────────────────────────────
   const LOC = {
     provinceName: "Sơn La",
-    districtName: "Huyện Bắc Yên",
-    wardName: "Xã Tà Xùa",
+    wardName: "Tà Xùa",
   } as const;
 
   const eateries = [
@@ -1168,13 +1165,12 @@ async function main() {
     },
     {
       slug: "quan-pho-sang-bac-yen",
-      name: "Phở sáng thị trấn Bắc Yên",
+      name: "Phở sáng trung tâm Bắc Yên",
       category: EateryCategory.local,
       meals: [Meal.breakfast],
-      address: "Thị trấn Bắc Yên, gần bến xe",
+      address: "Trung tâm xã Bắc Yên, gần bến xe",
       provinceName: "Sơn La",
-      districtName: "Huyện Bắc Yên",
-      wardName: "Thị trấn Bắc Yên",
+      wardName: "Bắc Yên",
       lat: 21.1889,
       lng: 104.4145,
       openingHours: "5:00 – 10:00",
@@ -1340,7 +1336,7 @@ async function main() {
       notice:
         "Xe đêm khởi hành khoảng 20h–22h, tới Bắc Yên lúc rạng sáng — vừa kịp lên bản săn mây. Nên gọi đặt chỗ trước 1–2 ngày, cuối tuần rất đông.",
       description:
-        "Cách phổ biến nhất. Xe chạy từ bến Mỹ Đình về thị trấn Bắc Yên; xuống bến rồi bắt xe ôm hoặc thuê xe máy đi tiếp 13km đèo lên xã Tà Xùa.",
+        "Cách phổ biến nhất. Xe chạy từ bến Mỹ Đình về trung tâm Bắc Yên; xuống bến rồi bắt xe ôm hoặc thuê xe máy đi tiếp 13km đèo lên xã Tà Xùa.",
     },
     {
       direction: D.getTo,
@@ -1351,7 +1347,7 @@ async function main() {
       distanceKm: 240,
       isRecommended: true,
       notice:
-        "Đổ đầy xăng ở thị trấn Bắc Yên — lên bản rất ít cây xăng. Không chạy đoạn đèo sau khi trời tối vì sương mù dày đặc.",
+        "Đổ đầy xăng ở trung tâm Bắc Yên — lên bản rất ít cây xăng. Không chạy đoạn đèo sau khi trời tối vì sương mù dày đặc.",
       description:
         "Cung quen của dân phượt: Hà Nội – Sơn Tây – Thanh Sơn – Thu Cúc – Phù Yên – Bắc Yên – Tà Xùa. Đường đẹp tới thị trấn, 13km cuối là đèo dốc liên tục.",
     },

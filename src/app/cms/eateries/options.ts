@@ -6,8 +6,6 @@ export type Option = {
   label: string;
   provinceCode: number | null;
   provinceName: string | null;
-  districtCode: number | null;
-  districtName: string | null;
   wardCode: number | null;
   wardName: string | null;
 };
@@ -22,8 +20,6 @@ export async function getPlaceOptions(): Promise<Option[]> {
       parent: { select: { name: true } },
       provinceCode: true,
       provinceName: true,
-      districtCode: true,
-      districtName: true,
       wardCode: true,
       wardName: true,
     },
@@ -36,8 +32,6 @@ export async function getPlaceOptions(): Promise<Option[]> {
         : `${p.name}${p.parent ? ` · ${p.parent.name}` : ""}`,
     provinceCode: p.provinceCode,
     provinceName: p.provinceName,
-    districtCode: p.districtCode,
-    districtName: p.districtName,
     wardCode: p.wardCode,
     wardName: p.wardName,
   }));

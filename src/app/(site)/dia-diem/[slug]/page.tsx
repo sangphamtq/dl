@@ -117,7 +117,6 @@ export default async function SpotPublicPage({
       },
       tags: true,
       provinceName: true,
-      districtName: true,
       wardName: true,
       placeId: true,
       place: {
@@ -303,7 +302,7 @@ export default async function SpotPublicPage({
   const categoryLabel = label(SPOT_CATEGORY_LABELS, spot.category);
 
   // Địa chỉ hành chính đầy đủ (phường → quận → tỉnh) — phụ trợ cho `address`.
-  const adminAddress = [spot.wardName, spot.districtName, spot.provinceName]
+  const adminAddress = [spot.wardName, spot.provinceName]
     .filter(Boolean)
     .join(", ");
   // Một điểm duy nhất cho CẢ iframe lẫn nút "Chỉ đường" để chúng luôn khớp:

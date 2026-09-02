@@ -72,7 +72,6 @@ export default async function SpotDetailPage({
       tips: true,
       tags: true,
       provinceName: true,
-      districtName: true,
       wardName: true,
       createdAt: true,
       updatedAt: true,
@@ -115,7 +114,7 @@ export default async function SpotDetailPage({
     {
       label: "Khu vực",
       value:
-        [spot.wardName, spot.districtName, spot.provinceName]
+        [spot.wardName, spot.provinceName]
           .filter(Boolean)
           .join(", ") || null,
     },

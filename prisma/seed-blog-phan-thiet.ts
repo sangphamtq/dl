@@ -11,7 +11,7 @@ const img = (seed: string, w = 1200, h = 630) =>
 const SLUG = "kinh-nghiem-du-lich-phan-thiet-tu-a-den-z";
 
 const CONTENT = `
-<p>Phan Thiết — thủ phủ của tỉnh Bình Thuận — là điểm đến biển quen thuộc nhưng chưa bao giờ hết hấp dẫn. Ở đây có những đồi cát đổi màu theo nắng, làng chài tấp nập lúc rạng đông, hải sản tươi rói với giá rất mềm, và một nhịp sống chậm rãi đủ để bạn thật sự nghỉ ngơi. Bài viết này tổng hợp mọi thứ bạn cần biết cho một chuyến đi trọn vẹn.</p>
+<p>Phan Thiết — đô thị biển lớn nhất của tỉnh Lâm Đồng — là điểm đến biển quen thuộc nhưng chưa bao giờ hết hấp dẫn. Ở đây có những đồi cát đổi màu theo nắng, làng chài tấp nập lúc rạng đông, hải sản tươi rói với giá rất mềm, và một nhịp sống chậm rãi đủ để bạn thật sự nghỉ ngơi. Bài viết này tổng hợp mọi thứ bạn cần biết cho một chuyến đi trọn vẹn.</p>
 
 <h2>Phan Thiết có gì hấp dẫn?</h2>
 <p>Không quá ồn ào như những thành phố biển lớn, Phan Thiết giữ được vẻ mộc mạc của một vùng duyên hải Nam Trung Bộ. Bờ biển dài, cát mịn, sóng vừa phải; xen giữa là những đồi cát mênh mông tạo nên khung cảnh độc nhất ở Việt Nam.</p>

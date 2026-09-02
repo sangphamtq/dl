@@ -292,7 +292,6 @@ async function fetchEateryDetails(placeId: string): Promise<EateryDetailData[]> 
       notice: true,
       tags: true,
       wardName: true,
-      districtName: true,
       provinceName: true,
       images: {
         orderBy: [{ isCover: "desc" as const }, { order: "asc" as const }],

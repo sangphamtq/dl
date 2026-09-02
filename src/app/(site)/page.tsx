@@ -311,7 +311,7 @@ export default async function Home() {
           thay vì gạch chân, để chúng đọc ra như bốn mảnh dữ kiện rời chứ không
           phải một bảng.
 
-          ĐÃ THỬ VÀ BỎ (đừng dựng lại mà không hỏi): một **bản đồ độ phủ** 63
+          ĐÃ THỬ VÀ BỎ (đừng dựng lại mà không hỏi): một **bản đồ độ phủ** 34
           tỉnh ở cột phải. Nhìn đẹp nhưng kéo cả section thành một thứ để nghịch,
           và bộ đường viền ~58KB nằm thẳng trong HTML trang chủ chỉ để minh hoạ
           mấy con số. Đường viền vẫn còn ở `components/account/vietnam-map-paths.ts`.
@@ -333,8 +333,8 @@ export default async function Home() {
             <p className={cn(MICRO, "text-warm-ink")}>Nội dung đang có</p>
 
             <h2 className="mt-4 text-balance font-[family-name:var(--font-display)] text-[clamp(1.6rem,3vw,2.15rem)] font-semibold leading-[1.15] tracking-tight">
-              {/* CỐ Ý KHÔNG đếm số tỉnh: đích đến là phủ đủ 63 tỉnh, mà một con
-                  số "31/63" đọc ra như thanh tiến trình còn dang dở. */}
+              {/* CỐ Ý KHÔNG đếm số tỉnh: đích đến là phủ đủ 34 tỉnh, mà một con
+                  số "18/34" đọc ra như thanh tiến trình còn dang dở. */}
               <Big>{destCount}</Big>
               <span className="text-muted-foreground">
                 điểm đến, mỗi nơi một trang riêng

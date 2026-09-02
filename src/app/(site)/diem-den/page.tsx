@@ -90,8 +90,8 @@ export default async function DiemDenPage() {
       },
     }),
     // Phần nặng của một tỉnh — ảnh bìa, tagline, tên các nơi bên trong — chỉ
-    // cần cho tỉnh LÊN DẢI THẺ, mà số đó thường là 0–3 trong tổng 63. Gộp chung
-    // vào truy vấn trên là kéo về 63 ảnh bìa và 126 lượt join lấy tên chỉ để
+    // cần cho tỉnh LÊN DẢI THẺ, mà số đó thường là 0–3 trong tổng 34. Gộp chung
+    // vào truy vấn trên là kéo về 34 ảnh bìa và 68 lượt join lấy tên chỉ để
     // vứt đi gần hết.
     prisma.place.findMany({
       where: { kind: "province", treatAsDestination: true, ...pub },

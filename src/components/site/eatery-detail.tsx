@@ -63,7 +63,6 @@ export type EateryDetailData = {
   notice: string | null;
   tags: string[];
   wardName: string | null;
-  districtName: string | null;
   provinceName: string | null;
   images: { id: string; url: string; alt: string | null; isCover: boolean }[];
   // Ảnh chụp tấm thực đơn / bảng giá. Rỗng ở phần lớn quán — tab Thực đơn chỉ
@@ -152,12 +151,12 @@ export function EateryDetail({
     .map((m) => label(MEAL_LABELS, m))
     .filter(Boolean) as string[];
   const viewLabel = label(VIEW_TYPE_LABELS, data.viewType);
-  const area = [data.wardName, data.districtName].filter(Boolean).join(", ");
+  const area = data.wardName ?? "";
 
-  // Địa chỉ đầy đủ: chi tiết → xã/phường → huyện/quận → tỉnh, bỏ phần đã lặp
-  // (address seed thường chứa sẵn tên TP/huyện).
+  // Địa chỉ đầy đủ: chi tiết → xã/phường → tỉnh, bỏ phần đã lặp (address seed
+  // thường chứa sẵn tên phường/thành phố).
   const fullAddress =
-    [data.address, data.wardName, data.districtName, data.provinceName]
+    [data.address, data.wardName, data.provinceName]
       .filter((p): p is string => Boolean(p))
       .reduce<string[]>((acc, part) => {
         if (!acc.join(", ").toLowerCase().includes(part.toLowerCase()))

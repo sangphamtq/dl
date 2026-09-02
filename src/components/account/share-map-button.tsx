@@ -24,7 +24,7 @@ import { VN_ISLANDS, VN_MAP_VIEWBOX_WIDE } from "./vietnam-islands";
 // ── Tuỳ chọn cá nhân hoá ảnh ────────────────────────────────────────────────
 export type ShareOptions = {
   eyebrow: string;
-  headline: string; // dùng {n} để chèn "X/63"
+  headline: string; // dùng {n} để chèn "X/34"
   name: string;
   watermark: string;
   accent: string; // màu nhấn (hex)

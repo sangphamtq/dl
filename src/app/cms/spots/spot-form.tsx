@@ -8,8 +8,8 @@ import { AlertCircle, Loader2, Plus, Trash2 } from "@/components/icons";
 import { slugify } from "@/lib/slug";
 import { cn } from "@/lib/utils";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
-import type { Province, District, Ward } from "@/lib/locations";
-import { loadDistricts, loadWards } from "../places/location-client";
+import type { Province, Ward } from "@/lib/locations";
+import { loadWards } from "../places/location-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -65,8 +65,6 @@ const EMPTY: SpotFormValues = {
   tags: "",
   provinceCode: "",
   provinceName: "",
-  districtCode: "",
-  districtName: "",
   wardCode: "",
   wardName: "",
 };
@@ -92,10 +90,8 @@ export function SpotForm({
     mode === "edit" && Boolean(initial?.slug),
   );
 
-  // Huyện/xã của cấp trên đang chọn (nạp qua cache client → server action).
-  const [districts, setDistricts] = useState<District[]>([]);
+  // Xã/phường của tỉnh đang chọn (nạp qua cache client → server action).
   const [wards, setWards] = useState<Ward[]>([]);
-  const [districtsLoading, setDistrictsLoading] = useState(false);
   const [wardsLoading, setWardsLoading] = useState(false);
 
   const slugPreview = slugTouched ? values.slug : slugify(values.name);
@@ -171,29 +167,10 @@ export function SpotForm({
     }));
   }
 
-  // Nạp huyện mỗi khi provinceCode đổi (gồm cả lần đầu khi sửa).
+  // Nạp xã/phường mỗi khi provinceCode đổi (gồm cả lần đầu khi sửa).
   useEffect(() => {
     const c = Number(values.provinceCode);
     if (!values.provinceCode || !Number.isFinite(c)) return;
-    let active = true;
-    void (async () => {
-      setDistrictsLoading(true);
-      try {
-        const d = await loadDistricts(c);
-        if (active) setDistricts(d);
-      } finally {
-        if (active) setDistrictsLoading(false);
-      }
-    })();
-    return () => {
-      active = false;
-    };
-  }, [values.provinceCode]);
-
-  // Nạp xã mỗi khi districtCode đổi.
-  useEffect(() => {
-    const c = Number(values.districtCode);
-    if (!values.districtCode || !Number.isFinite(c)) return;
     let active = true;
     void (async () => {
       setWardsLoading(true);
@@ -207,30 +184,15 @@ export function SpotForm({
     return () => {
       active = false;
     };
-  }, [values.districtCode]);
+  }, [values.provinceCode]);
 
   function onProvinceChange(c: string) {
     const p = adminProvinces.find((x) => String(x.code) === c);
-    setDistricts([]);
     setWards([]);
     setValues((prev) => ({
       ...prev,
       provinceCode: c,
       provinceName: p?.name ?? "",
-      districtCode: "",
-      districtName: "",
-      wardCode: "",
-      wardName: "",
-    }));
-  }
-
-  function onDistrictChange(c: string) {
-    const d = districts.find((x) => String(x.code) === c);
-    setWards([]);
-    setValues((prev) => ({
-      ...prev,
-      districtCode: c,
-      districtName: d?.name ?? "",
       wardCode: "",
       wardName: "",
     }));
@@ -319,7 +281,7 @@ export function SpotForm({
           title="Vị trí"
           description="Đơn vị hành chính, địa chỉ, toạ độ và link bản đồ. Tùy chọn."
         >
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Tỉnh / Thành phố</Label>
               <Combobox
@@ -339,27 +301,7 @@ export function SpotForm({
               />
             </div>
             <div className="space-y-2">
-              <Label>Quận / Huyện</Label>
-              <Combobox
-                options={districts.map((d) => ({
-                  value: String(d.code),
-                  label: d.name,
-                }))}
-                value={values.districtCode}
-                onChange={onDistrictChange}
-                disabled={!values.provinceCode || districtsLoading}
-                placeholder={
-                  districtsLoading
-                    ? "Đang tải…"
-                    : !values.provinceCode
-                      ? "Chọn tỉnh trước"
-                      : "Chọn quận/huyện…"
-                }
-                searchPlaceholder="Tìm quận/huyện…"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Phường / Xã</Label>
+              <Label>Phường / Xã / Đặc khu</Label>
               <Combobox
                 options={wards.map((w) => ({
                   value: String(w.code),
@@ -367,12 +309,12 @@ export function SpotForm({
                 }))}
                 value={values.wardCode}
                 onChange={onWardChange}
-                disabled={!values.districtCode || wardsLoading}
+                disabled={!values.provinceCode || wardsLoading}
                 placeholder={
                   wardsLoading
                     ? "Đang tải…"
-                    : !values.districtCode
-                      ? "Chọn huyện trước"
+                    : !values.provinceCode
+                      ? "Chọn tỉnh trước"
                       : "Chọn phường/xã…"
                 }
                 searchPlaceholder="Tìm phường/xã…"

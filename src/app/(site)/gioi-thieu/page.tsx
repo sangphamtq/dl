@@ -130,7 +130,7 @@ export default async function GioiThieuPage() {
     prisma.post.count({ where: pub }),
   ]);
 
-  // Số tỉnh THẬT SỰ có điểm đến. Không dùng tổng số tỉnh đã xuất bản (63):
+  // Số tỉnh THẬT SỰ có điểm đến. Không dùng tổng số tỉnh đã xuất bản (34):
   // phần lớn trong đó chưa có nội dung nào, đếm cả vào là hứa nhiều hơn thứ
   // đang có — chính lỗi mà bản trước của trang này mắc phải.
   const provinceCount = new Set(destParents.map((d) => d.parentId)).size;

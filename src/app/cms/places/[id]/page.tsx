@@ -61,7 +61,6 @@ export default async function PlaceDetailPage({
       description: true,
       quickInfo: true,
       provinceName: true,
-      districtName: true,
       wardName: true,
       tags: true,
       status: true,
@@ -399,7 +398,7 @@ export default async function PlaceDetailPage({
                 <span className="font-mono text-xs">/diem-den/{place.slug}</span>
               </Meta>
               <Meta label="Vị trí">
-                {[place.wardName, place.districtName, place.provinceName]
+                {[place.wardName, place.provinceName]
                   .filter(Boolean)
                   .join(", ") || "—"}
               </Meta>
