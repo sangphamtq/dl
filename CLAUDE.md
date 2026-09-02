@@ -742,7 +742,8 @@ PostRef {
 - **TypeScript** (strict), alias import `@/*` → `src/*`
 - **Tailwind CSS v4**
 - **shadcn/ui** (style `new-york`, base color `neutral`) — component dán vào
-  `src/components/ui/`, dựng trên **Radix UI** (package hợp nhất `radix-ui`); icon dùng **lucide-react**
+  `src/components/ui/`, dựng trên **Radix UI** (package hợp nhất `radix-ui`); icon dùng
+  **`@/components/icons`** (shim Material Symbols sinh bởi `scripts/build-icons.mjs`)
 - **Prisma 7 + PostgreSQL** — ORM; client mới sinh ra `src/generated/prisma` (đã gitignore),
   kết nối qua driver adapter `@prisma/adapter-pg`. `DATABASE_URL` trong `.env`.
 - **Auth.js (NextAuth v5)** — đăng nhập Google OAuth (**đã gắn** Prisma adapter, xem `auth.ts`)
@@ -852,7 +853,8 @@ components.json                  # cấu hình shadcn (style, alias, base color)
   (đây là code của dự án, không phải package). Style hiện tại là `new-york` (dựng trên
   **Radix UI**): đổi thẻ gốc bằng prop **`asChild`** (vd `<DropdownMenuTrigger asChild><button/>`,
   `<SidebarMenuButton asChild><Link/>`). Gộp class bằng `cn()` từ `@/lib/utils`. Icon lấy từ
-  `lucide-react`. Màu/spacing dùng biến theme trong `globals.css` (vd `bg-primary`,
+  `@/components/icons` (tên component theo quy ước lucide cũ; `lucide-react` KHÔNG còn là
+  dependency). Màu/spacing dùng biến theme trong `globals.css` (vd `bg-primary`,
   `text-muted-foreground`) thay vì màu cứng.
 - **Khổ nhỏ nhất phải chạy được là 320px.** Hàng số liệu ở hero (lượt xem · đánh giá · đã
   đến) **giữ MỘT HÀNG xuống tới 320px** — cách làm: bỏ CHỮ chứ không bỏ SỐ. Dưới `sm` chỉ còn

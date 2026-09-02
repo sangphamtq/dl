@@ -28,18 +28,6 @@ export type MapPlacePoint = {
   stayCount: number;
 };
 
-// Một listing (địa điểm/quán/lưu trú) có toạ độ — lớp chi tiết trên bản đồ.
-export type ListingGeoPoint = {
-  id: string;
-  type: GeoType;
-  name: string;
-  lat: number;
-  lng: number;
-  href: string;
-  category: string | null;
-  placeSlug: string | null;
-};
-
 export async function getDestinationMapPoints(): Promise<MapPlacePoint[]> {
   const geoScope = { ...pub, lat: { not: null } } as const;
 
@@ -132,38 +120,6 @@ export async function getDestinationMapPoints(): Promise<MapPlacePoint[]> {
       x.name.localeCompare(y.name, "vi"),
   );
   return points;
-}
-
-// Địa điểm (Spot) có toạ độ trên toàn quốc — lớp "địa điểm chi tiết" của bản đồ.
-// Chỉ Spot: KHÔNG hiện quán ăn / lưu trú ở lớp này.
-export async function getAllGeoListingPoints(): Promise<ListingGeoPoint[]> {
-  const spots = await prisma.spot.findMany({
-    where: { ...pub, lat: { not: null } },
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      lat: true,
-      lng: true,
-      category: true,
-      place: { select: { slug: true } },
-    },
-  });
-  const out: ListingGeoPoint[] = [];
-  for (const r of spots) {
-    if (r.lat == null || r.lng == null) continue;
-    out.push({
-      id: r.id,
-      type: "spot",
-      name: r.name,
-      lat: r.lat,
-      lng: r.lng,
-      href: `/dia-diem/${r.slug}`,
-      category: r.category,
-      placeSlug: r.place?.slug ?? null,
-    });
-  }
-  return out;
 }
 
 export type GeoPoint = {

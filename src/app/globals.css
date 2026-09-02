@@ -346,16 +346,6 @@
   height: 100%;
   object-fit: cover;
 }
-.dl-pop-blank {
-  display: grid;
-  place-items: center;
-  width: 100%;
-  height: 100%;
-  background: var(--primary);
-  color: #fff;
-  font-family: var(--font-display), var(--font-sans);
-  font-size: 2rem;
-}
 .dl-pop-scrim {
   position: absolute;
   inset: 0;
@@ -456,26 +446,6 @@
   color: var(--background);
 }
 /* Bản rút gọn cho lớp địa điểm chi tiết: không ảnh, chỉ ba dòng chữ. */
-.dl-pop--mini .dl-pop-eyebrow,
-.dl-pop--mini .dl-pop-title {
-  color: inherit;
-  text-shadow: none;
-}
-.dl-pop--mini .dl-pop-eyebrow {
-  padding: 0.75rem 0.875rem 0;
-  font-family: var(--font-sans);
-  font-style: normal;
-  font-size: 0.6rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: var(--muted-foreground);
-}
-.dl-pop--mini .dl-pop-title {
-  padding: 0 0.875rem;
-  font-size: 1rem;
-}
-
 /* Pin ảnh cho bản đồ điểm đến toàn quốc (/ban-do). VUÔNG chứ không tròn: pin
    này là thẻ điểm đến thu về 46px, mà thẻ ở /diem-den vuông và cắt ảnh 3/2 —
    pin tròn đọc ra là "chấm bản đồ của một app khác". Pin chấm nhỏ của lớp
