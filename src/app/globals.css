@@ -52,23 +52,11 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  /* Thang bo góc — MỘT núm chỉnh duy nhất là --radius (12px), phần còn lại là
-     hệ số. Thang cố ý NỞ DẦN chứ không tuyến tính: đầu thang (chip, ô nhập, ảnh
-     nhỏ) phải gọn để không bị "tròn ủng", còn cuối thang (card, panel nổi) mới
-     là chỗ tạo cảm giác mềm của cả trang.
-       sm  8px   viền mảnh, ô nhỏ, badge vuông
-       md 10px   ô nhập, nút phụ
-       lg 12px   ảnh trong card, khối phụ  (= --radius)
-       xl 16px   KHUÔN CARD MẶC ĐỊNH — dùng nhiều nhất
-       2xl 22px  panel nổi, popup, khối bao nhiều card
-       3xl 28px  dải lớn tràn section
-     Nút bấm phần lớn là `rounded-full`, không lấy từ thang này. */
-  --radius-sm: calc(var(--radius) * 0.667);
-  --radius-md: calc(var(--radius) * 0.833);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.333);
-  --radius-2xl: calc(var(--radius) * 1.833);
-  --radius-3xl: calc(var(--radius) * 2.333);
+  /* KHÔNG khai thang bo góc ở đây — đã gỡ 2026-09-04. `rounded-*` dùng thẳng số
+     mặc định của Tailwind (xs 2px · sm 4px · md 6px · lg 8px · xl 12px ·
+     2xl 16px · 3xl 24px). Thang cũ nhân từ `--radius: 12px` cho ra bộ 8/10/12/16/22/28px —
+     quá tròn so với ngôn ngữ hình khối vuông của dự án. Cần số nhỏ hơn nữa thì
+     ghi thẳng (`rounded-[6px]`), xem .claude/skills/design/SKILL.md §1. */
 }
 
 :root {
@@ -122,7 +110,6 @@
   --border: #e8e6e1;
   --input: #e8e6e1;
   --ring: #2e871c;
-  --radius: 0.75rem; /* 12px — gốc của thang bo góc, xem @theme inline ở trên */
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-accent: oklch(0.97 0 0);
@@ -540,7 +527,7 @@
   margin: 0;
   aspect-ratio: 3 / 2;
   object-fit: cover;
-  border-radius: var(--radius-lg);
+  border-radius: 0.5rem; /* = rounded-lg mặc định của Tailwind */
 }
 
 /* Thanh tiến trình của dải "Địa điểm đáng ghé": tô từ trái sang phải trong đúng

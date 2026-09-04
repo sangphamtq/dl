@@ -16,6 +16,7 @@ export function Rail({
   children,
   itemClassName,
   arrowClassName,
+  arrowWrapClassName,
   progress = false,
   heading,
   headingClassName,
@@ -25,6 +26,9 @@ export function Rail({
 }: {
   children: React.ReactNode;
   itemClassName?: string;
+  /** Bo góc/viền của KHUNG bọc cặp mũi tên — khung mới là thứ nhìn thấy, bo
+   *  riêng từng nút bên trong thì nền hover sẽ lệch khỏi khung. */
+  arrowWrapClassName?: string;
   arrowClassName?: string;
   progress?: boolean;
   heading?: React.ReactNode;
@@ -57,6 +61,7 @@ export function Rail({
             {meta}
             {progress && <RailProgress />}
             <ArrowPair
+              wrapClassName={arrowWrapClassName}
               className={cn(arrowBase, arrowClassName)}
               nextClassName={cn(
                 arrowBase,
@@ -93,15 +98,22 @@ export function Rail({
 function ArrowPair({
   className,
   nextClassName,
+  wrapClassName,
 }: {
   className?: string;
   nextClassName?: string;
+  wrapClassName?: string;
 }) {
   const { canScrollPrev, canScrollNext } = useCarousel();
   if (!canScrollPrev && !canScrollNext) return null;
 
   return (
-    <div className="flex items-center divide-x divide-border border border-border">
+    <div
+      className={cn(
+        "flex items-center divide-x divide-border border border-border",
+        wrapClassName,
+      )}
+    >
       <CarouselPrevious className={className} />
       <CarouselNext className={nextClassName} />
     </div>

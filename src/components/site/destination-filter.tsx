@@ -16,6 +16,7 @@ import {
 import { coverUrl } from "@/lib/place-image";
 import { Rail } from "@/components/site/rail";
 import { RiseInView } from "@/components/site/reveal";
+import { R_BADGE, R_CARD, R_CTRL } from "@/lib/radius";
 
 export type DestItem = {
   slug: string;
@@ -76,6 +77,7 @@ const SORTS: { key: SortKey; label: string }[] = [
 ];
 
 const MICRO = "text-[0.6rem] font-semibold uppercase tracking-[0.14em]";
+
 
 function norm(s: string): string {
   return s
@@ -153,7 +155,7 @@ export function DestinationFilter({
               ariaLabel="Chuyển nhanh theo miền"
               resetKey={`${query}|${sort}`}
               indicator="solid"
-              shapeClassName="rounded-none"
+              shapeClassName={R_CTRL}
               tabClassName={cn(MICRO, "h-9 px-4 sm:px-5")}
             />
           </div>
@@ -161,7 +163,7 @@ export function DestinationFilter({
           <div className="ml-auto flex min-w-0 items-center gap-4 sm:gap-6">
             <div className="group relative min-w-0 flex-1">
               <Search
-                className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-foreground"
+                className="pointer-events-none absolute left-3.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-foreground"
                 aria-hidden
               />
               <input
@@ -170,14 +172,14 @@ export function DestinationFilter({
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Tìm điểm đến…"
                 aria-label="Tìm điểm đến"
-                className="h-9 w-full border border-border bg-transparent pl-8 pr-8 text-[0.8125rem] outline-none transition-colors placeholder:text-muted-foreground/80 focus:border-foreground [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none"
+                className={cn(R_CTRL, "h-9 w-full border border-border bg-transparent pl-9 pr-9 text-[0.8125rem] outline-none transition-colors placeholder:text-muted-foreground/80 focus:border-foreground [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none")}
               />
               {query && (
                 <button
                   type="button"
                   onClick={() => setQuery("")}
                   aria-label="Xóa tìm kiếm"
-                  className="absolute right-1.5 top-1/2 grid size-6 -translate-y-1/2 place-items-center text-muted-foreground transition-colors hover:text-foreground"
+                  className={cn(R_BADGE, "absolute right-2 top-1/2 grid size-6 -translate-y-1/2 place-items-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground")}
                 >
                   <X className="size-3.5" aria-hidden />
                 </button>
@@ -189,7 +191,7 @@ export function DestinationFilter({
                 <button
                   type="button"
                   aria-label={`Sắp xếp: ${SORTS.find((x) => x.key === sort)?.label}`}
-                  className="inline-flex h-9 shrink-0 items-center gap-2 border border-border bg-transparent px-3 text-[0.8125rem] font-medium transition-colors hover:border-foreground focus-visible:border-foreground focus-visible:outline-none"
+                  className={cn(R_CTRL, "inline-flex h-9 shrink-0 items-center gap-2 border border-border bg-transparent pl-4 pr-3.5 text-[0.8125rem] font-medium transition-colors hover:border-foreground focus-visible:border-foreground focus-visible:outline-none")}
                 >
                   {SORTS.find((x) => x.key === sort)?.label}
                   <ChevronDown
@@ -228,7 +230,7 @@ export function DestinationFilter({
         <div className="mt-16 flex flex-col items-center text-center">
           <span
             aria-hidden
-            className="grid size-12 place-items-center rounded-[3px] bg-muted text-muted-foreground"
+            className={cn(R_CARD, "grid size-12 place-items-center bg-muted text-muted-foreground")}
           >
             <Search className="size-5" />
           </span>
@@ -241,7 +243,7 @@ export function DestinationFilter({
           <button
             type="button"
             onClick={() => setQuery("")}
-            className="mt-5 inline-flex h-9 items-center rounded-[3px] border border-border px-4 text-sm font-medium transition-colors hover:border-primary/40 hover:text-primary"
+            className={cn(R_CTRL, "mt-5 inline-flex h-9 items-center border border-border px-4 text-sm font-medium transition-colors hover:border-primary/40 hover:text-primary")}
           >
             Xóa tìm kiếm
           </button>
@@ -287,6 +289,11 @@ export function DestinationFilter({
                   contentClassName="xl:pl-[var(--bleed)]"
                   viewportClassName="transition-[clip-path,translate] duration-500 ease-out motion-reduce:transition-none xl:mr-[calc(-1*var(--bleed))] xl:[clip-path:inset(0_calc(2*var(--bleed))_0_var(--bleed))] xl:group-hover/mien:-translate-x-[var(--bleed)] xl:group-hover/mien:[clip-path:inset(0_0_0_var(--bleed))]"
                   itemClassName="basis-[86%] sm:basis-[60%] lg:basis-[44%] xl:basis-[27rem]"
+                  // Bo ở KHUNG bọc + cắt tràn, nút bên trong để vuông: nhờ
+                  // vậy nền hover phủ kín ô rồi bị chính khung bo lại, thay
+                  // vì là một mảng bo góc lửng lơ trong một cái khung vuông.
+                  arrowWrapClassName={cn(R_CTRL, "overflow-hidden")}
+                  arrowClassName="hover:bg-foreground/90"
                   progress
                 >
                   {g.dests.map((d, di) => (
@@ -339,7 +346,7 @@ function ProvinceChip({ p }: { p: ProvinceItem }) {
   return (
     <Link
       href={`/diem-den/${p.slug}`}
-      className="inline-flex items-center gap-1.5 rounded-[3px] border border-border bg-card py-1.5 pl-3.5 pr-3 text-sm font-medium text-foreground/85 transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
+      className={cn(R_CTRL, "inline-flex items-center gap-1.5 border border-border bg-card py-1.5 pl-3.5 pr-3 text-sm font-medium text-foreground/85 transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary")}
     >
       {p.isFeatured && (
         <Star className="size-3.5 shrink-0 text-warm" aria-hidden />
@@ -348,7 +355,7 @@ function ProvinceChip({ p }: { p: ProvinceItem }) {
       {p.childCount >= 2 ? (
         <span
           aria-label={`${p.childCount} điểm đến`}
-          className="grid h-4 min-w-4 place-items-center rounded-[2px] bg-primary/10 px-1 text-[10px] font-semibold tabular-nums text-primary"
+          className={cn(R_BADGE, "grid h-[1.125rem] min-w-[1.125rem] place-items-center bg-primary/10 px-1.5 text-[10px] font-semibold tabular-nums text-primary")}
         >
           {p.childCount}
         </span>
@@ -366,38 +373,36 @@ const FACTS: { key: keyof DestItem["counts"]; label: string }[] = [
   { key: "activity", label: "trải nghiệm" },
 ];
 
+function Num({ children }: { children: React.ReactNode }) {
+  return <span className="font-semibold tabular-nums text-white">{children}</span>;
+}
+
 function DestCard({ d }: { d: DestItem }) {
   const facts = FACTS.filter((f) => d.counts[f.key] > 0);
   const names = d.isProvince ? (d.childNames ?? []) : [];
   const total = d.childTotal ?? d.childCount ?? 0;
-  const SLOTS = FACTS.length; 
 
-  const CHIP_SLOTS = 3;
-  const chips =
-    total > CHIP_SLOTS
-      ? [
-          ...names.slice(0, CHIP_SLOTS - 1),
-          `+${total - (CHIP_SLOTS - 1)} nơi`,
-        ]
-      : names.slice(0, CHIP_SLOTS);
-
-  const rows: { key: string; text: React.ReactNode }[] =
+  // Dòng dữ kiện ở đáy thẻ: TÊN các nơi bên trong (với tỉnh) hoặc số lượng nội
+  // dung (với điểm đến). MỘT hàng, ngăn nhau bằng KHOẢNG TRẮNG.
+  //
+  // Bản trước chia thành lưới 2–3 cột, mỗi ô một gạch ngang phía trên — nên mỗi
+  // thẻ tự vẽ thêm một cái bảng con bên trong khung ảnh vốn đã là hình chữ
+  // nhật, và phải độn thêm ô trống vô hình cho các cột thẳng hàng. Dấu chấm nói
+  // đúng cùng một ý (đây là các mẩu rời) mà không kẻ thêm nét nào.
+  const NAME_SLOTS = 3;
+  const FACT_SLOTS = 4;
+  const meta: { key: string; text: React.ReactNode; dim?: boolean }[] =
     names.length > 0
-      ? 
-        (total > SLOTS
+      ? (total > NAME_SLOTS
           ? [
-              ...names.slice(0, SLOTS - 1),
-              `+${total - (SLOTS - 1)} nơi khác`,
+              ...names.slice(0, NAME_SLOTS - 1),
+              `+${total - (NAME_SLOTS - 1)} nơi`,
             ]
-          : names.slice(0, SLOTS)
-        ).map((n, i) => ({
+          : names.slice(0, NAME_SLOTS)
+        ).map((n, i, arr) => ({
           key: `${i}-${n}`,
-          text:
-            total > SLOTS && i === SLOTS - 1 ? (
-              <span className="text-white/60">{n}</span>
-            ) : (
-              <span className="font-medium text-white">{n}</span>
-            ),
+          text: n,
+          dim: total > NAME_SLOTS && i === arr.length - 1,
         }))
       : [
           ...(d.isProvince && total
@@ -406,10 +411,7 @@ function DestCard({ d }: { d: DestItem }) {
                   key: "child",
                   text: (
                     <>
-                      <span className="font-semibold tabular-nums text-white">
-                        {total}
-                      </span>{" "}
-                      điểm đến
+                      <Num>{total}</Num> điểm đến
                     </>
                   ),
                 },
@@ -419,41 +421,35 @@ function DestCard({ d }: { d: DestItem }) {
             key: f.key,
             text: (
               <>
-                <span className="font-semibold tabular-nums text-white">
-                  {d.counts[f.key]}
-                </span>{" "}
-                {f.label}
+                <Num>{d.counts[f.key]}</Num> {f.label}
               </>
             ),
           })),
-        ].slice(0, SLOTS);
-
-  const blanks = SLOTS - rows.length;
+        ].slice(0, FACT_SLOTS);
 
   return (
     <Link
       href={`/diem-den/${d.slug}`}
-      className="group relative block aspect-[3/2] overflow-hidden bg-muted"
+      className={cn(
+        R_CARD,
+        "group relative block aspect-[3/2] overflow-hidden bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+      )}
     >
       <Image
         src={coverUrl(d.images, d.slug, 900, 600)}
         alt=""
         fill
         sizes="(min-width: 1280px) 31vw, (min-width: 1024px) 44vw, (min-width: 640px) 60vw, 86vw"
-        className="object-cover"
+        className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.045] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
       />
 
       <span
         aria-hidden
         className="absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,0.84)_0%,rgba(0,0,0,0.7)_22%,rgba(0,0,0,0.54)_44%,rgba(0,0,0,0.32)_64%,rgba(0,0,0,0.1)_84%,rgba(0,0,0,0.04)_100%)] opacity-80 transition-opacity duration-300 group-hover:opacity-[0.92] motion-reduce:transition-none"
       />
-      <span
-        aria-hidden
-        className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/12 transition-[box-shadow] duration-300 group-hover:ring-white/55 motion-reduce:transition-none"
-      />
 
       {d.isFeatured && (
-        <span className="absolute right-3 top-3 inline-flex items-center gap-1.5 bg-white/95 py-1 pl-2 pr-2.5 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-neutral-900 shadow-sm backdrop-blur-sm">
+        <span className={cn(R_BADGE, "absolute right-3 top-3 inline-flex items-center gap-1.5 bg-white/95 py-1 pl-2.5 pr-3 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-neutral-900 shadow-sm backdrop-blur-sm")}>
           <Star className="size-3 shrink-0 text-[#a34c00]" aria-hidden />
           Nổi bật
         </span>
@@ -476,41 +472,17 @@ function DestCard({ d }: { d: DestItem }) {
               {d.tagline}
             </span>
           )}
+
         </span>
 
-        {names.length > 0 ? (
-          <span className="grid min-h-[3.5rem] grid-cols-3 content-start gap-x-3 sm:gap-x-4">
-            {chips.map((n, i) => (
+        {meta.length > 0 && (
+          <span className="flex min-h-[1.25rem] flex-wrap items-center justify-center gap-x-5 gap-y-0.5 text-[0.75rem] leading-tight text-white/75 [text-shadow:0_1px_6px_rgba(0,0,0,0.65)]">
+            {meta.map((m) => (
               <span
-                key={`${i}-${n}`}
-                className={cn(
-                  "mt-2 truncate border-t border-white/30 pt-1.5 text-[0.75rem] leading-tight [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]",
-                  total > CHIP_SLOTS && i === chips.length - 1
-                    ? "text-white/60"
-                    : "font-medium text-white",
-                )}
+                key={m.key}
+                className={cn("max-w-[11rem] truncate", m.dim && "text-white/55")}
               >
-                {n}
-              </span>
-            ))}
-          </span>
-        ) : (
-          <span className="grid grid-cols-2 gap-x-5 sm:gap-x-8">
-            {rows.map((r) => (
-              <span
-                key={r.key}
-                className="mt-2 truncate border-t border-white/30 pt-1.5 text-[0.75rem] leading-tight text-white/75 [text-shadow:0_1px_6px_rgba(0,0,0,0.6)]"
-              >
-                {r.text}
-              </span>
-            ))}
-            {Array.from({ length: blanks }, (_, i) => (
-              <span
-                key={`blank-${i}`}
-                aria-hidden
-                className="invisible mt-2 pt-1.5 text-[0.75rem] leading-tight"
-              >
-                &nbsp;
+                {m.text}
               </span>
             ))}
           </span>

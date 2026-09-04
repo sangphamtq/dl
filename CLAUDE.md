@@ -882,7 +882,11 @@ components.json                  # cấu hình shadcn (style, alias, base color)
   mục "URL"). URL chi tiết phẳng `/[loại]/[slug]`, không lồng tỉnh/điểm đến.
 - **Hình ảnh** dùng `next/image`. Domain ảnh ngoài cần khai báo trong `next.config.ts`.
 - **Thiết kế/UI:** trước khi dựng hay chỉnh bất kỳ giao diện nào, theo **skill `design`**
-  (`.claude/skills/design/SKILL.md`) — hệ thống thiết kế tối giản/biên tập, ảnh làm chủ.
+  (`.claude/skills/design/SKILL.md`) — hệ tối giản/biên tập, ảnh làm chủ. Hai quy ước
+  cắt ngang mọi trang nằm ở đó: **bo góc dùng bộ số nhỏ 6/4/3px** (`globals.css` đã gỡ
+  thang `--radius` riêng — `rounded-*` nay là số mặc định Tailwind, và đó là TRẦN chứ
+  không phải mặc định nên dùng), và **không dùng dấu chấm `·` làm dải phân cách** (ngăn
+  bằng khoảng trắng rộng).
 - **UI dùng shadcn/ui.** Ưu tiên thêm component qua `pnpm dlx shadcn@latest add <tên>`
   thay vì tự viết từ đầu; component nằm ở `src/components/ui/` và **được phép sửa trực tiếp**
   (đây là code của dự án, không phải package). Style hiện tại là `new-york` (dựng trên
@@ -1227,6 +1231,18 @@ bao xa, đi chung chuyến có nổi không) thì không có chỗ nào. Nay pan
 
 **Ngôn ngữ hình khối lấy nguyên từ `/diem-den`** (`destination-filter.tsx`) — hai trang nói
 về cùng một tập nội dung, người dùng đi qua lại giữa chúng:
+
+> ⚠️ **HAI TRANG ĐANG LỆCH NHAU (2026-09-04).** `/diem-den` đã chuyển sang bộ bo góc
+> nhỏ (`R_CARD` 6px · `R_CTRL` 4px · `R_BADGE` 3px, khai ở đầu `destination-filter.tsx`),
+> bỏ ring viền quanh ảnh, và đổi dữ kiện đáy thẻ từ lưới gạch chia cột sang một hàng
+> ngăn bằng KHOẢNG TRẮNG. Con số, lý do và bốn mức đã bị loại: xem
+> [`.claude/skills/design/SKILL.md`](.claude/skills/design/SKILL.md) §1 — **đừng chép
+> lại vào đây, một quy ước chỉ nên có một nguồn.**
+>
+> `/ban-do` **vẫn vuông hoàn toàn** — cố ý hoãn để duyệt hướng trên một trang trước.
+> Đồng bộ nốt thì sửa: chip lọc, nút điều khiển bản đồ, nút zoom Leaflet ép vuông trong `globals.css`, `.dl-place-pin`,
+> `.dl-trip-pin` và các lớp `.dl-pop*`. Mô tả "vuông hết" bên dưới là mô tả `/ban-do`
+> hiện tại, KHÔNG còn là mô tả `/diem-den`.
 
 - **Vuông hết, không `rounded-full`/`rounded-xl`**: chip lọc vuông (bật = `bg-foreground
   text-background`), nút điều khiển bản đồ vuông, nút zoom của Leaflet ép vuông trong

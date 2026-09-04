@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ChevronDown, Search, X } from "@/components/icons";
 import { cn } from "@/lib/utils";
+import { R_BADGE, R_CTRL } from "@/lib/radius";
 import { SORTS, type SortKey } from "@/lib/spot-sort";
 import {
   DropdownMenu,
@@ -87,7 +88,7 @@ export function SpotControls({
         <div className="ml-auto flex min-w-0 items-center gap-4 sm:gap-6">
           <div className="group relative min-w-0 flex-1 sm:w-52 sm:flex-none">
             <Search
-              className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-foreground"
+              className="pointer-events-none absolute left-3.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-foreground"
               aria-hidden
             />
             <input
@@ -96,7 +97,7 @@ export function SpotControls({
               onChange={(e) => setDraft(e.target.value)}
               placeholder="Tìm địa điểm…"
               aria-label="Tìm địa điểm"
-              className="h-9 w-full border border-border bg-transparent pl-8 pr-8 text-[0.8125rem] outline-none transition-colors placeholder:text-muted-foreground/80 focus:border-foreground [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none"
+              className={cn(R_CTRL, "h-9 w-full border border-border bg-transparent pl-9 pr-9 text-[0.8125rem] outline-none transition-colors placeholder:text-muted-foreground/80 focus:border-foreground [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none")}
             />
             {draft && (
               <button
@@ -106,7 +107,7 @@ export function SpotControls({
                   push({ q: null, trang: null });
                 }}
                 aria-label="Xóa tìm kiếm"
-                className="absolute right-1.5 top-1/2 grid size-6 -translate-y-1/2 place-items-center text-muted-foreground transition-colors hover:text-foreground"
+                className={cn(R_BADGE, "absolute right-2 top-1/2 grid size-6 -translate-y-1/2 place-items-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground")}
               >
                 <X className="size-3.5" aria-hidden />
               </button>
@@ -118,7 +119,7 @@ export function SpotControls({
               <button
                 type="button"
                 aria-label={`Sắp xếp: ${SORTS.find((x) => x.key === sort)?.label}`}
-                className="inline-flex h-9 shrink-0 items-center gap-2 border border-border bg-transparent px-3 text-[0.8125rem] font-medium transition-colors hover:border-foreground focus-visible:border-foreground focus-visible:outline-none"
+                className={cn(R_CTRL, "inline-flex h-9 shrink-0 items-center gap-2 border border-border bg-transparent pl-4 pr-3.5 text-[0.8125rem] font-medium transition-colors hover:border-foreground focus-visible:border-foreground focus-visible:outline-none")}
               >
                 {SORTS.find((x) => x.key === sort)?.label}
                 <ChevronDown
@@ -173,6 +174,7 @@ function CatTab({
       aria-pressed={active}
       className={cn(
         MICRO,
+        R_CTRL,
         "h-9 shrink-0 whitespace-nowrap px-4 transition-colors sm:px-5",
         active
           ? "bg-foreground text-background"

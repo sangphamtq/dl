@@ -5,6 +5,7 @@ import { Playfair_Display } from "next/font/google";
 import { prisma } from "@/lib/prisma";
 import { Ic } from "@/components/icon";
 import { cn } from "@/lib/utils";
+import { R_CARD, R_CTRL } from "@/lib/radius";
 import { SPOT_CATEGORY_LABELS } from "@/lib/listing-labels";
 import { Curtain, Rise, RiseInView } from "@/components/site/reveal";
 import { SpotControls } from "@/components/site/spot-controls";
@@ -188,8 +189,16 @@ export default async function DiaDiemPage({
 
             <Rise delay={0.32} className="mt-8 sm:mt-10">
               <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
-                <HeroLink href="/diem-den" label={`Xem ${destCount} điểm đến`} />
-                <HeroLink href="/ban-do" label="Mở bản đồ du lịch" />
+                <HeroLink
+                  href="/diem-den"
+                  label={`Xem ${destCount} điểm đến`}
+                  className="rounded-[4px] [&>span]:rounded-[4px]"
+                />
+                <HeroLink
+                  href="/ban-do"
+                  label="Mở bản đồ du lịch"
+                  className="rounded-[4px] [&>span]:rounded-[4px]"
+                />
               </div>
             </Rise>
           </div>
@@ -200,7 +209,7 @@ export default async function DiaDiemPage({
 
           {total === 0 ? (
             <div className="mt-16 flex flex-col items-center text-center">
-              <span className="grid size-12 place-items-center border border-border text-muted-foreground">
+              <span className={cn(R_CARD, "grid size-12 place-items-center border border-border text-muted-foreground")}>
                 <Ic icon="search" className="size-5" aria-hidden />
               </span>
               <p className="mt-4 font-[family-name:var(--font-display)] text-lg font-semibold tracking-tight">
@@ -211,7 +220,7 @@ export default async function DiaDiemPage({
               </p>
               <Link
                 href="/dia-diem"
-                className="mt-5 inline-flex h-9 items-center border border-border px-4 text-sm font-medium transition-colors hover:border-foreground"
+                className={cn(R_CTRL, "mt-5 inline-flex h-9 items-center border border-border px-4 text-sm font-medium transition-colors hover:border-foreground")}
               >
                 Xóa bộ lọc
               </Link>
@@ -222,9 +231,8 @@ export default async function DiaDiemPage({
                 <span className="text-foreground tabular-nums">{total}</span>{" "}
                 địa điểm
                 {lastPage > 1 && (
-                  <span className="tabular-nums">
-                    {" "}
-                    · trang {page}/{lastPage}
+                  <span className="ms-5 tabular-nums">
+                    trang {page}/{lastPage}
                   </span>
                 )}
               </p>
@@ -252,6 +260,7 @@ export default async function DiaDiemPage({
                       aria-current={p === page ? "page" : undefined}
                       className={cn(
                         MICRO,
+                        R_CTRL,
                         "grid h-9 min-w-9 place-items-center px-2 tabular-nums transition-colors",
                         p === page
                           ? "bg-foreground text-background"
@@ -292,6 +301,7 @@ function PageLink({
         aria-disabled
         className={cn(
           MICRO,
+          R_CTRL,
           "grid h-9 place-items-center border border-border/50 px-3 text-muted-foreground/40",
         )}
       >
@@ -303,6 +313,7 @@ function PageLink({
       href={href}
       className={cn(
         MICRO,
+        R_CTRL,
         "grid h-9 place-items-center border border-border px-3 text-muted-foreground transition-colors hover:border-foreground hover:text-foreground",
       )}
     >

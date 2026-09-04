@@ -222,8 +222,9 @@ export async function SiteHeader({
                thân) và một bóng tiếp xúc 1px màu ĐEN mờ — cùng vật liệu với
                `CtaButton`, và cần thật khi nút này nằm đè lên ảnh hero.
 
-               GÓC: `rounded-lg` = `--radius` của theme (10px), cùng radius
-               với `Button` của shadcn. Trước đây là `rounded-full` với lập luận
+               GÓC: `rounded-lg` (8px — mặc định Tailwind; thang `--radius`
+               riêng của dự án đã gỡ 2026-09-04), cùng radius với `Button`
+               của shadcn. Trước đây là `rounded-full` với lập luận
                "viên tròn là ngôn ngữ của site — 14 control bo tròn hết cỡ so
                với 9 chỗ bo nhẹ". Đếm lại thì tỉ lệ thật là 21/19, tức sát nhau
                chứ không áp đảo; và cái đọc ra "mặc định" ở đây không phải con

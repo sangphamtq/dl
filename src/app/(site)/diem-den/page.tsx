@@ -229,8 +229,16 @@ export default async function DiemDenPage() {
                 </Rise>
                 <Rise delay={0.32} className="mt-8 sm:mt-10">
                 <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
-                  <HeroLink href="/dia-diem" label={`Xem ${spotCount} địa điểm`} />
-                  <HeroLink href="/ban-do" label="Mở bản đồ du lịch" />
+                  <HeroLink
+                    href="/dia-diem"
+                    label={`Xem ${spotCount} địa điểm`}
+                    className="rounded-[4px] [&>span]:rounded-[4px]"
+                  />
+                  <HeroLink
+                    href="/ban-do"
+                    label="Mở bản đồ du lịch"
+                    className="rounded-[4px] [&>span]:rounded-[4px]"
+                  />
                 </div>
                 </Rise>
               </div>
