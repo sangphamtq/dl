@@ -108,7 +108,7 @@ export function BlogFilters({
               value={destQuery}
               onChange={(e) => setDestQuery(e.target.value)}
               placeholder="Tìm điểm đến"
-              className="h-9 w-full border border-border bg-transparent pl-8 pr-2 text-[0.8125rem] text-foreground outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-foreground"
+              className="h-9 w-full rounded-[4px] border border-border bg-transparent pl-9 pr-2 text-[0.8125rem] text-foreground outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-foreground"
             />
           </div>
           <ul className="flex flex-col">

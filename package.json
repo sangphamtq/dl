@@ -11,6 +11,7 @@
     "set-role": "tsx scripts/set-role.ts",
     "backfill:place-coords": "tsx scripts/backfill-place-coords.ts",
     "check:trip-dnd": "tsx scripts/check-trip-dnd.ts",
+    "check:loading": "node scripts/check-loading.mjs",
     "check:trip-collab": "NODE_PATH=scripts/.shim tsx scripts/check-trip-collab.ts",
     "export:excel": "tsx scripts/export-excel.ts",
     "seed:places": "tsx prisma/seed-places.ts",

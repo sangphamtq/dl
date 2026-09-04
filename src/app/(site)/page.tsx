@@ -4,6 +4,7 @@ import { Playfair_Display } from "next/font/google";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
+import { R_BADGE, R_CARD } from "@/lib/radius";
 import { coverUrl } from "@/lib/place-image";
 import { POST_CATEGORY_LABELS, label } from "@/lib/listing-labels";
 import { Ic } from "@/components/icon";
@@ -355,7 +356,7 @@ export default async function Home() {
               {inside.map((item) => (
                 <li
                   key={item.unit}
-                  className="border border-border px-4 py-4"
+                  className={cn(R_CARD, "border border-border px-4 py-4")}
                 >
                   <p className="font-[family-name:var(--font-display)] text-[clamp(1.5rem,2.4vw,1.9rem)] font-bold leading-none tabular-nums text-warm-ink">
                     {item.n}
@@ -445,9 +446,9 @@ export default async function Home() {
             {STEPS.map((s, i) => (
               <li
                 key={s.title}
-                className="border border-border bg-card p-6 text-center sm:p-7"
+                className={cn(R_CARD, "border border-border bg-card p-6 text-center sm:p-7")}
               >
-                <span className="mx-auto grid size-14 place-items-center border border-border text-primary-ink">
+                <span className={cn(R_CARD, "mx-auto grid size-14 place-items-center border border-border text-primary-ink")}>
                   <Ic icon={s.icon} className="size-6" />
                 </span>
                 <p className={cn(MICRO, "mt-5 text-muted-foreground")}>
@@ -685,9 +686,9 @@ function PlaceTile({ p }: { p: Tile }) {
   return (
     <Link
       href={`/diem-den/${p.slug}`}
-      className="group flex h-full flex-col border border-border bg-card p-2 transition-colors duration-200 hover:border-foreground"
+      className={cn(R_CARD, "group flex h-full flex-col border border-border bg-card p-2 transition-colors duration-200 hover:border-foreground")}
     >
-      <span className="relative block aspect-[4/3] overflow-hidden bg-muted">
+      <span className={cn(R_BADGE, "relative block aspect-[4/3] overflow-hidden bg-muted")}>
         <Image
           src={coverUrl(p.images, p.slug, 560, 420)}
           alt=""
@@ -724,7 +725,7 @@ function LeadTile({ p, thumbs }: { p: Tile; thumbs: Tile[] }) {
   return (
     <Link
       href={`/diem-den/${p.slug}`}
-      className="group relative isolate flex min-h-[22rem] flex-col justify-end overflow-hidden bg-muted p-6 sm:min-h-[26rem] sm:p-8 lg:min-h-full"
+      className={cn(R_CARD, "group relative isolate flex min-h-[22rem] flex-col justify-end overflow-hidden bg-muted p-6 sm:min-h-[26rem] sm:p-8 lg:min-h-full")}
     >
       <Image
         src={coverUrl(p.images, p.slug, 1200, 900)}
@@ -746,7 +747,7 @@ function LeadTile({ p, thumbs }: { p: Tile; thumbs: Tile[] }) {
           {thumbs.map((t) => (
             <span
               key={t.slug}
-              className="relative block size-14 overflow-hidden bg-card/20 ring-2 ring-white/70"
+              className={cn(R_BADGE, "relative block size-14 overflow-hidden bg-card/20 ring-2 ring-white/70")}
             >
               <Image
                 src={coverUrl(t.images, t.slug, 160, 160)}
@@ -858,7 +859,7 @@ type PostRow = {
 function PostTile({ p }: { p: PostRow }) {
   return (
     <Link href={`/blog/${p.slug}`} className="group flex flex-col">
-      <span className="relative block aspect-[16/10] overflow-hidden bg-muted">
+      <span className={cn(R_CARD, "relative block aspect-[16/10] overflow-hidden bg-muted")}>
         <Image
           src={coverUrl(p.images, p.slug, 640, 400)}
           alt=""

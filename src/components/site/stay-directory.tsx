@@ -7,6 +7,7 @@ import {
   ShieldCheck,
 } from "@/components/icons";
 import { cn } from "@/lib/utils";
+import { R_BADGE, R_CARD, R_CTRL } from "@/lib/radius";
 import { coverUrl } from "@/lib/place-image";
 import { ACCOMMODATION_CATEGORY_LABELS, label } from "@/lib/listing-labels";
 import { SectionHeading } from "@/components/site/section-heading";
@@ -93,7 +94,7 @@ export function StayDirectory({
           Danh bạ liên hệ chính chủ
         </span>
         {verifiedTotal > 0 ? (
-          <span className="inline-flex items-center gap-1.5 border border-border px-2.5 py-1 text-xs font-semibold text-primary-ink">
+          <span className={cn(R_CTRL, "inline-flex items-center gap-1.5 border border-border px-2.5 py-1 text-xs font-semibold text-primary-ink")}>
             <BadgeCheck className="size-3.5 shrink-0" aria-hidden />
             {`${verifiedTotal}${total ? `/${total}` : ""} đã xác minh chính chủ`}
           </span>
@@ -149,9 +150,9 @@ function StayTile({ s, priority }: { s: StayEntry; priority: boolean }) {
     <li className="h-full">
       <Link
         href={`/luu-tru/${s.slug}`}
-        className="group flex h-full flex-col border border-border bg-card p-2 transition-colors duration-200 hover:border-foreground"
+        className={cn(R_CARD, "group flex h-full flex-col border border-border bg-card p-2 transition-colors duration-200 hover:border-foreground")}
       >
-        <span className="relative block aspect-[4/3] overflow-hidden bg-muted">
+        <span className={cn(R_BADGE, "relative block aspect-[4/3] overflow-hidden bg-muted")}>
           <Image
             src={coverUrl(s.images, s.slug, 800, 600)}
             alt=""

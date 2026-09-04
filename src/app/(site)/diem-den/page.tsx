@@ -232,12 +232,10 @@ export default async function DiemDenPage() {
                   <HeroLink
                     href="/dia-diem"
                     label={`Xem ${spotCount} địa điểm`}
-                    className="rounded-[4px] [&>span]:rounded-[4px]"
                   />
                   <HeroLink
                     href="/ban-do"
                     label="Mở bản đồ du lịch"
-                    className="rounded-[4px] [&>span]:rounded-[4px]"
                   />
                 </div>
                 </Rise>

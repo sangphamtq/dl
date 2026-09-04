@@ -155,7 +155,6 @@ export function DestinationFilter({
               ariaLabel="Chuyển nhanh theo miền"
               resetKey={`${query}|${sort}`}
               indicator="solid"
-              shapeClassName={R_CTRL}
               tabClassName={cn(MICRO, "h-9 px-4 sm:px-5")}
             />
           </div>

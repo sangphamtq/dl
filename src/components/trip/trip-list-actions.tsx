@@ -46,7 +46,7 @@ export function NewTripButton() {
       disabled={pending}
       // Mép vuông + nhãn nhỏ in hoa, cùng vật liệu nút của bộ biên tập. Giữ
       // nền CAM: đây vẫn là hành động chính duy nhất của trang.
-      className="h-11 rounded-none bg-warm px-5 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-warm-foreground hover:bg-warm/90"
+      className="h-11 rounded-[4px] bg-warm px-5 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-warm-foreground hover:bg-warm/90"
     >
       {pending ? (
         <Loader2 className="size-4 animate-spin" aria-hidden />

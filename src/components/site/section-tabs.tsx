@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { R_CTRL } from "@/lib/radius";
 
 // Thanh chuyển nhanh giữa các section của một trang danh sách — VIÊN SÁNG TRƯỢT
 // bám theo section đang xem.
@@ -37,12 +38,10 @@ export function SectionTabs({
    */
   resetKey,
   /**
-   * Bo góc của viên sáng + vùng bấm. Mặc định `rounded-full` (viên thuốc, khớp
-   * với phần lớn điều khiển trong site). Trang nào chạy ngôn ngữ VUÔNG thì
-   * truyền `rounded-[3px]`/`rounded-none` để tab không thành thứ duy nhất còn
-   * bo tròn trong thanh lọc.
+   * Bo góc của viên sáng + vùng bấm. Mặc định `R_CTRL` — bộ bo góc chung của
+   * site (xem `lib/radius.ts`). Truyền giá trị khác chỉ khi có lý do riêng.
    */
-  shapeClassName = "rounded-full",
+  shapeClassName = R_CTRL,
   /**
    * Hình của dấu chỉ mục đang xem.
    *  · `pill` (mặc định): viên nền `primary/10` ôm lấy nhãn — nổi, hợp thanh

@@ -28,6 +28,11 @@ trên**, không phải mặc định nên dùng.
 - Hằng nằm ở **`src/lib/radius.ts`**, ghép bằng `cn()` — đừng rắc số cứng và đừng
   khai lại trong từng component. File đó không có `"use client"` nên Server
   Component lẫn Client Component đều import được.
+- Vật liệu dùng chung đã mang sẵn bo góc: `CtaButton`, `HeroLink`, `PlaceCard`,
+  `SectionTabs`, mũi tên của `Rail`. **Đừng truyền `className` bo góc riêng cho
+  chúng ở từng trang** — sẽ lệch giữa các trang.
+- Ảnh lồng trong thẻ có padding lấy **`R_BADGE`**, không lấy `R_CARD`: bán kính
+  trong phải nhỏ hơn bán kính ngoài trừ đi phần đệm.
 - Component shadcn thêm mới mang sẵn `rounded-md`/`rounded-lg` (6/8px), lớn hơn bộ
   trên — chỉnh tay khi thêm.
 - Nhiều nút nằm chung một khung có viền: **bo ở KHUNG + `overflow-hidden`**, phần tử

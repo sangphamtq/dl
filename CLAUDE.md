@@ -908,6 +908,29 @@ components.json                  # cấu hình shadcn (style, alias, base color)
   chụp file đó; iframe cho viewport CSS đúng bằng bề rộng đặt ra.
 - Trước khi báo "đã xong", chạy `pnpm exec tsc --noEmit` và `pnpm lint` để chắc không lỗi.
 
+## Màn chờ chuyển trang (`loading.tsx`)
+
+`PageLoading` (`components/site/page-loading.tsx`) là fallback dùng chung. Nhưng chỗ ĐẶT
+nó mới là phần dễ sai:
+
+> ⚠️ **`loading.tsx` phải nằm trong một SEGMENT URL THẬT.** `(site)` là **route group** —
+> nó không tạo segment nào trong URL, nên `(site)/loading.tsx` **không chạy** cho các route
+> lồng bên dưới. Đã đo từng cấu hình: chỉ `(site)/loading.tsx` → ❌; thêm `diem-den/loading.tsx`
+> (segment cha) → ✅; hoặc chỉ `diem-den/[placeSlug]/loading.tsx` (segment đổi) → ✅. Một
+> trong hai là đủ; dự án đặt cả hai để mọi lối vào đều có.
+>
+> Lỗi này **không có gì báo**: typecheck sạch, lint sạch, build sạch, trang vẫn chạy — chỉ
+> là màn chờ im lặng. Vì vậy có **`pnpm check:loading`**: mở Chrome headless qua CDP, bóp
+> mạng xuống 3G, BẤM THẬT một link rồi xem `.page-loading` có vào DOM không. Thêm route
+> mới thì thêm một dòng vào `CASES` trong `scripts/check-loading.mjs`.
+
+- Màn chờ **hoãn 120ms** mới hiện (`.page-loading` trong `globals.css`) — chuyển trang nào
+  xong nhanh hơn thế thì không ai thấy gì. Nên đo trên mạng chậm, đừng kết luận từ máy dev.
+- **Chưa đặt cho các segment tab lồng nhau** (`diem-den/[placeSlug]/[loai]`, `.../ban-do`,
+  `.../cong-dong`): ở đó hero + `PlaceTabs` giữ nguyên, chỉ vùng dưới đổi, nên một màn chờ
+  `min-h-svh` sẽ đội trang cao vọt. Cần thì phải làm fallback nội tuyến riêng, đừng dùng
+  `PageLoading`.
+
 ## PWA (cài được lên màn hình chính + dùng khi mất sóng)
 
 Site là một PWA. Các mảnh ghép:
@@ -1232,17 +1255,12 @@ bao xa, đi chung chuyến có nổi không) thì không có chỗ nào. Nay pan
 **Ngôn ngữ hình khối lấy nguyên từ `/diem-den`** (`destination-filter.tsx`) — hai trang nói
 về cùng một tập nội dung, người dùng đi qua lại giữa chúng:
 
-> ⚠️ **HAI TRANG ĐANG LỆCH NHAU (2026-09-04).** `/diem-den` đã chuyển sang bộ bo góc
-> nhỏ (`R_CARD` 6px · `R_CTRL` 4px · `R_BADGE` 3px, khai ở đầu `destination-filter.tsx`),
-> bỏ ring viền quanh ảnh, và đổi dữ kiện đáy thẻ từ lưới gạch chia cột sang một hàng
-> ngăn bằng KHOẢNG TRẮNG. Con số, lý do và bốn mức đã bị loại: xem
-> [`.claude/skills/design/SKILL.md`](.claude/skills/design/SKILL.md) §1 — **đừng chép
-> lại vào đây, một quy ước chỉ nên có một nguồn.**
->
-> `/ban-do` **vẫn vuông hoàn toàn** — cố ý hoãn để duyệt hướng trên một trang trước.
-> Đồng bộ nốt thì sửa: chip lọc, nút điều khiển bản đồ, nút zoom Leaflet ép vuông trong `globals.css`, `.dl-place-pin`,
-> `.dl-trip-pin` và các lớp `.dl-pop*`. Mô tả "vuông hết" bên dưới là mô tả `/ban-do`
-> hiện tại, KHÔNG còn là mô tả `/diem-den`.
+> ⚠️ **`/ban-do` CHƯA theo bộ bo góc chung (2026-09-05).** Toàn bộ trang công khai đã
+> chuyển sang `R_CARD` 6px · `R_CTRL` 4px · `R_BADGE` 3px (`lib/radius.ts`, xem
+> [`.claude/skills/design/SKILL.md`](.claude/skills/design/SKILL.md)); riêng `/ban-do`
+> vẫn vuông. Đồng bộ nốt thì sửa: chip lọc, nút điều khiển bản đồ, nút zoom Leaflet ép
+> vuông trong `globals.css`, `.dl-place-pin`, `.dl-trip-pin` và các lớp `.dl-pop*`.
+> Mô tả "vuông hết" bên dưới là mô tả `/ban-do` hiện tại, KHÔNG còn là mô tả `/diem-den`.
 
 - **Vuông hết, không `rounded-full`/`rounded-xl`**: chip lọc vuông (bật = `bg-foreground
   text-background`), nút điều khiển bản đồ vuông, nút zoom của Leaflet ép vuông trong

@@ -282,7 +282,7 @@ export function PlanTripButton({
         // đây vẫn là CTA cam duy nhất của trang điểm đến (quy ước ở
         // docs/lich-trinh.md §6b) — đổi hình, không đổi vai.
         className={cn(
-          "rounded-none bg-warm text-warm-foreground hover:bg-warm/90",
+          "rounded-[4px] bg-warm text-warm-foreground hover:bg-warm/90",
           className,
         )}
       >

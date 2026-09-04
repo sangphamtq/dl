@@ -34,7 +34,7 @@ export function SortSelect({ value }: { value: string }) {
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="h-9 appearance-none border border-border bg-transparent pl-3 pr-8 text-[0.8125rem] font-medium text-foreground outline-none transition-colors hover:border-foreground focus:border-foreground"
+          className="h-9 appearance-none rounded-[4px] border border-border bg-transparent pl-3.5 pr-8 text-[0.8125rem] font-medium text-foreground outline-none transition-colors hover:border-foreground focus:border-foreground"
         >
           {OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>

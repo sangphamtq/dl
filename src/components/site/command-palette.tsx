@@ -55,7 +55,7 @@ function HitItem({ h, onSelect }: { h: SearchHit; onSelect: () => void }) {
     <CommandItem
       value={h.href}
       onSelect={onSelect}
-      className="gap-3 rounded-none px-3 py-2.5"
+      className="gap-3 rounded-[4px] px-3 py-2.5"
     >
       {createElement(iconFor(h), {
         className: "size-5 shrink-0 text-muted-foreground",
@@ -83,7 +83,7 @@ function PlaceHitItem({ h, onSelect }: { h: SearchHit; onSelect: () => void }) {
     <CommandItem
       value={h.href}
       onSelect={onSelect}
-      className="gap-3 rounded-none px-2 py-2"
+      className="gap-3 rounded-[4px] px-2 py-2"
     >
       <span className="relative size-11 shrink-0 overflow-hidden bg-muted ring-1 ring-inset ring-border">
         {h.image ? (
@@ -127,7 +127,7 @@ function SuggestionCard({
     <CommandItem
       value={h.href}
       onSelect={onSelect}
-      className="gap-3 rounded-none px-2 py-1.5"
+      className="gap-3 rounded-[4px] px-2 py-1.5"
     >
       {/* Ô VUÔNG 40px, đúng bằng dấu chân của ảnh tròn cũ. Đã thử khung 3/2
           rộng 56px: phần lớn điểm đến chưa có ảnh bìa nên lưới sáu gợi ý thành
@@ -234,7 +234,7 @@ export function CommandPalette({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="top-[10vh] w-[calc(100%-1.5rem)] max-w-[calc(100%-1.5rem)] translate-y-0 gap-0 overflow-hidden rounded-none border-border p-0 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.45)] sm:max-w-2xl"
+        className="top-[10vh] w-[calc(100%-1.5rem)] max-w-[calc(100%-1.5rem)] translate-y-0 gap-0 overflow-hidden rounded-[4px] border-border p-0 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.45)] sm:max-w-2xl"
       >
         <DialogTitle className="sr-only">Tìm kiếm</DialogTitle>
         <DialogDescription className="sr-only">
@@ -299,7 +299,7 @@ export function CommandPalette({
                 <CommandItem
                   value="__xem-tat-ca__"
                   onSelect={() => go(`/tim-kiem?q=${encodeURIComponent(term)}`)}
-                  className="mt-1 gap-3 rounded-none border-t border-border px-3 py-3 text-foreground"
+                  className="mt-1 gap-3 rounded-[4px] border-t border-border px-3 py-3 text-foreground"
                 >
                   <Search className="size-4" />
                   <span className={cn(MICRO)}>

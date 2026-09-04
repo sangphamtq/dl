@@ -46,7 +46,7 @@ function Monogram({ name, small }: { name: string | null; small?: boolean }) {
     <span
       aria-hidden
       className={cn(
-        "grid shrink-0 place-items-center rounded-[2px] bg-[#1f2226] font-semibold uppercase text-white dark:bg-white dark:text-[#1f2226]",
+        "grid shrink-0 place-items-center rounded-[3px] bg-[#1f2226] font-semibold uppercase text-white dark:bg-white dark:text-[#1f2226]",
         small ? "size-7 text-[0.6rem]" : "size-9 text-xs",
       )}
     >

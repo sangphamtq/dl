@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight, Eye, Sunrise } from "@/components/icons";
 import { cn } from "@/lib/utils";
+import { R_BADGE, R_CARD } from "@/lib/radius";
 import { coverUrl } from "@/lib/place-image";
 import {
   EATERY_CATEGORY_LABELS,
@@ -165,9 +166,9 @@ function VenueTile({
     <li className="h-full">
       <Link
         href={`${href}#eatery-${v.slug}`}
-        className="group flex h-full flex-col border border-border bg-card p-2 transition-colors duration-200 hover:border-foreground"
+        className={cn(R_CARD, "group flex h-full flex-col border border-border bg-card p-2 transition-colors duration-200 hover:border-foreground")}
       >
-        <span className="relative block aspect-[4/3] overflow-hidden bg-muted">
+        <span className={cn(R_BADGE, "relative block aspect-[4/3] overflow-hidden bg-muted")}>
           <Image
             src={coverUrl(v.images, v.slug, 800, 600)}
             alt=""

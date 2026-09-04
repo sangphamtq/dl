@@ -192,12 +192,10 @@ export default async function DiaDiemPage({
                 <HeroLink
                   href="/diem-den"
                   label={`Xem ${destCount} điểm đến`}
-                  className="rounded-[4px] [&>span]:rounded-[4px]"
                 />
                 <HeroLink
                   href="/ban-do"
                   label="Mở bản đồ du lịch"
-                  className="rounded-[4px] [&>span]:rounded-[4px]"
                 />
               </div>
             </Rise>

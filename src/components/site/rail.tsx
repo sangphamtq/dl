@@ -3,6 +3,7 @@
 import { Children, useEffect, useState } from "react";
 import { WheelGesturesPlugin } from "embla-carousel-wheel-gestures";
 import { cn } from "@/lib/utils";
+import { R_CTRL } from "@/lib/radius";
 import {
   Carousel,
   CarouselContent,
@@ -38,9 +39,9 @@ export function Rail({
   meta?: React.ReactNode;
 }) {
   const arrowInline =
-    "static hidden size-9 shrink-0 translate-y-0 rounded-none border-0 bg-transparent text-foreground opacity-100 shadow-none transition-colors hover:bg-foreground hover:text-background disabled:cursor-default disabled:bg-transparent disabled:text-muted-foreground/30 sm:inline-flex";
+    R_CTRL + " static hidden size-9 shrink-0 translate-y-0 border-0 bg-transparent text-foreground opacity-100 shadow-none transition-colors hover:bg-foreground hover:text-background disabled:cursor-default disabled:bg-transparent disabled:text-muted-foreground/30 sm:inline-flex";
   const arrowOverlay =
-    "left-3 top-[36%] hidden size-10 border-0 bg-black/45 text-white opacity-0 shadow-lg backdrop-blur-md transition-all pointer-events-none hover:bg-black/65 hover:text-white disabled:cursor-default disabled:bg-black/25 disabled:opacity-0 disabled:pointer-events-auto group-hover/rail:pointer-events-auto group-hover/rail:opacity-100 sm:inline-flex";
+    R_CTRL + " left-3 top-[36%] hidden size-10 border-0 bg-black/45 text-white opacity-0 shadow-lg backdrop-blur-md transition-all pointer-events-none hover:bg-black/65 hover:text-white disabled:cursor-default disabled:bg-black/25 disabled:opacity-0 disabled:pointer-events-auto group-hover/rail:pointer-events-auto group-hover/rail:opacity-100 sm:inline-flex";
   const arrowBase = heading ? arrowInline : arrowOverlay;
 
   return (

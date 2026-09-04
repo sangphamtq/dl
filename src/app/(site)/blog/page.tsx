@@ -17,6 +17,7 @@ import {
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import { cn } from "@/lib/utils";
+import { R_BADGE, R_CARD } from "@/lib/radius";
 import { coverUrl } from "@/lib/place-image";
 import { POST_CATEGORY_LABELS, label } from "@/lib/listing-labels";
 import { Pagination } from "@/components/pagination";
@@ -52,7 +53,7 @@ const MICRO = "text-[0.6rem] font-semibold uppercase tracking-[0.14em]";
 
 // Khung ảnh dùng chung. MÉP VUÔNG — cùng hình khối với thẻ ở `/diem-den` và
 // `/dia-diem`; bản trước bo `rounded-2xl`/`rounded-3xl`.
-const SHOT = "overflow-hidden bg-muted";
+const SHOT = `${R_CARD} overflow-hidden bg-muted`;
 // Vành sáng mảnh vẽ bên trong mép ảnh, đậm lên khi rê chuột — đúng vành của thẻ
 // điểm đến (`ring-white/12` → `ring-white/55`), thay cho vành mực tĩnh.
 const RING =
@@ -479,11 +480,11 @@ export default async function BlogPage({
                       <span aria-hidden className={SCRIM} />
                     </div>
                     <span aria-hidden className={RING} />
-                    {/* Huy hiệu "Nổi bật" y hệt thẻ điểm đến: khối TRẮNG vuông,
+                    {/* Huy hiệu "Nổi bật" y hệt thẻ điểm đến: khối TRẮNG bo nhẹ,
                         chữ mực, ngôi sao cam đậm — thay cho viên cam bo tròn.
                         Trên một tấm ảnh, khối trắng đọc rõ hơn mà không giành
                         vai với chính tấm ảnh. */}
-                    <span className="absolute right-3 top-3 inline-flex items-center gap-1.5 bg-white/95 py-1 pl-2 pr-2.5 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-neutral-900 shadow-sm backdrop-blur-sm">
+                    <span className={cn(R_BADGE, "absolute right-3 top-3 inline-flex items-center gap-1.5 bg-white/95 py-1 pl-2.5 pr-3 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-neutral-900 shadow-sm backdrop-blur-sm")}>
                       <Star className="size-3 shrink-0 text-[#a34c00]" aria-hidden />
                       Nổi bật
                     </span>
@@ -517,7 +518,7 @@ export default async function BlogPage({
                         // là bằng đúng chiều cao thẻ lead bên trái. Để chúng tự
                         // cao theo nội dung thì cột phải hụt gần 200px so với
                         // ảnh lớn bên cạnh, hở một mảng trống ở đáy.
-                        className="group grid flex-1 grid-cols-[8rem_1fr] gap-4 overflow-hidden border border-border transition-colors duration-200 hover:border-foreground"
+                        className={cn(R_CARD, "group grid flex-1 grid-cols-[8rem_1fr] gap-4 overflow-hidden border border-border transition-colors duration-200 hover:border-foreground")}
                       >
                         <div className="relative min-h-[6.5rem] overflow-hidden bg-muted">
                           <Image
@@ -602,7 +603,7 @@ export default async function BlogPage({
                   ))}
                 </div>
               ) : (
-                <div className="mt-8 border border-dashed border-border py-16 text-center">
+                <div className={cn(R_CARD, "mt-8 border border-dashed border-border py-16 text-center")}>
                   <MapPin
                     className="mx-auto size-8 text-muted-foreground/60"
                     aria-hidden

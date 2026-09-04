@@ -7,6 +7,7 @@ import { coverUrl } from "@/lib/place-image";
 import { ACCOMMODATION_CATEGORY_LABELS, label } from "@/lib/listing-labels";
 import { getSettings } from "@/lib/settings";
 import { cn } from "@/lib/utils";
+import { R_BADGE, R_CARD } from "@/lib/radius";
 
 export const metadata = {
   title: "Giới thiệu",
@@ -321,9 +322,9 @@ export default async function GioiThieuPage() {
                   <figure className="mt-8 max-w-sm">
                     <Link
                       href={`/luu-tru/${sampleStay.slug}`}
-                      className="group flex flex-col border border-border bg-card p-2 transition-colors duration-200 hover:border-foreground"
+                      className={cn(R_CARD, "group flex flex-col border border-border bg-card p-2 transition-colors duration-200 hover:border-foreground")}
                     >
-                      <span className="relative block aspect-[4/3] overflow-hidden bg-muted">
+                      <span className={cn(R_BADGE, "relative block aspect-[4/3] overflow-hidden bg-muted")}>
                         <Image
                           src={coverUrl(sampleStay.images, sampleStay.slug, 640, 480)}
                           alt=""

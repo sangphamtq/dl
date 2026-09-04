@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { cn } from "@/lib/utils";
+import { R_BADGE, R_CARD } from "@/lib/radius";
 import Image from "next/image";
 import { Ic } from "@/components/icon";
 import { coverUrl } from "@/lib/place-image";
@@ -17,9 +19,9 @@ export function PlaceCard({ place }: { place: PlaceCardData }) {
   return (
     <Link
       href={`/diem-den/${place.slug}`}
-      className="group flex flex-col border border-border bg-card p-3 transition-colors hover:border-foreground"
+      className={cn(R_CARD, "group flex flex-col border border-border bg-card p-3 transition-colors hover:border-foreground")}
     >
-      <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+      <div className={cn(R_BADGE, "relative aspect-[4/3] overflow-hidden bg-muted")}>
         <Image
           src={coverUrl(place.images, place.slug)}
           alt={place.name}

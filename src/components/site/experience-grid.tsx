@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Ic } from "@/components/icon";
 import { cn } from "@/lib/utils";
+import { R_CARD } from "@/lib/radius";
 import { SectionHeading } from "@/components/site/section-heading";
 
 export type ExperienceItem = {
@@ -89,7 +90,7 @@ function Card({ it }: { it: ExperienceItem }) {
   return (
     <li>
       <Link href={`/hoat-dong/${it.slug}`} className="group block">
-        <span className="relative block aspect-[4/5] overflow-hidden bg-muted">
+        <span className={cn(R_CARD, "relative block aspect-[4/5] overflow-hidden bg-muted")}>
           <Image
             src={it.image}
             alt=""

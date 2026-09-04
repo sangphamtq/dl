@@ -119,7 +119,7 @@ export function PlaceHeroCenter({
                 // Nút CÓ CHỮ thì vuông; nút chỉ-icon (chia sẻ, cuộn) giữ hình
                 // tròn — ranh giới này áp cho cả trang: chữ = khối, điều khiển
                 // = viên tròn.
-                className="h-9 gap-2 rounded-none border border-white/30 px-4 text-[0.6rem] font-semibold uppercase tracking-[0.14em] hover:border-white/70"
+                className="h-9 gap-2 rounded-[4px] border border-white/30 px-4 text-[0.6rem] font-semibold uppercase tracking-[0.14em] hover:border-white/70"
               />
             )}
             <ShareButton
