@@ -252,7 +252,7 @@ export function DestinationFilter({
           {sections.map((g, i) => {
             const heading = (
               <RiseInView distance={14}>
-              <h2 className="font-[family-name:var(--font-serif)] text-[clamp(1.25rem,2.8vw,2rem)] font-normal uppercase leading-[1.2] tracking-[0.1em] sm:tracking-[0.14em]">
+              <h2 className="font-[family-name:var(--font-display)] text-[clamp(1.25rem,2.8vw,2rem)] font-normal uppercase leading-[1.2] tracking-[0.1em] sm:tracking-[0.14em]">
                 {g.label}
               </h2>
               </RiseInView>

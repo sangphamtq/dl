@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { HeroLink } from "@/components/site/hero-link";
 import Image from "next/image";
-import { Playfair_Display } from "next/font/google";
 import { prisma } from "@/lib/prisma";
 import { Ic } from "@/components/icon";
 import { cn } from "@/lib/utils";
@@ -13,13 +12,6 @@ import { SORTS, type SortKey } from "@/lib/spot-sort";
 import { SpotCard, type SpotItem } from "@/components/site/spot-card";
 import type { Prisma } from "@/generated/prisma/client";
 import { SpotCategory } from "@/generated/prisma/enums";
-
-const serif = Playfair_Display({
-  variable: "--font-serif",
-  subsets: ["latin", "vietnamese"],
-  weight: ["400"],
-  display: "swap",
-});
 
 const pub = { status: "published" as const };
 
@@ -158,7 +150,7 @@ export default async function DiaDiemPage({
   };
 
   return (
-    <div className={cn("flex flex-1 flex-col", serif.variable)}>
+    <div className="flex flex-1 flex-col">
       <main className="flex-1">
         <section className="relative isolate overflow-hidden">
           <Image
@@ -176,7 +168,7 @@ export default async function DiaDiemPage({
 
           <div className="relative mx-auto flex min-h-[clamp(15rem,22vw,18.5rem)] max-w-7xl flex-col items-center justify-center px-4 py-12 text-center sm:px-6 lg:min-h-[clamp(19rem,26vw,22.5rem)] lg:pb-12 lg:pt-[7rem]">
             <Curtain>
-              <h1 className="font-[family-name:var(--font-serif)] text-[clamp(2.5rem,7.5vw,5.5rem)] font-normal uppercase leading-[1.15] tracking-[0.12em] text-white [text-shadow:0_2px_40px_rgba(0,0,0,0.62)] sm:tracking-[0.18em]">
+              <h1 className="font-[family-name:var(--font-display)] text-[clamp(2.5rem,7.5vw,5.5rem)] font-normal uppercase leading-[1.15] tracking-[0.12em] text-white [text-shadow:0_2px_40px_rgba(0,0,0,0.62)] sm:tracking-[0.18em]">
                 Địa điểm
               </h1>
             </Curtain>

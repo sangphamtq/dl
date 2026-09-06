@@ -129,7 +129,7 @@ export function SectionHeading({
         className={cn(
           "min-w-0 text-foreground",
           serif
-            ? "font-[family-name:var(--font-serif)] font-normal uppercase leading-[1.2] tracking-[0.1em] sm:tracking-[0.14em]"
+            ? "font-[family-name:var(--font-display)] font-normal uppercase leading-[1.2] tracking-[0.1em] sm:tracking-[0.14em]"
             : "font-[family-name:var(--font-display)] font-bold leading-[1.15] tracking-[-0.03em]",
           size === "lead"
             ? serif

@@ -97,7 +97,7 @@ export function PlaceHero({
               )}
             </div>
 
-            <h1 className="mt-2 text-balance font-[family-name:var(--font-serif)] text-[clamp(1.875rem,5vw,3rem)] font-normal uppercase leading-[1.1] tracking-[0.06em] text-foreground sm:tracking-[0.1em]">
+            <h1 className="mt-2 text-balance font-[family-name:var(--font-display)] text-[clamp(1.875rem,5vw,3rem)] font-normal uppercase leading-[1.1] tracking-[0.06em] text-foreground sm:tracking-[0.1em]">
               {place.name}
             </h1>
             {place.tagline && (

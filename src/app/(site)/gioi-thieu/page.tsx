@@ -1,6 +1,5 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Playfair_Display } from "next/font/google";
 import { ArrowRight, BadgeCheck, Mail, MapPin } from "@/components/icons";
 import { prisma } from "@/lib/prisma";
 import { coverUrl } from "@/lib/place-image";
@@ -14,15 +13,6 @@ export const metadata = {
   description:
     "Halivivu là trang tra cứu du lịch Việt Nam: ăn gì, chơi gì, ở đâu, đi lại thế nào cho từng nơi — cộng danh bạ chỗ ở đã xác minh chính chủ.",
 };
-
-// Cùng họ chữ tiêu đề với `/diem-den`, `/dia-diem`, `/blog` — khai TẠI TRANG vì
-// `--font-serif` không có trong root layout.
-const serif = Playfair_Display({
-  variable: "--font-serif",
-  subsets: ["latin", "vietnamese"],
-  weight: ["400"],
-  display: "swap",
-});
 
 // Nhãn nhỏ in hoa — CÙNG hằng với `destination-filter.tsx`.
 const MICRO = "text-[0.6rem] font-semibold uppercase tracking-[0.14em]";
@@ -148,7 +138,7 @@ export default async function GioiThieuPage() {
     ).find(Boolean) ?? verifiedPool[0];
 
   return (
-    <div className={cn("flex flex-1 flex-col", serif.variable)}>
+    <div className="flex flex-1 flex-col">
 
       <main className="flex-1">
         {/* ── MỞ ĐẦU ────────────────────────────────────────────────────────
@@ -164,7 +154,7 @@ export default async function GioiThieuPage() {
                 riêng ngắn ("VIỆT NAM") nên in hoa giãn chữ hợp; đây là một CÂU
                 bốn vế — in hoa cỡ 4rem thì thành khẩu hiệu quảng cáo và đọc
                 chậm hẳn. Giữ đúng giọng serif, bỏ phần hét. */}
-            <h1 className="max-w-4xl text-balance font-[family-name:var(--font-serif)] text-[clamp(2.25rem,5.6vw,4rem)] font-normal leading-[1.12] tracking-[-0.01em]">
+            <h1 className="max-w-4xl text-balance font-[family-name:var(--font-display)] text-[clamp(2.25rem,5.6vw,4rem)] font-normal leading-[1.12] tracking-[-0.01em]">
               Ăn gì, chơi gì, ở đâu, đi lại thế nào —{" "}
               <span className="text-muted-foreground">cho từng nơi một.</span>
             </h1>
@@ -307,7 +297,7 @@ export default async function GioiThieuPage() {
                   <BadgeCheck className="size-3.5" aria-hidden />
                   Đã xác minh chính chủ
                 </span>
-                <h2 className="mt-4 max-w-md text-balance font-[family-name:var(--font-serif)] text-[clamp(1.375rem,2.8vw,2rem)] font-normal uppercase leading-[1.2] tracking-[0.1em] sm:tracking-[0.14em]">
+                <h2 className="mt-4 max-w-md text-balance font-[family-name:var(--font-display)] text-[clamp(1.375rem,2.8vw,2rem)] font-normal uppercase leading-[1.2] tracking-[0.1em] sm:tracking-[0.14em]">
                   Chỗ ở là phần chúng tôi làm khác
                 </h2>
 
@@ -458,7 +448,7 @@ export default async function GioiThieuPage() {
                   chúng tôi một câu" thì đó là một lời hứa dẫn vào ngõ cụt —
                   đúng loại chữ mà cả trang này đang cố tránh. Không có kênh nào
                   thì đóng lại bằng một câu tự nó đứng được. */}
-              <h2 className="mt-5 max-w-md text-balance font-[family-name:var(--font-serif)] text-[clamp(1.25rem,2.6vw,1.875rem)] font-normal uppercase leading-[1.2] tracking-[0.1em] sm:tracking-[0.14em]">
+              <h2 className="mt-5 max-w-md text-balance font-[family-name:var(--font-display)] text-[clamp(1.25rem,2.6vw,1.875rem)] font-normal uppercase leading-[1.2] tracking-[0.1em] sm:tracking-[0.14em]">
                 {hasContact
                   ? "Thấy chỗ nào sai, thiếu, hoặc đã đóng cửa?"
                   : "Danh sách dài thêm sau mỗi chuyến đi"}
@@ -532,7 +522,7 @@ function Section({
   return (
     <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24">
       <div className="grid gap-8 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16">
-        <h2 className="text-balance font-[family-name:var(--font-serif)] text-[clamp(1.375rem,2.8vw,2rem)] font-normal uppercase leading-[1.2] tracking-[0.1em] sm:tracking-[0.14em] lg:sticky lg:top-24 lg:self-start">
+        <h2 className="text-balance font-[family-name:var(--font-display)] text-[clamp(1.375rem,2.8vw,2rem)] font-normal uppercase leading-[1.2] tracking-[0.1em] sm:tracking-[0.14em] lg:sticky lg:top-24 lg:self-start">
           {title}
         </h2>
         <div>{children}</div>

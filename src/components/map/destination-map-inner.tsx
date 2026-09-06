@@ -15,6 +15,7 @@ import {
 } from "react-leaflet";
 import { Layers, Map as MapIcon, Maximize, Crosshair, ArrowRight } from "@/components/icons";
 import type { GeoPoint, GeoType } from "@/lib/geo";
+import { CARTO_ATTRIBUTION, cartoTileUrl } from "@/lib/basemap";
 import {
   SPOT_CATEGORY_LABELS,
   EATERY_CATEGORY_LABELS,
@@ -122,8 +123,8 @@ function BaseTiles({
     <TileLayer
       // key ép remount khi đổi theme để đổi hẳn bộ tile.
       key={style}
-      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-      url={`https://{s}.basemaps.cartocdn.com/rastertiles/${style}/{z}/{x}/{y}.png`}
+      attribution={CARTO_ATTRIBUTION}
+      url={cartoTileUrl(style)}
       subdomains="abcd"
       maxZoom={20}
     />

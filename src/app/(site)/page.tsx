@@ -1,6 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Playfair_Display } from "next/font/google";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
@@ -25,16 +24,6 @@ const dateFmt = new Intl.DateTimeFormat("vi-VN", {
   day: "2-digit",
   month: "2-digit",
   year: "numeric",
-});
-
-// Nhãn nhỏ dùng chung — cùng khuôn với thẻ ở Điểm đến / Lưu trú / Ẩm thực.
-// Cùng họ chữ tiêu đề với các trang đã chuyển giọng — khai TẠI TRANG vì
-// `--font-serif` không có trong root layout.
-const serif = Playfair_Display({
-  variable: "--font-serif",
-  subsets: ["latin", "vietnamese"],
-  weight: ["400"],
-  display: "swap",
 });
 
 const MICRO = "text-[0.6rem] font-semibold uppercase tracking-[0.14em]";
@@ -207,7 +196,7 @@ export default async function Home() {
   ];
 
   return (
-    <main className={cn("flex-1", serif.variable)}>
+    <main className="flex-1">
       {/* ── HERO — ẢNH TRÀN VIỀN, CHỮ LÀ LỜI HỨA CỦA SITE ──────────────
           Ảnh chỉ là KHÔNG KHÍ: nơi trong ảnh ghi tên ở cụm điều khiển bên phải
           (kèm link), chứ không làm chữ to nhất màn hình — trang chủ không phải
@@ -392,7 +381,7 @@ export default async function Home() {
               như mọi section khác, mà cả eyebrow ("Đi đâu bây giờ") lẫn câu dẫn
               đều chỉ diễn đạt lại đúng bốn chữ "Điểm đến nổi bật" nằm giữa
               chúng. Nút "Xem tất cả" ở cuối section gánh nốt phần dẫn. */}
-          <h2 className="text-balance text-center font-[family-name:var(--font-serif)] text-[clamp(1.375rem,2.8vw,2rem)] font-normal uppercase leading-[1.2] tracking-[0.1em] sm:tracking-[0.14em]">
+          <h2 className="text-balance text-center font-[family-name:var(--font-display)] text-[clamp(1.375rem,2.8vw,2rem)] font-normal uppercase leading-[1.2] tracking-[0.1em] sm:tracking-[0.14em]">
             Điểm đến nổi bật
           </h2>
 
@@ -434,7 +423,7 @@ export default async function Home() {
               tới lịch trình, ba bước") — mà tiêu đề ấy không mang tin gì, còn
               câu dẫn thì mang. Gộp lại thì mất một dòng và tiêu đề có việc. */}
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-balance font-[family-name:var(--font-serif)] text-[clamp(1.375rem,2.8vw,2rem)] font-normal uppercase leading-[1.2] tracking-[0.1em] sm:tracking-[0.14em]">
+            <h2 className="text-balance font-[family-name:var(--font-display)] text-[clamp(1.375rem,2.8vw,2rem)] font-normal uppercase leading-[1.2] tracking-[0.1em] sm:tracking-[0.14em]">
               Ba bước, không cần đăng nhập
             </h2>
             <p className="mt-4 text-pretty text-sm leading-relaxed text-muted-foreground">
@@ -547,7 +536,7 @@ export default async function Home() {
                     một lần, còn câu dưới nó thì lặp NGUYÊN VĂN "xem xong là
                     chốt được nơi" ở hero. Bản mới nói thứ chưa chỗ nào nói:
                     quyết định thật mà người ta cần là ĐI HAY KHÔNG. */}
-                <h2 className="text-balance font-[family-name:var(--font-serif)] text-[clamp(1.375rem,2.8vw,2.125rem)] font-normal uppercase leading-[1.2] tracking-[0.1em] text-white sm:tracking-[0.14em]">
+                <h2 className="text-balance font-[family-name:var(--font-display)] text-[clamp(1.375rem,2.8vw,2.125rem)] font-normal uppercase leading-[1.2] tracking-[0.1em] text-white sm:tracking-[0.14em]">
                   Chọn một nơi rồi tính tiếp
                 </h2>
                 <p className="mt-4 max-w-md text-pretty text-sm leading-relaxed text-[#f7e7d6] sm:text-base">

@@ -171,7 +171,7 @@ export function PlaceHeroCenter({
             in hoa hợp; cỡ hạ một bậc vì chữ serif in hoa choán chỗ hơn hẳn chữ
             display nén, để nguyên 8.5rem thì tên dài như "Phan Thiết" tràn hai
             dòng ở khổ vừa. */}
-        <h1 className="mt-4 text-balance font-[family-name:var(--font-serif)] text-[clamp(2.5rem,7.5vw,6rem)] font-normal uppercase leading-[1.05] tracking-[0.06em] text-white [text-shadow:0_2px_28px_rgba(0,0,0,0.45)] sm:tracking-[0.1em]">
+        <h1 className="mt-4 text-balance font-[family-name:var(--font-display)] text-[clamp(2.5rem,7.5vw,6rem)] font-normal uppercase leading-[1.05] tracking-[0.06em] text-white [text-shadow:0_2px_28px_rgba(0,0,0,0.45)] sm:tracking-[0.1em]">
           {place.name}
         </h1>
 

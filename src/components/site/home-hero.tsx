@@ -248,7 +248,7 @@ export function HomeHero({
                 `font-bold` thì trình duyệt tự bơm đậm và nét bị bè.
                 Nét gạch tay (`HeroMark`) và khung cắt của `.hero-line` đều đo
                 bằng `em` nên tự khớp với họ chữ mới, không phải chỉnh. */}
-            <h1 className="font-[family-name:var(--font-serif)] text-[clamp(2.4rem,5.6vw,4rem)] font-normal leading-[1.12] tracking-[-0.005em] [text-shadow:0_2px_28px_rgba(0,0,0,0.5)]">
+            <h1 className="font-[family-name:var(--font-display)] text-[clamp(2.4rem,5.6vw,4rem)] font-normal leading-[1.12] tracking-[-0.005em] [text-shadow:0_2px_28px_rgba(0,0,0,0.5)]">
               <span className="sr-only">
                 {titles[0]?.a} {titles[0]?.b}
               </span>

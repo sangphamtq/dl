@@ -788,7 +788,7 @@ Thư viện lớn khác đang dùng (đừng thêm thư viện trùng vai trò):
 
 | Mảng | Gói | Ghi chú |
 |---|---|---|
-| Bản đồ | `leaflet` + `react-leaflet` + `leaflet.markercluster` | luôn nạp động (`ssr: false`) — xem `components/map/*-inner.tsx` |
+| Bản đồ | `leaflet` + `react-leaflet` + `leaflet.markercluster` | luôn nạp động (`ssr: false`) — xem `components/map/*-inner.tsx`. Tile nền qua `lib/basemap.ts` (CARTO, cần `NEXT_PUBLIC_CARTO_KEY`) |
 | Upload ảnh | `uploadthing` + `@uploadthing/react` | route `/api/uploadthing`, `/api/editor-upload`; helper `lib/uploadthing.ts` |
 | Rich text | `@tiptap/*` | soạn thân bài `Post` → lưu **chuỗi HTML**; đọc lại phải qua `lib/sanitize.ts` |
 | Realtime | `ably` | server giữ `ABLY_API_KEY`, browser lấy token qua `/api/ably/token`. **Không có key → tự rơi về polling**, không vỡ |
@@ -871,8 +871,15 @@ components.json                  # cấu hình shadcn (style, alias, base color)
   `admin`/`editor` (chặn ở `proxy.ts` + kiểm lại trong page). Đặt admin: user đăng nhập 1
   lần (tạo bản ghi `User`) → `pnpm set-role <email> admin` → đăng xuất/đăng nhập lại để
   JWT cập nhật role mới.
-- **Biến môi trường:** secret auth ở `.env.local` (`AUTH_SECRET`, `AUTH_GOOGLE_ID/SECRET`);
-  `DATABASE_URL` ở `.env` (Prisma đọc qua `prisma.config.ts`). Cả hai đã gitignore — không commit.
+- **Biến môi trường:** tất cả nằm trong `.env` (`AUTH_SECRET`, `AUTH_GOOGLE_ID/SECRET`,
+  `DATABASE_URL` — Prisma đọc qua `prisma.config.ts`). `.gitignore` chặn `.env*` nên
+  không commit. Next vẫn nạp `.env.local` nếu bạn tạo, và nó đè lên `.env`.
+  · ⚠️ **`NEXT_PUBLIC_*` KHÔNG phải chỗ giấu bí mật** — Next nhúng thẳng giá trị vào
+    bundle trình duyệt. `NEXT_PUBLIC_CARTO_KEY` (tile nền bản đồ) buộc phải công khai
+    vì chính trình duyệt gọi tile; muốn chặn xài ké thì **giới hạn domain ở bảng điều
+    khiển CARTO**. Thiếu key thì bản đồ vẫn chạy, chỉ hiện watermark "API key required".
+  · Đổi biến `NEXT_PUBLIC_*` phải **khởi động lại dev server** — chúng được nhúng lúc
+    biên dịch, không đọc lại lúc chạy.
 - **Database/Prisma:** luôn import `prisma` từ `@/lib/prisma` (singleton), không `new
   PrismaClient()` rải rác. Sau khi sửa `schema.prisma` → chạy `prisma generate` (và
   `migrate dev` khi có DB). Schema là **nguồn chân lý**; mô hình trong tài liệu này phải khớp nó.
@@ -1255,17 +1262,16 @@ bao xa, đi chung chuyến có nổi không) thì không có chỗ nào. Nay pan
 **Ngôn ngữ hình khối lấy nguyên từ `/diem-den`** (`destination-filter.tsx`) — hai trang nói
 về cùng một tập nội dung, người dùng đi qua lại giữa chúng:
 
-> ⚠️ **`/ban-do` CHƯA theo bộ bo góc chung (2026-09-05).** Toàn bộ trang công khai đã
-> chuyển sang `R_CARD` 6px · `R_CTRL` 4px · `R_BADGE` 3px (`lib/radius.ts`, xem
-> [`.claude/skills/design/SKILL.md`](.claude/skills/design/SKILL.md)); riêng `/ban-do`
-> vẫn vuông. Đồng bộ nốt thì sửa: chip lọc, nút điều khiển bản đồ, nút zoom Leaflet ép
-> vuông trong `globals.css`, `.dl-place-pin`, `.dl-trip-pin` và các lớp `.dl-pop*`.
-> Mô tả "vuông hết" bên dưới là mô tả `/ban-do` hiện tại, KHÔNG còn là mô tả `/diem-den`.
+> **Toàn bộ trang công khai — gồm cả `/ban-do` — dùng chung bộ bo góc**
+> `R_CARD` 6px · `R_CTRL` 4px · `R_BADGE` 3px (`lib/radius.ts`; phía CSS thì ghi số
+> trực tiếp trong `globals.css` vì không import TS được). Xem
+> [`.claude/skills/design/SKILL.md`](.claude/skills/design/SKILL.md).
 
-- **Vuông hết, không `rounded-full`/`rounded-xl`**: chip lọc vuông (bật = `bg-foreground
-  text-background`), nút điều khiển bản đồ vuông, nút zoom của Leaflet ép vuông trong
-  `globals.css`. Nhãn nhỏ dùng **cùng hằng `MICRO`**; tiêu đề `VIỆT NAM` dùng **Playfair**
-  (`--font-serif` khai ngay ở `ban-do/page.tsx` vì nó không có trong root layout).
+- **Bo NHẸ, không `rounded-full`/`rounded-xl`**: chip lọc, nút điều khiển bản đồ và nút
+  zoom Leaflet đều 4px (`R_CTRL`); pin ảnh và cụm gom 4px; popup 6px. Cụm hai tab
+  "Quanh đây / Đo chuyến" bo ở KHUNG BỌC + `overflow-hidden` nên nền đậm của tab đang
+  chọn được chính khung cắt lại, khe giữa vẫn thẳng. Nhãn nhỏ dùng **cùng hằng `MICRO`**;
+  tiêu đề `VIỆT NAM` dùng `--font-display` (Be Vietnam Pro) in hoa giãn chữ.
 - **Hàng trong panel có HAI đích, tách bằng vị trí** (như thẻ lưu trú): thân hàng làm việc
   của chế độ đang bật (đặt mốc / thêm chặng), ô mũi tên bên phải mới rời sang
   `/diem-den/[slug]`. Hai phần tử anh em trong một `<li>`, KHÔNG lồng `<a>` trong `<button>`.

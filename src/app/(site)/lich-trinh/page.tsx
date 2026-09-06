@@ -1,14 +1,20 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Playfair_Display } from "next/font/google";
 import { ArrowRight, Route } from "@/components/icons";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { TripControls } from "@/components/trip/trip-controls";
+import { TRIP_SORTS, type TripSortKey } from "@/lib/trip-template-sort";
 import { cn } from "@/lib/utils";
+import { R_CARD } from "@/lib/radius";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar";
 import { coverUrl } from "@/lib/place-image";
 import { Curtain, Rise, RiseInView } from "@/components/site/reveal";
 import { HeroLink } from "@/components/site/hero-link";
-import { PlanTripButton } from "@/components/site/plan-trip-button";
 import { getPlanningTripId } from "@/app/(site)/lich-trinh/actions";
 
 // `/lich-trinh` — trang CÔNG KHAI của cả tính năng lịch trình.
@@ -34,10 +40,9 @@ import { getPlanningTripId } from "@/app/(site)/lich-trinh/actions";
 // ~8 thì lấy lại trong lịch sử git, đừng dựng lại từ đầu.
 //
 // ── PHONG CÁCH: LẤY NGUYÊN CỦA `/diem-den` ──────────────────────────────────
-// Serif in hoa giãn chữ cho tiêu đề (Playfair, `--font-serif` khai tại trang vì
-// nó không có trong root layout), nhãn `MICRO`, HÌNH KHỐI VUÔNG, và thẻ LẤY ẢNH
-// LÀM CHỦ: tên đặt GIỮA ảnh dưới lớp phủ tối, hàng dữ kiện ngăn bằng gạch mảnh
-// trắng ở đáy ảnh. Một lịch trình và một điểm đến là hai mặt của cùng một
+// Tiêu đề in hoa giãn chữ (`--font-display`), nhãn `MICRO`, bo góc theo bộ
+// chung, và thẻ LẤY ẢNH LÀM CHỦ: tên đặt GIỮA ảnh dưới lớp phủ tối, hàng dữ
+// kiện ngăn bằng khoảng trắng ở đáy ảnh. Một lịch trình và một điểm đến là hai mặt của cùng một
 // chuyến đi, người dùng đi qua lại giữa hai trang — chúng không được là hai sản
 // phẩm khác nhau.
 
@@ -46,13 +51,6 @@ export const metadata = {
   description:
     "Lịch trình gợi ý theo từng điểm đến — xem chi tiết từng ngày, giờ ước tính, rồi sao về tài khoản và sửa theo ý bạn.",
 };
-
-const serif = Playfair_Display({
-  variable: "--font-serif",
-  subsets: ["latin", "vietnamese"],
-  weight: ["400"],
-  display: "swap",
-});
 
 // CÙNG một hằng với `destination-filter.tsx` — đừng chế biến thể riêng.
 const MICRO = "text-[0.6rem] font-semibold uppercase tracking-[0.14em]";
@@ -70,11 +68,16 @@ function lengthLabel(days: number): string {
   return days > 1 ? `${days} ngày ${days - 1} đêm` : "1 ngày";
 }
 
-export default async function TripTemplatesPage() {
+export default async function TripTemplatesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ ngay?: string; "sap-xep"?: string }>;
+}) {
+  const sp = await searchParams;
   const session = await auth();
   const isAuthed = !!session?.user;
 
-  const [rows, places, planningId] = await Promise.all([
+  const [rows, planningId] = await Promise.all([
     prisma.trip.findMany({
       where: {
         isTemplate: true,
@@ -117,46 +120,8 @@ export default async function TripTemplatesPage() {
         },
       },
     }),
-    // Nơi để BẮT ĐẦU một chuyến. Lấy dư rồi lọc bỏ nơi chưa có nội dung: mời
-    // lên lịch trình cho một điểm đến rỗng là mời vào một trang trắng.
-    prisma.place.findMany({
-      where: {
-        ...pub,
-        OR: [
-          { kind: "destination" },
-          { kind: "province", treatAsDestination: true },
-        ],
-      },
-      orderBy: [{ isFeatured: "desc" }, { popularity: "desc" }, { name: "asc" }],
-      take: 18,
-      select: {
-        id: true,
-        slug: true,
-        name: true,
-        kind: true,
-        tagline: true,
-        images: coverSel,
-        parent: { select: { name: true } },
-        _count: {
-          select: {
-            spots: { where: pub },
-            eateries: { where: pub },
-            accommodations: { where: pub },
-            activities: { where: pub },
-          },
-        },
-      },
-    }),
     getPlanningTripId(),
   ]);
-
-  const starters = places
-    .filter(
-      (p) =>
-        p._count.spots + p._count.eateries + p._count.accommodations + p._count.activities >
-        0,
-    )
-    .slice(0, 8);
 
   // Chuyến đang lên lịch trình — chỉ tra khi CÓ cookie và người dùng đã đăng
   // nhập. `ownerId` trong điều kiện là để cookie của phiên trước (hoặc của máy
@@ -172,6 +137,28 @@ export default async function TripTemplatesPage() {
           },
         })
       : null;
+
+  // Lọc + sắp xếp làm Ở ĐÂY chứ không trong truy vấn: số mẫu đếm trên đầu ngón
+  // tay, mà `lengths` (các độ dài có thật) phải tính trên TOÀN BỘ mẫu — lọc ở
+  // tầng DB thì chip "2 ngày" sẽ biến mất ngay khi đang đứng ở "3 ngày".
+  const lengths = [...new Set(rows.map((t) => t.days.length))].sort(
+    (a, b) => a - b,
+  );
+  const days = sp.ngay && /^\d+$/.test(sp.ngay) ? Number(sp.ngay) : null;
+  const sort: TripSortKey =
+    (TRIP_SORTS.find((x) => x.key === sp["sap-xep"])?.key as TripSortKey) ??
+    "noi-bat";
+
+  const stopsOf = (t: (typeof rows)[number]) =>
+    t.days.reduce((n, d) => n + d._count.items, 0);
+  const visible = rows
+    .filter((t) => days === null || t.days.length === days)
+    .sort((a, b) => {
+      if (sort === "ngan-nhat") return a.days.length - b.days.length;
+      if (sort === "dai-nhat") return b.days.length - a.days.length;
+      if (sort === "nhieu-diem") return stopsOf(b) - stopsOf(a);
+      return 0; // "noi-bat" — giữ đúng thứ tự truy vấn đã sắp
+    });
 
   const covers = rows.map((t) => coverOf(t));
   // Ảnh dải mở đầu KHÔNG được trùng ảnh của bất kỳ mẫu nào bên dưới: cùng một
@@ -191,10 +178,8 @@ export default async function TripTemplatesPage() {
       ])
       .find((u) => u && !used.has(u)) ?? null;
 
-  const totalDays = rows.reduce((n, t) => n + t.days.length, 0);
-
   return (
-    <div className={cn("flex flex-1 flex-col", serif.variable)}>
+    <div className="flex flex-1 flex-col">
       <main className="flex-1 overflow-x-clip">
         {/* ── Dải mở đầu ───────────────────────────────────────────────────
             Cùng khuôn với `/diem-den`: ảnh tràn viền + lớp phủ hình bầu dục,
@@ -219,7 +204,7 @@ export default async function TripTemplatesPage() {
 
           <div className="relative mx-auto flex min-h-[clamp(15rem,22vw,18.5rem)] max-w-7xl flex-col items-center justify-center px-4 py-12 text-center sm:px-6 lg:min-h-[clamp(19rem,26vw,22.5rem)] lg:pb-12 lg:pt-[7rem]">
             <Curtain>
-              <h1 className="font-[family-name:var(--font-serif)] text-[clamp(2.5rem,7.5vw,5.5rem)] font-normal uppercase leading-[1.15] tracking-[0.12em] text-white [text-shadow:0_2px_40px_rgba(0,0,0,0.62)] sm:tracking-[0.18em]">
+              <h1 className="font-[family-name:var(--font-display)] text-[clamp(2.5rem,7.5vw,5.5rem)] font-normal uppercase leading-[1.15] tracking-[0.12em] text-white [text-shadow:0_2px_40px_rgba(0,0,0,0.62)] sm:tracking-[0.18em]">
                 Lịch trình
               </h1>
             </Curtain>
@@ -237,41 +222,63 @@ export default async function TripTemplatesPage() {
           </div>
         </section>
 
-        <div className="mx-auto max-w-7xl px-4 pb-16 pt-10 sm:px-6 sm:pb-24 sm:pt-14">
-          {/* Người đang có chuyến dở cần ĐƯỜNG QUAY LẠI, không cần một mẫu mới
-              — nên nó đứng trước cả danh sách mẫu. */}
-          {planning && (
-            <Link
-              href={`/lich-trinh/cua-toi/${planning.id}`}
-              className="group mb-12 flex items-center gap-4 border border-border bg-card px-5 py-4 transition-colors hover:border-primary/40 sm:mb-14"
-            >
-              <span className="grid size-10 shrink-0 place-items-center bg-primary/10 text-primary">
-                <Route className="size-5" aria-hidden />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className={cn(MICRO, "block text-muted-foreground")}>
-                  Đang lên lịch trình
-                </span>
-                <span className="mt-1 block truncate font-[family-name:var(--font-display)] text-lg tracking-tight">
+        {/* DẢI TRẠNG THÁI của CHÍNH NGƯỜI ĐANG XEM, không phải một thẻ nội dung.
+            Hai thứ nói "đây là của bạn", cả hai đều cần:
+              · ẢNH ĐẠI DIỆN — dấu hiệu mạnh nhất, không cần đọc chữ cũng hiểu;
+              · CÂU Ở NGÔI THỨ HAI viết thường ("Bạn đang lên lịch trình …").
+                Bản trước dùng nhãn IN HOA NHỎ `MICRO`, mà đó đúng là kiểu chữ
+                của nhãn phân loại ở các hàng mẫu ("BÌNH THUẬN · 3 NGÀY 2 ĐÊM")
+                — nên nó đọc ra như metadata của một mẫu, không phải lời hệ
+                thống nói với người dùng.
+            Nền phớt màu đã tự tách khối nên KHÔNG thêm đường kẻ. Đặt ngay dưới
+            hero: người quay lại giữa chừng cần đường về trước, chưa cần mẫu mới. */}
+        {planning && (
+          <Link
+            href={`/lich-trinh/cua-toi/${planning.id}`}
+            className="group block bg-primary/5 transition-colors hover:bg-primary/10"
+          >
+            <span className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3.5 sm:px-6">
+              <Avatar className="size-8 shrink-0 ring-2 ring-primary/20">
+                {session?.user?.image && (
+                  <AvatarImage src={session.user.image} alt="" />
+                )}
+                <AvatarFallback className="text-xs">
+                  {(session?.user?.name ?? session?.user?.email ?? "?")
+                    .charAt(0)
+                    .toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+
+              <span className="min-w-0 flex-1 text-[0.9375rem] leading-snug text-muted-foreground">
+                Bạn đang lên lịch trình{" "}
+                <span className="font-[family-name:var(--font-display)] font-medium tracking-tight text-foreground">
                   {planning.title}
                 </span>
-                <span className={cn(MICRO, "mt-1 block text-muted-foreground")}>
-                  <span className="tabular-nums text-foreground">
-                    {planning._count.days}
-                  </span>{" "}
-                  ngày ·{" "}
-                  <span className="tabular-nums text-foreground">
-                    {planning._count.items}
-                  </span>{" "}
-                  mục
-                </span>
               </span>
-              <ArrowRight
-                className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5"
-                aria-hidden
-              />
-            </Link>
-          )}
+
+              <span className={cn(MICRO, "shrink-0 text-muted-foreground")}>
+                <span className="tabular-nums text-foreground">
+                  {planning._count.days}
+                </span>{" "}
+                ngày{" "}
+                <span className="ms-3 tabular-nums text-foreground">
+                  {planning._count.items}
+                </span>{" "}
+                mục
+              </span>
+
+              <span className="flex shrink-0 items-center gap-1.5 text-[0.8125rem] font-semibold text-primary-ink">
+                Tiếp tục
+                <ArrowRight
+                  className="size-3.5 transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none"
+                  aria-hidden
+                />
+              </span>
+            </span>
+          </Link>
+        )}
+
+        <div className="mx-auto max-w-7xl px-4 pb-16 pt-10 sm:px-6 sm:pb-24 sm:pt-14">
 
           {/* ── Lịch trình mẫu ─────────────────────────────────────────────
               MỖI MẪU MỘT HÀNG TRÀN NGANG, không phải thẻ teaser trong lưới:
@@ -281,304 +288,134 @@ export default async function TripTemplatesPage() {
               trình mới có: TỪNG NGÀY. */}
           {rows.length > 0 ? (
             <section>
-              <SectionHead
-                title="Lịch trình mẫu"
-                meta={
-                  <>
-                    <span className="tabular-nums text-foreground">{rows.length}</span> mẫu
-                    {" · "}
-                    <span className="tabular-nums text-foreground">{totalDays}</span> ngày
-                  </>
-                }
-              />
+              <SectionHead title="Lịch trình mẫu" />
 
-              <ul className="mt-8 space-y-12 sm:space-y-16">
-                {rows.map((t, ti) => {
-                  const days = t.days.map((d, i) => ({
-                    title: d.title ?? `Ngày ${i + 1}`,
-                    stops: d._count.items,
-                  }));
-                  const stops = days.reduce((n, d) => n + d.stops, 0);
+              <TripControls lengths={lengths} days={days} sort={sort} />
+
+              {visible.length === 0 ? (
+                <p className="mt-10 text-sm text-muted-foreground">
+                  Không có mẫu nào dài {days} ngày.{" "}
+                  <Link href="/lich-trinh" className="underline underline-offset-4">
+                    Xoá bộ lọc
+                  </Link>
+                </p>
+              ) : (
+              <ul className="mt-6 divide-y divide-border">
+                {visible.map((t) => {
+                  const days = t.days;
+                  // Luôn có ảnh: bìa mẫu → ảnh điểm dừng đầu tiên → ảnh dự
+                  // phòng theo slug. Thẻ ở /diem-den cũng vậy, nên hai trang
+                  // không bao giờ có cái nào là ô xám trống.
+                  const cover =
+                    coverOf(t) ?? coverUrl([], t.slug ?? t.id, 900, 600);
+                  const stops = days.reduce((n, d) => n + d._count.items, 0);
                   const where = t.place?.parent?.name ?? t.place?.name ?? null;
                   return (
                     <li key={t.id}>
                       <RiseInView distance={14}>
-                        <div className="grid gap-6 lg:grid-cols-[minmax(0,26rem)_1fr] lg:gap-10">
-                          <Link
-                            href={`/lich-trinh/${t.slug}`}
-                            className="group relative block aspect-[3/2] overflow-hidden bg-muted"
-                          >
-                            {covers[ti] ? (
-                              <>
-                                <Image
-                                  src={covers[ti]!}
-                                  alt=""
-                                  fill
-                                  priority={ti === 0}
-                                  sizes="(min-width: 1024px) 26rem, 100vw"
-                                  className="object-cover"
-                                />
-                                <span
-                                  aria-hidden
-                                  className="absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,0.84)_0%,rgba(0,0,0,0.7)_22%,rgba(0,0,0,0.54)_44%,rgba(0,0,0,0.32)_64%,rgba(0,0,0,0.1)_84%,rgba(0,0,0,0.04)_100%)] opacity-80 transition-opacity duration-300 group-hover:opacity-[0.92] motion-reduce:transition-none"
-                                />
-                                <span
-                                  aria-hidden
-                                  className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/12 transition-[box-shadow] duration-300 group-hover:ring-white/55 motion-reduce:transition-none"
-                                />
-                              </>
-                            ) : (
-                              // Mẫu chưa có ảnh: để TRỐNG, chỉ còn khuôn chữ.
-                              // Bản trước vẽ N nốt tròn đánh số nối nét đứt (kế
-                              // thừa từ thẻ cũ, nơi ô ảnh KHÔNG có chữ nào nên
-                              // cần thứ gì đó lấp chỗ). Nay khuôn chữ nằm ngay
-                              // trên đó: nốt vừa đè lên tên, vừa nói lại đúng
-                              // điều hàng dữ kiện đã nói ("2 ngày 1 đêm").
-                              <span
-                                aria-hidden
-                                className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-border transition-[box-shadow] duration-300 group-hover:ring-foreground/35 motion-reduce:transition-none"
-                              />
+                        <Link
+                          href={`/lich-trinh/${t.slug}`}
+                          className="group grid gap-4 py-7 focus-visible:outline-none sm:grid-cols-[minmax(0,19rem)_1fr] sm:gap-7 sm:py-8"
+                        >
+                          {/* Ảnh CAO BẰNG cột chữ (`sm:h-full`), không đặt tỉ lệ
+                              cố định: mẫu 1 ngày có cột chữ ngắn, mẫu 3 ngày dài
+                              hơn — để `aspect-[4/3]` thì hàng nào cũng thừa hoặc
+                              thiếu chỗ. `min-h` giữ ảnh không bị bẹp ở mẫu ngắn. */}
+                          <span
+                            className={cn(
+                              R_CARD,
+                              "relative block aspect-[4/3] overflow-hidden bg-muted group-focus-visible:ring-2 group-focus-visible:ring-primary group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-background sm:aspect-auto sm:h-full sm:min-h-[12rem]",
                             )}
+                          >
+                            <Image
+                              src={cover}
+                              alt=""
+                              fill
+                              sizes="(min-width: 640px) 19rem, 92vw"
+                              className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.045] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+                            />
+                          </span>
 
-                            {/* Lớp chữ dùng CHUNG cho cả hai trường hợp, chỉ đổi
-                                màu. Bản trước chỉ vẽ nó khi CÓ ảnh, nên mẫu chưa
-                                có ảnh mất luôn tên lịch trình — cả hàng không
-                                còn chỗ nào ghi nó tên gì. */}
-                            <span className="absolute inset-0 flex flex-col p-4 sm:p-5">
-                              <span className="flex flex-1 flex-col items-center justify-center px-2 pt-6 text-center">
-                                {where && (
-                                  <span
-                                    className={cn(
-                                      "max-w-full truncate font-[family-name:var(--font-rounded)] text-[0.8125rem] italic",
-                                      covers[ti]
-                                        ? "text-white/85 [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]"
-                                        : "text-muted-foreground",
-                                    )}
-                                  >
-                                    {where}
-                                  </span>
-                                )}
-                                <span
-                                  className={cn(
-                                    "mt-1 line-clamp-2 font-[family-name:var(--font-display)] text-[1.35rem] font-normal leading-[1.18] tracking-[-0.015em] sm:text-[1.5rem] lg:text-[1.75rem]",
-                                    covers[ti]
-                                      ? "text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.45)]"
-                                      : "text-foreground",
-                                  )}
-                                >
-                                  {t.title}
+                          <span className="min-w-0">
+                            <span className="flex flex-wrap items-center gap-x-5 gap-y-1">
+                              {where && (
+                                <span className={cn(MICRO, "text-muted-foreground")}>
+                                  {where}
                                 </span>
+                              )}
+                              <span className={cn(MICRO, "text-muted-foreground")}>
+                                {lengthLabel(days.length)}
                               </span>
-
-                              <span className="grid grid-cols-2 gap-x-5 sm:gap-x-8">
-                                {[lengthLabel(days.length), `${stops} điểm dừng`].map(
-                                  (fact) => (
-                                    <span
-                                      key={fact}
-                                      className={cn(
-                                        "mt-2 truncate border-t pt-1.5 text-[0.75rem] font-semibold leading-tight",
-                                        covers[ti]
-                                          ? "border-white/30 text-white [text-shadow:0_1px_6px_rgba(0,0,0,0.6)]"
-                                          : "border-border text-foreground",
-                                      )}
-                                    >
-                                      {fact}
-                                    </span>
-                                  ),
-                                )}
+                              <span className={cn(MICRO, "text-muted-foreground")}>
+                                <span className="tabular-nums text-foreground">
+                                  {stops}
+                                </span>{" "}
+                                điểm dừng
                               </span>
                             </span>
-                          </Link>
 
-                          <div className="min-w-0">
-                            {/* Tên đã nằm GIỮA ẢNH — cột này không lặp lại nó,
-                                chỉ nói tiếp: chuyến này gồm những ngày nào. */}
+                            <span className="mt-1.5 block font-[family-name:var(--font-display)] text-[clamp(1.375rem,2.6vw,1.875rem)] font-normal leading-[1.18] tracking-tight underline-offset-[6px] group-hover:underline">
+                              {t.title}
+                            </span>
+
                             {t.summary && (
-                              <p className="max-w-2xl text-[1.0625rem] leading-relaxed text-muted-foreground">
+                              <span className="mt-2 block max-w-2xl text-[0.9375rem] leading-relaxed text-muted-foreground">
                                 {t.summary}
-                              </p>
+                              </span>
                             )}
 
-                            <ol className="mt-6 border-t border-border">
+                            {/* KHÔNG kẻ nét dưới từng ngày: số thứ tự ở cột
+                                trái và số điểm dừng neo mép phải đã tự tạo hai
+                                trục thẳng hàng, mắt bám theo được. Thêm nét thì
+                                một trang 5 mẫu có tới ~16 đường ngang. */}
+                            <span className="mt-4 block">
                               {days.map((d, i) => (
-                                <li
-                                  key={i}
-                                  className="flex items-baseline gap-4 border-b border-border py-3"
+                                <span
+                                  key={d.id}
+                                  className="flex items-baseline gap-3 py-1.5"
                                 >
                                   <span
-                                    className={cn(MICRO, "w-6 shrink-0 text-muted-foreground")}
+                                    className={cn(
+                                      MICRO,
+                                      "w-5 shrink-0 tabular-nums text-muted-foreground",
+                                    )}
                                     aria-hidden
                                   >
                                     {String(i + 1).padStart(2, "0")}
                                   </span>
-                                  <span className="min-w-0 flex-1 truncate font-[family-name:var(--font-display)] tracking-tight">
-                                    {d.title}
+                                  <span className="min-w-0 flex-1 truncate font-[family-name:var(--font-display)] text-[0.9375rem] tracking-tight">
+                                    {d.title ?? `Ngày ${i + 1}`}
                                   </span>
-                                  <span className={cn(MICRO, "shrink-0 text-muted-foreground")}>
+                                  <span
+                                    className={cn(MICRO, "shrink-0 text-muted-foreground")}
+                                  >
                                     <span className="tabular-nums text-foreground">
-                                      {d.stops}
+                                      {d._count.items}
                                     </span>{" "}
                                     điểm dừng
                                   </span>
-                                </li>
+                                </span>
                               ))}
-                            </ol>
-
-                            <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
-                              <SquareLink
-                                href={`/lich-trinh/${t.slug}`}
-                                label="Xem lịch trình"
-                              />
-                              <p className={cn(MICRO, "text-muted-foreground")}>
-                                Sao về tài khoản rồi sửa thoải mái
-                              </p>
-                            </div>
-                          </div>
-                        </div>
+                            </span>
+                          </span>
+                        </Link>
                       </RiseInView>
                     </li>
                   );
                 })}
               </ul>
+              )}
             </section>
           ) : (
-            <section className="border border-dashed border-border px-6 py-14 text-center">
+            <section className={cn(R_CARD, "border border-dashed border-border px-6 py-14 text-center")}>
               <Route className="mx-auto size-9 text-muted-foreground/40" aria-hidden />
               <p className="mt-4 font-[family-name:var(--font-display)] text-lg tracking-tight">
                 Chưa có lịch trình mẫu nào
               </p>
               <p className="mx-auto mt-1.5 max-w-sm text-sm leading-relaxed text-muted-foreground">
-                Bạn vẫn tự xếp được — chọn một điểm đến bên dưới để bắt đầu.
+                Bạn vẫn tự xếp được — mở một điểm đến rồi bấm “Thêm vào lịch
+                trình” ở bất kỳ địa điểm, quán ăn hay chỗ ở nào.
               </p>
-            </section>
-          )}
-
-          {/* ── Tự bắt đầu ─────────────────────────────────────────────────
-              Đây là chỗ bản cũ đặt MỘT ĐOẠN VĂN hướng dẫn ("bấm Thêm vào lịch
-              trình ở bất kỳ địa điểm nào rồi kéo vào ngày"). Một trang công cụ
-              mà phải giải thích công cụ bằng lời thì cái nút đang nằm sai chỗ:
-              nút đó vốn có, chỉ là nó ở trang điểm đến. */}
-          {starters.length > 0 && (
-            <section className="mt-16 sm:mt-24">
-              <SectionHead
-                title="Tự xếp chuyến của bạn"
-                meta={
-                  <Link
-                    href="/diem-den"
-                    className="transition-colors hover:text-foreground"
-                  >
-                    Tất cả điểm đến →
-                  </Link>
-                }
-              />
-              {/* Cố ý KHÔNG viết "không mẫu nào hợp thì chọn nơi khác": hiện chỉ
-                  hai điểm đến có đủ nội dung để xếp lịch, mà đúng hai nơi đó đã
-                  có mẫu ở ngay trên. Câu đó sẽ tự mâu thuẫn. Chuyện thật là:
-                  cùng một nơi, chuyến của bạn không nhất thiết giống mẫu. */}
-              <p className="mt-4 max-w-2xl leading-relaxed text-muted-foreground">
-                Mẫu chỉ là một cách đi. Chọn nơi bạn định tới — chuyến được tạo ngay,
-                rồi cứ lướt địa điểm, quán ăn, chỗ ở của nơi đó mà bấm{" "}
-                <strong className="font-semibold text-foreground">
-                  Thêm vào lịch trình
-                </strong>
-                .
-              </p>
-
-              {/* Lưới CO THEO SỐ THẺ, không phải bốn cột cố định: hiện mới hai
-                  nơi đủ nội dung, để nguyên `lg:grid-cols-4` thì hai ô trống bên
-                  phải đọc ra như trang lỗi tải. Cùng bài học đã ghi ở khối "Gợi ý
-                  lịch trình" của trang điểm đến. */}
-              <ul
-                className={cn(
-                  "mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2",
-                  starters.length >= 3 && "lg:grid-cols-4",
-                  starters.length <= 2 && "lg:max-w-3xl",
-                )}
-              >
-                {starters.map((p, i) => (
-                  <li key={p.id}>
-                    <RiseInView delay={Math.min(i, 3) * 0.07}>
-                      <PlanTripButton
-                        placeId={p.id}
-                        placeName={p.name}
-                        isAuthed={isAuthed}
-                        className="group block w-full"
-                      >
-                        {/* Cùng khuôn thẻ với `/diem-den`: ảnh 3/2, lớp phủ tối,
-                            tên GIỮA ảnh, dữ kiện ngăn bằng gạch mảnh trắng. */}
-                        <span className="relative block aspect-[3/2] overflow-hidden bg-muted">
-                          <Image
-                            src={coverUrl(
-                              p.images.map((im) => ({ url: im.url, isCover: true })),
-                              p.slug,
-                              900,
-                              600,
-                            )}
-                            alt=""
-                            fill
-                            sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 92vw"
-                            className="object-cover"
-                          />
-                          <span
-                            aria-hidden
-                            className="absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,0.84)_0%,rgba(0,0,0,0.7)_22%,rgba(0,0,0,0.54)_44%,rgba(0,0,0,0.32)_64%,rgba(0,0,0,0.1)_84%,rgba(0,0,0,0.04)_100%)] opacity-80 transition-opacity duration-300 group-hover:opacity-[0.92] motion-reduce:transition-none"
-                          />
-                          <span
-                            aria-hidden
-                            className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/12 transition-[box-shadow] duration-300 group-hover:ring-white/55 motion-reduce:transition-none"
-                          />
-                          <span className="absolute inset-0 flex flex-col p-4 sm:p-5">
-                            <span className="flex flex-1 flex-col items-center justify-center px-2 pt-6 text-center">
-                              <span className="max-w-full truncate font-[family-name:var(--font-rounded)] text-[0.8125rem] italic text-white/85 [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]">
-                                {p.kind === "province" ? "Tỉnh" : (p.parent?.name ?? "Việt Nam")}
-                              </span>
-                              <span className="mt-1 line-clamp-2 font-[family-name:var(--font-display)] text-[1.35rem] font-normal leading-[1.18] tracking-[-0.015em] text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.45)] sm:text-[1.5rem]">
-                                {p.name}
-                              </span>
-                            </span>
-
-                            {/* Hàng đáy nói HÀNH ĐỘNG, không phải dữ kiện: thẻ
-                                này bấm vào là mở hộp thoại tạo chuyến chứ không
-                                phải đi tới một trang. Nhãn LUÔN hiện — điện
-                                thoại không có hover. */}
-                            <span className="mt-2 flex items-center justify-center gap-1.5 border-t border-white/30 pt-2 text-[0.75rem] font-semibold uppercase tracking-[0.14em] text-white [text-shadow:0_1px_6px_rgba(0,0,0,0.6)]">
-                              Lên lịch trình
-                              <ArrowRight
-                                className="size-3.5 transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none"
-                                aria-hidden
-                              />
-                            </span>
-                          </span>
-                        </span>
-                      </PlanTripButton>
-                    </RiseInView>
-                  </li>
-                ))}
-              </ul>
-
-              {/* Chuyến nhiều điểm đến không bắt đầu từ MỘT nơi — nó bắt đầu từ
-                  câu hỏi "mấy nơi này có gần nhau không". Chỗ trả lời là bản đồ. */}
-              <Link
-                href="/ban-do"
-                className="group mt-10 flex items-center justify-between gap-6 border-y border-border py-6 transition-colors hover:border-foreground"
-              >
-                <span className="min-w-0">
-                  <span className={cn(MICRO, "block text-muted-foreground")}>
-                    Đi nhiều nơi trong một chuyến
-                  </span>
-                  <span className="mt-1.5 block font-[family-name:var(--font-serif)] text-[clamp(1.125rem,2.2vw,1.5rem)] font-normal uppercase leading-[1.2] tracking-[0.1em]">
-                    Đo trên bản đồ
-                  </span>
-                  <span className="mt-2 block max-w-xl text-sm leading-relaxed text-muted-foreground">
-                    Nối các điểm đến theo thứ tự, xem tổng đường và giờ lái từng chặng
-                    trước khi chốt.
-                  </span>
-                </span>
-                <ArrowRight
-                  className="size-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1"
-                  aria-hidden
-                />
-              </Link>
             </section>
           )}
         </div>
@@ -593,38 +430,21 @@ function SectionHead({
   meta,
 }: {
   title: string;
-  meta: React.ReactNode;
+  /** Dữ kiện phụ bên phải tiêu đề. Bỏ trống thì tiêu đề đứng một mình. */
+  meta?: React.ReactNode;
 }) {
   return (
     <RiseInView distance={14}>
       <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-b border-border pb-4">
-        <h2 className="font-[family-name:var(--font-serif)] text-[clamp(1.25rem,2.8vw,2rem)] font-normal uppercase leading-[1.2] tracking-[0.1em] sm:tracking-[0.14em]">
+        <h2 className="font-[family-name:var(--font-display)] text-[clamp(1.25rem,2.8vw,2rem)] font-normal uppercase leading-[1.2] tracking-[0.1em] sm:tracking-[0.14em]">
           {title}
         </h2>
-        <p className={cn(MICRO, "text-muted-foreground")}>{meta}</p>
+        {meta && <p className={cn(MICRO, "text-muted-foreground")}>{meta}</p>}
       </div>
     </RiseInView>
   );
 }
 
-/** Nút vuông trên nền trang — bản "trên giấy" của `HeroLink`. */
-function SquareLink({ href, label }: { href: string; label: string }) {
-  return (
-    <Link
-      href={href}
-      className={cn(
-        MICRO,
-        "group inline-flex h-11 items-center gap-2 bg-foreground px-5 text-background transition-colors hover:bg-foreground/85",
-      )}
-    >
-      {label}
-      <ArrowRight
-        className="size-3.5 transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none"
-        aria-hidden
-      />
-    </Link>
-  );
-}
 
 /**
  * Ảnh của một mẫu: bìa riêng → ảnh bìa của ĐIỂM DỪNG ĐẦU TIÊN có ảnh → **null**.

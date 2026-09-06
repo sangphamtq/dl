@@ -16,6 +16,8 @@ import { Layers, Map as MapIcon, Globe, Crosshair } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { coverUrl } from "@/lib/place-image";
 import type { MapPlacePoint } from "@/lib/geo";
+import { CARTO_ATTRIBUTION, cartoTileUrl } from "@/lib/basemap";
+import { R_CTRL } from "@/lib/radius";
 
 export type LatLng = { lat: number; lng: number };
 
@@ -248,8 +250,8 @@ function BaseTiles({
   return (
     <TileLayer
       key={style}
-      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-      url={`https://{s}.basemaps.cartocdn.com/rastertiles/${style}/{z}/{x}/{y}.png`}
+      attribution={CARTO_ATTRIBUTION}
+      url={cartoTileUrl(style)}
       subdomains="abcd"
       maxZoom={20}
     />
@@ -290,7 +292,8 @@ function Controls({
   };
 
   const btn =
-    "grid size-10 place-items-center border border-border bg-background text-foreground shadow-[0_2px_10px_-4px_rgba(0,0,0,0.35)] transition-colors hover:border-foreground hover:bg-foreground hover:text-background disabled:opacity-60";
+    R_CTRL +
+    " grid size-10 place-items-center border border-border bg-background text-foreground shadow-[0_2px_10px_-4px_rgba(0,0,0,0.35)] transition-colors hover:border-foreground hover:bg-foreground hover:text-background disabled:opacity-60";
   return (
     <div ref={ref} className="absolute left-3 top-3 z-[1000] flex flex-col gap-1.5">
       <button

@@ -7,9 +7,7 @@ import {
 } from "@/components/site/destination-filter";
 import { HeroLink } from "@/components/site/hero-link";
 import Image from "next/image";
-import { cn } from "@/lib/utils";
 import { Curtain, Rise } from "@/components/site/reveal";
-import { Playfair_Display } from "next/font/google";
 import { REGION_LABELS, regionOf } from "@/lib/regions";
 
 // ISR: HTML của trang được dựng một lần rồi phục vụ từ cache; hết hạn thì Next
@@ -30,13 +28,6 @@ export const metadata = {
   title: "Điểm đến · Halivivu",
   description: "Khám phá các điểm đến nổi bật và tỉnh thành khắp Việt Nam.",
 };
-
-const serif = Playfair_Display({
-  variable: "--font-serif",
-  subsets: ["latin", "vietnamese"],
-  weight: ["400"],
-  display: "swap",
-});
 
 const pub = { status: "published" as const };
 
@@ -184,7 +175,7 @@ export default async function DiemDenPage() {
   );
 
   return (
-    <div className={cn("flex flex-1 flex-col", serif.variable)}>
+    <div className="flex flex-1 flex-col">
 
       <main className="flex-1 overflow-x-clip">
         {isEmpty ? (
@@ -217,7 +208,7 @@ export default async function DiemDenPage() {
               <div className="relative mx-auto flex min-h-[clamp(15rem,22vw,18.5rem)] max-w-7xl flex-col items-center justify-center px-4 py-12 text-center sm:px-6 lg:min-h-[clamp(19rem,26vw,22.5rem)] lg:pb-12 lg:pt-[7rem]">
                 <Curtain>
                 <h1
-                  className={`font-[family-name:var(--font-serif)] text-[clamp(2.5rem,7.5vw,5.5rem)] font-normal uppercase leading-[1.15] tracking-[0.12em] text-white [text-shadow:0_2px_40px_rgba(0,0,0,0.62)] sm:tracking-[0.18em]`}
+                  className={`font-[family-name:var(--font-display)] text-[clamp(2.5rem,7.5vw,5.5rem)] font-normal uppercase leading-[1.15] tracking-[0.12em] text-white [text-shadow:0_2px_40px_rgba(0,0,0,0.62)] sm:tracking-[0.18em]`}
                 >
                   Việt Nam
                 </h1>

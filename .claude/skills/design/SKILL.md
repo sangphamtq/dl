@@ -28,6 +28,11 @@ trên**, không phải mặc định nên dùng.
 - Hằng nằm ở **`src/lib/radius.ts`**, ghép bằng `cn()` — đừng rắc số cứng và đừng
   khai lại trong từng component. File đó không có `"use client"` nên Server
   Component lẫn Client Component đều import được.
+- ⚠️ **Mọi hằng dùng chung giữa hai phía phải nằm trong `lib/`, không nằm trong
+  module `"use client"`.** Nhìn từ Server Component, export của module client chỉ
+  là *client reference* — `HANG.find(...)` ném "is not a function" lúc CHẠY,
+  trong khi `tsc` và `lint` đều xanh. Không có gì bắt được lỗi này ngoài việc mở
+  trang lên xem.
 - Vật liệu dùng chung đã mang sẵn bo góc: `CtaButton`, `HeroLink`, `PlaceCard`,
   `SectionTabs`, mũi tên của `Rail`. **Đừng truyền `className` bo góc riêng cho
   chúng ở từng trang** — sẽ lệch giữa các trang.
@@ -38,6 +43,22 @@ trên**, không phải mặc định nên dùng.
 - Nhiều nút nằm chung một khung có viền: **bo ở KHUNG + `overflow-hidden`**, phần tử
   con để vuông. Bo từng nút thì khung vẫn vuông và nền hover thành mảng lửng lơ bên
   trong nó. `Rail` có prop `arrowWrapClassName`.
+
+## Chữ
+
+Ba font, **tất cả khai ở `app/layout.tsx`** — đừng khai font riêng trong từng trang.
+Không dùng serif.
+
+| Biến | Font | Dùng cho |
+|---|---|---|
+| `--font-sans` | Cabin | chữ thân, mặc định |
+| `--font-display` | Be Vietnam Pro | tiêu đề, kể cả kiểu **in hoa giãn chữ** ở hero/section |
+| `--font-rounded` | Mali | nhãn viết tay (tên tỉnh trên thẻ…) |
+
+Thêm font mới thì phải có **subset `vietnamese`** — kiểm trước bằng cách gọi
+`fonts.googleapis.com/css2?family=<Tên>` với User-Agent trình duyệt đầy đủ và tìm khối
+`/* vietnamese */`. UA rút gọn sẽ khiến Google trả bản không có subset và báo nhầm là
+"không hỗ trợ". Libre Baskerville và Instrument Serif **không** có tiếng Việt.
 
 ## Dải phân cách
 

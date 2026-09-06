@@ -1,6 +1,5 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Playfair_Display } from "next/font/google";
 import { notFound } from "next/navigation";
 import { Ic } from "@/components/icon";
 import { auth } from "@/auth";
@@ -34,16 +33,6 @@ import { summarizeReviews } from "@/lib/review-meta";
 import { PeerBar } from "@/components/site/peer-bar";
 import { PlainProse } from "@/components/site/plain-prose";
 
-// Cùng họ chữ tiêu đề với `/diem-den`, `/dia-diem`, `/blog`, `/gioi-thieu` —
-// khai TẠI TRANG vì `--font-serif` không có trong root layout. Biến này chảy
-// xuống mọi component con qua CSS custom property, nên `SectionHeading serif`
-// bên trong `FoodMenu`/`SpotSpotlight`… dùng được ngay.
-const serifFont = Playfair_Display({
-  variable: "--font-serif",
-  subsets: ["latin", "vietnamese"],
-  weight: ["400"],
-  display: "swap",
-});
 import { getDestinationPeerGroups } from "@/lib/peers";
 import {
   getPlaceCounts,
@@ -489,7 +478,7 @@ export default async function PlaceDetailPage({
   const tinted = () => bandIndex++ % 2 === 0;
 
   return (
-    <div className={cn("flex flex-1 flex-col", serifFont.variable)}>
+    <div className="flex flex-1 flex-col">
       <PlaceViewTracker
         placeId={place.id}
         name={place.name}

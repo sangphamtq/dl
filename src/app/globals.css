@@ -285,10 +285,10 @@
   background: transparent;
   border: none;
 }
-/* Popup: bỏ padding mặc định để ảnh tràn viền. GÓC VUÔNG (3px) chứ không bo
-   lớn — popup là bản thu nhỏ của thẻ điểm đến ở /diem-den, mà cả hệ đó vuông. */
+/* Popup: bỏ padding mặc định để ảnh tràn viền. Bo 6px = `R_CARD` — popup là bản
+   thu nhỏ của thẻ điểm đến ở /diem-den nên phải cùng bán kính với thẻ đó. */
 .leaflet-popup-content-wrapper {
-  border-radius: 3px;
+  border-radius: 6px;
   padding: 0;
   overflow: hidden;
   box-shadow: 0 18px 40px -18px rgb(0 0 0 / 0.45);
@@ -300,12 +300,22 @@
 .leaflet-popup-tip {
   box-shadow: 0 18px 40px -18px rgb(0 0 0 / 0.45);
 }
-/* Nút zoom mặc định của Leaflet: vuông, viền mảnh — cùng vật liệu với cụm nút
-   trái (xem `btn` trong vietnam-map-inner.tsx). */
+/* Nút zoom mặc định của Leaflet: bo 4px = `R_CTRL`, viền mảnh — cùng vật liệu
+   với cụm nút trái (xem `btn` trong vietnam-map-inner.tsx). `!important` là bắt
+   buộc: Leaflet tự đặt border-radius inline cho nút đầu/cuối của thanh. */
 .leaflet-bar,
 .leaflet-bar a {
-  border-radius: 0 !important;
+  border-radius: 4px !important;
   border-color: var(--border);
+}
+/* Thanh zoom là hai nút chồng nhau — chỉ bo mép NGOÀI, khe giữa để thẳng. */
+.leaflet-bar a:first-child {
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+.leaflet-bar a:last-child {
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
 }
 .leaflet-touch .leaflet-bar {
   border: 1px solid var(--border);
@@ -385,7 +395,8 @@
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
-  padding: 0.2rem 0.4rem;
+  padding: 0.2rem 0.45rem;
+  border-radius: 3px; /* = R_BADGE */
   background: rgb(255 255 255 / 0.95);
   color: #171717;
   font-size: 0.6rem;
@@ -433,14 +444,14 @@
   color: var(--background);
 }
 /* Bản rút gọn cho lớp địa điểm chi tiết: không ảnh, chỉ ba dòng chữ. */
-/* Pin ảnh cho bản đồ điểm đến toàn quốc (/ban-do). VUÔNG chứ không tròn: pin
-   này là thẻ điểm đến thu về 46px, mà thẻ ở /diem-den vuông và cắt ảnh 3/2 —
+/* Pin ảnh cho bản đồ điểm đến toàn quốc (/ban-do). CHỮ NHẬT bo nhẹ chứ không
+   tròn: pin này là thẻ điểm đến thu về 52px, mà thẻ ở /diem-den cắt ảnh 3/2 —
    pin tròn đọc ra là "chấm bản đồ của một app khác". Pin chấm nhỏ của lớp
    listing (.dl-pin) vẫn tròn, nhờ vậy hai lớp phân biệt được ngay bằng HÌNH. */
 .dl-place-pin {
   width: 52px;
   height: 36px;
-  border-radius: 2px;
+  border-radius: 4px;
   overflow: hidden;
   border: 2px solid #fff;
   background: var(--muted);
@@ -485,7 +496,7 @@
   place-items: center;
   width: 38px;
   height: 30px;
-  border-radius: 2px;
+  border-radius: 4px;
   background: var(--foreground);
   color: var(--background);
   border: 2px solid #fff;

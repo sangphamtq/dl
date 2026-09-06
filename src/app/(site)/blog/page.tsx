@@ -1,6 +1,5 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Playfair_Display } from "next/font/google";
 import {
   BedDouble,
   BookOpen,
@@ -17,28 +16,18 @@ import {
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import { cn } from "@/lib/utils";
-import { R_BADGE, R_CARD } from "@/lib/radius";
+import { R_BADGE, R_CARD, R_CTRL } from "@/lib/radius";
 import { coverUrl } from "@/lib/place-image";
 import { POST_CATEGORY_LABELS, label } from "@/lib/listing-labels";
 import { Pagination } from "@/components/pagination";
 import { PostStats } from "@/components/blog/post-stats";
 import { SortSelect } from "@/components/blog/sort-select";
-import { BlogFilters, type FilterOption } from "@/components/blog/blog-filters";
 import { RiseInView } from "@/components/site/reveal";
 
 export const metadata = {
   title: "Cẩm nang du lịch · Halivivu",
   description: "Kinh nghiệm, lịch trình gợi ý và review điểm đến khắp Việt Nam.",
 };
-
-// Cùng họ chữ tiêu đề với `/diem-den` và `/dia-diem` — khai TẠI TRANG vì
-// `--font-serif` không có trong root layout.
-const serif = Playfair_Display({
-  variable: "--font-serif",
-  subsets: ["latin", "vietnamese"],
-  weight: ["400"],
-  display: "swap",
-});
 
 const dateFmt = new Intl.DateTimeFormat("vi-VN", {
   day: "2-digit",
@@ -176,9 +165,6 @@ export default async function BlogPage({
     total,
     grouped,
     featured,
-    destRows,
-    topicRows,
-    catCoverRows,
     newest,
   ] = await Promise.all([
     prisma.post.findMany({
@@ -198,29 +184,13 @@ export default async function BlogPage({
       ? prisma.post.findMany({
           where: { status: "published" },
           orderBy: [{ isFeatured: "desc" }, { publishedAt: "desc" }],
-          take: 3,
+          // 1 thẻ lead + 3 thẻ phụ. BA chứ không hai: hai thẻ chia đôi chiều
+          // cao thẻ lead thì mỗi ảnh cao ~230px trong khi chỉ rộng 192px —
+          // thành ảnh ĐỨNG, lệch hẳn với mọi ảnh ngang khác trên trang.
+          take: 4,
           select: cardSelect,
         })
       : Promise.resolve([] as Card[]),
-    prisma.place.findMany({
-      where: { postRefs: { some: { post: { status: "published" } } } },
-      select: {
-        name: true,
-        slug: true,
-        _count: {
-          select: { postRefs: { where: { post: { status: "published" } } } },
-        },
-      },
-    }),
-    prisma.$queryRaw<{ tag: string; count: number }[]>`
-      SELECT unnest(tags) AS tag, count(*)::int AS count
-      FROM "Post" WHERE status = 'published'
-      GROUP BY tag ORDER BY count DESC, tag ASC LIMIT 12`,
-    prisma.post.findMany({
-      where: { status: "published", category: { not: null } },
-      orderBy: [{ isFeatured: "desc" }, { publishedAt: "desc" }],
-      select: { category: true, slug: true, images: coverSelect },
-    }),
     // Ngày bài mới nhất — dữ kiện THẬT thay cho lời hứa "Cập nhật hàng tuần".
     prisma.post.findFirst({
       where: { status: "published" },
@@ -235,24 +205,7 @@ export default async function BlogPage({
       ? totalPublished
       : (grouped.find((g) => g.category === v)?._count._all ?? 0);
 
-  const destinations: FilterOption[] = destRows
-    .map((d) => ({ value: d.slug, label: d.name, count: d._count.postRefs }))
-    .sort((a, b) => b.count - a.count);
-  const topics: FilterOption[] = topicRows.map((t) => ({
-    value: t.tag,
-    label: t.tag,
-    count: Number(t.count),
-  }));
-
   // Ảnh đại diện cho từng danh mục (dùng ở "Chủ đề nổi bật").
-  const catCover = new Map<
-    string,
-    { images: (typeof catCoverRows)[number]["images"]; slug: string }
-  >();
-  for (const r of catCoverRows) {
-    if (r.category && !catCover.has(r.category))
-      catCover.set(r.category, { images: r.images, slug: r.slug });
-  }
 
   const liveTopics = CATEGORIES.filter(
     (c) => c.value !== "all" && countOf(c.value) > 0,
@@ -283,7 +236,7 @@ export default async function BlogPage({
     // sách này giờ dùng chung một bộ vật liệu, mà nền là thứ đầu tiên mắt nhận
     // ra: một trang be giữa hai trang trắng thì đọc ra là site khác, không phải
     // mục khác.
-    <div className={cn("flex flex-1 flex-col", serif.variable)}>
+    <div className="flex flex-1 flex-col">
 
       <main className="flex-1">
         {/* Container ĐÚNG BẰNG container của header: `max-w-7xl px-4 sm:px-6`.
@@ -313,7 +266,7 @@ export default async function BlogPage({
               Bỏ ảnh thì đầu trang còn ~180px thay vì ~380px: lưới chủ đề và bài
               nổi bật — vốn đã đầy ảnh thật, đúng ngữ cảnh — lên thẳng tầm mắt. */}
           <section className="mt-5 max-w-3xl">
-            <h1 className="text-balance font-[family-name:var(--font-serif)] text-[clamp(1.75rem,4.4vw,3.25rem)] font-normal uppercase leading-[1.15] tracking-[0.1em] sm:tracking-[0.14em]">
+            <h1 className="text-balance font-[family-name:var(--font-display)] text-[clamp(1.75rem,4.4vw,3.25rem)] font-normal uppercase leading-[1.15] tracking-[0.1em] sm:tracking-[0.14em]">
               Kinh nghiệm cho mọi hành trình
             </h1>
             {/* `max-w-2xl`: ở `max-w-xl` câu này rớt đúng hai chữ cuối xuống
@@ -349,117 +302,53 @@ export default async function BlogPage({
           </section>
         </div>
 
-        <div className="mx-auto mt-9 grid max-w-7xl gap-10 px-4 pb-16 sm:px-6 lg:grid-cols-[16rem_1fr] lg:gap-14">
-          {/* Sidebar */}
-          <aside className="lg:sticky lg:top-24 lg:self-start">
-            <div className="flex flex-col gap-6">
-              <div>
-                <h2 className={cn(MICRO, "mb-3 text-muted-foreground")}>
-                  Danh mục
-                </h2>
-                {/* Mục đang chọn tô MỰC (`foreground`), không phải xanh
-                    `primary`: cả hệ thẻ ở ba trang danh sách chỉ dùng mực và
-                    trắng, xanh để dành cho hành động. Bỏ icon từng mục — sáu
-                    icon xếp dọc thành một cột hình vẽ chạy song song cột chữ,
-                    trong khi tên mục đã đủ. */}
-                <ul className="flex flex-col border-t border-border">
-                  {CATEGORIES.map((c) => {
-                    const active = category === c.value;
-                    return (
-                      <li key={c.value}>
-                        <Link
-                          href={buildHref({ category: c.value })}
-                          className={cn(
-                            "flex items-center gap-3 border-b border-border py-2.5 text-sm transition-colors",
-                            active
-                              ? "font-semibold text-foreground"
-                              : "text-muted-foreground hover:text-foreground",
-                          )}
-                        >
-                          <span
-                            aria-hidden
-                            className={cn(
-                              "h-4 w-0.5 shrink-0 transition-colors",
-                              active ? "bg-foreground" : "bg-transparent",
-                            )}
-                          />
-                          <span className="min-w-0 flex-1 truncate">
-                            {c.label}
-                          </span>
-                          <span
-                            className={cn(
-                              "shrink-0 text-xs tabular-nums",
-                              active ? "text-foreground" : "text-muted-foreground/60",
-                            )}
-                          >
-                            {countOf(c.value)}
-                          </span>
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
+        <div className="mx-auto mt-9 max-w-7xl px-4 pb-16 sm:px-6">
+          {/* DANH MỤC: hàng ngang thay cho cột dọc.
+              Bỏ cột lọc để nội dung trải hết container, nhưng danh mục là LỐI
+              DUYỆT chính của blog nên giữ lại — chỉ đổi trục. Vẫn là link
+              (`buildHref`) chứ không phải nút: bấm ra một URL chia sẻ được. */}
+          <nav
+            aria-label="Danh mục bài viết"
+            className="-mx-1 flex items-center gap-2 overflow-x-auto px-1 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            {CATEGORIES.map((c) => {
+              const active = category === c.value;
+              return (
+                <Link
+                  key={c.value}
+                  href={buildHref({ category: c.value })}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    MICRO,
+                    R_CTRL,
+                    "flex h-9 shrink-0 items-center gap-2 whitespace-nowrap border px-4 transition-colors",
+                    active
+                      ? "border-foreground bg-foreground text-background"
+                      : "border-border text-muted-foreground hover:border-foreground hover:text-foreground",
+                  )}
+                >
+                  {c.label}
+                  <span
+                    className={cn(
+                      "tabular-nums",
+                      active ? "text-background/70" : "text-muted-foreground/60",
+                    )}
+                  >
+                    {countOf(c.value)}
+                  </span>
+                </Link>
+              );
+            })}
+          </nav>
 
-              <BlogFilters
-                destinations={destinations}
-                topics={topics}
-                selectedDest={dd}
-                selectedTopics={tags}
-                time={time}
-              />
-            </div>
-          </aside>
-
-          {/* Nội dung */}
-          <div className="min-w-0">
-            {/* Chủ đề nổi bật */}
-            {liveTopics.length > 0 && (
-              <section>
-                <SectionHead title="Chủ đề nổi bật" />
-                <div className="mt-4 flex gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                  {liveTopics.map((c) => {
-                    const cover = catCover.get(c.value);
-                    return (
-                      <Link
-                        key={c.value}
-                        href={buildHref({ category: c.value })}
-                        // `min-w-44 flex-1` chứ không phải `w-44 shrink-0`:
-                        // cột nội dung rộng thêm ~150px sau khi nới container,
-                        // mà ba thẻ cố định 176px thì bỏ trống nửa hàng. Cho
-                        // chúng giãn ra lấp hết chỗ, và chỉ khi nhiều chủ đề
-                        // quá mới co về 176px rồi cuộn ngang.
-                        className={cn(
-                          SHOT,
-                          "group relative aspect-[16/10] min-w-44 flex-1",
-                        )}
-                      >
-                        {cover && (
-                          <Image
-                            src={coverUrl(cover.images, cover.slug, 360, 226)}
-                            alt=""
-                            fill
-                            sizes="176px"
-                            className="object-cover"
-                          />
-                        )}
-                        <span aria-hidden className={SCRIM} />
-                        <span aria-hidden className={RING} />
-                        <span className="absolute inset-x-3.5 bottom-3">
-                          <span className="block font-[family-name:var(--font-display)] text-sm font-semibold text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.45)]">
-                            {c.label}
-                          </span>
-                          <span className="mt-0.5 block text-[11px] tabular-nums text-white/75">
-                            {countOf(c.value)} bài viết
-                          </span>
-                        </span>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </section>
-            )}
-
+          <div className="mt-8">
+            {/* KHÔNG có khối "Chủ đề nổi bật" ở đây nữa.
+                Nó render đúng `liveTopics` = `CATEGORIES` đã lọc bỏ mục rỗng —
+                cùng danh sách, cùng link, cùng số đếm với hàng chip danh mục
+                ngay phía trên, chỉ khác là có ảnh. Hai khối cạnh nhau nói y hệt
+                một điều. Giữ hàng chip vì nó ĐẦY ĐỦ hơn (có cả "Tất cả" và mục
+                chưa có bài), gọn hơn (~50px thay vì ~250px) và hiện được mục
+                đang chọn — thứ mà lưới ảnh không làm được. */}
             {/* Bài viết nổi bật */}
             {lead && (
               <section className="mt-12">
@@ -518,24 +407,31 @@ export default async function BlogPage({
                         // là bằng đúng chiều cao thẻ lead bên trái. Để chúng tự
                         // cao theo nội dung thì cột phải hụt gần 200px so với
                         // ảnh lớn bên cạnh, hở một mảng trống ở đáy.
-                        className={cn(R_CARD, "group grid flex-1 grid-cols-[8rem_1fr] gap-4 overflow-hidden border border-border transition-colors duration-200 hover:border-foreground")}
+                        //
+                        // KHÔNG bọc viền: bản trước là một hộp `border` với ảnh
+                        // dán sát mép trong — thành khuôn thẻ THỨ BA trên cùng
+                        // một trang (thẻ lead chữ-trên-ảnh, thẻ lưới ảnh-trên-
+                        // chữ, và cái hộp này). Nay ảnh có khung bo + vành
+                        // hairline riêng y như thẻ lưới, chỉ khác trục.
+                        className="group grid flex-1 grid-cols-[minmax(0,9rem)_1fr] items-stretch gap-4 sm:grid-cols-[minmax(0,11rem)_1fr]"
                       >
-                        <div className="relative min-h-[6.5rem] overflow-hidden bg-muted">
+                        <div className={cn(SHOT, "relative h-full min-h-[5.5rem]")}>
                           <Image
-                            src={coverUrl(p.images, p.slug, 320, 240)}
+                            src={coverUrl(p.images, p.slug, 480, 360)}
                             alt=""
                             fill
-                            sizes="128px"
+                            sizes="(min-width: 640px) 11rem, 9rem"
                             className="object-cover"
                           />
+                          <span aria-hidden className={RING_PLAIN} />
                         </div>
-                        <div className="flex min-w-0 flex-col justify-center pr-3">
+                        <div className="flex min-w-0 flex-col justify-center">
                           {p.category && (
                             <span className={cn(MICRO, "mb-1.5 text-warm-ink")}>
                               {label(POST_CATEGORY_LABELS, p.category)}
                             </span>
                           )}
-                          <h3 className="line-clamp-2 font-[family-name:var(--font-display)] text-sm font-semibold leading-snug tracking-tight underline-offset-4 group-hover:underline">
+                          <h3 className="line-clamp-2 font-[family-name:var(--font-display)] text-[0.9375rem] font-semibold leading-snug tracking-tight underline-offset-4 group-hover:underline">
                             {p.title}
                           </h3>
                           <DateMeta
@@ -645,7 +541,7 @@ function SectionHead({
 }) {
   return (
     <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-b border-border pb-3">
-      <h2 className="font-[family-name:var(--font-serif)] text-[clamp(1.125rem,2.2vw,1.5rem)] font-normal uppercase leading-[1.2] tracking-[0.1em] sm:tracking-[0.14em]">
+      <h2 className="font-[family-name:var(--font-display)] text-[clamp(1.125rem,2.2vw,1.5rem)] font-normal uppercase leading-[1.2] tracking-[0.1em] sm:tracking-[0.14em]">
         {title}
       </h2>
       {right}

@@ -1,18 +1,6 @@
 import { Map as MapIcon } from "@/components/icons";
-import { Playfair_Display } from "next/font/google";
 import { getDestinationMapPoints } from "@/lib/geo";
 import { VietnamMap } from "@/components/map/vietnam-map";
-import { cn } from "@/lib/utils";
-
-// Cùng họ chữ tiêu đề với trang danh sách điểm đến (`/diem-den`) — hai trang
-// nói về cùng một tập nội dung nên tiêu đề phải cùng một giọng. Khai ở trang
-// vì `--font-serif` không nằm trong root layout (xem `diem-den/page.tsx`).
-const serif = Playfair_Display({
-  variable: "--font-serif",
-  subsets: ["latin", "vietnamese"],
-  weight: ["400"],
-  display: "swap",
-});
 
 export const metadata = {
   title: "Bản đồ du lịch Việt Nam · Halivivu",
@@ -36,7 +24,7 @@ export default async function BanDoPage({
     // trả về `LatLng(NaN, NaN)` → cả trang văng sang màn hình lỗi.
     // Trừ thẳng chiều cao header: dưới lg header `hidden` nên không chiếm chỗ,
     // từ lg mới phải trừ 4rem (h-16 — xem header-chrome.tsx).
-    <div className={cn("flex h-dvh flex-col lg:h-[calc(100dvh-4rem)]", serif.variable)}>
+    <div className="flex h-dvh flex-col lg:h-[calc(100dvh-4rem)]">
       <main className="min-h-0 flex-1">
         {points.length === 0 ? (
           <div className="grid h-full place-items-center px-6 text-center">
@@ -50,7 +38,7 @@ export default async function BanDoPage({
               <p className="mt-5 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                 Bản đồ du lịch
               </p>
-              <h1 className="mt-2 font-[family-name:var(--font-serif)] text-[clamp(1.75rem,5vw,2.75rem)] font-normal uppercase leading-[1.15] tracking-[0.12em]">
+              <h1 className="mt-2 font-[family-name:var(--font-display)] text-[clamp(1.75rem,5vw,2.75rem)] font-normal uppercase leading-[1.15] tracking-[0.12em]">
                 Việt Nam
               </h1>
               <p className="mt-3 text-sm leading-relaxed text-muted-foreground">

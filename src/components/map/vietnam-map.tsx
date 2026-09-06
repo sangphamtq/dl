@@ -18,6 +18,7 @@ import {
   Crosshair,
 } from "@/components/icons";
 import { cn } from "@/lib/utils";
+import { R_BADGE, R_CARD, R_CTRL } from "@/lib/radius";
 import { coverUrl } from "@/lib/place-image";
 import { getRoute, getDistances } from "@/lib/map-actions";
 import { startTripFromRoute } from "@/app/(site)/lich-trinh/actions";
@@ -361,7 +362,7 @@ export function VietnamMap({
         <div className="flex items-baseline justify-between gap-3 px-4 pt-3.5 sm:px-5 lg:pt-5">
           <div className="min-w-0">
             <p className={cn(MICRO, "text-muted-foreground")}>Bản đồ du lịch</p>
-            <h1 className="mt-1.5 hidden font-[family-name:var(--font-serif)] text-[clamp(1.5rem,2.4vw,2rem)] font-normal uppercase leading-[1.1] tracking-[0.12em] lg:block">
+            <h1 className="mt-1.5 hidden font-[family-name:var(--font-display)] text-[clamp(1.5rem,2.4vw,2rem)] font-normal uppercase leading-[1.1] tracking-[0.12em] lg:block">
               Việt Nam
             </h1>
           </div>
@@ -381,7 +382,7 @@ export function VietnamMap({
         {/* Hai chế độ = hai câu hỏi không gian mà một danh sách không trả lời
             được. Trang này KHÔNG có ô tìm kiếm / lọc miền / lọc nổi bật: cả ba
             đã có ở /diem-den, và trên bản đồ thì "miền" vốn là thứ nhìn thấy. */}
-        <div className="mt-3.5 grid grid-cols-2 gap-px border-y border-border/60 bg-border/60 sm:mt-4">
+        <div className={cn(R_CTRL, "mt-3.5 grid grid-cols-2 gap-px overflow-hidden border border-border/60 bg-border/60 sm:mt-4")}>
           {(
             [
               ["nearby", "Quanh đây"],
@@ -455,7 +456,7 @@ export function VietnamMap({
             <div className="flex flex-col items-center px-6 py-12 text-center">
               <span
                 aria-hidden
-                className="grid size-12 place-items-center bg-muted text-muted-foreground"
+                className={cn(R_CARD, "grid size-12 place-items-center bg-muted text-muted-foreground")}
               >
                 <Compass className="size-5" />
               </span>
@@ -771,7 +772,7 @@ function PlaceRow({
         aria-pressed={marked}
         className="flex min-w-0 flex-1 items-center gap-3 px-4 py-2.5 text-left outline-none focus-visible:bg-muted sm:px-5"
       >
-        <span className="relative aspect-[3/2] w-[4.75rem] shrink-0 overflow-hidden bg-muted">
+        <span className={cn(R_BADGE, "relative aspect-[3/2] w-[4.75rem] shrink-0 overflow-hidden bg-muted")}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={p.coverUrl ?? coverUrl([], p.slug, 240, 160)}
@@ -831,7 +832,7 @@ function PlaceRow({
         {mode === "route" && stopIndex === null && (
           <span
             aria-hidden
-            className="grid size-7 shrink-0 place-items-center border border-border text-muted-foreground"
+            className={cn(R_BADGE, "grid size-7 shrink-0 place-items-center border border-border text-muted-foreground")}
           >
             <Plus className="size-3.5" />
           </span>
@@ -865,7 +866,8 @@ function Chip({
       aria-pressed={active}
       className={cn(
         MICRO,
-        "inline-flex h-8 items-center gap-1.5 border px-3 transition-colors",
+        R_CTRL,
+        "inline-flex h-8 items-center gap-1.5 border px-3.5 transition-colors",
         active
           ? "border-foreground bg-foreground text-background"
           : "border-border text-muted-foreground hover:border-foreground hover:text-foreground",

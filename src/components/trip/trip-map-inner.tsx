@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import L from "leaflet";
 import { MapContainer, TileLayer, Marker, Popup, Polyline, ZoomControl, useMap } from "react-leaflet";
 import type { TripItemKind } from "@/lib/trip-time";
+import { CARTO_ATTRIBUTION, cartoTileUrl } from "@/lib/basemap";
 
 // Bản đồ một ngày trong lịch trình. Khác DestinationMapInner ở một điểm cốt
 // lõi: pin ở đây ĐÁNH SỐ THEO THỨ TỰ, vì thứ tự chính là nội dung của lịch
@@ -105,8 +106,8 @@ export default function TripMapInner({
     >
       <TileLayer
         key={style}
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-        url={`https://{s}.basemaps.cartocdn.com/rastertiles/${style}/{z}/{x}/{y}.png`}
+        attribution={CARTO_ATTRIBUTION}
+        url={cartoTileUrl(style)}
         subdomains="abcd"
         maxZoom={20}
       />

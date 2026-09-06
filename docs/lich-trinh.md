@@ -706,21 +706,71 @@ nằm sai chỗ.
 Bố cục hiện tại:
 
 ```
-Dải mở đầu: ẢNH TRÀN VIỀN + "LỊCH TRÌNH" serif in hoa + 2 nút kính (khuôn /diem-den)
-[đã đăng nhập] thẻ "Đang lên lịch trình: <tên chuyến>"
-Lịch trình mẫu — MỖI MẪU MỘT HÀNG TRÀN NGANG:
-   trái: THẺ ẢNH 3/2 (tên GIỮA ảnh dưới lớp phủ tối, 2 dữ kiện gạch mảnh ở đáy)
-   phải: tóm tắt · BẢNG TỪNG NGÀY (01 · tên ngày · n điểm dừng) · [Xem lịch trình]
-Tự xếp chuyến của bạn — lưới THẺ ẢNH điểm đến, mỗi thẻ là một `PlanTripButton`
-Dải "Đo trên bản đồ" → /ban-do (chế độ Đo chuyến)
+Dải mở đầu: ẢNH TRÀN VIỀN + "LỊCH TRÌNH" in hoa giãn chữ + 2 nút kính (khuôn /diem-den)
+[đã đăng nhập] DẢI TRẠNG THÁI tràn viền ngay dưới hero, nền `primary/5`, MỘT hàng:
+   (ảnh đại diện)  Bạn đang lên lịch trình <tên chuyến> ····· n ngày  n mục  Tiếp tục →
+
+   ⚠️ Hai thứ nói "đây là của BẠN", cả hai đều cần:
+      · ẢNH ĐẠI DIỆN của người đang đăng nhập (`Avatar` của shadcn — dùng `<img>`
+        của Radix nên KHÔNG phải khai domain trong `next.config.ts`);
+      · CÂU Ở NGÔI THỨ HAI, viết thường. Bản trước dùng nhãn IN HOA NHỎ `MICRO`
+        — đó đúng là kiểu chữ của nhãn phân loại ở các hàng mẫu ("BÌNH THUẬN ·
+        3 NGÀY 2 ĐÊM"), nên nó đọc ra như metadata của một mẫu chứ không phải
+        lời hệ thống nói với người dùng.
+   ⚠️ Không phải một thẻ trong cột nội dung. Bản cũ là thẻ có viền đặt trên danh
+   sách mẫu, mà nó lặp đúng hình của một hàng mẫu — đây là VIỆC DỞ CỦA BẠN, không
+   phải mẫu để xem. Nền phớt màu đã tự tách khối nên KHÔNG thêm đường kẻ.
+Lịch trình mẫu — MỘT MẪU MỘT HÀNG tràn ngang, các hàng ngăn bằng `divide-y`:
+   ┌────────┬────────────────────────────────────────────┐
+   │        │ BÌNH THUẬN   3 NGÀY 2 ĐÊM   17 ĐIỂM DỪNG   │
+   │  ảnh   │ Phan Thiết 3 ngày 2 đêm                    │
+   │        │ Một chiều thả lỏng ở biển…      (max-w-2xl)│
+   │        │ 01  Về tới biển             5 điểm dừng    │
+   │        │ 02  Bình minh đồi cát       8 điểm dừng    │
+   └────────┴────────────────────────────────────────────┘
+   Tiêu đề section KHÔNG kèm dữ kiện phụ (`SectionHead` có `meta` tuỳ chọn).
+   CẢ HÀNG là link — không nút phụ, không dòng chữ phụ
+
+   ⚠️ TÊN MẪU là CHỮ ở cột phải, KHÔNG đè lên ảnh như thẻ /diem-den: ảnh ở đây
+   chỉ rộng ~19rem, đặt tên lên đó thì chật và tranh chỗ với chính tấm ảnh.
+   ⚠️ Ảnh dùng `sm:h-full` + `min-h`, KHÔNG đặt tỉ lệ cố định: cột chữ cao thấp
+   khác nhau theo số ngày (1 ngày vs 3 ngày), `aspect-[…]` thì hàng nào cũng
+   thừa hoặc thiếu chỗ.
+   ⚠️ Danh sách ngày trải HẾT cột phải (không `max-w`) — số điểm dừng neo ở mép
+   phải hàng nên không còn khoảng trống thừa. Riêng TÓM TẮT vẫn giữ `max-w-2xl`:
+   đó là văn xuôi, cần độ dài dòng đọc được.
+   ⚠️ KHÔNG kẻ nét dưới từng ngày. Số thứ tự ở cột trái và số điểm dừng neo mép
+   phải đã tạo sẵn hai trục thẳng hàng để mắt bám theo — thêm nét thì một trang
+   5 mẫu có tới ~16 đường ngang. Cả trang giờ chỉ còn nét dưới tiêu đề section
+   và `divide-y` giữa các hàng.
 ```
 
-**Phong cách lấy nguyên của `/diem-den`** (`destination-filter.tsx`): serif Playfair in hoa
-giãn chữ cho tiêu đề (`--font-serif` khai TẠI TRANG — nó không có trong root layout), hằng
-`MICRO` **0.6rem** dùng chung, hình khối VUÔNG (không `rounded-full`/`rounded-2xl`), và thẻ
-lấy ẢNH LÀM CHỦ: tên đặt giữa ảnh dưới lớp phủ tối, hàng dữ kiện ngăn bằng gạch mảnh trắng ở
-đáy ảnh. Một lịch trình và một điểm đến là hai mặt của cùng một chuyến đi, người dùng đi qua
-lại giữa hai trang — chúng không được là hai sản phẩm khác nhau.
+> **ĐÃ GỠ (2026-09-06) — đừng dựng lại mà không hỏi:** khối *"Tự xếp chuyến của bạn"*
+> (lưới thẻ điểm đến, mỗi thẻ một `PlanTripButton`) và dải *"Đo trên bản đồ"*. Cả hai
+> **lặp đúng hai nút đã có sẵn trên hero** — "Chọn điểm đến" (→ `/diem-den`) và "Đo chuyến
+> trên bản đồ" (→ `/ban-do`) — nên trang mời cùng hai việc đó hai lần trong một màn hình.
+> Gỡ kèm luôn truy vấn `place.findMany` chỉ phục vụ khối đó: trang nay còn **2 truy vấn**.
+> Muốn dựng lại thì lấy trong lịch sử git; `PlanTripButton` vẫn còn nguyên và vẫn dùng ở
+> trang điểm đến.
+
+**Phong cách lấy nguyên của `/diem-den`** (`destination-filter.tsx`): tiêu đề in hoa giãn chữ
+bằng `--font-display` (Be Vietnam Pro, khai ở root layout), hằng
+`MICRO` **0.6rem** dùng chung, bo góc theo bộ chung (`lib/radius.ts`). Một lịch trình và một
+điểm đến là hai mặt của cùng một chuyến đi, người dùng đi qua lại giữa hai trang — chúng
+không được là hai sản phẩm khác nhau.
+
+> **Đã thử và bỏ HAI bố cục khác, đừng dựng lại mà không hỏi:**
+> · *hàng 2 cột* (ảnh trái — tóm tắt + bảng từng ngày bên phải): phần giá trị nhất
+>   (các ngày) thành cột chữ nép bên cạnh, và hai mẫu lặp y hệt nhau;
+> · *dải dòng thời gian ngang* (mỗi ngày một nốt trên một đường): nói đúng thứ sản phẩm
+>   bán, nhưng **phần lớn mẫu chỉ 2–3 ngày** nên dải lúc nào cũng ngắn hơn bề ngang trang.
+>
+> Bài học chung: **mọi khối trên trang này phải TRẢI HẾT bề ngang với số thẻ THẬT** (hiện
+> là 2). Đừng bó `max-w`, đừng khai số cột lớn hơn số thẻ — mép phải răng cưa làm cả trang
+> đọc ra như bị hụt nội dung. Lưới "Tự xếp chuyến" chỉ bật `lg:grid-cols-4` khi có ≥3 nơi.
+>
+> Ảnh thẻ luôn có: bìa mẫu → ảnh điểm dừng đầu tiên → `coverUrl([], slug)`. **Đừng lấy URL
+> thô** — nhiều điểm dừng chưa có ảnh thật và thẻ sẽ thành ô xám trống.
 
 Nút kính trên ảnh hero là **`components/site/hero-link.tsx`** — tách ra dùng chung sau khi
 phát hiện `/diem-den` (`BrowseLink`) và `/dia-diem` (`HeroLink`) giữ hai bản chép **giống

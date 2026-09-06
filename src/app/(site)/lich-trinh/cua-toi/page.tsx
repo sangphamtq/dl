@@ -1,6 +1,5 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Playfair_Display } from "next/font/google";
 import { redirect } from "next/navigation";
 import { CalendarDays, MapPin, Route, Sparkles } from "@/components/icons";
 import { auth } from "@/auth";
@@ -8,15 +7,6 @@ import { prisma } from "@/lib/prisma";
 import { getPlanningTripId } from "../actions";
 import { NewTripButton, TripCardMenu } from "@/components/trip/trip-list-actions";
 import { cn } from "@/lib/utils";
-
-// Cùng họ chữ tiêu đề với các trang đã chuyển giọng — khai TẠI TRANG vì
-// `--font-serif` không có trong root layout.
-const serif = Playfair_Display({
-  variable: "--font-serif",
-  subsets: ["latin", "vietnamese"],
-  weight: ["400"],
-  display: "swap",
-});
 
 // Nhãn nhỏ in hoa — CÙNG hằng với `destination-filter.tsx`.
 const MICRO = "text-[0.6rem] font-semibold uppercase tracking-[0.14em]";
@@ -96,13 +86,13 @@ export default async function LichTrinhPage() {
     // ba vòng tròn đồng tâm ở góc phải — hai thứ trang trí thuần tuý, mà bộ vật
     // liệu biên tập (`/diem-den`, `/dia-diem`, `/blog`…) không dùng nền màu lẫn
     // hoạ tiết: phân tầng ở đó do chữ và khoảng trắng lo.
-    <div className={cn("flex flex-1 flex-col", serif.variable)}>
+    <div className="flex flex-1 flex-col">
       <main className="flex-1">
         <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
           <p className={cn(MICRO, "text-warm-ink")}>Chuyến đi của bạn</p>
           <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
             <div>
-              <h1 className="font-[family-name:var(--font-serif)] text-[clamp(1.75rem,4.4vw,3rem)] font-normal uppercase leading-[1.15] tracking-[0.1em] sm:tracking-[0.14em]">
+              <h1 className="font-[family-name:var(--font-display)] text-[clamp(1.75rem,4.4vw,3rem)] font-normal uppercase leading-[1.15] tracking-[0.1em] sm:tracking-[0.14em]">
                 Lịch trình
               </h1>
               <p className="mt-2 max-w-prose leading-relaxed text-muted-foreground">
@@ -227,7 +217,7 @@ export default async function LichTrinhPage() {
               {/* Bỏ icon tia lấp lánh cạnh tiêu đề: tiêu đề mục ở bộ vật liệu
                   này chỉ có chữ và một đường kẻ. */}
               <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-b border-border pb-3">
-                <h2 className="font-[family-name:var(--font-serif)] text-[clamp(1.125rem,2.2vw,1.5rem)] font-normal uppercase leading-[1.2] tracking-[0.1em] sm:tracking-[0.14em]">
+                <h2 className="font-[family-name:var(--font-display)] text-[clamp(1.125rem,2.2vw,1.5rem)] font-normal uppercase leading-[1.2] tracking-[0.1em] sm:tracking-[0.14em]">
                   Lịch trình gợi ý
                 </h2>
                 <Link
