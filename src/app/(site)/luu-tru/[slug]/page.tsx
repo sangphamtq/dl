@@ -46,6 +46,7 @@ import { AddToTripButton } from "@/components/site/add-to-trip-button";
 import { getListingPeers } from "@/lib/peers";
 import { isStaffViewer } from "@/lib/preview";
 import { auth } from "@/auth";
+import { notFoundMetadata } from "@/lib/metadata";
 
 const pub = { status: "published" as const };
 
@@ -72,7 +73,7 @@ export async function generateMetadata({
     where: { slug },
     select: { name: true, description: true, status: true },
   });
-  if (!acc || acc.status !== "published") return {};
+  if (!acc || acc.status !== "published") return notFoundMetadata;
   return { title: acc.name, description: acc.description ?? undefined };
 }
 

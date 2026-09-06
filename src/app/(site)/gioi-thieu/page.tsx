@@ -240,26 +240,35 @@ export default async function GioiThieuPage() {
             Ở đây là đúng NĂM mục thật của một trang điểm đến, đánh số, không
             icon, không thẻ. Tiêu đề đứng cột trái và dính lại khi cuộn (từ lg)
             nên mắt luôn biết đang đọc phần nào. */}
-        <Section title="Một trang điểm đến có gì">
-          <ol className="space-y-9">
+        {/* HÀNG NGANG 5 Ô, không phải danh sách dọc cạnh tiêu đề.
+            Năm mục này CHÍNH LÀ năm tab của một trang điểm đến, nên bày chúng
+            thành một hàng thì hình của khối nói luôn điều mà chữ đang nói. */}
+        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24">
+          <span aria-hidden className="mb-5 block h-[3px] w-10 bg-warm" />
+          <h2 className="text-balance font-[family-name:var(--font-display)] text-[clamp(1.375rem,2.8vw,2rem)] font-normal uppercase leading-[1.2] tracking-[0.1em] sm:tracking-[0.14em]">
+            Một trang điểm đến có gì
+          </h2>
+
+          <ol className="mt-10 grid gap-x-7 gap-y-9 sm:grid-cols-2 lg:grid-cols-5">
             {PARTS.map((p, i) => (
-              <li key={p.label} className="flex gap-5 sm:gap-7">
+              <li key={p.label}>
+                {/* Chữ số LỚN màu cam, không phải nhãn li ti: cả trang vốn
+                    chỉ có xám + hai dải xanh, mà luật màu của dự án là xanh cho
+                    tầng nơi chốn, CAM cho tầng nội dung — năm mục này chính là
+                    tầng nội dung. `warm-ink` chứ không `warm`: chữ trên nền
+                    sáng phải dùng bản ink (≈4.9:1 thay vì ~2:1). */}
                 <span
                   aria-hidden
-                  // `warm-ink` chứ không `warm`: chữ trên nền sáng thì phải
-                  // dùng bản ink (luật màu ở globals.css) — `warm` chỉ đạt ~2:1.
-                  className={cn(MICRO, "shrink-0 pt-2 tabular-nums text-warm-ink")}
+                  className="block font-[family-name:var(--font-display)] text-[2rem] font-semibold leading-none tabular-nums text-warm-ink"
                 >
                   {String(i + 1).padStart(2, "0")}
                 </span>
-                <div className="min-w-0">
-                  <h3 className="font-[family-name:var(--font-display)] text-lg font-semibold tracking-tight sm:text-xl">
-                    {p.label}
-                  </h3>
-                  <p className="mt-1.5 max-w-xl leading-relaxed text-muted-foreground">
-                    {p.desc}
-                  </p>
-                </div>
+                <h3 className="mt-3 font-[family-name:var(--font-display)] text-lg font-semibold tracking-tight">
+                  {p.label}
+                </h3>
+                <p className="mt-1.5 text-[0.9375rem] leading-relaxed text-muted-foreground">
+                  {p.desc}
+                </p>
               </li>
             ))}
           </ol>
@@ -268,7 +277,7 @@ export default async function GioiThieuPage() {
             href="/diem-den"
             className={cn(
               MICRO,
-              "group mt-10 inline-flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground",
+              "group mt-12 inline-flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground",
             )}
           >
             Xem thử một điểm đến
@@ -277,14 +286,17 @@ export default async function GioiThieuPage() {
               aria-hidden
             />
           </Link>
-        </Section>
+        </section>
 
         {/* ── CHỖ Ở ─────────────────────────────────────────────────────────
             Phần khác biệt thật sự của dự án, nên nó được một dải nền riêng chứ
             không phải một ô trong lưới sáu thẻ như bản cũ. Nội dung lấy đúng
             định vị đã chốt trong CLAUDE.md — kể cả chỗ nói rõ mình KHÔNG làm gì,
             vì đó mới là thứ khiến lời hứa còn lại đáng tin. */}
-        <section className="bg-accent/40">
+        {/* `bg-accent` ĐẦY, không phải `/40`: `--accent` vốn đã là #ecf7ea — xanh
+            gần trắng — nên lấy 40% của nó thì dải này gần như biến mất, khối
+            khác biệt lớn nhất của dự án lại là khối nhạt nhất trang. */}
+        <section className="bg-accent">
           <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24">
             <div className="grid gap-10 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16">
               <div>
@@ -387,32 +399,38 @@ export default async function GioiThieuPage() {
         </section>
 
         {/* ── KHÔNG LÀM ─────────────────────────────────────────────────── */}
-        <Section title="Những gì trang này không làm">
-          <ul className="space-y-6">
+        {/* Lưới 2 cột GỌN, không phải cột chữ dài cạnh tiêu đề: đây là phần
+            ngắn nhất trang (một ranh giới phạm vi), nên nó cũng phải chiếm ít
+            chỗ nhất — và hình của nó khác hẳn hàng 5 ô ở trên lẫn khối có ảnh
+            ở giữa. */}
+        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24">
+          <span aria-hidden className="mb-5 block h-[3px] w-10 bg-warm" />
+          <h2 className="text-balance font-[family-name:var(--font-display)] text-[clamp(1.375rem,2.8vw,2rem)] font-normal uppercase leading-[1.2] tracking-[0.1em] sm:tracking-[0.14em]">
+            Những gì trang này không làm
+          </h2>
+          <ul className="mt-8 grid gap-x-12 gap-y-5 sm:grid-cols-2">
             {NOT_DOING.map((t) => (
               <li key={t} className="flex gap-4">
                 {/* Một gạch ngang thay cho icon dấu ✕: đây là ranh giới phạm vi,
                     không phải lỗi hay điều cấm. */}
                 <span
                   aria-hidden
-                  className="mt-3.5 h-px w-5 shrink-0 bg-border"
+                  className="mt-3.5 h-px w-5 shrink-0 bg-warm"
                 />
-                <p className="max-w-2xl leading-relaxed text-muted-foreground">
-                  {t}
-                </p>
+                <p className="leading-relaxed text-muted-foreground">{t}</p>
               </li>
             ))}
           </ul>
-        </Section>
+        </section>
 
-        {/* Cẩm nang là phần phụ nên nó là một dòng thêm vào, không phải một
-            section ngang hàng. Vẫn dùng lại đúng lưới hai cột của các section
-            trên (cột trái để trống) để dòng này thẳng hàng với mọi khối chữ
-            khác — lệch ra là đọc ra ngay như một mẩu vá. */}
+        {/* Cẩm nang là phần phụ nên nó là một DÒNG thêm vào, không phải một
+            section ngang hàng — không tiêu đề, không nền riêng.
+            Bắt đầu từ MÉP TRÁI container như mọi khối khác. Bản trước thụt vào
+            cột phải của lưới hai cột để thẳng hàng với các section thời đó; nay
+            các khối kia đã bỏ lưới ấy nên thụt vào là lệch một mình. */}
         {posts > 0 && (
           <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 sm:pb-24">
-            <div className="grid gap-8 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16">
-              <div aria-hidden className="hidden lg:block" />
+            <div>
               <p className="max-w-2xl leading-relaxed text-muted-foreground">
                 Ngoài các trang điểm đến còn <Num>{posts}</Num> bài trong{" "}
                 <Link
@@ -507,29 +525,6 @@ export default async function GioiThieuPage() {
 }
 
 /* ─── Sub-components ──────────────────────────────────────── */
-
-// Khuôn section: tiêu đề cột trái (DÍNH lại khi cuộn từ lg), nội dung cột phải.
-// Bố cục hai cột lệch này thay cho kiểu "tiêu đề căn giữa + đoạn dẫn căn giữa +
-// lưới thẻ" của bản cũ — kiểu đó khiến mọi section trông giống hệt nhau và mắt
-// phải quay về giữa trang sau mỗi khối.
-function Section({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24">
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16">
-        <h2 className="text-balance font-[family-name:var(--font-display)] text-[clamp(1.375rem,2.8vw,2rem)] font-normal uppercase leading-[1.2] tracking-[0.1em] sm:tracking-[0.14em] lg:sticky lg:top-24 lg:self-start">
-          {title}
-        </h2>
-        <div>{children}</div>
-      </div>
-    </section>
-  );
-}
 
 // Con số trong câu văn: đậm hơn một bậc và về màu chữ chính — đủ để mắt bắt
 // được mà vẫn nằm trong dòng, thay cho dải "số liệu" bốn cột có vạch ngăn.

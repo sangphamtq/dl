@@ -1,6 +1,6 @@
 import { TripWorkspace } from "./trip-workspace";
 
-export const metadata = { title: "Soạn lịch trình · Halivivu" };
+export const metadata = { title: "Soạn lịch trình" };
 
 // Mục Lịch trình của một chuyến. Toàn bộ nội dung (kể cả ba mục kia) render ở
 // `TripWorkspace` — xem chú thích trong file đó.

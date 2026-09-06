@@ -16,6 +16,7 @@ import { prisma } from "@/lib/prisma";
 import { isStaffViewer } from "@/lib/preview";
 import { saleServiceLabel, SALE_LEVEL_LABELS } from "@/lib/sale";
 import { StayShare } from "@/components/site/stay-share";
+import { notFoundMetadata } from "@/lib/metadata";
 
 // Zalo có thể là SĐT hoặc link — chuẩn hoá thành URL chat zalo.me.
 function zaloHref(v: string): string {
@@ -39,7 +40,7 @@ export async function generateMetadata({
     where: { slug },
     select: { displayName: true, bio: true, status: true },
   });
-  if (!p || p.status !== "approved") return {};
+  if (!p || p.status !== "approved") return notFoundMetadata;
   return { title: `${p.displayName} · CTV du lịch`, description: p.bio ?? undefined };
 }
 

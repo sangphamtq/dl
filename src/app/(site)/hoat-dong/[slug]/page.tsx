@@ -34,6 +34,7 @@ import { ShareButton } from "@/components/site/share-button";
 import { AddToTripButton } from "@/components/site/add-to-trip-button";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { notFoundMetadata } from "@/lib/metadata";
 
 const pub = { status: "published" as const };
 
@@ -47,7 +48,7 @@ export async function generateMetadata({
     where: { slug },
     select: { name: true, description: true, status: true },
   });
-  if (!a || a.status !== "published") return {};
+  if (!a || a.status !== "published") return notFoundMetadata;
   return { title: a.name, description: a.description ?? undefined };
 }
 

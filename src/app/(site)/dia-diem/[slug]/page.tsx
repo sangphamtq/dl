@@ -54,6 +54,7 @@ import {
   ReviewsSection,
   type ReviewListItem,
 } from "@/components/site/place-reviews";
+import { notFoundMetadata } from "@/lib/metadata";
 
 const pub = { status: "published" as const };
 
@@ -73,7 +74,7 @@ export async function generateMetadata({
     where: { slug },
     select: { name: true, description: true, status: true },
   });
-  if (!spot || spot.status !== "published") return {};
+  if (!spot || spot.status !== "published") return notFoundMetadata;
   return { title: spot.name, description: spot.description ?? undefined };
 }
 

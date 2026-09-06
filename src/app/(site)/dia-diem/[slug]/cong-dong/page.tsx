@@ -26,6 +26,7 @@ import { CommunityFilter } from "@/components/community/community-filter";
 import { CommunitySort } from "@/components/community/community-sort";
 import { CommunitySidebar } from "@/components/community/community-sidebar";
 import { RealtimeRefresher } from "@/components/community/realtime-refresher";
+import { notFoundMetadata } from "@/lib/metadata";
 
 export async function generateMetadata({
   params,
@@ -37,8 +38,8 @@ export async function generateMetadata({
     where: { slug },
     select: { name: true },
   });
-  if (!spot) return {};
-  return { title: `Cộng đồng ${spot.name} · Halivivu` };
+  if (!spot) return notFoundMetadata;
+  return { title: `Cộng đồng ${spot.name}` };
 }
 
 export default async function SpotCommunityPage({

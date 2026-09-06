@@ -39,7 +39,17 @@ export const viewport: Viewport = {
 export async function generateMetadata(): Promise<Metadata> {
   const s = await getSettings();
   return {
-    title: { default: `${s.siteName} — ${s.tagline}`, template: `%s · ${s.siteName}` },
+    // Tiêu đề tab là NHÃN, không phải câu: cắt dấu chấm cuối của `tagline`
+    // (trường đó còn dùng ở chỗ khác, nơi dấu chấm đúng, nên cắt tại đây chứ
+    // không sửa dữ liệu). Ngăn cách bằng — chứ không phải "·": trong <title>
+    // không có khoảng trắng rộng để ngăn như trên trang, còn "·" thì cả dự án
+    // đã bỏ. Từng trang CHỈ ghi tên của mình, `template` lo phần tên site —
+    // đừng gắn thêm "Halivivu" vào title của page (24 trang từng làm vậy và ra
+    // "Điểm đến · Halivivu · Halivivu").
+    title: {
+      default: `${s.siteName} — ${s.tagline.replace(/\.\s*$/, "")}`,
+      template: `%s — ${s.siteName}`,
+    },
     description: s.description,
     applicationName: s.siteName,
     // <link rel="manifest"> do app/manifest.ts tự sinh; khối này là phần iOS
@@ -49,11 +59,12 @@ export async function generateMetadata(): Promise<Metadata> {
       title: s.siteName,
       statusBarStyle: "default",
     },
-    // Favicon vẫn do app/icon.png (file convention) lo; ở đây chỉ bổ sung icon
-    // màn hình chính của iOS — bản 180×180, nền đục (iOS không nhận alpha).
-    icons: {
-      apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }],
-    },
+    // ⚠️ KHÔNG khai `icons` ở đây. Khai một khoá bất kỳ trong đó là ĐÈ LÊN cả
+    // bộ file convention, nên bản trước — chỉ khai `apple` — làm HTML mất sạch
+    // `<link rel="icon">`: `src/app/icon.png` có tồn tại nhưng chẳng ai trỏ
+    // tới, trình duyệt rơi về favicon mặc định. Nay cả hai đều là file
+    // convention (`src/app/icon.png`, `src/app/apple-icon.png`), Next tự sinh
+    // thẻ link kèm hash — cũng là thứ đường dẫn viết tay không có.
   };
 }
 

@@ -1,19 +1,9 @@
 "use client";
 
-import { createElement, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import {
-  ArrowUpRight,
-  BedDouble,
-  Camera,
-  Compass,
-  Landmark,
-  MapPin,
-  Newspaper,
-  Search,
-  type LucideIcon,
-} from "@/components/icons";
+import { ArrowUpRight, Search } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import {
   Dialog,
@@ -23,7 +13,6 @@ import {
 } from "@/components/ui/dialog";
 import {
   Command,
-  CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
@@ -33,66 +22,30 @@ import {
   searchSite,
   getSuggestions,
   type SearchHit,
-  type SearchResults,
+  type SearchGroup,
 } from "./search-action";
 
-// Icon theo loại kết quả (suy từ tiền tố route; tỉnh khác điểm đến con).
-const PREFIX_ICON: Record<string, LucideIcon> = {
-  "hoat-dong": Compass,
-  "dia-diem": Camera,
-  "luu-tru": BedDouble,
-  blog: Newspaper,
-};
-function iconFor(h: SearchHit): LucideIcon {
-  const prefix = h.href.split("/")[1] ?? "";
-  if (prefix === "diem-den") return h.province ? Landmark : MapPin;
-  return PREFIX_ICON[prefix] ?? MapPin;
-}
-
-// Một hàng kết quả: icon · tên + ngữ cảnh · loại (cuối hàng).
-function HitItem({ h, onSelect }: { h: SearchHit; onSelect: () => void }) {
+/**
+ * MỘT khuôn hàng cho MỌI loại kết quả: ảnh · tên · ngữ cảnh.
+ *
+ * Trước đây có hai khuôn — Place/Spot thì ảnh thumbnail, còn Lưu trú/Bài viết
+ * chỉ được một icon xám. Sự phân hạng đó không đến từ dữ liệu: chẳng loại nào
+ * có ảnh thật cả (kể cả "Phan Thiết"), chỉ là hai khuôn xử lý chỗ trống theo
+ * hai cách. Nay `searchSite` cho mọi hit đi qua `coverUrl()` nên ảnh LUÔN có,
+ * và một khuôn là đủ.
+ *
+ * KHÔNG còn nhãn loại ở mép phải: tiêu đề nhóm đã nói loại, và nhãn đó ăn mất
+ * bề ngang của đúng thứ người ta đang đọc — cái tên.
+ */
+function HitRow({ h, onSelect }: { h: SearchHit; onSelect: () => void }) {
   return (
     <CommandItem
       value={h.href}
       onSelect={onSelect}
-      className="gap-3 rounded-[4px] px-3 py-2.5"
+      className="group gap-3 rounded-[4px] px-2 py-2"
     >
-      {createElement(iconFor(h), {
-        className: "size-5 shrink-0 text-muted-foreground",
-      })}
-      <span className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate text-sm font-medium text-foreground">
-          {h.name}
-        </span>
-        {h.context && (
-          <span className="truncate text-xs text-muted-foreground">
-            {h.context}
-          </span>
-        )}
-      </span>
-      <span className={cn(MICRO, "ml-auto shrink-0 self-center pl-3 text-muted-foreground")}>
-        {h.label}
-      </span>
-    </CommandItem>
-  );
-}
-
-// Hàng "Địa điểm" (nhóm chính): ảnh thumbnail + tên + ngữ cảnh + loại.
-function PlaceHitItem({ h, onSelect }: { h: SearchHit; onSelect: () => void }) {
-  return (
-    <CommandItem
-      value={h.href}
-      onSelect={onSelect}
-      className="gap-3 rounded-[4px] px-2 py-2"
-    >
-      <span className="relative size-11 shrink-0 overflow-hidden bg-muted ring-1 ring-inset ring-border">
-        {h.image ? (
-          <Image src={h.image} alt="" fill sizes="44px" className="object-cover" />
-        ) : (
-          <span className="grid size-full place-items-center text-muted-foreground">
-            {createElement(iconFor(h), { className: "size-4" })}
-          </span>
-        )}
+      <span className="relative size-11 shrink-0 overflow-hidden bg-muted">
+        <Image src={h.image} alt="" fill sizes="44px" className="object-cover" />
       </span>
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="truncate text-sm font-medium text-foreground">
@@ -104,9 +57,12 @@ function PlaceHitItem({ h, onSelect }: { h: SearchHit; onSelect: () => void }) {
           </span>
         )}
       </span>
-      <span className={cn(MICRO, "ml-auto shrink-0 self-center pl-3 text-muted-foreground")}>
-        {h.label}
-      </span>
+      {/* Mũi tên chỉ hiện ở hàng đang chọn — cùng cách thẻ lưu trú để lộ mũi tên
+          khi rê chuột, thay cho một cột nhãn chiếm chỗ vĩnh viễn. */}
+      <ArrowUpRight
+        className="ml-auto size-4 shrink-0 self-center text-muted-foreground opacity-0 group-data-[selected=true]:opacity-100"
+        aria-hidden
+      />
     </CommandItem>
   );
 }
@@ -129,19 +85,9 @@ function SuggestionCard({
       onSelect={onSelect}
       className="gap-3 rounded-[4px] px-2 py-1.5"
     >
-      {/* Ô VUÔNG 40px, đúng bằng dấu chân của ảnh tròn cũ. Đã thử khung 3/2
-          rộng 56px: phần lớn điểm đến chưa có ảnh bìa nên lưới sáu gợi ý thành
-          sáu mảng xám to hơn hẳn, trông như ảnh hỏng chứ không phải chỗ trống. */}
-      <span className="relative size-10 shrink-0 overflow-hidden bg-muted ring-1 ring-inset ring-border">
-        {h.image ? (
-          <Image src={h.image} alt="" fill sizes="40px" className="object-cover" />
-        ) : (
-          <span className="grid size-full place-items-center text-muted-foreground">
-            {createElement(h.province ? Landmark : MapPin, {
-              className: "size-4",
-            })}
-          </span>
-        )}
+      {/* Ô VUÔNG 40px, đúng bằng dấu chân của ảnh tròn cũ. */}
+      <span className="relative size-10 shrink-0 overflow-hidden bg-muted">
+        <Image src={h.image} alt="" fill sizes="40px" className="object-cover" />
       </span>
       <span className="truncate text-sm font-medium">{h.name}</span>
     </CommandItem>
@@ -155,10 +101,13 @@ const COMMAND_CLASS = cn(
   "[&_[data-slot=command-input-wrapper]]:h-16 [&_[data-slot=command-input-wrapper]]:gap-3 [&_[data-slot=command-input-wrapper]]:px-5",
   "[&_[data-slot=command-input-wrapper]_svg]:size-5 [&_[data-slot=command-input-wrapper]_svg]:opacity-60",
   "[&_[data-slot=command-input]]:text-base",
-  // Tiêu đề nhóm: đúng thang `MICRO` dùng chung với các trang danh sách, và có
-  // một gạch chân mảnh — cùng cách `SectionHeading serif` phân tầng.
-  "[&_[cmdk-group-heading]]:mb-1.5 [&_[cmdk-group-heading]]:border-b [&_[cmdk-group-heading]]:border-border [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:pb-2 [&_[cmdk-group-heading]]:text-[0.6rem] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.14em] [&_[cmdk-group-heading]]:text-muted-foreground",
-  "[&_[cmdk-group]]:px-2 [&_[cmdk-group]]:py-2",
+  // Tiêu đề nhóm: đúng thang `MICRO` dùng chung với các trang danh sách, phân
+  // tầng bằng KHOẢNG TRẮNG chứ không phải gạch chân. Bản trước mỗi nhóm một nét
+  // ngang — hồi đó chỉ có hai nhóm nên còn chịu được; nay nhóm chia theo loại
+  // thật (tới năm nhóm) thì panel cao 480px kẻ tới năm vạch, đúng thứ đã gỡ ở
+  // `/lich-trinh`.
+  "[&_[cmdk-group-heading]]:mb-1 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:pt-1 [&_[cmdk-group-heading]]:text-[0.6rem] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.14em] [&_[cmdk-group-heading]]:text-muted-foreground",
+  "[&_[cmdk-group]]:px-2 [&_[cmdk-group]]:pb-3",
   // Hàng đang chọn: nền MỰC nhạt, không phải nền xanh brand. Trên trang này
   // xanh nghĩa là "bấm được"; cả một hàng tô xanh khi mới chỉ di chuột/phím là
   // nói dối bảng từ vựng đó.
@@ -174,11 +123,16 @@ export function CommandPalette({
 }) {
   const router = useRouter();
   const [q, setQ] = useState("");
-  const [results, setResults] = useState<SearchResults>({
-    places: [],
-    others: [],
-  });
-  const [loading, setLoading] = useState(false);
+  const [results, setResults] = useState<SearchGroup[]>([]);
+  /**
+   * Từ khoá mà `results` đang mô tả — KHÔNG phải một cờ `loading`.
+   *
+   * Cờ loading chỉ bật bên trong callback của debounce, tức 150ms sau phím cuối.
+   * Trong khoảng đó `loading=false` và `results=[]`, nên điều kiện "rỗng" cũ ăn
+   * đúng vào lúc người ta còn đang gõ dở: câu "Không có kết quả cho …" nháy lên
+   * giữa chừng mỗi từ khoá. So khớp từ khoá thì không có khe hở nào.
+   */
+  const [done, setDone] = useState("");
   const [suggestions, setSuggestions] = useState<SearchHit[]>([]);
   const reqId = useRef(0);
   const loadedSug = useRef(false);
@@ -200,16 +154,15 @@ export function CommandPalette({
     const t = setTimeout(async () => {
       if (!term) {
         if (id === reqId.current) {
-          setResults({ places: [], others: [] });
-          setLoading(false);
+          setResults([]);
+          setDone("");
         }
         return;
       }
-      if (id === reqId.current) setLoading(true);
       const res = await searchSite(term);
       if (id === reqId.current) {
         setResults(res);
-        setLoading(false);
+        setDone(term);
       }
     }, 150);
     return () => clearTimeout(t);
@@ -224,8 +177,8 @@ export function CommandPalette({
   const handleOpenChange = (o: boolean) => {
     if (!o) {
       setQ("");
-      setResults({ places: [], others: [] });
-      setLoading(false);
+      setResults([]);
+      setDone("");
     }
     onOpenChange(o);
   };
@@ -254,14 +207,29 @@ export function CommandPalette({
             }
           />
           <CommandList className="max-h-[min(62vh,480px)] p-2">
-            {term &&
-              !loading &&
-              results.places.length === 0 &&
-              results.others.length === 0 && (
-                <CommandEmpty className="py-12 text-center text-sm text-muted-foreground">
-                  Không có kết quả cho “{term}”.
-                </CommandEmpty>
-              )}
+            {term && done !== term && (
+              <div className="px-2 py-2" aria-hidden>
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="flex items-center gap-3 px-2 py-2">
+                    <span className="size-11 shrink-0 animate-pulse bg-muted" />
+                    <span className="flex min-w-0 flex-1 flex-col gap-1.5">
+                      <span className="h-3 w-2/5 animate-pulse bg-muted" />
+                      <span className="h-2.5 w-1/4 animate-pulse bg-muted/70" />
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* KHÔNG dùng `CommandEmpty`: nó chỉ render khi cmdk đếm được 0 item,
+                mà hàng "Xem tất cả" bên dưới luôn là một item — nên câu báo rỗng
+                bị nuốt và người gõ trượt chỉ thấy một panel trống trơn. Ở đây
+                `shouldFilter={false}`, tình trạng rỗng do chính ta biết. */}
+            {term && done === term && results.length === 0 && (
+              <p className="px-4 py-12 text-center text-sm text-muted-foreground">
+                Không có kết quả cho “{term}”.
+              </p>
+            )}
 
             {!term && suggestions.length > 0 && (
               <CommandGroup
@@ -278,23 +246,16 @@ export function CommandPalette({
               </CommandGroup>
             )}
 
-            {results.places.length > 0 && (
-              <CommandGroup heading="Địa điểm">
-                {results.places.map((h) => (
-                  <PlaceHitItem key={h.href} h={h} onSelect={() => go(h.href)} />
-                ))}
-              </CommandGroup>
-            )}
+            {done === term &&
+              results.map((g) => (
+                <CommandGroup key={g.label} heading={g.label}>
+                  {g.items.map((h) => (
+                    <HitRow key={h.href} h={h} onSelect={() => go(h.href)} />
+                  ))}
+                </CommandGroup>
+              ))}
 
-            {results.others.length > 0 && (
-              <CommandGroup heading="Khác">
-                {results.others.map((h) => (
-                  <HitItem key={h.href} h={h} onSelect={() => go(h.href)} />
-                ))}
-              </CommandGroup>
-            )}
-
-            {term && (
+            {done === term && results.length > 0 && (
               <CommandGroup>
                 <CommandItem
                   value="__xem-tat-ca__"

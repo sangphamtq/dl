@@ -7,7 +7,7 @@ import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
 
 export const metadata = {
-  title: "Không tìm thấy trang · Halivivu",
+  title: "Không tìm thấy trang",
 };
 
 // `not-found.tsx` ở gốc bắt cả những đường dẫn KHÔNG thuộc route group `(site)`

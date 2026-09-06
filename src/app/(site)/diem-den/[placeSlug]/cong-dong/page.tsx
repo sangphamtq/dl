@@ -27,6 +27,7 @@ import { CommunityFilter } from "@/components/community/community-filter";
 import { CommunitySort } from "@/components/community/community-sort";
 import { CommunitySidebar } from "@/components/community/community-sidebar";
 import { RealtimeRefresher } from "@/components/community/realtime-refresher";
+import { notFoundMetadata } from "@/lib/metadata";
 
 export async function generateMetadata({
   params,
@@ -35,8 +36,8 @@ export async function generateMetadata({
 }) {
   const { placeSlug } = await params;
   const place = await getPlaceHeader(placeSlug);
-  if (!place) return {};
-  return { title: `Cộng đồng ${place.name} · Halivivu` };
+  if (!place) return notFoundMetadata;
+  return { title: `Cộng đồng ${place.name}` };
 }
 
 export default async function PlaceCommunityPage({

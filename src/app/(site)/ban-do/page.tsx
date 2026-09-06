@@ -3,7 +3,7 @@ import { getDestinationMapPoints } from "@/lib/geo";
 import { VietnamMap } from "@/components/map/vietnam-map";
 
 export const metadata = {
-  title: "Bản đồ du lịch Việt Nam · Halivivu",
+  title: "Bản đồ du lịch Việt Nam",
   description:
     "Khám phá các điểm đến trên khắp Việt Nam qua bản đồ tương tác — chọn vùng, xem điểm đến nổi bật và lên ý tưởng cho chuyến đi.",
 };

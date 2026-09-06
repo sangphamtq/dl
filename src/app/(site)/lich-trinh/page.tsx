@@ -47,7 +47,7 @@ import { getPlanningTripId } from "@/app/(site)/lich-trinh/actions";
 // phẩm khác nhau.
 
 export const metadata = {
-  title: "Lịch trình mẫu · Halivivu",
+  title: "Lịch trình mẫu",
   description:
     "Lịch trình gợi ý theo từng điểm đến — xem chi tiết từng ngày, giờ ước tính, rồi sao về tài khoản và sửa theo ý bạn.",
 };

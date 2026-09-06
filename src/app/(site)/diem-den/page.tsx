@@ -25,7 +25,7 @@ import { REGION_LABELS, regionOf } from "@/lib/regions";
 export const revalidate = 86400;
 
 export const metadata = {
-  title: "Điểm đến · Halivivu",
+  title: "Điểm đến",
   description: "Khám phá các điểm đến nổi bật và tỉnh thành khắp Việt Nam.",
 };
 

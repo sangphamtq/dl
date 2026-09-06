@@ -25,7 +25,7 @@ import { SortSelect } from "@/components/blog/sort-select";
 import { RiseInView } from "@/components/site/reveal";
 
 export const metadata = {
-  title: "Cẩm nang du lịch · Halivivu",
+  title: "Cẩm nang du lịch",
   description: "Kinh nghiệm, lịch trình gợi ý và review điểm đến khắp Việt Nam.",
 };
 

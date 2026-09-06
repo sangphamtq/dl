@@ -1,7 +1,7 @@
 import { BedDouble } from "@/components/icons";
 import { ComingSoon } from "@/components/site/coming-soon";
 
-export const metadata = { title: "Lưu trú · Halivivu" };
+export const metadata = { title: "Lưu trú" };
 
 // Placeholder — danh bạ lưu trú toàn quốc đang phát triển.
 export default function LuuTruPage() {

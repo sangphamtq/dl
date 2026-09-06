@@ -947,7 +947,8 @@ Site là một PWA. Các mảnh ghép:
 | `src/app/manifest.ts` | Web app manifest (Next phục vụ ở `/manifest.webmanifest`, tự chèn `<link rel="manifest">`). Tên/mô tả lấy từ `getSettings()`, `revalidate = 3600` |
 | `src/lib/pwa.ts` | Hằng dùng chung: `THEME_COLOR`, `BACKGROUND_COLOR` (trang `/offline` khai trong `sw.js`) |
 | `public/sw.js` | Service worker viết tay (không build tool) |
-| `public/icons/` | Icon 192/512 (`any` + `maskable`) + `apple-touch-icon.png` — sinh từ `public/logo_mark.png` |
+| `public/icons/` | Icon 192/512 (`any` + `maskable`) cho manifest — sinh từ `public/logo_mark.png` |
+| `src/app/icon.png` · `src/app/apple-icon.png` | Favicon (256) + icon iOS (180), **file convention** của Next |
 | `src/components/site/pwa-register.tsx` | Đăng ký SW; có bản mới thì hiện toast "Tải lại" |
 | `src/components/site/install-prompt.tsx` | Mời cài app (Chromium dùng `beforeinstallprompt`; iOS chỉ hướng dẫn Chia sẻ → Thêm vào MH chính) |
 | `src/app/offline/page.tsx` | Trang dự phòng khi mất mạng, được precache lúc SW cài |
@@ -963,8 +964,19 @@ Lưu ý khi sửa:
   nhớ thêm vào đây, kèm `HIDDEN_ON` trong `install-prompt.tsx` nếu không muốn mời cài app.
 - Chỉ chặn request có `mode === "navigate"`; prefetch RSC của App Router cố tình để nguyên
   cho mạng, tránh cache nhầm payload RSC rồi trả về cho một request document.
-- Đổi icon: sửa `public/logo_mark.png` rồi sinh lại bộ `public/icons/` (192/512 `any`,
-  192/512 `maskable` — mascot nằm trong vòng an toàn 80%, 180 `apple-touch-icon` nền đục).
+- Đổi icon manifest: sửa `public/logo_mark.png` rồi sinh lại bộ `public/icons/` (192/512
+  `any`, 192/512 `maskable` — mascot nằm trong vòng an toàn 80%).
+- ⚠️ **Đừng khai `icons` trong `generateMetadata`.** Khai MỘT khoá trong đó là đè lên cả bộ
+  file convention: bản trước chỉ khai `apple` và HTML mất sạch `<link rel="icon">` —
+  `src/app/icon.png` vẫn nằm đó nhưng không ai trỏ tới, trình duyệt rơi về favicon mặc định.
+  Cả hai icon nay là file convention (`src/app/icon.png`, `src/app/apple-icon.png`), Next tự
+  sinh thẻ link kèm hash.
+- **Favicon KHÔNG dùng mascot đầy đủ** — nó sống ở 16px, mà ở cỡ đó bản mascot rã thành một
+  ô xanh đặc chạm bốn mép (đo bằng cách hạ ảnh xuống 16×16 rồi đọc từng pixel: mặt, bánh xe,
+  viền đều mất, chỉ còn vệt vàng mờ ở đỉnh). `pnpm build:favicon` (`scripts/build-favicon.mjs`)
+  dựng bản rút gọn từ SVG nội tuyến: nền xanh `--brand` + bóng **nón lá** kem — hai thứ duy
+  nhất sống sót ở 16px. Ô ĐẶC chứ không nền trong suốt, để có mép trên cả thanh tab sáng lẫn
+  tối. Bộ `public/icons/` (192–512px) vẫn giữ mascot đầy đủ, ở cỡ ấy chi tiết đọc được.
 - Cố ý **chưa** đặt `viewportFit: "cover"` ở `layout.tsx`: các phần tử fixed hiện có
   (`BackToTop`) chưa chừa `safe-area-inset`. Làm tràn viền thì làm cùng lúc.
   (`BottomNav` đã dùng `max(0.75rem, env(safe-area-inset-bottom))` nên sẵn sàng.)

@@ -19,7 +19,7 @@ const MICRO = "text-[0.6rem] font-semibold uppercase tracking-[0.14em]";
 const PAGE_SIZE = 24;
 
 export const metadata = {
-  title: "Địa điểm · Halivivu",
+  title: "Địa điểm",
   description:
     "Duyệt mọi địa điểm tham quan trên khắp Việt Nam theo loại hình — biển, núi, thác, hang động, đền chùa…",
 };

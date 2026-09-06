@@ -19,6 +19,7 @@ import { CommentSection } from "@/components/blog/comment-section";
 import { extractToc } from "@/lib/toc";
 import { ablyEnabled } from "@/lib/ably";
 import { auth } from "@/auth";
+import { notFoundMetadata } from "@/lib/metadata";
 
 const dateFmt = new Intl.DateTimeFormat("vi-VN", {
   day: "2-digit",
@@ -47,7 +48,7 @@ export async function generateMetadata({
     where: { slug },
     select: { title: true, excerpt: true, status: true },
   });
-  if (!p || p.status !== "published") return {};
+  if (!p || p.status !== "published") return notFoundMetadata;
   return { title: p.title, description: p.excerpt ?? undefined };
 }
 

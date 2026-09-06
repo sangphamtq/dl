@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getTemplateBySlug, buildDayViews } from "@/lib/trip";
 import { isStaffViewer } from "@/lib/preview";
 import { TripView } from "@/components/trip/trip-view";
+import { notFoundMetadata } from "@/lib/metadata";
 
 // Lịch trình MẪU do biên tập soạn — công khai, CÓ index, là đích SEO chính của
 // cả tính năng (docs/lich-trinh.md §7). Người dùng bấm "Dùng lịch trình này"
@@ -28,7 +29,7 @@ export async function generateMetadata({
     where: { slug },
     select: { title: true, summary: true, status: true, isTemplate: true },
   });
-  if (!t || !t.isTemplate || t.status !== "published") return {};
+  if (!t || !t.isTemplate || t.status !== "published") return notFoundMetadata;
   return { title: t.title, description: t.summary ?? undefined };
 }
 

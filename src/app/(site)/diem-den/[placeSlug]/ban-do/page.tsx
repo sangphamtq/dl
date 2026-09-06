@@ -5,6 +5,7 @@ import { getPlaceHeader } from "@/lib/place-meta";
 import { getPlaceGeoPoints } from "@/lib/geo";
 import { isStaffViewer } from "@/lib/preview";
 import { MapExplorer } from "@/components/map/map-explorer";
+import { notFoundMetadata } from "@/lib/metadata";
 
 export async function generateMetadata({
   params,
@@ -13,8 +14,8 @@ export async function generateMetadata({
 }) {
   const { placeSlug } = await params;
   const place = await getPlaceHeader(placeSlug);
-  if (!place || place.status !== "published") return {};
-  return { title: `Bản đồ ${place.name} · Halivivu` };
+  if (!place || place.status !== "published") return notFoundMetadata;
+  return { title: `Bản đồ ${place.name}` };
 }
 
 export default async function PlaceMapPage({

@@ -3,8 +3,9 @@ import Image from "next/image";
 import { Search, MapPin } from "@/components/icons";
 import { searchAll, featuredDestinations } from "@/lib/search";
 import { SearchResults } from "@/components/site/search-results";
+import { R_CARD, R_CTRL } from "@/lib/radius";
 
-export const metadata = { title: "Tìm kiếm · Halivivu" };
+export const metadata = { title: "Tìm kiếm" };
 
 export default async function SearchPage({
   searchParams,
@@ -25,9 +26,14 @@ export default async function SearchPage({
             Tìm kiếm
           </h1>
 
+          {/* Cùng VẬT LIỆU với mọi ô nhập khác của site: viền mảnh + nền
+              trong suốt + bo `R_CTRL`, focus thì viền về màu mực. Bản trước là
+              `rounded-xl` (12px) nền `bg-muted/50` viền trong suốt và vòng focus
+              XANH — ba thứ đều chỉ có ở đây, khiến ô tìm kiếm chính của site
+              đọc ra như đến từ một bộ giao diện khác. */}
           <form action="/tim-kiem" className="group relative mt-5">
             <Search
-              className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary"
+              className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-foreground"
               aria-hidden
             />
             <input
@@ -35,7 +41,7 @@ export default async function SearchPage({
               defaultValue={q}
               autoFocus
               placeholder="Tìm điểm đến, địa điểm, lưu trú, bài viết…"
-              className="h-12 w-full rounded-xl border border-transparent bg-muted/50 pl-12 pr-4 text-base outline-none transition-colors placeholder:text-muted-foreground hover:bg-muted focus:border-primary/40 focus:bg-background"
+              className={`${R_CTRL} h-12 w-full border border-border bg-transparent pl-12 pr-4 text-base outline-none transition-colors placeholder:text-muted-foreground/80 focus:border-foreground`}
             />
           </form>
 
@@ -64,7 +70,7 @@ export default async function SearchPage({
                     href={`/diem-den/${it.slug}`}
                     className="group"
                   >
-                    <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-muted ring-1 ring-inset ring-border/60">
+                    <div className={`${R_CARD} relative aspect-[4/3] overflow-hidden bg-muted ring-1 ring-inset ring-border/60`}>
                       {it.image ? (
                         <Image
                           src={it.image}

@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { DaDenBoard } from "@/components/account/da-den-board";
 
-export const metadata = { title: "Nơi đã đến · Halivivu" };
+export const metadata = { title: "Nơi đã đến" };
 
 export default async function DaDenPage() {
   const session = await auth();

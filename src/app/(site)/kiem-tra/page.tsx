@@ -7,7 +7,7 @@ import { TRUST_CHANNEL_LABELS } from "@/lib/trust";
 import { TrustChecker } from "./trust-checker";
 
 export const metadata = {
-  title: "Kiểm tra uy tín · Halivivu",
+  title: "Kiểm tra uy tín",
   description:
     "Tra cứu SĐT, Facebook, website, số tài khoản: đã xác minh hay bị báo cáo lừa đảo. Kèm danh sách cảnh báo đã xác nhận, dấu hiệu nhận biết và nguyên tắc an toàn.",
 };

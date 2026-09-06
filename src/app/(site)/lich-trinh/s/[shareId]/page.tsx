@@ -7,7 +7,7 @@ import { TripView } from "@/components/trip/trip-view";
 // cho người khác (khác hẳn lịch trình mẫu ở /lich-trinh/[slug], vốn là nội
 // dung biên tập và CÓ index).
 export const metadata = {
-  title: "Lịch trình được chia sẻ · Halivivu",
+  title: "Lịch trình được chia sẻ",
   robots: { index: false, follow: false },
 };
 

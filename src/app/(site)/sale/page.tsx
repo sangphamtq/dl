@@ -16,7 +16,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { SALE_SERVICES, saleServiceLabel, isSaleService } from "@/lib/sale";
 
 export const metadata = {
-  title: "Cộng tác viên du lịch đã xác minh · Halivivu",
+  title: "Cộng tác viên du lịch đã xác minh",
   description:
     "Danh bạ cộng tác viên bán tour, phòng, vé… đã được xác minh uy tín.",
 };

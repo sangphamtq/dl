@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Check, Loader2, MoreHorizontal, Pin, Plus, Trash2 } from "@/components/icons";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -58,17 +59,21 @@ export function NewTripButton() {
   );
 }
 
-// Menu "..." trên thẻ chuyến. Đặt trên ảnh nên cần z-index vượt lớp phủ link
+// Menu "..." của một chuyến. Dù đặt ở đâu cũng cần z-index vượt lớp phủ link
 // `after:inset-0` của tiêu đề — nếu không, bấm vào menu sẽ mở luôn chuyến.
 export function TripCardMenu({
   tripId,
   title,
   isPlanning,
+  className,
 }: {
   tripId: string;
   title: string;
   /** Chuyến đang lên lịch trình — đích mặc định của nút Thêm vào lịch trình. */
   isPlanning: boolean;
+  /** Lớp cho nút mở menu. Mặc định là bản NỔI TRÊN ẢNH; danh sách dạng hàng
+   *  truyền lớp riêng để nút nằm thẳng hàng trong hàng, không phải neo tuyệt đối. */
+  className?: string;
 }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pending, start] = useTransition();
@@ -82,7 +87,11 @@ export function TripCardMenu({
             aria-label={`Tuỳ chọn cho ${title}`}
             // Nút chỉ-ICON nên giữ hình tròn — cùng ranh giới đã dùng ở trang
             // điểm đến: nút có chữ thì vuông, nút chỉ icon thì tròn.
-            className="absolute right-2 top-2 z-10 grid size-8 place-items-center rounded-full bg-background/85 text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-background"
+            className={cn(
+              "z-10 grid size-8 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+              className ??
+                "absolute right-2 top-2 bg-background/85 shadow-sm backdrop-blur-sm hover:bg-background",
+            )}
           >
             <MoreHorizontal className="size-4" aria-hidden />
           </button>

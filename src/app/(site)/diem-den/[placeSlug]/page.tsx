@@ -42,6 +42,7 @@ import {
   resolveVideos,
   getVisitors,
 } from "@/lib/place-meta";
+import { notFoundMetadata } from "@/lib/metadata";
 
 const pub = { status: "published" as const };
 
@@ -111,9 +112,9 @@ export async function generateMetadata({
     where: { slug: placeSlug },
     select: { name: true, description: true, status: true },
   });
-  if (!place || place.status !== "published") return {};
+  if (!place || place.status !== "published") return notFoundMetadata;
   return {
-    title: `${place.name} · Halivivu`,
+    title: `${place.name}`,
     description: place.description ?? undefined,
   };
 }

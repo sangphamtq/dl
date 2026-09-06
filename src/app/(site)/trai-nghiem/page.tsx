@@ -1,7 +1,7 @@
 import { Ticket } from "@/components/icons";
 import { ComingSoon } from "@/components/site/coming-soon";
 
-export const metadata = { title: "Tour & trải nghiệm · Halivivu" };
+export const metadata = { title: "Tour & trải nghiệm" };
 
 // Placeholder — tour, vé & hoạt động trải nghiệm đang phát triển.
 export default function TraiNghiemPage() {

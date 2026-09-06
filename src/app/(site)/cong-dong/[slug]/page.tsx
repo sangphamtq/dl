@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { getThread } from "@/lib/community-feed";
 import { ablyEnabled } from "@/lib/ably";
 import { PostCard } from "@/components/community/post-card";
+import { notFoundMetadata } from "@/lib/metadata";
 
 export async function generateMetadata({
   params,
@@ -17,7 +18,7 @@ export async function generateMetadata({
     where: { slug },
     select: { body: true, isHidden: true },
   });
-  if (!t || t.isHidden) return {};
+  if (!t || t.isHidden) return notFoundMetadata;
   const text = t.body.replace(/\s+/g, " ").trim().slice(0, 70);
   return { title: `${text || "Bài viết"} · Cộng đồng` };
 }

@@ -31,6 +31,7 @@ import {
   label,
 } from "@/lib/listing-labels";
 import { parseTicketTiers, formatVnd } from "@/lib/tickets";
+import { notFoundMetadata } from "@/lib/metadata";
 
 // Map token [loai] đơn loại → model + tiêu đề. Quán ăn KHÔNG có ở đây: nó hiển
 // thị chi tiết inline trên tab gộp "am-thuc" (xem dưới).
@@ -400,12 +401,12 @@ export async function generateMetadata({
 }) {
   const { placeSlug, loai } = await params;
   const title = pageTitle(loai);
-  if (!title) return {};
+  if (!title) return notFoundMetadata;
   const place = await prisma.place.findUnique({
     where: { slug: placeSlug },
     select: { name: true },
   });
-  if (!place) return {};
+  if (!place) return notFoundMetadata;
   return { title: `${title} ở ${place.name}` };
 }
 

@@ -17,7 +17,7 @@ import { CommunitySidebar } from "@/components/community/community-sidebar";
 import { RealtimeRefresher } from "@/components/community/realtime-refresher";
 
 export const metadata = {
-  title: "Cộng đồng · Halivivu",
+  title: "Cộng đồng",
   description:
     "Chia sẻ trải nghiệm, hỏi đáp và tìm bạn đồng hành cho chuyến đi của bạn.",
 };

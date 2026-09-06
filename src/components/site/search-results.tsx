@@ -15,6 +15,7 @@ import {
 } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import type { SearchGroup } from "@/lib/search";
+import { R_BADGE, R_CARD, R_CTRL } from "@/lib/radius";
 
 const PREFIX_ICON: Record<string, LucideIcon> = {
   "hoat-dong": Compass,
@@ -93,10 +94,11 @@ export function SearchResults({
             type="button"
             onClick={() => setActive(t.key)}
             className={cn(
-              "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors",
+              R_CTRL,
+              "inline-flex h-9 shrink-0 items-center gap-1.5 border px-4 text-sm font-medium transition-colors",
               active === t.key
-                ? "bg-foreground text-background"
-                : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground",
+                ? "border-foreground bg-foreground text-background"
+                : "border-border text-muted-foreground hover:border-foreground hover:text-foreground",
             )}
           >
             {t.label}
@@ -118,9 +120,9 @@ export function SearchResults({
           <li key={r.href}>
             <Link
               href={r.href}
-              className="group flex items-center gap-4 rounded-2xl p-2.5 transition-colors hover:bg-muted/60"
+              className={cn(R_CARD, "group flex items-center gap-4 p-2.5 transition-colors hover:bg-muted/60")}
             >
-              <div className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-muted ring-1 ring-inset ring-border/60 sm:size-[72px]">
+              <div className={cn(R_BADGE, "relative size-16 shrink-0 overflow-hidden bg-muted ring-1 ring-inset ring-border/60 sm:size-[72px]")}>
                 {r.image ? (
                   <Image
                     src={r.image}
@@ -143,7 +145,7 @@ export function SearchResults({
                   <span className="truncate font-medium text-foreground">
                     {r.name}
                   </span>
-                  <span className="shrink-0 rounded-full border px-2 py-0.5 text-[0.7rem] text-muted-foreground">
+                  <span className={cn(R_BADGE, "shrink-0 border px-2 py-0.5 text-[0.7rem] text-muted-foreground")}>
                     {r.label}
                   </span>
                 </div>

@@ -8,7 +8,7 @@ import { notifMessage } from "@/lib/notification-labels";
 import { cn } from "@/lib/utils";
 import { markAllNotificationsRead } from "./actions";
 
-export const metadata = { title: "Thông báo · Halivivu" };
+export const metadata = { title: "Thông báo" };
 
 export default async function NotificationsPage() {
   const session = await auth();

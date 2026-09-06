@@ -1,7 +1,7 @@
 import { Car } from "@/components/icons";
 import { ComingSoon } from "@/components/site/coming-soon";
 
-export const metadata = { title: "Thuê xe · Halivivu" };
+export const metadata = { title: "Thuê xe" };
 
 // Placeholder — dịch vụ thuê xe / đưa đón đang phát triển.
 export default function ThueXePage() {
