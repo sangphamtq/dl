@@ -19,7 +19,12 @@ import {
 } from "@/components/icons";
 import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
-import { parseTicketTiers, tierPriceLabel } from "@/lib/tickets";
+import {
+  feePriceLabel,
+  parseExtraFees,
+  parseTicketTiers,
+  tierPriceLabel,
+} from "@/lib/tickets";
 import { PRICE_LABELS } from "@/lib/listing-labels";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -66,6 +71,7 @@ export default async function SpotDetailPage({
       bestTimeNote: true,
       ticketFree: true,
       ticketTiers: true,
+      extraFees: true,
       ticketInfo: true,
       notice: true,
       gettingThere: true,
@@ -101,6 +107,7 @@ export default async function SpotDetailPage({
   const cover = spot.images.find((i) => i.isCover) ?? spot.images[0] ?? null;
   const gallery = spot.images.filter((i) => i.id !== cover?.id);
   const tiers = parseTicketTiers(spot.ticketTiers);
+  const extraFees = parseExtraFees(spot.extraFees);
   const hasMap = spot.lat != null && spot.lng != null;
   const facts = [
     { label: "Loại", value: labelOf(SPOT_CATEGORIES, spot.category) },
@@ -416,6 +423,44 @@ export default async function SpotDetailPage({
                   {spot.ticketInfo}
                 </p>
               )}
+            </div>
+          )}
+
+          {extraFees.length > 0 && (
+            <div className="rounded-xl border p-4">
+              <h3 className="text-sm font-semibold">Chi phí khác tại chỗ</h3>
+              <dl className="mt-3 space-y-2.5 text-sm">
+                {extraFees.map((f, i) => {
+                  const { price, unit } = feePriceLabel(f);
+                  return (
+                    <div key={i}>
+                      <div className="flex items-baseline justify-between gap-3">
+                        <dt className="text-muted-foreground">
+                          {f.label}
+                          {f.required && (
+                            <span className="ml-1 text-xs text-warm-ink">
+                              (bắt buộc)
+                            </span>
+                          )}
+                        </dt>
+                        <dd className="text-right font-medium tabular-nums">
+                          {price}
+                          {unit && (
+                            <span className="ml-1 text-xs font-normal text-muted-foreground">
+                              {unit}
+                            </span>
+                          )}
+                        </dd>
+                      </div>
+                      {f.note && (
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          {f.note}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+              </dl>
             </div>
           )}
 

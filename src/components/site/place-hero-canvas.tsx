@@ -14,60 +14,15 @@ import {
 } from "@/components/ui/carousel";
 import { HeroLightbox } from "@/components/site/hero-lightbox";
 import type { HeroImage } from "@/components/site/place-hero-stack";
+import { R_BADGE } from "@/lib/radius";
 
-// THANH TIẾN TRÌNH kiểu vệt sao chổi: một rãnh mảnh chạy suốt bề ngang hàng
-// ảnh, phần đã qua là một vệt cam nhạt dần về đuôi, dẫn đầu là một chấm sáng có
-// quầng. Vì rãnh dài đúng bằng hàng ảnh và mỗi ảnh chiếm một đoạn, chấm sáng đi
-// ngang qua ĐÚNG chân tấm ảnh đang mở — thanh vừa cho biết còn bao lâu, vừa cho
-// biết đang ở ảnh nào, mà không cần chia vạch hay đánh số.
-//
-// `key={index}` ở chỗ gọi → mỗi chặng mount lại, chạy lại từ mốc đầu của chặng
-// đó. Nhờ vậy chặng cuối kết thúc ở mép phải rồi chấm sáng xuất phát lại từ mép
-// trái, KHÔNG có cú trượt ngược — lỗi kinh điển khi tính vị trí bằng `index / n`
-// rồi để CSS nội suy qua đoạn nối vòng.
-function CometBar({
-  from,
-  to,
-  duration,
-  playing,
-}: {
-  from: number;
-  to: number;
-  duration: number;
-  playing: boolean;
-}) {
-  const [run, setRun] = useState(false);
-  useEffect(() => {
-    const id = requestAnimationFrame(() => setRun(true));
-    return () => cancelAnimationFrame(id);
-  }, []);
-  const pos = playing && run ? to : from;
-  const ease = playing ? `${duration}ms linear` : undefined;
-
-  return (
-    <>
-      {/* Vệt: chuyển sắc từ trong suốt ở đuôi tới đặc ở đầu. Chính cái đuôi mờ
-          dần biến một thanh chạy thành một vệt sáng đang lướt. */}
-      <span
-        aria-hidden
-        className="absolute inset-y-0 left-0 rounded-full bg-[linear-gradient(90deg,rgba(255,154,31,0.3)_0%,rgba(255,154,31,0.75)_65%,rgb(255,154,31)_100%)]"
-        style={{ width: `${pos}%`, transition: ease && `width ${ease}` }}
-      />
-      {/* Đầu vệt: chấm trắng có quầng cam. Trắng chứ không cam — cùng màu với
-          vệt ngay sau lưng thì nó chìm mất. */}
-      <span
-        aria-hidden
-        className={cn(
-          "absolute top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white transition-opacity duration-300",
-          playing
-            ? "opacity-100 shadow-[0_0_10px_3px_rgba(255,154,31,0.85)]"
-            : "opacity-60 shadow-[0_0_6px_1px_rgba(255,154,31,0.5)]",
-        )}
-        style={{ left: `${pos}%`, transition: ease && `left ${ease}` }}
-      />
-    </>
-  );
-}
+// Hình học CHUNG của một ô trong dải ảnh — ô ảnh và ô thư viện phải khớp từng
+// pixel, nếu không ô cuối sẽ đọc ra là một nút gắn thêm chứ không phải phần
+// tiếp theo của dải.
+// KHÔNG `shrink-0`: 6 ô × 56px + khe = 376px, vượt bề ngang khả dụng của màn
+// 320px. Cho phép co thì ô tự hẹp lại ở máy nhỏ nhất mà `aspect-[3/4]` vẫn giữ
+// tỉ lệ.
+const TILE = `group relative aspect-[3/4] w-14 cursor-pointer overflow-hidden transition-all duration-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black/50 sm:w-24 ${R_BADGE}`;
 
 // Dải mây ở đáy hero: silhouette ghép từ các nửa cung tròn bán kính lệch nhau
 // (đều nhau sẽ ra "vỏ sò"). Path vẽ lún xuống dưới đáy viewBox (h=220 > 140) để
@@ -197,6 +152,9 @@ export function PlaceHeroCanvas({
 
   if (n === 0) return null;
   const active = shots[index];
+  // Ảnh không có ô riêng trong dải (dải tối đa 5) → con số trên ô thư viện.
+  const rest = total - n;
+  const more = images[n] ?? null;
 
   return (
     <section className="relative isolate w-full overflow-hidden bg-neutral-900">
@@ -353,123 +311,131 @@ export function PlaceHeroCanvas({
               n === 1 && "hidden",
             )}
           >
-            {/* HÀNG ẢNH — hình chữ nhật trơn, bo góc vừa phải, CÙNG MỘT CỠ. Ô
-                đang xem không to lên cũng không đổi dáng: hàng giữ được nhịp đều,
-                còn việc đánh dấu thì chấm sáng của thanh tiến trình bên dưới đã
-                lo — nó luôn nằm ngay dưới chân tấm đang mở.
-                `inline-flex` để cả cụm rộng ĐÚNG bằng hàng ảnh, nhờ vậy thanh
-                bên dưới tự dài bằng hàng mà không phải tính bề ngang. */}
-            <div className="flex flex-col items-center gap-4">
-              <div className="inline-flex flex-col items-stretch gap-2.5">
-                <div className="flex items-center gap-2 sm:gap-2.5">
-                  {shots.map((img, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => api?.scrollTo(i)}
-                      aria-label={img.alt || `Ảnh ${i + 1}`}
-                      aria-current={i === index ? "true" : undefined}
+            {/* DẢI ẢNH — MỘT hàng ô, ô cuối là cửa vào thư viện.
+                Bản trước là ba hàng chồng nhau: hàng ảnh, một hàng điều khiển
+                riêng (tạm dừng ‹ thanh chạy › lưới + số), rồi hàng chú thích.
+                Ba hàng cho ba việc vốn cùng nói về một thứ — tấm ảnh đang xem —
+                nên cụm cao gần bằng khối chữ ở giữa hero và bắt đầu tranh chỗ
+                với nó. Nay gộp còn hai:
+                  · việc "xem tất cả" chuyển thành MỘT Ô trong chính dải, cùng
+                    cỡ cùng dáng với các ô ảnh — nó là phần tiếp theo của dải
+                    chứ không phải một nút lạc loài, và ô đó tự mang luôn con
+                    số (+N) nên bộ đếm rời biến mất;
+                  · nút tạm dừng nhập vào hàng chú thích, thành một cụm canh
+                    giữa "▮▮ Tên ảnh ↗" — đọc như dòng caption của một khung
+                    hình đang chạy.
+                Ô ĐANG XEM đánh dấu bằng viền CAM (`warm-bright`) thay cho viền
+                trắng: trắng đặt trên ảnh trắng thì mất dấu, mà cam đã là màu
+                điểm nhấn của hero (vạch hai bên tên tỉnh, nút lịch trình).
+                Ô không to lên cũng không đổi dáng — hàng phải giữ nhịp đều. */}
+            <div className="flex w-full flex-col items-center gap-3.5">
+              {/* `w-full` + `justify-center`: hàng phải NHẬN bề ngang của cha
+                  thì các ô mới có áp lực co lại. Để `width:auto` (mặc định
+                  trong cột `items-center`) thì hàng rộng bằng max-content — sáu
+                  ô × 56px + khe = 376px, và ở màn 320px ô cuối bị cắt cụt ngoài
+                  mép thay vì cả hàng thu nhỏ. */}
+              <div className="flex w-full items-center justify-center gap-1.5 sm:gap-2.5">
+                {shots.map((img, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => api?.scrollTo(i)}
+                    aria-label={img.alt || `Ảnh ${i + 1}`}
+                    aria-current={i === index ? "true" : undefined}
+                    className={cn(
+                      TILE,
+                      i === index
+                        ? "shadow-[0_0_0_2px_var(--warm-bright)]"
+                        : "shadow-lg shadow-black/40",
+                    )}
+                  >
+                    <Image
+                      src={img.url}
+                      alt=""
+                      fill
+                      // Cỡ thật của ô, khai đúng theo breakpoint để máy nhỏ
+                      // khỏi tải bản ảnh của desktop.
+                      sizes="(min-width: 640px) 96px, 56px"
+                      className="object-cover"
+                    />
+                    {/* Làm tối ô CHƯA mở bằng lớp phủ đen, không phải `opacity`:
+                        hạ opacity thì ảnh hero phía sau xuyên qua, ô ảnh đục mờ
+                        và ngả màu theo nền. Lớp phủ giữ ảnh nguyên nét. */}
+                    <span
+                      aria-hidden
                       className={cn(
-                        // KHÔNG `shrink-0`: 5 ô × 56px + khe = 312px, vượt bề
-                        // ngang khả dụng của màn 320px. Cho phép co thì ô tự hẹp
-                        // lại ở máy nhỏ nhất mà `aspect-[3/4]` vẫn giữ tỉ lệ.
-                        "group relative aspect-[3/4] w-14 cursor-pointer overflow-hidden transition-all duration-500 sm:w-24",
-                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black/50",
+                        "absolute inset-0 bg-black transition-opacity duration-500",
                         i === index
-                          ? "shadow-[0_0_0_1px_rgba(255,255,255,0.75),0_10px_24px_-6px_rgba(0,0,0,0.7)]"
-                          : "shadow-lg shadow-black/40",
+                          ? "opacity-0"
+                          : "opacity-55 group-hover:opacity-25",
                       )}
-                    >
+                    />
+                  </button>
+                ))}
+
+                {/* Ô THƯ VIỆN — nền là tấm ảnh ĐẦU TIÊN NGOÀI DẢI, phủ tối.
+                    Lấy ảnh thật chứ không phải một ô trống có icon: nó cho thấy
+                    "còn nữa" bằng chính thứ đang được hứa hẹn. Hết ảnh ngoài
+                    dải (total = n) thì rơi về ô hairline + icon lưới. */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLbIndex(rest > 0 ? n : index);
+                    setLightbox(true);
+                  }}
+                  aria-label={`Xem tất cả ${total} ảnh`}
+                  title={`Xem tất cả ${total} ảnh`}
+                  className={cn(TILE, "shadow-lg shadow-black/40")}
+                >
+                  {more ? (
+                    <>
                       <Image
-                        src={img.url}
+                        src={more.url}
                         alt=""
                         fill
-                        // Cỡ thật của ô, khai đúng theo breakpoint để máy nhỏ
-                        // khỏi tải bản ảnh của desktop.
                         sizes="(min-width: 640px) 96px, 56px"
                         className="object-cover"
                       />
-                      {/* Làm tối ô CHƯA mở bằng lớp phủ đen, không phải `opacity`:
-                          hạ opacity thì ảnh hero phía sau xuyên qua, ô ảnh đục
-                          mờ và ngả màu theo nền. Lớp phủ giữ ảnh nguyên nét, chỉ
-                          tối đi. */}
                       <span
                         aria-hidden
-                        className={cn(
-                          "absolute inset-0 bg-black transition-opacity duration-500",
-                          i === index
-                            ? "opacity-0"
-                            : "opacity-55 group-hover:opacity-25",
-                        )}
+                        className="absolute inset-0 bg-black/60 transition-opacity duration-500 group-hover:opacity-75"
                       />
-                    </button>
-                  ))}
-                </div>
-
-                {/* HÀNG ĐIỀU KHIỂN — tạm dừng · thanh chạy · thư viện, đúng
-                    khuôn thanh điều khiển của trình phát video. Vì thế hai nút
-                    để icon TRẦN, không viên kính: một viên 32px đứng cạnh rãnh
-                    2px thì nó đè bẹp cái rãnh, cả hàng mất vẻ mảnh.
-                    Cả hàng rộng ĐÚNG bằng hàng ảnh phía trên (cùng nằm trong
-                    `inline-flex` co theo hàng ảnh) nên cụm vẫn vừa màn hình hẹp —
-                    đổi lại rãnh ngắn hơn hàng ảnh, chấm sáng không còn đi ngang
-                    qua đúng chân từng tấm nữa. Đó là cái giá của việc gom ba thứ
-                    vào một dòng; ảnh đang mở vẫn được đánh dấu bằng viền sáng. */}
-                <div className="flex items-center gap-3">
-                  {n > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => setPaused((p) => !p)}
-                      aria-label={paused ? "Tiếp tục" : "Tạm dừng"}
-                      // `before:-inset-2`: nới vùng chạm ra 40px mà icon vẫn nhỏ.
-                      // Icon 16px làm nút thì trên điện thoại gần như không trúng.
-                      className="relative shrink-0 cursor-pointer text-white/70 transition-colors before:absolute before:-inset-2 before:content-[''] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
-                    >
-                      {paused ? (
-                        <Play className="size-4" aria-hidden />
-                      ) : (
-                        <Pause className="size-4" aria-hidden />
-                      )}
-                    </button>
+                    </>
+                  ) : (
+                    <span
+                      aria-hidden
+                      className="absolute inset-0 border border-white/30 bg-white/5 transition-colors group-hover:bg-white/15"
+                    />
                   )}
-
-                  {n > 1 && (
-                    <div className="relative h-0.5 min-w-0 flex-1 rounded-full bg-white/20">
-                      <CometBar
-                        key={index}
-                        from={(index / n) * 100}
-                        to={((index + 1) / n) * 100}
-                        duration={intervalMs}
-                        playing={playing}
-                      />
-                    </div>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setLbIndex(index);
-                      setLightbox(true);
-                    }}
-                    aria-label={`Xem tất cả ${total} ảnh`}
-                    title={`Xem tất cả ${total} ảnh`}
-                    className="relative inline-flex shrink-0 cursor-pointer items-center gap-1.5 text-xs font-medium text-white/70 transition-colors before:absolute before:-inset-2 before:content-[''] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
-                  >
-                    {/* Chỉ ICON + SỐ LƯỢNG, không chữ. Đã bỏ chữ thì icon phải
-                        tự gánh nghĩa, nên chọn LƯỚI: đây là ký hiệu quy ước cho
-                        "xem tất cả ảnh" (mở lưới thư viện). Máy ảnh thì nói
-                        "chụp", ảnh đơn thì nói "một tấm ảnh" — cả hai đều sai
-                        việc mà nút này làm.
-                        Nhãn đầy đủ vẫn còn ở `aria-label` (cho trình đọc màn
-                        hình) và `title` (hiện khi rê chuột trên desktop). */}
-                    <LayoutGrid className="size-[1.05rem] shrink-0" aria-hidden />
-                    <span className="tabular-nums">{total}</span>
-                  </button>
-                </div>
+                  <span className="relative flex h-full flex-col items-center justify-center gap-1 text-white">
+                    <LayoutGrid className="size-4 shrink-0" aria-hidden />
+                    <span className="text-[0.65rem] font-semibold leading-none tabular-nums">
+                      {rest > 0 ? `+${rest}` : total}
+                    </span>
+                  </span>
+                </button>
               </div>
 
-              {/* Ô luôn chiếm chỗ (h-5) để cụm không nhảy khi ảnh không có tên. */}
-              <div className="flex h-5 items-center justify-center">
+              {/* HÀNG DƯỚI — tạm dừng + chú thích trong MỘT cụm canh giữa.
+                  Ô luôn cao 20px để cụm không nhảy khi ảnh không có tên. */}
+              <div className="flex h-5 items-center justify-center gap-3">
+                {n > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => setPaused((p) => !p)}
+                    aria-label={paused ? "Tiếp tục" : "Tạm dừng"}
+                    // `before:-inset-2`: nới vùng chạm ra 40px mà icon vẫn nhỏ.
+                    // Icon 16px làm nút thì trên điện thoại gần như không trúng.
+                    className="relative shrink-0 cursor-pointer text-white/60 transition-colors before:absolute before:-inset-2 before:content-[''] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+                  >
+                    {paused ? (
+                      <Play className="size-3.5" aria-hidden />
+                    ) : (
+                      <Pause className="size-3.5" aria-hidden />
+                    )}
+                  </button>
+                )}
+
                 {/* `key` theo index → mỗi lần đổi ảnh là mount lại và chạy hiệu
                     ứng hiện dần; không có nó thì chữ bị thay đột ngột. */}
                 {active.caption &&
@@ -477,7 +443,7 @@ export function PlaceHeroCanvas({
                     <Link
                       key={index}
                       href={active.href}
-                      className="group inline-flex max-w-full animate-in items-center gap-1.5 fade-in text-sm font-medium text-white/85 transition-colors duration-500 hover:text-white"
+                      className="group inline-flex min-w-0 animate-in items-center gap-1.5 fade-in text-sm font-medium text-white/85 transition-colors duration-500 hover:text-white"
                     >
                       <span className="truncate">{active.caption}</span>
                       <ArrowUpRight
@@ -494,7 +460,6 @@ export function PlaceHeroCanvas({
                     </p>
                   ))}
               </div>
-
             </div>
           </div>
         </div>

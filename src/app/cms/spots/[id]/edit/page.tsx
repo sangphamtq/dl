@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "@/components/icons";
 import { prisma } from "@/lib/prisma";
 import { getProvinces } from "@/lib/locations";
-import { parseTicketTiers } from "@/lib/tickets";
+import { parseExtraFees, parseTicketTiers } from "@/lib/tickets";
 import { getTikTokInfo } from "@/lib/tiktok";
 import { FormSection } from "@/components/cms/form-section";
 import { ListingImages } from "@/components/cms/listing-images";
@@ -42,6 +42,7 @@ export default async function EditSpotPage({
         ticketFree: true,
         ticketTiers: true,
         ticketInfo: true,
+        extraFees: true,
         notice: true,
         gettingThere: true,
         tips: true,
@@ -114,6 +115,14 @@ export default async function EditSpotPage({
       note: t.note ?? "",
     })),
     ticketInfo: spot.ticketInfo ?? "",
+    extraFees: parseExtraFees(spot.extraFees).map((f) => ({
+      label: f.label,
+      price: f.price == null ? "" : String(f.price),
+      priceTo: f.priceTo == null ? "" : String(f.priceTo),
+      unit: f.unit ?? "",
+      required: f.required,
+      note: f.note ?? "",
+    })),
     notice: spot.notice ?? "",
     gettingThere: spot.gettingThere ?? "",
     tips: spot.tips.join("\n"),

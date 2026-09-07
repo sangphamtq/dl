@@ -3,40 +3,31 @@
 import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import {
-  BedDouble,
-  LayoutGrid,
-  MapPin,
-  MapPinned,
-  MessagesSquare,
-  Route,
-  Sparkles,
-  Utensils,
-} from "@/components/icons";
+import { NavIcon, type NavIconName } from "@/components/site/nav-icons";
 import { cn } from "@/lib/utils";
 import type { PlaceTab } from "@/lib/place-meta";
 
-// Icon theo loại mục. Trả về JSX chứ KHÔNG trả về tham chiếu component để nơi
-// gọi tự `<Icon/>`: gán component vào biến viết hoa rồi render trong thân một
-// component khác bị React Compiler báo "cannot create components during render".
-function SectionIcon({ tab, className }: { tab: PlaceTab; className?: string }) {
-  const p = { className, "aria-hidden": true } as const;
-  if (tab.icon === "map") return <MapPinned {...p} />;
-  if (tab.icon === "community") return <MessagesSquare {...p} />;
-  if (tab.icon === "overview") return <LayoutGrid {...p} />;
+// Icon của một mục → tên trong bộ `nav-icons` (SVG tự vẽ, KHÔNG phải `Ic`/
+// Material Symbols). Cùng bộ với thanh tab dưới và cụm icon header: nét mảnh
+// 1.7 trên khung 24, hình mở, và có sẵn cặp VIỀN/ĐẶC để báo mục đang mở —
+// đúng cách thanh này vốn đã phân biệt trạng thái.
+function iconName(tab: PlaceTab): NavIconName {
+  if (tab.icon === "map") return "map";
+  if (tab.icon === "community") return "community";
+  if (tab.icon === "overview") return "overview";
   switch (tab.href.split("/").pop()) {
     case "dia-diem":
-      return <MapPin {...p} />;
+      return "spot";
     case "hoat-dong":
-      return <Sparkles {...p} />;
+      return "experience";
     case "am-thuc":
-      return <Utensils {...p} />;
+      return "food";
     case "luu-tru":
-      return <BedDouble {...p} />;
+      return "stay";
     case "di-chuyen":
-      return <Route {...p} />;
+      return "route";
     default:
-      return <LayoutGrid {...p} />;
+      return "overview";
   }
 }
 
@@ -59,9 +50,11 @@ function TabLabel({ label }: { label: string }) {
 // Thanh tab sticky: điều hướng giữa trang Place và các trang danh sách listing.
 // Tràn thì cuộn ngang (tab active tự vào tầm nhìn).
 //
-// Mỗi mục kèm SỐ LƯỢNG — khách biết nơi nào đáng vào trước khi bấm, đỡ mất một
-// lượt tải trang để rồi quay ra. Không cần lo tab rỗng: `buildPlaceTabs` chỉ
-// dựng tab cho loại có count > 0.
+// KHÔNG hiện số lượng bên cạnh nhãn. Từng có, với lý do "khách biết nơi nào
+// đáng vào trước khi bấm" — nhưng nó thêm một con số vào mỗi mục của một thanh
+// vốn phải cuộn ngang trên điện thoại, và cái tin nó mang lại thì mỗi trang
+// đích đều nói lại ngay ở dòng mở đầu. Tab rỗng vẫn không xảy ra:
+// `buildPlaceTabs` chỉ dựng tab cho loại có dữ liệu.
 //
 // VẬT LIỆU: luôn là dải SÁNG ĐẶC (`bg-background` + hairline), KHÔNG đổi theo
 // cuộn và KHÔNG dùng kính như header. Đã thử cho nó hoá kính khi ghim để "liền"
@@ -72,12 +65,16 @@ function TabLabel({ label }: { label: string }) {
 // kính tối nổi trên nội dung, thanh này là thanh công cụ của chính trang.
 //
 // HÌNH THỨC: mỗi mục dẫn đầu bằng ICON CỦA CHÍNH THỨ NÓ CHỨA — ghim (địa điểm),
-// dĩa (ẩm thực), giường (lưu trú), tuyến đường (di chuyển). Nhìn hình là biết
+// tô đũa (ẩm thực), giường (lưu trú), tuyến đường (di chuyển). Nhìn hình là biết
 // mục gì, không phải đọc chữ; và cả dải trở thành một hàng đồ vật du lịch, tự nó
 // mang chất chuyến đi mà không cần dán thêm hoạ tiết nào.
 //
-// Mục đang mở: icon tô CAM + nhãn in đậm. Mục khác: icon và chữ cùng một mức
-// xám. Chỉ một điểm màu trong cả thanh.
+// Icon lấy từ `nav-icons` (SVG tự vẽ) chứ KHÔNG từ `@/components/icons`
+// (Material Symbols): bộ Material nét dày và khối đặc, xếp cạnh chữ ở 16px thì
+// thanh trông nặng — đúng lý do thanh tab dưới đã tách ra bộ riêng.
+//
+// Mục đang mở: icon bản ĐẶC + tô CAM + nhãn in đậm. Mục khác: bản VIỀN, icon và
+// chữ cùng một mức xám. Chỉ một điểm màu trong cả thanh.
 //
 // Icon cũng gánh luôn việc ngăn cách: nhịp icon–chữ, icon–chữ đã đủ tách các mục,
 // nên không cần dấu chấm, gạch dọc hay viên nền giữa chúng.
@@ -179,21 +176,15 @@ export function PlaceTabs({ items }: { items: PlaceTab[] }) {
                       ngang, mỗi icon ăn thêm ~22px là bớt đi một phần nhãn nhìn
                       thấy được — mà nhãn mới là thứ đọc ra mục gì. Bỏ icon thì
                       thường vừa hết các mục trong một màn, khỏi cuộn. */}
-                  <SectionIcon
-                    tab={it}
+                  <NavIcon
+                    name={iconName(it)}
+                    active={active}
                     className={cn(
-                      "hidden size-4 shrink-0 sm:block",
+                      "hidden size-[1.1rem] shrink-0 sm:block",
                       active ? "text-warm" : "opacity-70",
                     )}
                   />
                   <TabLabel label={it.label} />
-                  {/* Số lượng: `tabular-nums` để số không so le khi đổi trang, và
-                      nhạt hơn nhãn — nó là chú thích, không phải nhãn. */}
-                  {it.count != null && (
-                    <span className="text-[0.6875rem] font-normal tabular-nums text-muted-foreground">
-                      {it.count}
-                    </span>
-                  )}
                 </Link>
               );
             })}
@@ -225,10 +216,11 @@ export function PlaceTabs({ items }: { items: PlaceTab[] }) {
                         : "font-medium text-muted-foreground hover:text-foreground",
                     )}
                   >
-                    <SectionIcon
-                      tab={tab}
+                    <NavIcon
+                      name={iconName(tab)}
+                      active={active}
                       className={cn(
-                        "size-4 shrink-0",
+                        "size-[1.1rem] shrink-0",
                         active ? "text-warm" : "opacity-70",
                       )}
                     />

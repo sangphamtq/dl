@@ -25,6 +25,7 @@ import { Combobox } from "@/components/ui/combobox";
 import { Switch } from "@/components/ui/switch";
 import { FormSection } from "@/components/cms/form-section";
 import { RichTextEditor } from "@/components/cms/rich-text-editor";
+import { ExtraFeesEditor } from "@/components/cms/extra-fees-editor";
 import {
   createSpot,
   updateSpot,
@@ -57,6 +58,7 @@ const EMPTY: SpotFormValues = {
   ticketFree: false,
   ticketTiers: [],
   ticketInfo: "",
+  extraFees: [],
   notice: "",
   gettingThere: "",
   tips: "",
@@ -653,6 +655,20 @@ export function SpotForm({
               placeholder="Giờ bán vé, ưu đãi nhóm…"
             />
           </div>
+        </FormSection>
+
+        {/* Chi phí khác tại chỗ — KHÔNG nằm trong khối "Vé vào cửa": vé là
+            khoản bắt buộc để vào, đây là các khoản trả cho người dân tại
+            chỗ. Nhập chung một chỗ thì sớm muộn cũng có người gõ "gửi xe"
+            thành một loại vé, và chip "Từ …đ" ngoài trang sẽ sai. */}
+        <FormSection
+          title="Chi phí khác tại chỗ"
+          description="Gửi xe, xe ôm bản địa, thuê phao, thuê gậy… — những khoản khách phải rút ví ngoài vé vào cửa."
+        >
+          <ExtraFeesEditor
+            value={values.extraFees}
+            onChange={(rows) => set("extraFees", rows)}
+          />
         </FormSection>
 
         {/* Thông tin thực địa */}

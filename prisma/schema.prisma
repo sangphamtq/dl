@@ -502,6 +502,7 @@ model Activity {
   priceRange   PriceRange? // (giữ cho dữ liệu cũ; form dùng ticketTiers)
   ticketFree   Boolean     @default(false) // miễn phí tham gia
   ticketTiers  Json? // [{ label, price, note }] — giá VND, null/0 = miễn phí (xem lib/tickets)
+  extraFees    Json? // [{ label, price, priceTo, unit, required, note }] — chi phí phải trả TẠI CHỖ, ngoài giá tham gia
 
   // Thực tế trải nghiệm (xem CLAUDE.md "Spot vs Activity")
   durationText String? // "nửa ngày", "2N1Đ", "~2 giờ"
@@ -565,6 +566,7 @@ model Spot {
   ticketFree   Boolean @default(false) // miễn phí vào cửa
   ticketTiers  Json? // [{ label, price, note }] — giá VND, null/0 = miễn phí (xem lib/tickets)
   ticketInfo   String? // ghi chú vé chung (giờ bán vé, ưu đãi…)
+  extraFees    Json? // [{ label, price, priceTo, unit, required, note }] — chi phí phải trả TẠI CHỖ, ngoài vé (xem lib/tickets)
   notice       String? // cảnh báo truy cập: "Tạm đóng", "Cần xin phép leo"
 
   // Nội dung biên tập có khuôn (thay rich-text tự do)

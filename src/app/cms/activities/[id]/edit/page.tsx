@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "@/components/icons";
 import { prisma } from "@/lib/prisma";
-import { parseTicketTiers } from "@/lib/tickets";
+import { parseExtraFees, parseTicketTiers } from "@/lib/tickets";
 import { FormSection } from "@/components/cms/form-section";
 import { ListingImages } from "@/components/cms/listing-images";
 import { ActivityForm, type ActivityFormValues } from "../../activity-form";
@@ -34,6 +34,7 @@ export default async function EditActivityPage({
         website: true,
         ticketFree: true,
         ticketTiers: true,
+        extraFees: true,
         tags: true,
         kind: true,
         spotLinks: { select: { spotId: true } },
@@ -71,6 +72,14 @@ export default async function EditActivityPage({
       note: t.note ?? "",
     })),
     spotIds: activity.spotLinks.map((l) => l.spotId),
+    extraFees: parseExtraFees(activity.extraFees).map((f) => ({
+      label: f.label,
+      price: f.price == null ? "" : String(f.price),
+      priceTo: f.priceTo == null ? "" : String(f.priceTo),
+      unit: f.unit ?? "",
+      required: f.required,
+      note: f.note ?? "",
+    })),
     tags: activity.tags.join(", "),
   };
 

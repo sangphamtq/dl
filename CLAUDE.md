@@ -189,6 +189,32 @@ Nếu chỉ là "việc tự nhiên ở đúng một chỗ, không đơn vị, k
   `notice` (cảnh báo truy cập: "Tạm đóng"/"Cần xin phép" — **khác** `status` draft/published).
   PlaceableFields (`address`, `lat`, `lng`, `openingHours`, `phone`, `website`…) đã có.
 
+**Tiền: `ticketTiers` là VÉ VÀO CỬA, `extraFees` là CHI PHÍ TẠI CHỖ** (cả `Spot`
+lẫn `Activity` đều có hai trường này, cùng `Json`, helper ở `lib/tickets.ts`):
+
+- **`ticketTiers`** `[{label, price, note}]` — khoản **bắt buộc để vào/tham gia**.
+  `ticketPriceLabel()` lấy **giá nhỏ nhất** trong đây để in chip **"Từ …đ"** ở hero
+  và thẻ danh sách.
+- **`extraFees`** `[{label, price, priceTo, unit, required, note}]` — gửi xe, xe ôm
+  bản địa chở lên đỉnh, thuê phao, thuê gậy, người dẫn đường… Hiện thành card
+  **"Chi phí khác tại chỗ"** (`components/site/extra-fees-card.tsx`) đứng RIÊNG ngay
+  dưới cuống vé, **không** đụng chip hero.
+  · ⚠️ **ĐỪNG nhét dịch vụ vào `ticketTiers`** — một dòng "Gửi xe 10.000đ" sẽ biến
+    giá vào cổng của cả địa điểm thành "Từ 10.000đ" ở 5–6 chỗ đang gọi hàm đó.
+    Seed Tà Xùa từng mắc đúng lỗi này (hoạt động "Phượt đèo" lấy "thuê xe máy" làm
+    vé → chip ghi "Từ 100.000đ" như thể phải mua vé mới được chạy đèo).
+  · Ba trường **không có** ở `TicketTier` chính là lý do phải tách kiểu chứ không
+    dùng lại: **`unit`** (vé luôn tính theo đầu người, dịch vụ thì không — "150.000đ"
+    cho xe ôm là /người hay /nhóm?), **`priceTo`** (giá thoả thuận vùng cao gần như
+    luôn là một KHOẢNG), **`required`** ("cầm tối thiểu bao nhiêu tiền mặt").
+  · `price = null` ⇒ hiện **"Thoả thuận"** — dùng nó thay vì bịa một con số.
+  · **CỐ Ý KHÔNG cộng tổng "tối thiểu cần mang"**: đơn vị lệch nhau (10.000đ **/xe**
+    + 50.000đ **/người**) nên mọi phép cộng đều ra một con số sai một cách vô hình.
+  · Giữ **đúng thứ tự biên tập nhập**, không tự đẩy khoản `required` lên đầu — thứ
+    tự đó là thứ tự gặp trên thực địa (gửi xe ở chân dốc trước, thuê gậy sau).
+  · **KHÔNG dựng "xe ôm bản địa" thành `Activity`**: không trải nhiều spot, không đơn
+    vị/đặt chỗ, không phải nhu cầu tìm kiếm độc lập — đúng ba tiêu chí ở trên.
+
 ### Đặc sản vs Quán ăn — mô hình khái niệm (song song Spot/Activity)
 
 > ⚠️ **`Specialty` (Đặc sản / món ăn) ĐANG TẮT — đọc trước khi động vào phần này.**

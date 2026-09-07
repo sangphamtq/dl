@@ -9,7 +9,11 @@ import { Prisma } from "@/generated/prisma/client";
 import { SpotCategory, PublishStatus } from "@/generated/prisma/enums";
 import { slugify, RESERVED_SLUGS } from "@/lib/slug";
 import { normalizeUrl } from "@/lib/url";
-import type { TicketTier } from "@/lib/tickets";
+import {
+  normalizeExtraFees,
+  type ExtraFeeInput,
+  type TicketTier,
+} from "@/lib/tickets";
 
 const STAFF = ["admin", "editor"];
 
@@ -59,6 +63,7 @@ export type SpotFormInput = {
   ticketFree: boolean;
   ticketTiers: TicketTierInput[];
   ticketInfo: string;
+  extraFees: ExtraFeeInput[];
   notice: string;
   gettingThere: string;
   tips: string; // mỗi dòng một mẹo
@@ -176,6 +181,12 @@ async function normalize(
     }
   }
 
+  // Chi phí tại chỗ: danh sách RIÊNG, không dính vào ticketTiers (xem
+  // lib/tickets.ts). Vẫn lưu kể cả khi miễn phí vào cửa — chỗ vào cửa tự
+  // do vẫn có thể mất tiền gửi xe.
+  const extra = normalizeExtraFees(input.extraFees);
+  if ("error" in extra) return { error: extra.error };
+
   return {
     highlights,
     data: {
@@ -199,6 +210,10 @@ async function normalize(
       ticketTiers:
         tiers.length > 0 ? (tiers as Prisma.InputJsonValue) : Prisma.DbNull,
       ticketInfo: input.ticketInfo.trim() || null,
+      extraFees:
+        extra.fees.length > 0
+          ? (extra.fees as unknown as Prisma.InputJsonValue)
+          : Prisma.DbNull,
       notice: input.notice.trim() || null,
       gettingThere: emptyableHtml(input.gettingThere),
       tips,

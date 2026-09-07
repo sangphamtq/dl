@@ -26,6 +26,7 @@ import {
   uniqueCoords,
 } from "@/lib/nearby";
 import {
+  parseExtraFees,
   parseTicketTiers,
   tierPriceLabel,
   ticketPriceLabel,
@@ -49,6 +50,7 @@ import { SpotSectionNav } from "@/components/site/spot-section-nav";
 import { SpotHero, type SpotQuickFact } from "@/components/site/spot-hero";
 import { buildSpotNavItems } from "@/lib/spot-nav";
 import { PeerBar } from "@/components/site/peer-bar";
+import { ExtraFeesCard } from "@/components/site/extra-fees-card";
 import { getListingPeers } from "@/lib/peers";
 import {
   ReviewsSection,
@@ -109,6 +111,7 @@ export default async function SpotPublicPage({
       ticketFree: true,
       ticketTiers: true,
       ticketInfo: true,
+      extraFees: true,
       notice: true,
       gettingThere: true,
       tips: true,
@@ -285,6 +288,7 @@ export default async function SpotPublicPage({
   }
   const videos = await resolveVideos(spot.videos);
   const tiers = parseTicketTiers(spot.ticketTiers);
+  const extraFees = parseExtraFees(spot.extraFees);
 
   // Fact nhanh hiển thị trên thanh nổi dưới hero (không gồm địa chỉ — để cạnh bản đồ).
   // Giá ưu tiên vé thật (ticketFree/ticketTiers), fallback thang priceRange cũ.
@@ -616,6 +620,11 @@ export default async function SpotPublicPage({
                 phone={spot.phone}
                 website={spot.website}
               />
+
+              {/* Chi phí khác tại chỗ — gửi xe, xe ôm bản địa, thuê phao…
+                  Card RIÊNG ngay dưới cuống vé: cùng chuyện tiền nên đứng
+                  cạnh nhau, nhưng không được lẫn vào giá vào cổng. */}
+              <ExtraFeesCard fees={extraFees} />
 
               {/* Vị trí — bản đồ dẫn dắt (Cộng đồng & Bản đồ nay ở thanh nav) */}
               {(mapEmbedSrc || spot.address || adminAddress) && (

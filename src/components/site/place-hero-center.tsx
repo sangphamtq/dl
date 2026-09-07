@@ -7,6 +7,7 @@ import { CheckInButton } from "@/components/site/check-in-button";
 import { PlanTripButton } from "@/components/site/plan-trip-button";
 import { CheckInFaces, type CheckInPerson } from "@/components/site/check-in-faces";
 import type { PlaceStat } from "@/lib/place-meta";
+import { regionOf } from "@/lib/regions";
 
 type PlaceHeroData = {
   id: string;
@@ -28,7 +29,30 @@ type PlaceHeroData = {
 const MICRO = "text-[0.72rem] font-medium uppercase tracking-[0.1em]";
 const DT = `${MICRO} text-white/75`;
 
-// Viên tròn hairline dùng cho MỌI nút ở thanh trên (back · đã đến · chia sẻ):
+// Kicker của hero: bậc chữ nằm GIỮA nhãn micro và tên điểm đến.
+const KICKER =
+  "text-[clamp(0.9rem,2vw,1.35rem)] font-semibold uppercase leading-none tracking-[0.16em] text-white/90 [text-shadow:0_1px_2px_rgba(0,0,0,0.85),0_2px_12px_rgba(0,0,0,0.75),0_0_36px_rgba(0,0,0,0.55)]";
+
+// Hai vạch kẹp hai bên kicker. CHỮ trắng (sống được trên mọi ảnh), VẠCH cam —
+// điểm nhấn màu dồn vào thứ chỉ có nhiệm vụ trang trí, nên nó tha hồ rực mà
+// không ảnh hưởng độ đọc của chữ. Bóng đổ để nét 1px không tan trên ảnh sáng.
+const RULE =
+  "h-px w-10 shrink-0 bg-warm-bright sm:w-16";
+
+// Khuôn chung của MỌI nút CÓ CHỮ ở thanh trên (lên lịch trình · đã đến): cùng
+// chiều cao, cùng bo góc, cùng bậc chữ micro, cùng đệm ngang. Khác nhau chỉ ở
+// VẬT LIỆU — nền đặc = hành động chính, viền 1px = hành động phụ. Đồng bộ theo
+// nghĩa cùng khuôn, không phải trông giống hệt nhau: giống hệt thì mất luôn
+// thứ tự ưu tiên.
+const BAR_TYPE = "text-[0.6rem] font-semibold uppercase tracking-[0.14em]";
+const BAR_BTN = `h-9 gap-2 whitespace-nowrap rounded-[4px] px-3 sm:px-4 ${BAR_TYPE}`;
+
+// "Đánh dấu đã đến" ở khổ hẹp thu về VIÊN TRÒN chỉ-icon (nhãn dài gấp đôi nút
+// chính, để nguyên thì nó rớt bốn dòng ở 320px và đẩy nút chia sẻ ra khỏi màn).
+// Đúng luật hình dáng của trang: có chữ = khối vuông, chỉ-icon = viên tròn.
+const BAR_BTN_COLLAPSE = `size-9 shrink-0 justify-center rounded-full border border-white/25 hover:border-white/60 sm:h-9 sm:w-auto sm:justify-start sm:gap-2 sm:whitespace-nowrap sm:rounded-[4px] sm:border-white/30 sm:px-4 sm:hover:border-white/70 ${BAR_TYPE}`;
+
+// Viên tròn hairline dùng cho nút CHỈ-ICON ở thanh trên (back · chia sẻ):
 // một hình dáng duy nhất, phân biệt nhau bằng icon chứ không bằng kiểu nút.
 const CIRCLE =
   "grid size-9 shrink-0 place-items-center rounded-full border border-white/25 transition-colors hover:border-white/60";
@@ -75,6 +99,16 @@ export function PlaceHeroCenter({
     (reviews && reviews.total > 0 ? 1 : 0);
   const hasMeta = metaCount >= 2;
 
+  // Tỉnh chưa map vào miền nào thì regionOf trả "Khác" — một kicker ghi
+  // "KHÁC" còn tệ hơn không có gì, nên rơi về nhãn loại.
+  const region = regionOf(place.slug);
+  const regionLabel =
+    region === "Khác"
+      ? place.kind === "province"
+        ? "Tỉnh"
+        : "Điểm đến"
+      : region;
+
   return (
     <PlaceHeroCanvas
       images={heroImages}
@@ -99,28 +133,44 @@ export function PlaceHeroCenter({
           ) : (
             <span />
           )}
-          {/* Phải: hành động chính là PILL CÓ NHÃN (icon ghim một mình không ai
-              đoán ra là "đánh dấu đã đến"), cạnh nó là tiện ích chia sẻ dạng
-              viên tròn. Cùng chất liệu hairline như nút back — cố ý KHÔNG dùng
-              nền kính: hero này chỉ có đường 1px và chữ, thêm một khối đặc/mờ ở
-              góc là nó hút mắt hơn cả tên điểm đến. */}
+          {/* Phải: BA nút, một khuôn — cùng chiều cao 36px, cùng bo 4px, cùng
+              bậc chữ micro, cùng khoảng cách. Phân biệt bằng VẬT LIỆU chứ
+              không bằng kiểu dáng, nhờ vậy vẫn đọc ra thứ tự ưu tiên:
+                nền cam đặc  → "Lên lịch trình" (hành động chính của trang)
+                viền 1px     → "Đánh dấu đã đến"
+                viên tròn    → chia sẻ (chỉ-icon nên tròn, theo luật hình dáng)
+              ⚠️ "Lên lịch trình" trước ở THÂN hero, và ghi chú cũ ở đây nói rõ
+              lý do: thanh này vốn chỉ có đường 1px và chữ, một khối nền đặc ở
+              góc sẽ hút mắt hơn cả tên điểm đến. Nay chuyển lên đây theo yêu
+              cầu — đổi lại thân hero không còn CTA nào, nên nếu thấy tỉ lệ
+              chuyển đổi tụt thì đây là chỗ đầu tiên cần soi lại.
+              Nhãn "Đánh dấu đã đến" dài gấp đôi nút chính nên dưới `sm` nó thu
+              về viên tròn chỉ-icon (`labelFrom="sm"`), nếu không ở 320px nó
+              rớt bốn dòng và đẩy nút chia sẻ ra khỏi màn hình. */}
           <div className="flex items-center gap-2">
             {checkIn && (
-              <CheckInButton
-                targetKind="place"
-                targetId={place.id}
-                targetName={place.name}
-                targetImage={heroImages[0]?.url ?? null}
-                redirectTo={`/diem-den/${place.slug}`}
-                initialChecked={checkIn.checked}
-                isAuthed={checkIn.isAuthed}
-                reviewable={place.kind === "destination"}
-                tone="onDark"
-                // Nút CÓ CHỮ thì vuông; nút chỉ-icon (chia sẻ, cuộn) giữ hình
-                // tròn — ranh giới này áp cho cả trang: chữ = khối, điều khiển
-                // = viên tròn.
-                className="h-9 gap-2 rounded-[4px] border border-white/30 px-4 text-[0.6rem] font-semibold uppercase tracking-[0.14em] hover:border-white/70"
-              />
+              <>
+                <PlanTripButton
+                  placeId={place.id}
+                  placeName={place.name}
+                  isAuthed={checkIn.isAuthed}
+                  compact
+                  className={`${BAR_BTN} bg-warm text-warm-foreground hover:bg-warm/90`}
+                />
+                <CheckInButton
+                  targetKind="place"
+                  targetId={place.id}
+                  targetName={place.name}
+                  targetImage={heroImages[0]?.url ?? null}
+                  redirectTo={`/diem-den/${place.slug}`}
+                  initialChecked={checkIn.checked}
+                  isAuthed={checkIn.isAuthed}
+                  reviewable={place.kind === "destination"}
+                  tone="onDark"
+                  labelFrom="sm"
+                  className={BAR_BTN_COLLAPSE}
+                />
+              </>
             )}
             <ShareButton
               title={place.name}
@@ -132,22 +182,42 @@ export function PlaceHeroCenter({
       }
     >
       <div className="mx-auto w-full max-w-3xl text-center">
-        {/* Eyebrow nằm giữa hai vạch ngắn — trục đối xứng cho cả khối */}
-        <div className="flex items-center justify-center gap-4">
-          <span aria-hidden className="h-px w-8 bg-warm-bright/50 sm:w-12" />
+        {/* KICKER — tên tỉnh cha, đặt ngay trên tên điểm đến.
+            Bản đầu để 0.7rem: cạnh một h1 cao tới 136px thì tỉ lệ là 1:11, đọc
+            ra như chú thích ảnh chứ không phải một tầng của tiêu đề — mà đây
+            chính là thứ trả lời "nơi này ở đâu". Nay ~1:5, vẫn thấp hơn tên
+            một bậc rõ ràng nhờ IN HOA + giãn ký tự chứ không nhờ bóp nhỏ.
+
+            CHIA VIỆC giữa chữ và vạch, đây là điểm cốt lõi của khối này:
+            · **CHỮ TRẮNG** vì nó phải sống trên MỌI ảnh. Bản cam
+              (`warm-bright`) đọc tốt trên hero tối nhưng tan hẳn trên ảnh
+              sáng — Tà Xùa nền mù xám trắng, Phan Thiết trời chiều sáng. Ảnh
+              do biên tập chọn, không đoán trước được độ sáng.
+            · **VẠCH CAM** gánh phần điểm nhấn màu. Vạch chỉ có nhiệm vụ trang
+              trí nên tha hồ rực mà không ảnh hưởng độ đọc của chữ; chữ trắng
+              đứng một mình thì chìm vào cùng một sắc với tên điểm đến.
+            · Độ đọc của chữ đến từ **quầng bóng ba tầng**, không từ nền kính
+              hay viên chip: hero này cố ý chỉ có đường 1px và chữ (xem ghi chú
+              ở topBar), thêm một khối mờ ở giữa là nó hút mắt hơn cả tên.
+            · **KHÔNG gạch chân dưới chữ.** Đã thử và bỏ: dưới một dòng in hoa
+              giãn ký tự nó đọc ra như chữ bị gạch xoá, và đụng dấu nặng của
+              "Ậ". Link báo bằng đổi độ sáng khi rê chuột.
+            · Trang TỈNH (không có parent) lấp bằng MIỀN thay nhãn cũ
+              "Tỉnh · Thành phố" — để ô này luôn là một NƠI CHỐN bao quanh, và
+              bỏ luôn dấu · vốn trái quy ước dải phân cách. */}
+        <div className="flex items-center justify-center gap-4 sm:gap-6">
+          <span aria-hidden className={RULE} />
           {place.parent ? (
             <Link
               href={`/diem-den/${place.parent.slug}`}
-              className="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-warm-bright drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)] transition-opacity hover:opacity-80 sm:text-xs"
+              className={`${KICKER} transition-colors hover:text-white`}
             >
               {place.parent.name}
             </Link>
           ) : (
-            <span className="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-warm-bright drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)] sm:text-xs">
-              {place.kind === "province" ? "Tỉnh · Thành phố" : "Điểm đến"}
-            </span>
+            <span className={KICKER}>{regionLabel}</span>
           )}
-          <span aria-hidden className="h-px w-8 bg-warm-bright/50 sm:w-12" />
+          <span aria-hidden className={RULE} />
         </div>
 
         {/* CHỮ ĐẶC, không gradient.
@@ -171,7 +241,7 @@ export function PlaceHeroCenter({
             in hoa hợp; cỡ hạ một bậc vì chữ serif in hoa choán chỗ hơn hẳn chữ
             display nén, để nguyên 8.5rem thì tên dài như "Phan Thiết" tràn hai
             dòng ở khổ vừa. */}
-        <h1 className="mt-4 text-balance font-[family-name:var(--font-display)] text-[clamp(2.5rem,7.5vw,6rem)] font-normal uppercase leading-[1.05] tracking-[0.06em] text-white [text-shadow:0_2px_28px_rgba(0,0,0,0.45)] sm:tracking-[0.1em]">
+        <h1 className="mt-[calc(1.6rem-0.24em)] mb-[-0.16em] text-balance bg-gradient-to-b from-white from-45% to-white/30 bg-clip-text pb-[0.16em] pt-[0.24em] font-[family-name:var(--font-display)] text-[clamp(3.25rem,10vw,8.5rem)] font-extrabold leading-[0.88] tracking-[-0.045em] text-transparent">
           {place.name}
         </h1>
 
@@ -195,22 +265,6 @@ export function PlaceHeroCenter({
           </>
         )}
 
-
-        {/* Hành động chính của trang: "Lên lịch trình đi X".
-            Đặt ở THÂN hero chứ không phải thanh trên — thanh đó cố ý chỉ có
-            đường 1px và chữ, nhét một nút nền đặc vào góc là nó hút mắt hơn cả
-            tên điểm đến (xem ghi chú ở topBar). Ở đây thì ngược lại: nằm dưới
-            deck, canh giữa, nó là bước tiếp theo tự nhiên sau khi đọc xong. */}
-        {checkIn && (
-          <div className="mt-7 flex justify-center sm:mt-9">
-            <PlanTripButton
-              placeId={place.id}
-              placeName={place.name}
-              isAuthed={checkIn.isAuthed}
-              className="h-11 px-6 text-base shadow-lg shadow-black/20"
-            />
-          </div>
-        )}
 
         {/* Bóng chữ mềm cho CẢ cụm meta. Tên điểm đến cỡ lớn thì scrim là đủ,
             nhưng chữ micro ở đây rơi vào quãng scrim mỏng nhất và vắt qua đủ

@@ -40,6 +40,7 @@ export function PlanTripButton({
   placeName,
   isAuthed,
   className,
+  compact = false,
   children,
 }: {
   placeId: string;
@@ -47,6 +48,13 @@ export function PlanTripButton({
   /** Bỏ trống = chưa biết; bấm rồi server báo mới mở cửa đăng nhập. */
   isAuthed?: boolean;
   className?: string;
+  /**
+   * Bỏ tên nơi khỏi nhãn ("Lên lịch trình" thay vì "Lên lịch trình đi Phan
+   * Thiết"). Dùng khi nút nằm ở thanh trên của hero: ở đó tên điểm đến đã là
+   * chữ lớn nhất màn hình, nhắc lại trong nút vừa thừa vừa dài gấp đôi mọi
+   * nút khác trong cùng một hàng.
+   */
+  compact?: boolean;
   /**
    * Nội dung trigger tuỳ biến (vd một THẺ ẢNH điểm đến ở `/lich-trinh`). Bỏ
    * trống thì vẫn là nút cam "Lên lịch trình đi X" như ở trang điểm đến.
@@ -295,7 +303,10 @@ export function PlanTripButton({
             giữa thành khoảng trắng đôi. Tên nơi chỉ hiện từ `sm` — "Lên lịch
             trình đi Phan Thiết" ở 320px sẽ rớt dòng. */}
         <span>
-          Lên lịch trình<span className="hidden sm:inline"> đi {placeName}</span>
+          Lên lịch trình
+          {!compact && (
+            <span className="hidden sm:inline"> đi {placeName}</span>
+          )}
         </span>
       </Button>
 

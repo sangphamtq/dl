@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { MapPinned, MessagesSquare } from "@/components/icons";
+// Cùng bộ icon SVG tự vẽ với thanh tab của trang điểm đến (`PlaceTabs`) —
+// hai thanh này là anh em, mục "Bản đồ" ở hai nơi phải là MỘT hình.
+import { NavIcon } from "@/components/site/nav-icons";
 import { cn } from "@/lib/utils";
 
 // id = mục cuộn trong trang (anchor). href = mục điều hướng sang trang khác.
@@ -151,7 +153,11 @@ export function SpotSectionNav({
                   aria-current={active === communityItem.id ? "true" : undefined}
                   className={rightClass(active === communityItem.id)}
                 >
-                  <MessagesSquare className="size-4" aria-hidden />
+                  <NavIcon
+                    name="community"
+                    active={active === communityItem.id}
+                    className="size-[1.1rem]"
+                  />
                   {communityItem.label}
                 </Link>
               )}
@@ -161,7 +167,11 @@ export function SpotSectionNav({
                   aria-current={active === mapItem.id ? "true" : undefined}
                   className={rightClass(active === mapItem.id)}
                 >
-                  <MapPinned className="size-4" aria-hidden />
+                  <NavIcon
+                    name="map"
+                    active={active === mapItem.id}
+                    className="size-[1.1rem]"
+                  />
                   {mapItem.label}
                 </Link>
               )}

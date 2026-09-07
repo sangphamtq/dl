@@ -8,7 +8,11 @@ import { Prisma } from "@/generated/prisma/client";
 import { ActivityCategory, ActivityKind, PublishStatus } from "@/generated/prisma/enums";
 import { slugify, RESERVED_SLUGS } from "@/lib/slug";
 import { normalizeUrl } from "@/lib/url";
-import type { TicketTier } from "@/lib/tickets";
+import {
+  normalizeExtraFees,
+  type ExtraFeeInput,
+  type TicketTier,
+} from "@/lib/tickets";
 
 const STAFF = ["admin", "editor"];
 
@@ -31,6 +35,7 @@ export type ActivityFormInput = {
   website: string;
   ticketFree: boolean;
   ticketTiers: TicketTierInput[];
+  extraFees: ExtraFeeInput[];
   spotIds: string[];
   tags: string;
 };
@@ -99,6 +104,10 @@ async function normalize(
     }
   }
 
+  // Chi phí tại chỗ — danh sách RIÊNG, xem lib/tickets.ts.
+  const extra = normalizeExtraFees(input.extraFees);
+  if ("error" in extra) return { error: extra.error };
+
   return {
     data: {
       name,
@@ -117,6 +126,10 @@ async function normalize(
       ticketFree: input.ticketFree,
       ticketTiers:
         tiers.length > 0 ? (tiers as Prisma.InputJsonValue) : Prisma.DbNull,
+      extraFees:
+        extra.fees.length > 0
+          ? (extra.fees as unknown as Prisma.InputJsonValue)
+          : Prisma.DbNull,
       tags,
     },
   };

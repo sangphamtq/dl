@@ -16,7 +16,12 @@ import {
 import { prisma } from "@/lib/prisma";
 import { coverUrl } from "@/lib/place-image";
 import { proseClass } from "@/lib/prose";
-import { parseTicketTiers, tierPriceLabel } from "@/lib/tickets";
+import {
+  parseExtraFees,
+  parseTicketTiers,
+  tierPriceLabel,
+} from "@/lib/tickets";
+import { ExtraFeesCard } from "@/components/site/extra-fees-card";
 import {
   ACTIVITY_CATEGORY_LABELS,
   SPOT_CATEGORY_LABELS,
@@ -77,6 +82,7 @@ export default async function ActivityPublicPage({
       phone: true,
       ticketFree: true,
       ticketTiers: true,
+      extraFees: true,
       tags: true,
       placeId: true,
       place: { select: { slug: true, name: true } },
@@ -108,6 +114,7 @@ export default async function ActivityPublicPage({
   const peers = await getListingPeers("activity", activity.placeId);
 
   const tiers = parseTicketTiers(activity.ticketTiers);
+  const extraFees = parseExtraFees(activity.extraFees);
 
   // Ảnh cho hero stack (chung mô-típ với trang Địa điểm / Điểm đến).
   const heroImages: HeroImage[] = activity.images.map((i) => ({
@@ -354,6 +361,11 @@ export default async function ActivityPublicPage({
                   )}
                 </div>
               )}
+
+              {/* Chi phí khác tại chỗ — khoản trả thẳng cho người cung
+                  cấp (thuê áo phao, gửi đồ, xe ôm chặng cuối…), tách khỏi
+                  giá tham gia vì giá đó còn in ra chip hero + thẻ. */}
+              <ExtraFeesCard fees={extraFees} context="activity" />
 
               {/* Diễn ra ở đâu */}
               {activity.spotLinks.length > 0 && (

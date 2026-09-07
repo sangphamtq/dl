@@ -49,6 +49,7 @@ export function CheckInButton({
   tone = "default",
   variant = "bare",
   iconOnly = false,
+  labelFrom = "always",
   className,
 }: {
   targetKind: TargetKind;
@@ -68,6 +69,14 @@ export function CheckInButton({
   variant?: "bare" | "solid";
   /** Chỉ icon (nhãn chuyển thành aria-label/title) — dùng khi chỗ đặt quá hẹp. */
   iconOnly?: boolean;
+  /**
+   * "sm": nhãn ẩn dưới breakpoint sm, chỉ còn icon (aria-label vẫn đủ cho trình
+   * đọc màn hình). Khác `iconOnly` ở chỗ nó đổi theo BỀ NGANG chứ không cố định
+   * — cần vậy khi nút nằm trong một hàng đông đúc như thanh trên của hero, mà
+   * dựng HAI bản rồi ẩn bớt bằng CSS thì hai bản có state riêng và lệch nhau
+   * ngay sau lần bấm đầu.
+   */
+  labelFrom?: "always" | "sm";
   /** Ghi đè hình dáng nút (vd viên tròn hairline ở hero). Đặt sau nên thắng. */
   className?: string;
 }) {
@@ -141,8 +150,8 @@ export function CheckInButton({
         onClick={onClick}
         disabled={pending}
         aria-pressed={checked}
-        aria-label={iconOnly ? label : undefined}
-        title={iconOnly ? label : undefined}
+        aria-label={iconOnly || labelFrom === "sm" ? label : undefined}
+        title={iconOnly || labelFrom === "sm" ? label : undefined}
         className={cn(
           ACTION_BASE,
           variant === "solid"
@@ -166,7 +175,12 @@ export function CheckInButton({
         ) : (
           <MapPinPlus className="size-4 transition-transform group-hover:-translate-y-0.5" aria-hidden />
         )}
-        {!iconOnly && label}
+        {!iconOnly &&
+          (labelFrom === "sm" ? (
+            <span className="hidden sm:inline">{label}</span>
+          ) : (
+            label
+          ))}
       </button>
 
       {isAuthed && reviewable && (

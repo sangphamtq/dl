@@ -37,7 +37,12 @@ export type NavIconName =
   | "menu"
   | "bell"
   | "checkin"
-  | "route";
+  | "route"
+  | "overview"
+  | "spot"
+  | "experience"
+  | "food"
+  | "stay";
 
 const OUTLINE: Record<NavIconName, React.ReactNode> = {
   // Mái nhà + thân, hai nét rời — đúng kiểu `house` của SF.
@@ -119,6 +124,56 @@ const OUTLINE: Record<NavIconName, React.ReactNode> = {
       <path d="M8.7 6.5h3.1a2.75 2.75 0 0 1 0 5.5h-1.7a2.75 2.75 0 0 0 0 5.5h5.2" />
     </>
   ),
+  // ── Thanh tab của trang điểm đến ──────────────────────────────────
+  // Tổng quan: lưới 2×2 — ký hiệu quy ước cho "xem toàn bộ", và là hình
+  // TĨNH nhất trong hàng nên hợp với mục đứng đầu.
+  overview: (
+    <>
+      <rect x="4.2" y="4.2" width="6.2" height="6.2" rx="1.6" />
+      <rect x="13.6" y="4.2" width="6.2" height="6.2" rx="1.6" />
+      <rect x="4.2" y="13.6" width="6.2" height="6.2" rx="1.6" />
+      <rect x="13.6" y="13.6" width="6.2" height="6.2" rx="1.6" />
+    </>
+  ),
+  // Địa điểm: ghim rỗng — CÙNG thân ghim với `checkin` (hai vai thẳng chạy
+  // lên cung tròn), khác ở ruột: vòng tròn thay dấu tick. Hai mục cùng nói
+  // về một chỗ trên bản đồ nên phải cùng dáng.
+  spot: (
+    <>
+      <path d="M12 20.6 6.6 14.2a6.6 6.6 0 1 1 10.8 0L12 20.6Z" />
+      <circle cx="12" cy="10.3" r="2.4" />
+    </>
+  ),
+  // Trải nghiệm: chùm lấp lánh — bốn cánh dựng bằng BỐN CUNG lõm (không
+  // bezier), thêm một ngôi nhỏ lệch góc cho ra nhịp "chùm" chứ không phải
+  // một ngôi sao đơn.
+  experience: (
+    <>
+      <path d="M10.6 5.2A9.2 9.2 0 0 0 18.6 13.2 9.2 9.2 0 0 0 10.6 21.2 9.2 9.2 0 0 0 2.6 13.2 9.2 9.2 0 0 0 10.6 5.2Z" />
+      <path d="M18.6 2.8A3.3 3.3 0 0 0 21.4 5.6 3.3 3.3 0 0 0 18.6 8.4 3.3 3.3 0 0 0 15.8 5.6 3.3 3.3 0 0 0 18.6 2.8Z" />
+    </>
+  ),
+  // Ẩm thực: TÔ + ĐŨA, không phải dao–dĩa. Trang này nói chuyện ăn ở Việt
+  // Nam; tô đũa vừa đúng chỗ vừa dễ đọc ở 16px hơn dao–dĩa (hai vật mảnh
+  // song song dễ dính thành một vệt).
+  food: (
+    <>
+      <path d="M3.4 12.2h17.2a8.6 8.6 0 0 1-17.2 0Z" />
+      <path d="m9.1 9.8 7.9-5.4" />
+      <path d="m12 10.9 7.9-5.4" />
+    </>
+  ),
+  // Nơi lưu trú: giường nhìn ngang — đầu giường, thành, nệm và gối. Bốn nét
+  // là nhiều so với phần còn lại của bộ, nhưng bỏ nét gối thì hình đọc ra
+  // ghế sofa.
+  stay: (
+    <>
+      <path d="M3.4 4.6v15.4" />
+      <path d="M3.4 9.4h14.9a2.3 2.3 0 0 1 2.3 2.3V20" />
+      <path d="M3.4 16.3h17.2" />
+      <path d="M7.6 9.4v6.9" />
+    </>
+  ),
 };
 
 const FILLED: Record<NavIconName, React.ReactNode> = {
@@ -193,6 +248,56 @@ const FILLED: Record<NavIconName, React.ReactNode> = {
         strokeLinecap="round"
       />
     </>
+  ),
+  overview: (
+    <>
+      <rect x="4" y="4" width="6.6" height="6.6" rx="1.8" />
+      <rect x="13.4" y="4" width="6.6" height="6.6" rx="1.8" />
+      <rect x="4" y="13.4" width="6.6" height="6.6" rx="1.8" />
+      <rect x="13.4" y="13.4" width="6.6" height="6.6" rx="1.8" />
+    </>
+  ),
+  // Ruột ghim KHOÉT LỖ (`evenodd`) như `checkin` — nền thanh tab là màu đặc
+  // nhưng cùng một kỹ thuật thì hai ghim mới giống hệt nhau.
+  spot: (
+    <path
+      fillRule="evenodd"
+      d="M12 20.6 6.6 14.2a6.6 6.6 0 1 1 10.8 0L12 20.6Zm0-13.2a2.9 2.9 0 1 0 0 5.8 2.9 2.9 0 0 0 0-5.8Z"
+    />
+  ),
+  experience: (
+    <>
+      <path d="M10.6 5.2A9.2 9.2 0 0 0 18.6 13.2 9.2 9.2 0 0 0 10.6 21.2 9.2 9.2 0 0 0 2.6 13.2 9.2 9.2 0 0 0 10.6 5.2Z" />
+      <path d="M18.6 2.8A3.3 3.3 0 0 0 21.4 5.6 3.3 3.3 0 0 0 18.6 8.4 3.3 3.3 0 0 0 15.8 5.6 3.3 3.3 0 0 0 18.6 2.8Z" />
+    </>
+  ),
+  // Tô tô đặc; ĐŨA giữ dạng NÉT (khai `fill="none"` ngay trên phần tử, như
+  // dây nối của `route`) — hai que đặc song song ở cỡ nhỏ dính thành mảng.
+  food: (
+    <>
+      <path d="M3.4 12.2h17.2a8.6 8.6 0 0 1-17.2 0Z" />
+      <path
+        d="m9.1 9.8 7.9-5.4M12 10.9l7.9-5.4"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={1.9}
+        strokeLinecap="round"
+      />
+    </>
+  ),
+  // Giường đặc: đầu giường + thành liền một khối, gối khoét lỗ để còn đọc ra
+  // là giường chứ không phải một bậc thềm.
+  // Giường là hình DUY NHẤT trong bộ không tô đặc được: đổ đầy thì đầu
+  // giường, nệm và gối dính thành một khối chữ nhật đọc ra bậc thềm, và cái
+  // lỗ khoét làm gối thì ở 16px nhỏ tới mức mất hẳn. Bản "đặc" ở đây là
+  // cùng nét dày lên (2.5) — cách `route` đã làm với dây nối.
+  stay: (
+    <g fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3.4 4.6v15.4" />
+      <path d="M3.4 9.4h14.9a2.3 2.3 0 0 1 2.3 2.3V20" />
+      <path d="M3.4 16.3h17.2" />
+      <path d="M7.6 9.4v6.9" />
+    </g>
   ),
 };
 

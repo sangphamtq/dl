@@ -22,6 +22,7 @@ import { Combobox } from "@/components/ui/combobox";
 import { MultiCombobox } from "@/components/ui/multi-combobox";
 import { Switch } from "@/components/ui/switch";
 import { FormSection } from "@/components/cms/form-section";
+import { ExtraFeesEditor } from "@/components/cms/extra-fees-editor";
 import { RichTextEditor } from "@/components/cms/rich-text-editor";
 import {
   createActivity,
@@ -50,6 +51,7 @@ const EMPTY: ActivityFormValues = {
   website: "",
   ticketFree: false,
   ticketTiers: [],
+  extraFees: [],
   spotIds: [],
   tags: "",
 };
@@ -422,6 +424,20 @@ export function ActivityForm({
               </p>
             </div>
           )}
+        </FormSection>
+
+        {/* Chi phí khác tại chỗ — tách khỏi bảng giá tham gia phía trên:
+            giá tham gia còn được in ra chip "Từ …đ" ở hero và thẻ danh
+            sách, một dòng "thuê áo phao 20k" lọt vào đó là sai hết. */}
+        <FormSection
+          title="Chi phí khác tại chỗ"
+          description="Thuê đồ, gửi xe, gửi đồ, xe ôm chặng cuối… — khoản khách trả thêm ngoài giá tham gia."
+        >
+          <ExtraFeesEditor
+            value={values.extraFees}
+            onChange={(rows) => set("extraFees", rows)}
+            context="activity"
+          />
         </FormSection>
 
         {/* Thẻ */}

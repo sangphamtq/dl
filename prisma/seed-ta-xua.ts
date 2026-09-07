@@ -209,6 +209,14 @@ async function main() {
     ticketFree?: boolean;
     ticketTiers?: { label: string; price: number; note?: string }[];
     ticketInfo?: string;
+    extraFees?: {
+      label: string;
+      price?: number;
+      priceTo?: number;
+      unit?: string;
+      required?: boolean;
+      note?: string;
+    }[];
     notice?: string;
     tips?: string[];
     gettingThere?: string;
@@ -230,7 +238,21 @@ async function main() {
       bestTimeNote:
         "Mây đẹp nhất từ lúc trời hửng đến khoảng 8h sáng, khi nắng chưa đủ mạnh để đánh tan biển mây. Mùa săn mây kéo dài tháng 10 đến tháng 4, đỉnh điểm là tháng 11–2 sau những đêm lạnh, khô và không mưa. Chiều muộn cũng có hoàng hôn đẹp nhưng mây thường mỏng hơn.",
       ticketFree: true,
-      ticketInfo: "Vào tự do; gửi xe tại điểm đầu đường mòn khoảng 10.000–20.000đ.",
+      extraFees: [
+        {
+          label: "Gửi xe máy",
+          price: 10000,
+          priceTo: 20000,
+          unit: "/xe",
+          required: true,
+          note: "Trả tại bãi trông xe đầu đường mòn.",
+        },
+        {
+          label: "Xe ôm bản địa chở ra sống núi",
+          unit: "/lượt",
+          note: "Người bản địa nhận chở đoạn đường đất — hỏi giá trước khi lên xe.",
+        },
+      ],
       notice:
         "Lối đi hẹp, hai bên là vực — rất trơn khi có sương hoặc sau mưa. Không nên ra sống núi khi trời mù đặc hoặc gió mạnh.",
       highlights: [
@@ -418,7 +440,16 @@ async function main() {
       bestTimeNote:
         "Bình minh cho ảnh cây nổi giữa biển mây; hoàng hôn cho ảnh ngược sáng với bóng cây in trên nền trời cam. Cả hai đều đẹp nhất vào mùa khô tháng 10–4.",
       ticketFree: true,
-      ticketInfo: "Một số điểm quanh cây do nhà dân trông giữ, phí gửi xe/chụp ảnh khoảng 10.000–20.000đ.",
+      extraFees: [
+        {
+          label: "Gửi xe & phí vào điểm chụp ảnh",
+          price: 10000,
+          priceTo: 20000,
+          unit: "/xe",
+          required: true,
+          note: "Một số điểm quanh cây do nhà dân tự trông giữ.",
+        },
+      ],
       highlights: [
         {
           title: "Khung hình tối giản đặc trưng",
@@ -497,7 +528,13 @@ async function main() {
       bestTimeNote:
         "Tháng 9–10 ruộng bậc thang quanh bản vào mùa lúa chín; tháng 11–12 trời khô ráo, dễ đi đường. Hang mát quanh năm nhưng nên tránh ngày mưa vì đường vào trơn.",
       ticketFree: true,
-      ticketInfo: "Tham quan tự do; nên gửi chút phí cho người dân dẫn đường vào hang.",
+      extraFees: [
+        {
+          label: "Người dân dẫn đường vào hang",
+          unit: "/nhóm",
+          note: "Tham quan tự do, nhưng nên gửi phí cho người dẫn.",
+        },
+      ],
       notice: "Trong hang tối và trơn — bắt buộc mang đèn pin và không đi một mình.",
       highlights: [
         {
@@ -606,7 +643,7 @@ async function main() {
 
   const spotId: Record<string, string> = {};
   for (const s of spots) {
-    const { slug, name, highlights, ticketTiers, ...rest } = s;
+    const { slug, name, highlights, ticketTiers, extraFees, ...rest } = s;
     const hl =
       highlights && highlights.length > 0
         ? highlights.map((h, i) => {
@@ -628,11 +665,27 @@ async function main() {
       ticketTiers && ticketTiers.length > 0
         ? (ticketTiers as Prisma.InputJsonValue)
         : Prisma.DbNull;
+    const ef =
+      extraFees && extraFees.length > 0
+        ? (extraFees.map((f) => ({
+            label: f.label,
+            price: f.price ?? null,
+            priceTo: f.priceTo ?? null,
+            unit: f.unit ?? null,
+            required: f.required ?? false,
+            note: f.note ?? null,
+          })) as unknown as Prisma.InputJsonValue)
+        : Prisma.DbNull;
     const row = await prisma.spot.upsert({
       where: { slug },
       update: {
         ...rest,
+        // Ghi đè cả khi seed KHÔNG khai: bỏ key khỏi object thì Prisma
+        // không đụng tới cột, nên câu ghi chú vé cũ (đã chuyển sang
+        // extraFees) sẽ nằm lại trong DB và hiện hai lần.
+        ticketInfo: s.ticketInfo ?? null,
         ticketTiers: tt,
+        extraFees: ef,
         placeId: taXua.id,
         ...PUB,
         // sửa: xoá điểm nhấn cũ rồi tạo lại theo thứ tự
@@ -643,6 +696,7 @@ async function main() {
         name,
         ...rest,
         ticketTiers: tt,
+        extraFees: ef,
         placeId: taXua.id,
         ...PUB,
         highlights: hl ? { create: hl } : undefined,
@@ -665,6 +719,14 @@ async function main() {
     phone?: string;
     ticketFree?: boolean;
     ticketTiers?: { label: string; price: number; note?: string }[];
+    extraFees?: {
+      label: string;
+      price?: number;
+      priceTo?: number;
+      unit?: string;
+      required?: boolean;
+      note?: string;
+    }[];
     description?: string;
     // Thân bài chi tiết dạng blog — mảng các khối HTML (<h2>, <p>, <ul>,
     // <blockquote>…) sẽ được nối lại thành rich text. Xem proseClass để biết
@@ -739,6 +801,13 @@ async function main() {
       ticketTiers: [
         { label: "Porter dẫn đường", price: 800000, note: "trọn gói theo đoàn 4–6 người" },
         { label: "Tour trọn gói 2N1Đ", price: 2000000, note: "gồm ăn uống, lều/lán, porter" },
+      ],
+      extraFees: [
+        {
+          label: "Thuê túi ngủ, gậy leo núi",
+          unit: "/món",
+          note: "Thuê tại bản, vài chục tới hơn trăm nghìn mỗi món.",
+        },
       ],
       description:
         "Một trong những cung trekking đáng nhớ nhất Tây Bắc: hai ngày băng qua rừng nguyên sinh phủ rêu, những vạt trúc lùn và ba mỏm 'sống lưng khủng long' hẹp đến thót tim, để rồi đón bình minh trên biển mây ở độ cao 2.865m. Cung dài và dốc, cần thể lực tốt và bắt buộc có người dẫn đường bản địa.",
@@ -816,9 +885,25 @@ async function main() {
       category: ActivityCategory.adventure,
       durationText: "Nửa ngày – 1 ngày",
       seasonText: "Quanh năm; tránh ngày mưa lớn",
-      ticketTiers: [
-        { label: "Thuê xe máy / ngày", price: 150000 },
-        { label: "Xe ôm bản địa / lượt", price: 100000, note: "chặng ngắn quanh bản" },
+      // Chạy đèo thì không mất phí gì — hai khoản dưới là dịch vụ thuê tại
+      // bản, nên nằm ở extraFees. Để trong ticketTiers thì chip ngoài trang
+      // ghi "Từ 100.000đ" như thể phải mua vé mới được đi cung đèo.
+      ticketFree: true,
+      extraFees: [
+        {
+          label: "Thuê xe máy",
+          price: 150000,
+          priceTo: 200000,
+          unit: "/ngày",
+          note: "Thường kèm mũ bảo hiểm. Nên chọn xe số để ghì số khi xuống dốc.",
+        },
+        {
+          label: "Xe ôm bản địa",
+          price: 50000,
+          priceTo: 150000,
+          unit: "/chặng",
+          note: "Chặng ngắn quanh bản.",
+        },
       ],
       description:
         "Cung 13km từ trung tâm Bắc Yên lên bản Tà Xùa rồi chạy tiếp sang Xím Vàng là một trong những đoạn đèo đẹp nhất Tây Bắc: đường vắt trên sống núi, một bên là vực mây, cua tay áo nối nhau và sương có thể ập xuống bất cứ lúc nào. Chạy chậm, dừng nhiều — mỗi khúc cua lại là một khung cảnh khác.",
@@ -1013,11 +1098,23 @@ async function main() {
   ];
 
   for (const a of activities) {
-    const { slug, name, spots: aSpots, ticketTiers, content, ...rest } = a;
+    const { slug, name, spots: aSpots, ticketTiers, extraFees, content, ...rest } =
+      a;
     const html = content && content.length > 0 ? content.join("") : null;
     const tt =
       ticketTiers && ticketTiers.length > 0
         ? (ticketTiers as Prisma.InputJsonValue)
+        : Prisma.DbNull;
+    const ef =
+      extraFees && extraFees.length > 0
+        ? (extraFees.map((f) => ({
+            label: f.label,
+            price: f.price ?? null,
+            priceTo: f.priceTo ?? null,
+            unit: f.unit ?? null,
+            required: f.required ?? false,
+            note: f.note ?? null,
+          })) as unknown as Prisma.InputJsonValue)
         : Prisma.DbNull;
     const links = aSpots.map((s, i) => ({
       spotId: spotId[s.slug],
@@ -1030,6 +1127,7 @@ async function main() {
         ...rest,
         content: html,
         ticketTiers: tt,
+        extraFees: ef,
         placeId: taXua.id,
         ...PUB,
         spotLinks: { deleteMany: {}, create: links },
@@ -1040,6 +1138,7 @@ async function main() {
         ...rest,
         content: html,
         ticketTiers: tt,
+        extraFees: ef,
         placeId: taXua.id,
         ...PUB,
         spotLinks: { create: links },
