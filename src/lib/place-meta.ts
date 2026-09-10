@@ -265,8 +265,15 @@ export async function getReviewSummary(kind: "place" | "spot", id: string) {
 // cùng bộ lọc "tác giả HIỆN còn đánh dấu đã đến chính spot đó".
 export async function getSpotReviewSummaries(
   spotIds: string[],
-): Promise<Map<string, { stars: number; total: number }>> {
-  const out = new Map<string, { stars: number; total: number }>();
+): Promise<Map<string, { stars: number; total: number; worthGoing: number }>> {
+  // `worthGoing` là SỐ ĐẾM (không phải %), cố ý: danh sách địa điểm hầu như chỉ
+  // có 1–4 đánh giá mỗi nơi, mà ở cỡ mẫu đó "100%" nghe như một sự đồng thuận
+  // trong khi sự thật là "một người". "3/4 khách thấy đáng đi" tự mang theo cỡ
+  // mẫu nên không nói quá.
+  const out = new Map<
+    string,
+    { stars: number; total: number; worthGoing: number }
+  >();
   if (spotIds.length === 0) return out;
   const rows = await prisma.review.findMany({
     where: { spotId: { in: spotIds }, isHidden: false },
@@ -299,7 +306,12 @@ export async function getSpotReviewSummaries(
   }
   for (const [sid, rws] of bySpot) {
     const s = summarizeReviews(rws);
-    if (s.total > 0) out.set(sid, { stars: s.stars, total: s.total });
+    if (s.total > 0)
+      out.set(sid, {
+        stars: s.stars,
+        total: s.total,
+        worthGoing: Math.round((s.worthGoingPct / 100) * s.total),
+      });
   }
   return out;
 }

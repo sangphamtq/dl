@@ -570,6 +570,59 @@ trùng tên, **gắn địa danh** để phân biệt (vd hai "Quán Cô Ba" →
 > khoá dành riêng của riêng nó — `RESERVED_TRIP_SLUGS` trong `src/lib/slug.ts`. URL cũ
 > (`/lich-trinh/mau/[slug]`, `/lich-trinh/[id]`) đều có chuyển hướng vĩnh viễn.
 
+**Màn hình Địa điểm** (`/diem-den/[placeSlug]/dia-diem`, `SpotSection`) — tab này có
+**section riêng**, không dùng chung `ListingView` với tab Trải nghiệm nữa: hai loại có bộ
+trường khác hẳn (địa điểm có `bestTime`/`notice`/vé; hoạt động có thời lượng/mùa) và trả
+lời hai câu hỏi khác nhau. Cùng lối với Ẩm thực / Lưu trú / Di chuyển — mỗi tab một
+component.
+
+Tab phải trả lời: **đi đâu · đi lúc nào · có mất tiền không · có gì phải cẩn thận**.
+
+- **`bestTime` và `notice` LÊN THẲNG THẺ** (dòng xanh giờ vàng + dòng cam cảnh báo), đúng
+  khuôn thẻ quán ăn. Đây là hai trường có sẵn trong truy vấn mà bản cũ không hiển thị ở
+  đâu cả: `bestTime` phủ **100%** địa điểm ("5h – 8h sáng", "Mùa lúa chín tháng 9–10") và
+  là thứ đổi kế hoạch mạnh nhất; `notice` ở Tà Xùa có trên **5/9** nơi ("lối đi hẹp, hai
+  bên là vực, rất trơn sau mưa") — chôn trong trang chi tiết thì phải mở từng nơi mới biết
+  hôm mưa nên tránh chỗ nào.
+- ⚠️ **KHÔNG in số sao lên thẻ.** `Review` của dự án là **`stance`** (love / worthOnce /
+  meh / bad), không phải thang điểm — chính `review-meta.ts` ghi trong kiểu dữ liệu rằng
+  `worthGoingPct` là "headline **thay** số sao". Bản cũ quy về sao rồi in 5 ngôi sao mỗi
+  thẻ: Bàu Trắng có ĐÚNG MỘT đánh giá "meh" nên thẻ hiện **"0,0"** — một nơi có thật bị
+  chấm 0 điểm vì một người thấy bình thường. Nay hiện **"3/4 khách thấy đáng đi"** (số
+  đếm, tự mang cỡ mẫu) và **chỉ khi ≥ 3 lượt** (`MIN_REVIEWS`); dưới ngưỡng thì im lặng.
+  Vì vậy `getSpotReviewSummaries` trả thêm `worthGoing` (số đếm, không phải %).
+- **Giá chỉ nói khi CÓ BÁN VÉ.** 6/8 địa điểm Phan Thiết vào tự do → chữ "Miễn phí" lặp
+  sáu lần không phân biệt được thẻ nào với thẻ nào. Số vào-tự-do gộp lên **dải dữ kiện**
+  đầu mục ("8 địa điểm  6 vào tự do  2 có bán vé"), thẻ chỉ gắn huy hiệu giá cho **ngoại
+  lệ**. Huy hiệu dựng từ `ticketTiers`, cố ý KHÔNG rơi về `ticketInfo` như `buildPrice` —
+  trường đó là câu văn nên nhét vào huy hiệu góc ảnh thì vỡ.
+- **Bo góc theo bộ chung** `R_CARD`/`R_CTRL`/`R_BADGE`, chip lọc là **hairline vuông** theo
+  ngôn ngữ của trang cha `/diem-den` và `/ban-do`. (Ẩm thực & Lưu trú vẫn còn viên tròn +
+  `rounded-2xl` — hai tab đó dựng trước bộ bo góc, chưa migrate.)
+- **Hình trong tab này KHÔNG lấy từ `@/components/icons`** (shim Material Symbols) mà từ
+  **`components/site/glyphs.tsx`** — bộ SVG tự vẽ, anh em với `nav-icons.tsx`: khung 24,
+  nét 1.8, đầu nét & góc bo tròn, chỉ dựng từ đường thẳng + cung tròn. Tách khỏi
+  `nav-icons` vì bộ kia có cặp viền/đặc để báo trạng thái một mục điều hướng, còn mấy hình
+  này chỉ là nhãn của một mẩu tin nên cần một bản duy nhất và nét dày hơn (sống ở 14–16px
+  chứ không phải 20–25px). Bảy hình: `pin` `gate` `ticket` `sunrise` `warn` `check`
+  `search`. Thêm hình mới thì giữ **chiều cao quang học ~60–70% khung** — hình nào dồn hết
+  xuống nửa dưới sẽ đọc ra nhỏ hơn hẳn mấy hình đứng cạnh trong cùng một dòng.
+- **Đã bỏ menu Sắp xếp** (còn nguyên ở tab Trải nghiệm): "Đánh giá cao" xếp theo đúng mấy
+  con sao bịa ở trên, "Tên A–Z" cho 8 mục không giải quyết gì.
+- **Hai kiểu xem CHIA VIỆC, không phải cùng nội dung xếp khác kiểu.** LƯỚI để lướt ảnh
+  chọn nhanh; DANH SÁCH có cột chữ rộng gấp ba nên gánh thêm hai hàng chip mà thẻ lưới
+  không có chỗ: **Làm gì** (`Activity` gắn với địa điểm) và **Điểm nhấn** (tiêu đề các khối
+  điểm nhấn) — cả hai đã nằm sẵn trong truy vấn từ lâu mà chưa hiển thị ở đâu. Bản cũ hai
+  kiểu hiện gần như y hệt nhau nên nút đổi kiểu chẳng đổi được gì ngoài cỡ ảnh.
+  · Dưới `sm`, hàng danh sách thu thành **ảnh nhỏ 112px nằm ngang** và **giấu hai hàng
+    chip** (cột chữ còn ~250px thì bốn chip rớt bốn dòng) — ở khổ đó "danh sách" nghĩa là
+    xem gọn, còn muốn xem kỹ thì mở thẳng trang địa điểm.
+  · Kiểu xem lưu ở cookie `listingView`, **dùng chung với tab Trải nghiệm**, server đọc rồi
+    truyền vào `initialView` nên không nháy một nhịp lưới trước khi đổi.
+- Lưới **1 / 2 / 3 cột**: thẻ nay mang cả giờ đẹp lẫn cảnh báo nên nhồi hai thẻ vào 390px
+  thì ảnh — thứ site lấy làm chủ — teo còn ~170px. `?cat=` lạ (link cũ) rơi về "tất cả",
+  không hiện trang trống.
+
 **Màn hình Ẩm thực** (`/diem-den/[placeSlug]/am-thuc`, `FoodSection`) — **MỘT danh sách quán,
 MỘT bộ điều khiển**, bám đúng ba câu hỏi của người mở tab, theo thứ tự hay gặp:
 

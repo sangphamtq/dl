@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { PeerBar } from "@/components/site/peer-bar";
 import { getDestinationPeerGroups } from "@/lib/peers";
 import { ListingView } from "@/components/site/listing-view";
+import { SpotSection } from "@/components/site/spot-section";
 import { type EateryDetailData } from "@/components/site/eatery-detail";
 import { FoodSection } from "@/components/site/food-section";
 import { AccommodationSection } from "@/components/site/accommodation-section";
@@ -67,8 +68,11 @@ type ListingItem = {
   name: string;
   tagline: string | null; // slogan ngắn (chỉ spot) — ưu tiên làm subline
   description: string | null;
-  review: { stars: number; total: number } | null; // đánh giá (chỉ spot)
+  review: { stars: number; total: number; worthGoing: number } | null; // đánh giá (chỉ spot)
   price: string | null; // giá vé / giá tham gia (nổi bật)
+  ticketPrice: string | null; // CHỈ khi có bán vé (dựng từ ticketTiers) — null = vào tự do
+  bestTime: string | null; // giờ/mùa đẹp nhất (chỉ spot)
+  notice: string | null; // cảnh báo truy cập (chỉ spot)
   highlights: string[]; // điểm nhấn / đặc trưng (chỉ spot)
   category: string | null; // giá trị enum của loại — khóa lọc & tham số ?cat=
   tag: string | null; // loại (category) — hiển thị làm kicker
@@ -95,6 +99,7 @@ type RawListing = {
   isFeatured?: boolean;
   category?: string | null;
   bestTime?: string | null;
+  notice?: string | null;
   ticketInfo?: string | null;
   address?: string | null;
   durationText?: string | null;
@@ -118,6 +123,7 @@ const EXTRA_SELECT: Record<ListingModel, Record<string, unknown>> = {
     tagline: true,
     category: true,
     bestTime: true,
+    notice: true,
     ticketInfo: true,
     ticketFree: true,
     ticketTiers: true,
@@ -238,6 +244,15 @@ async function fetchListing(
     description: r.description,
     review: reviews?.get(r.id) ?? null,
     price: buildPrice(model, r),
+    // Giá cho HUY HIỆU trên thẻ Địa điểm: chỉ dựng từ bảng vé, cố ý KHÔNG rơi
+    // về `ticketInfo` như `buildPrice` — trường đó là câu văn ("Vào tự do; gửi
+    // xe khoảng 10.000–20.000đ") nên nhét vào một huy hiệu góc ảnh thì vỡ.
+    ticketPrice:
+      model === "spot" && !r.ticketFree
+        ? activityPrice(false, r.ticketTiers)
+        : null,
+    bestTime: r.bestTime ?? null,
+    notice: r.notice ?? null,
     highlights: r.highlights?.map((h) => h.title) ?? [],
     category: r.category ?? null,
     tag: buildTag(model, r),
@@ -481,6 +496,28 @@ export default async function PlaceListingPage({
         ]
       : [];
 
+  // Tab Địa điểm có section riêng (xem `spot-section.tsx`) — cùng lối với Ẩm
+  // thực / Lưu trú / Di chuyển, mỗi tab một component vì mỗi loại có bộ trường
+  // và bộ câu hỏi khác hẳn nhau.
+  const spots =
+    loai === "dia-diem"
+      ? groups[0]!.items.map((it) => ({
+          slug: it.slug,
+          name: it.name,
+          tagline: it.tagline,
+          description: it.description,
+          category: it.category,
+          categoryLabel: it.tag,
+          bestTime: it.bestTime,
+          notice: it.notice,
+          price: it.ticketPrice,
+          review: it.review,
+          images: it.images,
+          highlights: it.highlights,
+          activities: it.activities,
+        }))
+      : null;
+
   const listingView =
     (await cookies()).get("listingView")?.value === "list" ? "list" : "grid";
 
@@ -543,6 +580,16 @@ export default async function PlaceListingPage({
                   />
                 </div>
               </section>
+            )
+          ) : spots ? (
+            spots.length === 0 ? (
+              <p className="text-muted-foreground">Chưa có địa điểm nào.</p>
+            ) : (
+              <SpotSection
+                spots={spots}
+                placeName={place.name}
+                initialView={listingView}
+              />
             )
           ) : (
             <ListingView groups={groups} initialView={listingView} />
