@@ -24,7 +24,24 @@ export type GlyphName =
   | "check"
   | "search"
   | "grid"
-  | "rows";
+  | "rows"
+  | "back"
+  | "sparkle"
+  | "route"
+  | "clock"
+  | "calendar"
+  | "eye"
+  | "bowl"
+  | "bed"
+  | "forward"
+  | "close"
+  | "plus"
+  | "phone"
+  | "globe"
+  | "navigation"
+  | "external"
+  | "expand"
+  | "chevron-down";
 
 const SHAPES: Record<GlyphName, React.ReactNode> = {
   // Ghim bản đồ — CÙNG thân ghim với `spot` của `nav-icons` (hai vai thẳng chạy
@@ -106,6 +123,114 @@ const SHAPES: Record<GlyphName, React.ReactNode> = {
       <rect x="13" y="13" width="7.2" height="7.2" rx="1.8" />
     </>
   ),
+  back: <path d="M14.8 5.2 8 12l6.8 6.8" />,
+  // Chùm lấp lánh — cùng hình với `experience` của `nav-icons` (bốn cánh dựng
+  // bằng bốn cung lõm + một ngôi nhỏ lệch góc), để mục "Trải nghiệm" ở thanh
+  // tab và dòng dữ kiện của chính tab đó nói cùng một hình.
+  sparkle: (
+    <>
+      <path d="M10.6 5.2A9.2 9.2 0 0 0 18.6 13.2 9.2 9.2 0 0 0 10.6 21.2 9.2 9.2 0 0 0 2.6 13.2 9.2 9.2 0 0 0 10.6 5.2Z" />
+      <path d="M18.6 2.8A3.3 3.3 0 0 0 21.4 5.6 3.3 3.3 0 0 0 18.6 8.4 3.3 3.3 0 0 0 15.8 5.6 3.3 3.3 0 0 0 18.6 2.8Z" />
+    </>
+  ),
+  // Lộ trình: hai điểm đầu–cuối + nét chữ S nối chúng. Cùng hình với `route`
+  // của `nav-icons` (mục "Di chuyển" ở thanh tab).
+  route: (
+    <>
+      <circle cx="6.4" cy="6.5" r="2.3" />
+      <circle cx="17.6" cy="17.5" r="2.3" />
+      <path d="M8.7 6.5h3.1a2.75 2.75 0 0 1 0 5.5h-1.7a2.75 2.75 0 0 0 0 5.5h5.2" />
+    </>
+  ),
+  // Đồng hồ: vòng tròn + hai kim chỉ 2 giờ. Dùng cho THỜI LƯỢNG của một hoạt
+  // động ("2 ngày 1 đêm", "nửa buổi").
+  clock: (
+    <>
+      <circle cx="12" cy="12" r="8.4" />
+      <path d="M12 7.2V12l3.4 2" />
+    </>
+  ),
+  // Lịch: khung + hai chân treo + vạch ngăn phần đầu. Dùng cho MÙA / thời điểm
+  // trong năm — khác `sunrise` (giờ đẹp trong ngày) ở chỗ đó.
+  calendar: (
+    <>
+      <path d="M5.8 6h12.4a1.8 1.8 0 0 1 1.8 1.8v11a1.8 1.8 0 0 1-1.8 1.8H5.8A1.8 1.8 0 0 1 4 18.8v-11A1.8 1.8 0 0 1 5.8 6Z" />
+      <path d="M4 10.2h16" />
+      <path d="M8.4 3.6v3.2" />
+      <path d="M15.6 3.6v3.2" />
+    </>
+  ),
+  // Con mắt: hai cung đối xứng + tròng. Dùng cho "chỗ ngồi có view".
+  eye: (
+    <>
+      <path d="M2.6 12S6.2 5.8 12 5.8 21.4 12 21.4 12 17.8 18.2 12 18.2 2.6 12 2.6 12Z" />
+      <circle cx="12" cy="12" r="2.9" />
+    </>
+  ),
+  // Tô + đũa — cùng hình với `food` của `nav-icons`, để mục "Ẩm thực" ở thanh
+  // tab và dòng dữ kiện của chính tab đó nói cùng một hình.
+  bowl: (
+    <>
+      <path d="M3.4 12.2h17.2a8.6 8.6 0 0 1-17.2 0Z" />
+      <path d="m9.1 9.8 7.9-5.4" />
+      <path d="m12 10.9 7.9-5.4" />
+    </>
+  ),
+  // Giường nhìn ngang — cùng hình với `stay` của `nav-icons`.
+  bed: (
+    <>
+      <path d="M3.4 4.6v15.4" />
+      <path d="M3.4 9.4h14.9a2.3 2.3 0 0 1 2.3 2.3V20" />
+      <path d="M3.4 16.3h17.2" />
+      <path d="M7.6 9.4v6.9" />
+    </>
+  ),
+  forward: <path d="M9.2 5.2 16 12l-6.8 6.8" />,
+  close: (
+    <>
+      <path d="M6.2 6.2 17.8 17.8" />
+      <path d="M17.8 6.2 6.2 17.8" />
+    </>
+  ),
+  plus: (
+    <>
+      <path d="M12 5.4v13.2" />
+      <path d="M5.4 12h13.2" />
+    </>
+  ),
+  // Ống nghe điện thoại — dáng quen thuộc nhất ở cỡ nhỏ, dựng từ đoạn thẳng +
+  // hai cung ở hai đầu.
+  phone: (
+    <path d="M7.4 3.8h3l1.6 4-2 1.2a12 12 0 0 0 5 5l1.2-2 4 1.6v3a1.8 1.8 0 0 1-1.8 1.8A15.6 15.6 0 0 1 5.6 5.6 1.8 1.8 0 0 1 7.4 3.8Z" />
+  ),
+  // Quả địa cầu: vòng ngoài + kinh tuyến (hai cung ngược chiều) + xích đạo.
+  globe: (
+    <>
+      <circle cx="12" cy="12" r="8.4" />
+      <path d="M3.6 12h16.8" />
+      <path d="M12 3.6a9.6 9.6 0 0 1 0 16.8 9.6 9.6 0 0 1 0-16.8Z" />
+    </>
+  ),
+  // Mũi tên chỉ đường kiểu cánh diều — chỉ dùng đoạn thẳng nên sắc ở mọi cỡ.
+  navigation: <path d="M20.4 3.6 3.6 10.8l7.2 2.4 2.4 7.2Z" />,
+  // Mở ra ngoài: khung hở một góc + mũi tên bay ra.
+  external: (
+    <>
+      <path d="M13.8 4.4h5.8v5.8" />
+      <path d="M19.6 4.4 11.6 12.4" />
+      <path d="M17.8 13.6v4.2a1.8 1.8 0 0 1-1.8 1.8H6.2a1.8 1.8 0 0 1-1.8-1.8V8a1.8 1.8 0 0 1 1.8-1.8h4.2" />
+    </>
+  ),
+  // Phóng to: bốn góc mở ra.
+  expand: (
+    <>
+      <path d="M9.4 4.4H4.4v5" />
+      <path d="M14.6 4.4h5v5" />
+      <path d="M14.6 19.6h5v-5" />
+      <path d="M9.4 19.6h-5v-5" />
+    </>
+  ),
+  "chevron-down": <path d="M5.2 9.2 12 16l6.8-6.8" />,
   rows: (
     <>
       <rect x="3.4" y="4.6" width="5" height="5" rx="1.4" />

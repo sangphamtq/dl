@@ -1,11 +1,9 @@
 import { notFound, redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { PeerBar } from "@/components/site/peer-bar";
-import { getDestinationPeerGroups } from "@/lib/peers";
-import { ListingView } from "@/components/site/listing-view";
 import { SpotSection } from "@/components/site/spot-section";
+import { ActivitySection } from "@/components/site/activity-section";
+import { Glyph, type GlyphName } from "@/components/site/glyphs";
 import { type EateryDetailData } from "@/components/site/eatery-detail";
 import { FoodSection } from "@/components/site/food-section";
 import { AccommodationSection } from "@/components/site/accommodation-section";
@@ -14,17 +12,7 @@ import {
   TransportSection,
   type TransportItem,
 } from "@/components/site/transport-section";
-import { PlaceHero } from "@/components/site/place-hero";
-import { PlaceTabs } from "@/components/site/place-tabs";
-import {
-  getPlaceHero,
-  getPlaceCounts,
-  buildPlaceTabs,
-  buildPlaceStats,
-  getVisitors,
-  getReviewSummary,
-  getSpotReviewSummaries,
-} from "@/lib/place-meta";
+import { getPlaceHero, getSpotReviewSummaries } from "@/lib/place-meta";
 import {
   SPOT_CATEGORY_LABELS,
   ACTIVITY_CATEGORY_LABELS,
@@ -61,7 +49,6 @@ const DI_CHUYEN = "di-chuyen";
 const FOOD_LEGACY = new Set(["dac-san", "quan-an"]);
 
 type LinkRef = { slug: string; name: string };
-type Fact = { kind: "location" | "price" | "time"; text: string };
 
 type ListingItem = {
   slug: string;
@@ -72,13 +59,15 @@ type ListingItem = {
   price: string | null; // giá vé / giá tham gia (nổi bật)
   ticketPrice: string | null; // CHỈ khi có bán vé (dựng từ ticketTiers) — null = vào tự do
   bestTime: string | null; // giờ/mùa đẹp nhất (chỉ spot)
+  duration: string | null; // thời lượng (chỉ activity)
+  season: string | null; // mùa/thời điểm (chỉ activity)
+  operator: string | null; // đơn vị khai thác (chỉ activity)
+  spots: LinkRef[]; // địa điểm mà hoạt động diễn ra (chỉ activity)
   notice: string | null; // cảnh báo truy cập (chỉ spot)
   highlights: string[]; // điểm nhấn / đặc trưng (chỉ spot)
   category: string | null; // giá trị enum của loại — khóa lọc & tham số ?cat=
   tag: string | null; // loại (category) — hiển thị làm kicker
   tags: string[];
-  meta: string[]; // fact ngắn theo loại (thời lượng, giá, giờ…)
-  facts: Fact[]; // fact có icon (vị trí, giá vé, mùa) — chủ yếu cho Địa điểm
   activities: LinkRef[]; // hoạt động ở địa điểm này (chỉ spot)
   images: { url: string; isCover: boolean }[];
   isFeatured: boolean; // mục nổi bật → dùng làm card "lead" đầu danh sách
@@ -108,6 +97,8 @@ type RawListing = {
   ticketTiers?: unknown;
   openingHours?: string | null;
   activityLinks?: { activity: LinkRef }[];
+  spotLinks?: { spot: LinkRef }[];
+  operatorName?: string | null;
 };
 
 // Field select thêm theo từng model (để build meta / quan hệ).
@@ -118,6 +109,15 @@ const EXTRA_SELECT: Record<ListingModel, Record<string, unknown>> = {
     seasonText: true,
     ticketFree: true,
     ticketTiers: true,
+    operatorName: true,
+    // Địa điểm mà hoạt động này diễn ra (M:N) — quan hệ xương sống của phần
+    // Trải nghiệm, trước đây tab không hiện lấy một cái tên.
+    spotLinks: {
+      where: { spot: { status: "published" } },
+      orderBy: { order: "asc" },
+      take: 4,
+      select: { spot: { select: { slug: true, name: true } } },
+    },
   },
   spot: {
     tagline: true,
@@ -172,16 +172,6 @@ function buildTag(model: ListingModel, r: RawListing): string | null {
   }
 }
 
-// Meta phụ (thời lượng, mùa…) — giá tách riêng ra buildPrice.
-function buildMeta(model: ListingModel, r: RawListing): string[] {
-  switch (model) {
-    case "activity":
-      return [r.durationText, r.seasonText].filter(Boolean) as string[];
-    default:
-      return [];
-  }
-}
-
 // Giá vé / giá tham gia — hiển thị nổi bật riêng (primary). "Miễn phí" khi free.
 function buildPrice(model: ListingModel, r: RawListing): string | null {
   if (model === "spot")
@@ -190,15 +180,6 @@ function buildPrice(model: ListingModel, r: RawListing): string | null {
     );
   if (model === "activity") return activityPrice(r.ticketFree, r.ticketTiers);
   return null;
-}
-
-// Fact phụ (vị trí / mùa) — dành riêng cho Địa điểm (spot); giá đã tách riêng.
-function buildFacts(model: ListingModel, r: RawListing): Fact[] {
-  if (model !== "spot") return [];
-  return [
-    r.address ? { kind: "location" as const, text: r.address } : null,
-    r.bestTime ? { kind: "time" as const, text: `Đẹp nhất: ${r.bestTime}` } : null,
-  ].filter(Boolean) as Fact[];
 }
 
 // Truy vấn danh sách đã xuất bản của một model (tên trùng key delegate Prisma).
@@ -253,13 +234,15 @@ async function fetchListing(
         : null,
     bestTime: r.bestTime ?? null,
     notice: r.notice ?? null,
+    duration: r.durationText ?? null,
+    season: r.seasonText ?? null,
+    operator: r.operatorName ?? null,
+    spots: r.spotLinks?.map((l) => l.spot) ?? [],
     highlights: r.highlights?.map((h) => h.title) ?? [],
     category: r.category ?? null,
     tag: buildTag(model, r),
     tags: r.tags,
     images: r.images,
-    meta: buildMeta(model, r),
-    facts: buildFacts(model, r),
     activities: r.activityLinks?.map((l) => l.activity) ?? [],
     isFeatured: r.isFeatured ?? false,
   }));
@@ -445,28 +428,9 @@ export default async function PlaceListingPage({
   if (!heroData || heroData.place.status !== "published") notFound();
   const place = heroData.place;
 
-  const peerGroups = await getDestinationPeerGroups();
-  const counts = await getPlaceCounts(place.id);
-  const stats = buildPlaceStats(place.viewCount);
-  const tabs = buildPlaceTabs(place.slug, counts);
-
-  // Trạng thái check-in "đã đến" của user hiện tại (nút ở hero).
-  const session = await auth();
-  const userId = session?.user?.id;
-  const checkIn = {
-    checked: userId
-      ? !!(await prisma.checkIn.findUnique({
-          where: { userId_placeId: { userId, placeId: place.id } },
-          select: { id: true },
-        }))
-      : false,
-    isAuthed: !!userId,
-  };
-  const visitors = await getVisitors("place", place.id);
-  const reviewSummary =
-    place.kind === "destination"
-      ? await getReviewSummary("place", place.id)
-      : null;
+  // Số liệu điểm đến, tab, check-in, dải lân cận: đã chuyển hết lên
+  // `(tabs)/layout.tsx`. Trang này chỉ truy vấn NỘI DUNG của tab, nên đổi tab
+  // không còn chạy lại mấy thứ đó nữa.
 
   // Ẩm thực: ăn ở đâu + quán nước + trải nghiệm.
   const food = isFood
@@ -488,7 +452,11 @@ export default async function PlaceListingPage({
     !isFood && !isStay && !isTransport && cfg
       ? [
           {
-            title: cfg.title,
+            // Tiêu đề mục nói theo giọng của các tab anh em ("Ăn uống ở X",
+            // "Đi đâu ở X") chứ không phải tên bảng dữ liệu. `cfg.title` vẫn
+            // giữ nguyên cho `generateMetadata` — thẻ <title> thì cần dạng
+            // trung tính, có thể đọc rời khỏi ngữ cảnh trang.
+            title: `Chơi gì ở ${place.name}`,
             prefix: loai,
             unit: cfg.unit,
             items: await fetchListing(cfg.model, place.id),
@@ -518,33 +486,60 @@ export default async function PlaceListingPage({
         }))
       : null;
 
+  // Dải dữ kiện của tab Di chuyển — tính từ chính danh sách.
+  const transportStats: {
+    glyph: GlyphName;
+    value: string;
+    text: string;
+  }[] = [];
+  if (transports) {
+    const to = transports.filter((t) => t.direction === "getTo").length;
+    const around = transports.length - to;
+    if (to > 0)
+      transportStats.push({ glyph: "route", value: String(to), text: "cách đến nơi" });
+    if (around > 0)
+      transportStats.push({
+        glyph: "gate",
+        value: String(around),
+        text: "cách đi lại tại chỗ",
+      });
+    const fares = transports
+      .map((t) => t.priceFrom)
+      .filter((p): p is number => p != null && p > 0);
+    if (fares.length > 0)
+      transportStats.push({
+        glyph: "ticket",
+        value: formatVnd(Math.min(...fares)),
+        text: "cho chặng rẻ nhất",
+      });
+  }
+
+  // Tab Trải nghiệm cũng có section riêng (`ActivitySection`), cùng lối với
+  // Địa điểm — khung lọc/kiểu xem dùng chung, chỉ nội dung thẻ là khác.
+  const acts =
+    loai === "hoat-dong"
+      ? groups[0]!.items.map((it) => ({
+          slug: it.slug,
+          name: it.name,
+          description: it.description,
+          category: it.category,
+          categoryLabel: it.tag,
+          duration: it.duration,
+          season: it.season,
+          price: it.price === "Miễn phí" ? null : it.price,
+          operator: it.operator,
+          spots: it.spots,
+          images: it.images,
+        }))
+      : null;
+
   const listingView =
     (await cookies()).get("listingView")?.value === "list" ? "list" : "grid";
 
+  // Thanh ngữ cảnh + thanh tab + dải lân cận nằm ở `(tabs)/layout.tsx` — trang
+  // này chỉ còn NỘI DUNG của tab.
   return (
-    <div className="flex flex-1 flex-col">
-
-      <main className="flex-1">
-        <PlaceHero
-          place={place}
-          heroImages={heroData.heroImages}
-          stats={stats}
-          back={{ href: `/diem-den/${place.slug}`, label: "Tổng quan" }}
-          checkIn={checkIn}
-          visitors={visitors}
-          reviews={
-            reviewSummary && reviewSummary.total > 0
-              ? { stars: reviewSummary.stars, total: reviewSummary.total }
-              : undefined
-          }
-        />
-
-        {/* Thanh tab: Tổng quan + xem tất cả từng listing + nút Video */}
-        <PlaceTabs items={tabs} />
-
-        <div
-          className={`mx-auto px-4 py-14 sm:px-6 sm:py-20 max-w-7xl`}
-        >
+    <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20">
           {food ? (
             food.eateries.length === 0 ? (
               <p className="text-muted-foreground">Chưa có nội dung ẩm thực.</p>
@@ -570,9 +565,28 @@ export default async function PlaceListingPage({
               <p className="text-muted-foreground">Chưa có thông tin di chuyển.</p>
             ) : (
               <section>
-                <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-                  Đi lại thế nào?
+                {/* Cùng giọng với các tab anh em ("Đi đâu ở X", "Ăn uống ở X")
+                    thay cho câu hỏi "Đi lại thế nào?" — và thêm dải dữ kiện.
+                    Thanh nhảy mục của `TransportSection` chỉ có hai nhãn không
+                    kèm số, nên ba con số dưới đây đều là tin mới. */}
+                <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                  Đi lại ở {place.name}
                 </h2>
+                <div className="mt-3.5 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
+                  {transportStats.map((st) => (
+                    <span
+                      key={st.text}
+                      className="inline-flex items-center gap-1.5"
+                    >
+                      <Glyph
+                        name={st.glyph}
+                        className="size-[1.05rem] shrink-0 text-muted-foreground/70"
+                      />
+                      <b className="font-semibold text-foreground">{st.value}</b>{" "}
+                      {st.text}
+                    </span>
+                  ))}
+                </div>
                 <div className="mt-8">
                   <TransportSection
                     transports={transports}
@@ -580,6 +594,16 @@ export default async function PlaceListingPage({
                   />
                 </div>
               </section>
+            )
+          ) : acts ? (
+            acts.length === 0 ? (
+              <p className="text-muted-foreground">Chưa có hoạt động nào.</p>
+            ) : (
+              <ActivitySection
+                activities={acts}
+                placeName={place.name}
+                initialView={listingView}
+              />
             )
           ) : spots ? (
             spots.length === 0 ? (
@@ -591,18 +615,11 @@ export default async function PlaceListingPage({
                 initialView={listingView}
               />
             )
-          ) : (
-            <ListingView groups={groups} initialView={listingView} />
-          )}
-        </div>
-      </main>
-
-      <PeerBar
-        groups={peerGroups}
-        currentSlug={place.slug}
-        prefix="diem-den"
-        title="Điểm đến"
-      />
+      ) : // Không còn nhánh nào: `LOAI` chỉ có ba token và cả ba đều đã có
+      // section riêng (Địa điểm · Trải nghiệm · Nơi lưu trú), cộng hai token
+      // đặc biệt Ẩm thực & Di chuyển ở trên. `ListingView` — component "danh
+      // sách listing chung chung" — vì thế đã xoá.
+      null}
     </div>
   );
 }

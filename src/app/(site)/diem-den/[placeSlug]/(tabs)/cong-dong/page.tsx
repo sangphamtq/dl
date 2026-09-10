@@ -7,20 +7,8 @@ import { coverUrl } from "@/lib/place-image";
 import { isThreadType, isThreadSort } from "@/lib/community";
 import { getFeed, getTrips } from "@/lib/community-feed";
 import { ablyEnabled, placeFeedChannel } from "@/lib/ably";
-import {
-  getPlaceHeader,
-  getPlaceHero,
-  getPlaceCounts,
-  buildPlaceTabs,
-  buildPlaceStats,
-  getVisitors,
-  getReviewSummary,
-} from "@/lib/place-meta";
-import { getDestinationPeerGroups } from "@/lib/peers";
+import { getPlaceHeader, getPlaceHero } from "@/lib/place-meta";
 import { isStaffViewer } from "@/lib/preview";
-import { PeerBar } from "@/components/site/peer-bar";
-import { PlaceHero } from "@/components/site/place-hero";
-import { PlaceTabs } from "@/components/site/place-tabs";
 import { PostComposer } from "@/components/community/post-composer";
 import { PostCard } from "@/components/community/post-card";
 import { CommunityFilter } from "@/components/community/community-filter";
@@ -64,9 +52,7 @@ export default async function PlaceCommunityPage({
   const isStaff = role === "admin" || role === "editor";
   const rt = ablyEnabled();
 
-  const [counts, peerGroups, { posts }, grouped, trips] = await Promise.all([
-    getPlaceCounts(place.id),
-    getDestinationPeerGroups(),
+  const [{ posts }, grouped, trips] = await Promise.all([
     getFeed({
       placeId: place.id,
       type: type === "all" ? undefined : (type as ThreadType),
@@ -82,24 +68,7 @@ export default async function PlaceCommunityPage({
     getTrips({ placeId: place.id }),
   ]);
 
-  const stats = buildPlaceStats(place.viewCount);
-  const tabs = buildPlaceTabs(place.slug, counts);
-
-  // Trạng thái check-in "đã đến" của user hiện tại (nút ở hero).
-  const checkIn = {
-    checked: currentUserId
-      ? !!(await prisma.checkIn.findUnique({
-          where: { userId_placeId: { userId: currentUserId, placeId: place.id } },
-          select: { id: true },
-        }))
-      : false,
-    isAuthed: !!currentUserId,
-  };
-  const visitors = await getVisitors("place", place.id);
-  const reviewSummary =
-    place.kind === "destination"
-      ? await getReviewSummary("place", place.id)
-      : null;
+  // Số liệu điểm đến, tab, check-in, dải lân cận: đã lên `(tabs)/layout.tsx`.
 
   const totalAll = grouped.reduce((s, g) => s + g._count._all, 0);
   const countOf = (v: string) =>
@@ -115,30 +84,14 @@ export default async function PlaceCommunityPage({
     return `${base}${qs ? `?${qs}` : ""}`;
   };
 
+  // Khung (thanh ngữ cảnh · thanh tab · dải lân cận) nằm ở `(tabs)/layout.tsx`.
   return (
-    <div className="flex flex-1 flex-col">
+    <>
       <RealtimeRefresher
         channelKey={placeFeedChannel(place.slug)}
         event="feed:changed"
         enabled={rt}
       />
-
-      <main className="flex-1">
-        <PlaceHero
-          place={place}
-          heroImages={heroData.heroImages}
-          stats={stats}
-          back={{ href: `/diem-den/${place.slug}`, label: "Tổng quan" }}
-          checkIn={checkIn}
-          visitors={visitors}
-          reviews={
-            reviewSummary && reviewSummary.total > 0
-              ? { stars: reviewSummary.stars, total: reviewSummary.total }
-              : undefined
-          }
-        />
-
-        <PlaceTabs items={tabs} />
 
         <div className="bg-muted/30">
         <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
@@ -146,8 +99,13 @@ export default async function PlaceCommunityPage({
             <h2 className="text-xl font-bold tracking-tight sm:text-2xl">
               Thảo luận về {place.name}
             </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Hỏi đáp, chia sẻ kinh nghiệm và rủ nhau ghép đoàn · {totalAll} bài
+            {/* Ngăn bằng khoảng trắng rộng, không phải dấu chấm giữa — quy
+                ước dải phân cách của dự án (xem skill `design`). */}
+            <p className="mt-1 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-muted-foreground">
+              <span>Hỏi đáp, chia sẻ kinh nghiệm và rủ nhau ghép đoàn</span>
+              <span>
+                <b className="font-semibold text-foreground">{totalAll}</b> bài
+              </span>
             </p>
           </div>
 
@@ -220,14 +178,6 @@ export default async function PlaceCommunityPage({
           </div>
         </div>
         </div>
-      </main>
-
-      <PeerBar
-        groups={peerGroups}
-        currentSlug={place.slug}
-        prefix="diem-den"
-        title="Điểm đến"
-      />
-    </div>
+    </>
   );
 }

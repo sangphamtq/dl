@@ -2,23 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import {
-  MapPin,
-  Clock,
-  Phone,
-  Globe,
-  UtensilsCrossed,
-  TriangleAlert,
-  ExternalLink,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  Eye,
-  Sunrise,
-  Navigation,
-  Maximize,
-  X,
-} from "@/components/icons";
+import { Glyph, type GlyphName } from "@/components/site/glyphs";
+import { R_BADGE, R_CARD, R_CTRL } from "@/lib/radius";
 import { cn } from "@/lib/utils";
 import { AddToTripButton } from "@/components/site/add-to-trip-button";
 import { coverUrl } from "@/lib/place-image";
@@ -227,13 +212,13 @@ export function EateryDetail({
                       src={im.url}
                       alt={im.alt ?? `Thực đơn ${data.name}`}
                       draggable={false}
-                      className="max-h-full max-w-full select-none rounded-lg object-contain shadow-2xl transition-transform duration-200 group-hover:scale-[1.01]"
+                      className={cn(R_CARD, "max-h-full max-w-full select-none object-contain shadow-2xl transition-transform duration-200 group-hover:scale-[1.01]")}
                     />
                     {/* Gợi ý đặt GÓC TRÊN TRÁI — ở tab Thực đơn chỗ đó trống
                         (không có huy hiệu trạng thái/hướng nhìn). Để ở đáy thì
                         trên điện thoại nó đụng ngay cụm tab. */}
-                    <span className="pointer-events-none absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-background/90 px-2.5 py-1 text-xs font-semibold shadow-sm backdrop-blur">
-                      <Maximize className="size-3.5" aria-hidden />
+                    <span className={cn(R_BADGE, "pointer-events-none absolute left-4 top-4 inline-flex items-center gap-1.5 bg-background/90 px-2.5 py-1 text-xs font-semibold shadow-sm backdrop-blur")}>
+                      <Glyph name="expand" className="size-3.5" />
                       Bấm để phóng to
                     </span>
                   </button>
@@ -265,8 +250,8 @@ export function EateryDetail({
           <div className="absolute left-4 top-4 flex flex-wrap items-center gap-2">
             {status && <StatusPill status={status} />}
             {viewLabel && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-background/90 px-2.5 py-1 text-xs font-semibold shadow-sm backdrop-blur-sm">
-                <Eye className="size-3 shrink-0 text-primary" aria-hidden />
+              <span className={cn(R_BADGE, "inline-flex items-center gap-1 bg-background/90 px-2.5 py-1 text-xs font-semibold shadow-sm backdrop-blur-sm")}>
+                <Glyph name="eye" className="size-3.5 shrink-0 text-primary" />
                 Nhìn ra {viewLabel.toLowerCase()}
               </span>
             )}
@@ -287,10 +272,10 @@ export function EateryDetail({
             chỗ. Ở tab Thực đơn thì chip luôn hiện dù chỉ có một ảnh — không có
             nó thì mất hẳn dấu hiệu "bạn đang xem thực đơn". */}
         {(isMenu || many) && (
-          <span className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-background/85 px-2.5 py-1 text-xs font-semibold shadow-sm backdrop-blur">
+          <span className={cn(R_BADGE, "absolute right-4 top-4 inline-flex items-center gap-1.5 bg-background/85 px-2.5 py-1 text-xs font-semibold shadow-sm backdrop-blur")}>
             {isMenu && (
               <>
-                <UtensilsCrossed className="size-3 shrink-0" aria-hidden />
+                <Glyph name="bowl" className="size-3.5 shrink-0" />
                 Thực đơn
               </>
             )}
@@ -331,7 +316,8 @@ export function EateryDetail({
                   aria-label={`Xem ảnh ${i + 1}`}
                   aria-current={i === shot}
                   className={cn(
-                    "relative size-14 shrink-0 overflow-hidden rounded-xl ring-2 transition-all",
+                    R_BADGE,
+                    "relative size-14 shrink-0 overflow-hidden ring-2 transition-all",
                     isMenu && "bg-background",
                     i === shot
                       ? "ring-white"
@@ -360,12 +346,15 @@ export function EateryDetail({
               {label(EATERY_CATEGORY_LABELS, data.category)}
             </p>
           )}
-          <DialogTitle className="mt-1 text-2xl font-bold leading-tight tracking-tight text-balance sm:text-3xl">
+          {/* Font display như tên trên thẻ ngoài lưới — popup và thẻ là hai
+              lần nhìn thấy CÙNG một quán, đổi kiểu chữ giữa hai lần là bắt mắt
+              phải nhận diện lại. */}
+          <DialogTitle className="mt-1 font-[family-name:var(--font-display)] text-2xl font-semibold leading-tight tracking-tight text-balance sm:text-3xl">
             {data.name}
           </DialogTitle>
           {area && (
             <p className="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground">
-              <MapPin className="size-4 shrink-0" aria-hidden />
+              <Glyph name="pin" className="size-4 shrink-0" />
               {area}
             </p>
           )}
@@ -390,7 +379,7 @@ export function EateryDetail({
                  cột, sau cả đoạn mô tả — trong khi cả màn hình Ẩm thực được
                  dựng quanh đúng câu hỏi "giờ này còn mở không". */}
           {(data.openingHours || sv || data.bestTime) && (
-            <div className="mt-4 space-y-2 rounded-2xl bg-muted/50 p-4">
+            <div className={cn(R_CARD, "mt-4 space-y-2 bg-muted/50 p-4")}>
               {sv && (
                 <p
                   className={cn(
@@ -412,13 +401,13 @@ export function EateryDetail({
               )}
               {data.openingHours && (
                 <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Clock className="size-4 shrink-0" aria-hidden />
+                  <Glyph name="clock" className="size-4 shrink-0" />
                   <span className="tabular-nums">{data.openingHours}</span>
                 </p>
               )}
               {data.bestTime && (
                 <p className="flex items-start gap-2 text-sm font-medium text-primary">
-                  <Sunrise className="mt-0.5 size-4 shrink-0" aria-hidden />
+                  <Glyph name="sunrise" className="mt-0.5 size-4 shrink-0" />
                   <span className="leading-snug">
                     Đẹp nhất: {data.bestTime}
                   </span>
@@ -429,10 +418,10 @@ export function EateryDetail({
 
           {/* Cảnh báo: nền cam nhạt, KHÔNG viền — cột này đã nhiều khung rồi */}
           {data.notice && (
-            <div className="mt-3 flex items-start gap-2.5 rounded-2xl bg-warm/10 px-4 py-3 text-sm">
-              <TriangleAlert
+            <div className={cn(R_CARD, "mt-3 flex items-start gap-2.5 bg-warm/10 px-4 py-3 text-sm")}>
+              <Glyph
+                name="warn"
                 className="mt-0.5 size-4 shrink-0 text-warm"
-                aria-hidden
               />
               <span className="leading-relaxed">{data.notice}</span>
             </div>
@@ -451,9 +440,9 @@ export function EateryDetail({
             <button
               type="button"
               onClick={() => changeTab("menu")}
-              className="mt-5 flex w-full items-center gap-3 rounded-2xl border border-border/60 bg-card p-3 text-left transition-colors hover:border-border hover:bg-muted/40"
+              className={cn(R_CARD, "mt-5 flex w-full items-center gap-3 border border-border/60 bg-card p-3 text-left transition-colors hover:border-border hover:bg-muted/40")}
             >
-              <span className="relative size-12 shrink-0 overflow-hidden rounded-xl bg-muted">
+              <span className={cn(R_BADGE, "relative size-12 shrink-0 overflow-hidden bg-muted")}>
                 <Image
                   src={menu[0].url}
                   alt=""
@@ -470,7 +459,7 @@ export function EateryDetail({
                   {menu.length} ảnh chụp thực đơn · bấm để phóng to
                 </span>
               </span>
-              <ChevronDown className="size-4 -rotate-90 text-muted-foreground" aria-hidden />
+              <Glyph name="forward" className="size-4 text-muted-foreground" />
             </button>
           )}
 
@@ -480,7 +469,7 @@ export function EateryDetail({
           {(street || mealLabels.length > 0 || viewLabel || data.phone) && (
             <dl className="mt-6 divide-y divide-border/60 border-y border-border/60">
               {street && (
-                <Row icon={MapPin} label="Địa chỉ">
+                <Row glyph="pin" label="Địa chỉ">
                   {/* `block`: để inline thì nút bản đồ dính liền vào cuối địa
                       chỉ, không có lấy một khoảng trắng ngăn cách. */}
                   <span className="block leading-snug">{street}</span>
@@ -492,24 +481,24 @@ export function EateryDetail({
                       className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
                     >
                       {mapOpen ? "Ẩn bản đồ" : "Xem trên bản đồ"}
-                      <ChevronDown
+                      <Glyph
+                        name="chevron-down"
                         className={cn(
-                          "size-3 transition-transform",
+                          "size-3.5 transition-transform",
                           mapOpen && "rotate-180",
                         )}
-                        aria-hidden
                       />
                     </button>
                   )}
                 </Row>
               )}
               {mealLabels.length > 0 && (
-                <Row icon={UtensilsCrossed} label="Hợp bữa">
+                <Row glyph="bowl" label="Hợp bữa">
                   <span className="mt-0.5 flex flex-wrap gap-1.5">
                     {mealLabels.map((m) => (
                       <span
                         key={m}
-                        className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
+                        className={cn(R_BADGE, "bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground")}
                       >
                         {m}
                       </span>
@@ -518,12 +507,12 @@ export function EateryDetail({
                 </Row>
               )}
               {viewLabel && (
-                <Row icon={Eye} label="Nhìn ra">
+                <Row glyph="eye" label="Nhìn ra">
                   {viewLabel}
                 </Row>
               )}
               {data.phone && (
-                <Row icon={Phone} label="Điện thoại">
+                <Row glyph="phone" label="Điện thoại">
                   <a href={`tel:${data.phone}`} className="hover:underline">
                     {data.phone}
                   </a>
@@ -533,7 +522,7 @@ export function EateryDetail({
           )}
 
           {hasMap && mapOpen && (
-            <div className="mt-4 overflow-hidden rounded-2xl border border-border/60">
+            <div className={cn(R_CARD, "mt-4 overflow-hidden border border-border/60")}>
               <iframe
                 title={`Bản đồ ${data.name}`}
                 className="aspect-[16/10] w-full"
@@ -548,7 +537,7 @@ export function EateryDetail({
               {data.tags.map((t) => (
                 <span
                   key={t}
-                  className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground"
+                  className={cn(R_BADGE, "bg-muted px-2.5 py-1 text-xs text-muted-foreground")}
                 >
                   {t}
                 </span>
@@ -566,27 +555,27 @@ export function EateryDetail({
                 href={directions}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                className={cn(R_CTRL, "inline-flex flex-1 items-center justify-center gap-2 bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90")}
               >
-                <Navigation className="size-4" aria-hidden />
+                <Glyph name="navigation" className="size-4" />
                 Chỉ đường
               </a>
             )}
             {data.phone && (
-              <IconAction href={`tel:${data.phone}`} icon={Phone} label="Gọi quán" />
+              <IconAction href={`tel:${data.phone}`} glyph="phone" label="Gọi quán" />
             )}
             {data.bookingUrl && (
               <a
                 href={data.bookingUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-lg bg-warm px-4 py-2.5 text-sm font-semibold text-warm-foreground transition-colors hover:bg-warm/90"
+                className={cn(R_CTRL, "inline-flex items-center gap-1.5 bg-warm px-4 py-2.5 text-sm font-semibold text-warm-foreground transition-colors hover:bg-warm/90")}
               >
-                <ExternalLink className="size-4" aria-hidden /> Đặt bàn
+                <Glyph name="external" className="size-4" /> Đặt bàn
               </a>
             )}
             {data.website && (
-              <IconAction href={data.website} icon={Globe} label="Website" external />
+              <IconAction href={data.website} glyph="globe" label="Website" external />
             )}
           </div>
         )}
@@ -664,9 +653,9 @@ function MenuZoom({
           type="button"
           onClick={onClose}
           aria-label="Đóng"
-          className="absolute right-4 top-4 grid size-10 place-items-center rounded-full bg-white/10 text-white backdrop-blur transition-colors hover:bg-white/20"
+          className={cn(R_CTRL, "absolute right-4 top-4 grid size-10 place-items-center bg-white/10 text-white backdrop-blur transition-colors hover:bg-white/20")}
         >
-          <X className="size-5" aria-hidden />
+          <Glyph name="close" className="size-5" />
         </button>
 
         {many && (
@@ -696,18 +685,19 @@ function ZoomNav({
   side: "left" | "right";
   onClick: () => void;
 }) {
-  const Icon = side === "left" ? ChevronLeft : ChevronRight;
+  const glyph = side === "left" ? "back" : "forward";
   return (
     <button
       type="button"
       onClick={onClick}
       aria-label={side === "left" ? "Ảnh trước" : "Ảnh sau"}
       className={cn(
-        "absolute top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white backdrop-blur transition-colors hover:bg-white/20",
+        R_CTRL,
+        "absolute top-1/2 grid size-11 -translate-y-1/2 place-items-center bg-white/10 text-white backdrop-blur transition-colors hover:bg-white/20",
         side === "left" ? "left-4" : "right-4",
       )}
     >
-      <Icon className="size-5" aria-hidden />
+      <Glyph name={glyph} className="size-5" />
     </button>
   );
 }
@@ -721,7 +711,7 @@ function ArrowBtn({
   side: "left" | "right";
   onClick: () => void;
 }) {
-  const Icon = side === "left" ? ChevronLeft : ChevronRight;
+  const glyph = side === "left" ? "back" : "forward";
   return (
     <button
       type="button"
@@ -730,11 +720,12 @@ function ArrowBtn({
       className={cn(
         // Ẩn dưới `sm`: ở đó vuốt là thao tác tự nhiên (embla đã bật `watchDrag`)
         // và dải ảnh nhỏ ngay bên dưới — mũi tên chỉ tổ che mất ảnh.
-        "absolute top-1/2 hidden size-9 -translate-y-1/2 place-items-center rounded-full bg-background/85 text-foreground shadow-sm backdrop-blur transition-colors hover:bg-background sm:grid",
+        R_CTRL,
+        "absolute top-1/2 hidden size-9 -translate-y-1/2 place-items-center bg-background/85 text-foreground shadow-sm backdrop-blur transition-colors hover:bg-background sm:grid",
         side === "left" ? "left-3" : "right-3",
       )}
     >
-      <Icon className="size-4" aria-hidden />
+      <Glyph name={glyph} className="size-4" />
     </button>
   );
 }
@@ -764,9 +755,9 @@ function MediaSwitch({
     <button
       type="button"
       onClick={onClick}
-      className="pointer-events-auto inline-flex items-center gap-2.5 rounded-2xl bg-background/90 p-1.5 pr-3 text-left shadow-sm backdrop-blur transition-colors hover:bg-background"
+      className={cn(R_CARD, "pointer-events-auto inline-flex items-center gap-2.5 bg-background/90 p-1.5 pr-3 text-left shadow-sm backdrop-blur transition-colors hover:bg-background")}
     >
-      <span className="relative size-10 shrink-0 overflow-hidden rounded-xl bg-muted">
+      <span className={cn(R_BADGE, "relative size-10 shrink-0 overflow-hidden bg-muted")}>
         <Image
           src={preview.url}
           alt=""
@@ -781,24 +772,27 @@ function MediaSwitch({
           {count} ảnh
         </span>
       </span>
-      <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+      <Glyph name="forward" className="size-4 shrink-0 text-muted-foreground" />
     </button>
   );
 }
 
 // Một dòng thông tin: icon · nhãn nhỏ · giá trị.
 function Row({
-  icon: Icon,
+  glyph,
   label: name,
   children,
 }: {
-  icon: React.ComponentType<{ className?: string }>;
+  glyph: GlyphName;
   label: string;
   children: React.ReactNode;
 }) {
   return (
     <div className="flex items-start gap-3 py-3">
-      <Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
+      <Glyph
+        name={glyph}
+        className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+      />
       <div className="min-w-0 flex-1">
         <dt className="text-xs text-muted-foreground">{name}</dt>
         <dd className="text-sm">{children}</dd>
@@ -811,12 +805,12 @@ function Row({
 // xuống, kể cả khi quán có đủ cả điện thoại lẫn website.
 function IconAction({
   href,
-  icon: Icon,
+  glyph,
   label: text,
   external = false,
 }: {
   href: string;
-  icon: React.ComponentType<{ className?: string }>;
+  glyph: GlyphName;
   label: string;
   external?: boolean;
 }) {
@@ -826,9 +820,9 @@ function IconAction({
       title={text}
       aria-label={text}
       {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-      className="grid size-11 shrink-0 place-items-center rounded-full border border-border/70 text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+      className={cn(R_CTRL, "grid size-11 shrink-0 place-items-center border border-border/70 text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground")}
     >
-      <Icon className="size-4" />
+      <Glyph name={glyph} className="size-[1.15rem]" />
     </a>
   );
 }
@@ -883,7 +877,8 @@ function StatusPill({ status }: { status: OpeningStatus }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full bg-background/90 px-2.5 py-1 text-xs font-semibold shadow-sm backdrop-blur-sm",
+        R_BADGE,
+        "inline-flex items-center gap-1.5 bg-background/90 px-2.5 py-1 text-xs font-semibold shadow-sm backdrop-blur-sm",
         s.tone,
       )}
     >

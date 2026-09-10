@@ -570,6 +570,121 @@ trùng tên, **gắn địa danh** để phân biệt (vd hai "Quán Cô Ba" →
 > khoá dành riêng của riêng nó — `RESERVED_TRIP_SLUGS` trong `src/lib/slug.ts`. URL cũ
 > (`/lich-trinh/mau/[slug]`, `/lich-trinh/[id]`) đều có chuyển hướng vĩnh viễn.
 
+**Các tab con dùng LAYOUT CHUNG** — `diem-den/[placeSlug]/(tabs)/layout.tsx`:
+
+```
+diem-den/[placeSlug]/
+├─ page.tsx          ← Tổng quan: hero LỚN (PlaceHeroCenter | PlaceHero theo heroLayout)
+├─ ban-do/           ← vẫn NGOÀI group (bản đồ cao 100dvh, chưa quyết chừa chỗ)
+└─ (tabs)/
+   ├─ layout.tsx     ← PlaceContextBar + PlaceTabs + PeerBar  ← dựng MỘT lần
+   ├─ loading.tsx    ← khung xám CHỈ cho vùng nội dung
+   ├─ [loai]/        └─ cong-dong/   ← chỉ còn nội dung
+```
+
+- Đổi tab thì Next chỉ tải lại `page`, **layout không dựng lại** → `getPlaceHero`,
+  `getPlaceCounts`, `getVisitors`, `getReviewSummary`, `getDestinationPeerGroups` **hết
+  chạy lại**. Trước đó ba file route mỗi file tự dựng đầu trang, nên vừa chạy lại tất cả
+  vừa là lý do hai kiểu hero trôi ra khác nhau — một nguyên nhân, ba triệu chứng.
+- `(tabs)` là **route group** nên URL không đổi: `/diem-den/phan-thiet/dia-diem` vẫn là
+  route thật, vẫn `generateMetadata` riêng, vẫn index & chia sẻ được.
+- **Tổng quan nằm NGOÀI group** → giữ hero lớn. Hai vai trò khác nhau thật; ép chung một
+  khung thì hoặc tổng quan mất hero, hoặc tab con lại đội một hero thứ hai.
+- `getPlaceHero`/`getPlaceCounts` bọc **`cache()`** của React: layout và page cùng cần
+  chúng trong một request, không bọc thì mỗi lần mở tab chạy truy vấn đôi.
+- **Tab con KHÔNG có hero.** Danh tính gộp thẳng vào thanh tab: `PlaceTabs` nhận thêm
+  `place` (mũi tên về · ảnh bìa 28px · tên nơi, tên chỉ hiện từ `sm`). Trang Tổng quan
+  **không** truyền prop đó — nó đã có hero.
+  · **Truyền `place` cũng có nghĩa là BỎ mục "Tổng quan" khỏi dải tab.** Hai thứ đó trỏ
+    cùng một URL và đứng cách nhau 8px. Bỏ mục tab chứ không bỏ mũi tên, vì cụm danh tính
+    còn kiêm việc nói "bạn đang ở đâu" — thứ dải tab không nói. Trang Tổng quan không có
+    cụm danh tính nên ở đó mục "Tổng quan" vẫn còn, để dải tab có mục đang mở.
+  · **Không có nút "đã đến"/chia sẻ ở tab con** — hành động cấp ĐIỂM ĐẾN, sống ở trang
+    Tổng quan (cách một chạm qua cụm danh tính). Nhờ vậy `(tabs)/layout.tsx` cũng không
+    cần phiên đăng nhập lẫn truy vấn check-in.
+  · Đo được: khung đầu trang **612px → 48px**. (Bước giữa từng là `PlaceContextBar` cao
+    72px xếp trên thanh tab 48px = 120px; đã gộp và **xoá component đó**.)
+  · Lý do gộp chứ không để hai thanh: 48px DÍNH của thanh tab không nói bạn đang ở đâu —
+    nó chỉ có tên các tab — còn thanh mang tên nơi thì lại cuộn đi mất. Gộp vào thì phần
+    dính làm hai việc mà chiều cao không đổi.
+  · **Giữ nguyên `h-12` (3rem)** là có chủ ý: `FoodSection` (`top-12 lg:top-28`),
+    `TransportSection` và `PlaceReviews` (`lg:top-28`) đều neo theo con số đó. Đổi chiều
+    cao thanh tab là phải sửa cả ba, và cái sai sẽ im lặng.
+  · Ở khổ hẹp giấu tên nơi (chỉ còn mũi tên + ảnh): tên đã nằm trong tiêu đề mục ngay dưới
+    ("Đi đâu ở Phan Thiết"), mà mỗi ký tự ở đây lấy đi một phần dải tab vốn phải cuộn ngang.
+  · Bỏ khỏi tab con: **CTA "Lên lịch trình"** (hành động cấp điểm đến, đúng chỗ ở tổng
+    quan), **dải số liệu** (lượt xem · đánh giá · Vivu-er — chuyện của cả điểm đến, mà lại
+    đứng cách dải dữ kiện của chính tab chưa tới một màn), **khối hai ảnh nghiêng** (đứng
+    ngay trên một lưới ảnh của chính tab).
+- **Đổi tab thì CUỘN LÊN ĐỈNH — hành vi mặc định của Next, không ghi đè.** Đã thử
+  `scroll={false}` (giữ nguyên chỗ đang đứng cho ra cảm giác "đổi panel") kèm một đoạn tự
+  kéo thanh tab lên sát đỉnh khung nhìn, và đã BỎ:
+  · nó chỉ chạy được **giữa các tab con**. Đi Tổng quan ↔ tab con là unmount rồi mount lại
+    `PlaceTabs` (một instance trong `(tabs)/layout.tsx`, một instance do `page.tsx` tự
+    render) nên lần nào cũng tính là "lần chạy đầu" → không hiệu chỉnh. Mà đó mới đúng là
+    chỗ lệch nhiều nhất: thanh tab nằm ở **836px** trên Tổng quan (dưới hero lớn) so với
+    **184px** ở tab con — giữ nguyên vị trí cuộn là thả người ta vào giữa hero, hoặc vào
+    giữa lưới ảnh ở chiều ngược lại;
+  · lý do ban đầu của `scroll={false}` ("nhảy về đỉnh thì mất cảm giác tab") **tự mất** khi
+    khung trên co từ 612px xuống 120px: cuộn lên đỉnh giờ chỉ lệch **136px** so với việc
+    canh thanh tab lên đỉnh, tức trả thêm code và một khái niệm phải nhớ để mua 136px.
+  ⚠️ Đừng thêm lại `scroll={false}` cho dải tab này nếu không xử lý luôn hướng đi qua ranh
+  giới layout — làm nửa vời thì một chiều đúng một chiều sai.
+- ⚠️ Còn treo: **`SiteSetting.heroLayout` chỉ áp cho trang tổng quan** (tab con nay không
+  còn hero nên hết mâu thuẫn, nhưng nhãn cài đặt vẫn nên nói rõ), và **`ban-do`** chưa vào
+  group nên vào đó là mất thanh tab.
+
+**Khối mở đầu của MỌI tab con** theo cùng một luật (`lib/listing-summary.ts` giữ phần
+dùng chung):
+
+- **Không có nhãn nhỏ trên tiêu đề.** Thanh tab ngay trên đã có mục đó đang sáng — thêm
+  nhãn là nói ba lần cùng một việc (tab đang mở · nhãn · tiêu đề). Đã gỡ ở Địa điểm, Ẩm
+  thực, Nơi lưu trú.
+- **Tiêu đề nói theo giọng "việc + nơi"**: *Đi đâu ở X · Chơi gì ở X · Ăn uống ở X · Chỗ ở
+  đã xác minh chính chủ ở X · Đi lại ở X*. (Trải nghiệm trước là "Hoạt động & trải nghiệm",
+  Di chuyển trước là "Đi lại thế nào?" — hai cái đó là tên bảng dữ liệu và một câu hỏi.)
+  `LOAI[].title` giữ nguyên cho `generateMetadata`: thẻ `<title>` cần dạng trung tính, đọc
+  rời khỏi ngữ cảnh trang vẫn hiểu.
+- **Dải dữ kiện KHÔNG đếm lại thứ màn hình đã đếm.** Mục đầu từng là "n địa điểm" / "n
+  quán" / "n hoạt động" — nhưng con số đó đã nằm ở chip "Tất cả n" hoặc ở dòng kết quả dưới
+  bộ lọc. Thay bằng **`compositionLine()`**: *Nhiều nhất là biển* / *Tất cả là …* / *Đủ
+  kiểu: a, b, c*. Đang LỌC thì câu này biến mất và quay về đếm số mục đang hiện.
+- **Ưu tiên thứ chỉ thấy khi nhìn cả tập**, và thêm **"n … có lưu ý"** ở đâu có `notice`
+  (Địa điểm, Ẩm thực, Nơi lưu trú) — Tà Xùa ra 6/9 nơi, thứ trước đây phải cuộn hết lưới
+  mới đếm được.
+- Riêng **Nơi lưu trú**: "n chỗ ở" + "n đã xác minh" gộp thành **tỉ lệ 9/12** (hai con số
+  rời thì cái sau lặp y nguyên tiêu đề nhóm "Đã xác minh chính chủ (9)" ngay dưới), và bỏ
+  hẳn "12 có Zalo trực tiếp" — 12/12 chỗ đều có Zalo nên nó không phân biệt được gì, đúng
+  lý do đã gỡ hàng icon liên hệ khỏi thẻ.
+- Riêng **Di chuyển**: thanh nhảy mục chỉ có hai nhãn không kèm số, nên dải ghi *n cách đến
+  nơi · n cách đi lại tại chỗ · giá chặng rẻ nhất* — cả ba đều là tin mới.
+
+**Màn hình Trải nghiệm** (`/diem-den/[placeSlug]/hoat-dong`, `ActivitySection`) — em song
+sinh của màn hình Địa điểm: **khung giống hệt, nội dung thẻ khác**.
+
+- Trước đây tab này dùng `ListingView` — component "danh sách listing chung chung" mà thẻ
+  chỉ có ảnh · tên · một dòng mô tả · giá. Với một HOẠT ĐỘNG thì đó là ba câu bị bỏ trống,
+  cả ba đều đã nằm sẵn trong DB: **thời lượng** (`durationText`, có ở 17/19 hoạt động thật
+  — "2 ngày 1 đêm" khác hẳn "30–60 phút" khi xếp lịch), **mùa** (`seasonText`, 15/19 — đi
+  sai mùa là đi hụt), và **diễn ra ở đâu** (`Activity ↔ Spot`, thứ CLAUDE.md gọi là *xương
+  sống* của phần này mà tab không hiện lấy một cái tên).
+- **Màu dòng dữ kiện khớp NGHĨA giữa hai tab**, không khớp tên trường: dòng XANH luôn là
+  "đi lúc nào cho đúng" — ở Địa điểm là `bestTime` (giờ đẹp trong ngày), ở Trải nghiệm là
+  `seasonText` (mùa). Thời lượng để xám vì nó là ràng buộc, không phải thời điểm.
+- **Dạng danh sách gánh phần cột rộng**: *Diễn ra ở* (chip tên spot) + *Đơn vị*. Đối xứng
+  với tab Địa điểm gánh *Làm gì* — hai tab là hai chiều của cùng một quan hệ M:N.
+- Dải dữ kiện: thành phần (`compositionLine`) · **n có thu phí** · **n có đơn vị tổ chức**.
+  Huy hiệu giá chỉ gắn cho hoạt động CÓ THU PHÍ, cùng luật với Địa điểm.
+- **Khung dùng chung ở `components/site/listing-filter.tsx`**: `useCatFilter` (lọc loại +
+  đồng bộ `?cat=`, `?cat=` lạ rơi về "tất cả"), `useListView` (cookie `listingView`),
+  `CatChipRow`, `ViewToggle`, `EmptyFilter`. Tách ra vì hai tab chỉ khác NỘI DUNG THẺ —
+  chép khung ra hai file là đúng cái bẫy đã trả giá với hai bản hero (chép ra rồi trôi mỗi
+  bản một kiểu, sửa thì quên một nơi).
+- ⚠️ **`ListingView` đã XOÁ.** Cả năm token của `[loai]` nay đều có section riêng (Địa điểm
+  · Trải nghiệm · Nơi lưu trú · Ẩm thực · Di chuyển). Đừng dựng lại một component "danh
+  sách chung chung": mỗi loại có bộ trường và bộ câu hỏi khác nhau, cái chung duy nhất là
+  khung lọc — và khung đó đã nằm ở `listing-filter.tsx`.
+
 **Màn hình Địa điểm** (`/diem-den/[placeSlug]/dia-diem`, `SpotSection`) — tab này có
 **section riêng**, không dùng chung `ListingView` với tab Trải nghiệm nữa: hai loại có bộ
 trường khác hẳn (địa điểm có `bestTime`/`notice`/vé; hoạt động có thời lượng/mùa) và trả
@@ -584,6 +699,16 @@ Tab phải trả lời: **đi đâu · đi lúc nào · có mất tiền không 
   là thứ đổi kế hoạch mạnh nhất; `notice` ở Tà Xùa có trên **5/9** nơi ("lối đi hẹp, hai
   bên là vực, rất trơn sau mưa") — chôn trong trang chi tiết thì phải mở từng nơi mới biết
   hôm mưa nên tránh chỗ nào.
+- **Khối mở đầu nói THÀNH PHẦN, không đếm lại.** Bỏ nhãn nhỏ "Địa điểm" (thanh tab ngay
+  trên đã có mục đó đang sáng — thêm nhãn là nói ba lần cùng một việc), và mục đầu của dải
+  dữ kiện đổi từ "n địa điểm" (con số đó đã nằm trong chip "Tất cả n") thành **"Nhiều nhất
+  là biển" / "Tất cả là …" / "Đủ kiểu: a, b, c"** — tính từ phân bố `category`, nên mỗi
+  điểm đến ra một câu khác nhau. Dùng chữ **"nhiều nhất"** chứ không phải "phần lớn": trên
+  dữ liệu thật loại đông nhất chỉ chiếm khoảng một phần ba (Phan Thiết 3/8 là biển), gọi
+  thế là "phần lớn" thì nói quá. Đang LỌC thì câu này biến mất và quay về đếm số mục đang
+  hiện — lúc đó chip đang sáng đã nói loại rồi.
+- **Thêm mục "n nơi có lưu ý"** vào dải dữ kiện (chỉ khi > 0): Tà Xùa là 6/9 nơi. Đó là
+  thứ đổi kế hoạch mà trước đây phải cuộn hết lưới mới đếm được.
 - ⚠️ **KHÔNG in số sao lên thẻ.** `Review` của dự án là **`stance`** (love / worthOnce /
   meh / bad), không phải thang điểm — chính `review-meta.ts` ghi trong kiểu dữ liệu rằng
   `worthGoingPct` là "headline **thay** số sao". Bản cũ quy về sao rồi in 5 ngôi sao mỗi
@@ -623,6 +748,24 @@ Tab phải trả lời: **đi đâu · đi lúc nào · có mất tiền không 
   thì ảnh — thứ site lấy làm chủ — teo còn ~170px. `?cat=` lạ (link cũ) rơi về "tất cả",
   không hiện trang trống.
 
+**Ẩm thực đã chuyển sang CÙNG NGÔN NGỮ với Địa điểm / Trải nghiệm** (chỉ phần vỏ; mọi
+quyết định về popup, thực đơn-là-ảnh và máy đọc giờ mở cửa dưới đây giữ nguyên):
+
+- **Thẻ bỏ khung**: hết `rounded-2xl` + `bg-card` + bóng, còn ảnh **3/2** bo `R_CARD` rồi
+  chữ nằm dưới — giống hệt hai tab kia. Ảnh to hơn, và thẻ hết đọc ra như một "card của
+  framework".
+- **Huy hiệu góc trái đổi vai: LOẠI MÓN, không phải trạng thái mở cửa.** Ba tab danh sách
+  giờ đều có nhãn loại ở đúng chỗ đó. Trạng thái mở cửa **hạ xuống thành DÒNG TIN** dưới
+  tên (chấm màu + chữ) và **cõng luôn giờ mở cửa** — trước đây giờ nằm riêng ở kicker,
+  ngăn với loại món bằng dấu `·` (trái quy ước dải phân cách). `statusView()` nay là một
+  nguồn duy nhất cho dòng này.
+- **Chip lọc dùng chung `FilterChip`** (`listing-filter.tsx`) — hairline vuông như hai tab
+  kia. `tone="live"` của chip "Đang mở" giữ nguyên ý: chưa bật đã có màu, vì nó lọc theo
+  thứ đang đúng NGAY BÂY GIỜ.
+- **Icon trong thân tab dùng bộ `glyphs.tsx`** (SVG tự vẽ), không phải `@/components/icons`.
+  Thêm `bowl` · `eye` · `bed` để dải dữ kiện của Ẩm thực và Lưu trú khớp với thanh tab.
+- Khối "Trải nghiệm ẩm thực" cuối trang cũng bỏ khung theo, và bỏ dấu `·` ở dòng đếm.
+
 **Màn hình Ẩm thực** (`/diem-den/[placeSlug]/am-thuc`, `FoodSection`) — **MỘT danh sách quán,
 MỘT bộ điều khiển**, bám đúng ba câu hỏi của người mở tab, theo thứ tự hay gặp:
 
@@ -634,6 +777,18 @@ Lưới thẻ 1/2/3 cột (một khuôn thẻ duy nhất) → POPUP chi tiết
 Trải nghiệm ẩm thực (Activity category=food) — khối riêng cuối trang, link sang /hoat-dong
 ```
 
+- **Popup cũng đã chuyển sang ngôn ngữ vật liệu của trang** (chỉ phần vỏ — bố cục, thứ tự
+  đọc và mọi quyết định dưới đây giữ nguyên): bo góc theo `R_CARD`/`R_CTRL`/`R_BADGE` thay
+  cho `rounded-3xl`/`rounded-full`; huy hiệu trên ảnh, dải ảnh nhỏ, khối tin thực địa, khối
+  cảnh báo, bảng, thẻ chuyển ảnh↔thực đơn, nút hành động, mũi tên và nút đóng đều vuông;
+  tên quán dùng **font display** như tên trên thẻ ngoài lưới (popup và thẻ là hai lần nhìn
+  thấy cùng một quán, đổi kiểu chữ giữa hai lần là bắt mắt nhận diện lại); toàn bộ icon
+  chuyển sang bộ `glyphs.tsx`, thêm `phone` · `globe` · `navigation` · `external` ·
+  `close` · `plus` · `forward` · `chevron-down` · `expand`.
+- ⚠️ **`AddToTripButton` vẫn giữ icon của bộ Material** — nó là component dùng chung cả
+  site, đổi ở đây là đổi mọi trang.
+- ⚠️ **Popup Nơi lưu trú CHƯA chuyển**, mà CLAUDE.md yêu cầu hai popup nói cùng một ngôn
+  ngữ overlay. Đây là món nợ đã biết: làm tab Lưu trú thì phải làm luôn.
 - **Chi tiết quán mở bằng POPUP** (`Dialog`), không phải ngăn trượt. Từ `lg` là **hai cột**:
   trái là **nửa hình ảnh**, phải là phần đọc cuộn riêng + **thanh hành động ghim đáy** với
   **"Chỉ đường"** làm nút chính (đây là trang thông tin, không phải nơi đặt bàn — việc kế
@@ -1012,10 +1167,12 @@ nó mới là phần dễ sai:
 
 - Màn chờ **hoãn 120ms** mới hiện (`.page-loading` trong `globals.css`) — chuyển trang nào
   xong nhanh hơn thế thì không ai thấy gì. Nên đo trên mạng chậm, đừng kết luận từ máy dev.
-- **Chưa đặt cho các segment tab lồng nhau** (`diem-den/[placeSlug]/[loai]`, `.../ban-do`,
-  `.../cong-dong`): ở đó hero + `PlaceTabs` giữ nguyên, chỉ vùng dưới đổi, nên một màn chờ
-  `min-h-svh` sẽ đội trang cao vọt. Cần thì phải làm fallback nội tuyến riêng, đừng dùng
-  `PageLoading`.
+- **Tab con của trang điểm đến có màn chờ RIÊNG**: `diem-den/[placeSlug]/(tabs)/loading.tsx`
+  — khung xám nội tuyến, **không** dùng `PageLoading` (nó `min-h-svh`, sẽ đội trang cao vọt
+  và đẩy thanh tab chạy lên chạy xuống mỗi lần bấm). Đặt được ở đây là nhờ layout chung:
+  thanh ngữ cảnh + thanh tab thuộc layout nên đứng yên, Suspense chỉ bọc phần dưới. Vẫn
+  mang class `.page-loading` để hưởng cái hoãn 120ms.
+  · `ban-do` vẫn dùng màn chờ của segment cha (nó nằm ngoài `(tabs)`).
 
 ## PWA (cài được lên màn hình chính + dùng khi mất sóng)
 

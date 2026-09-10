@@ -1,4 +1,5 @@
 import { Eye, type LucideIcon } from "@/components/icons";
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { summarizeReviews } from "@/lib/review-meta";
 import { coverUrl } from "@/lib/place-image";
@@ -72,7 +73,12 @@ export async function resolveVideos(
 }
 
 // Header + hero (ảnh gộp + video) đồng nhất cho trang danh sách listing.
-export async function getPlaceHero(placeSlug: string) {
+// `cache()`: từ khi các tab con dùng LAYOUT chung, layout và page trong cùng
+// một request đều cần dữ liệu này. Bọc lại thì hai lần gọi chỉ còn một truy
+// vấn — không bọc thì mỗi lần mở tab là chạy đôi.
+export const getPlaceHero = cache(async function getPlaceHero(
+  placeSlug: string,
+) {
   const cover = { where: { isCover: true }, take: 1, select: { url: true } };
   const place = await prisma.place.findUnique({
     where: { slug: placeSlug },
@@ -118,7 +124,7 @@ export async function getPlaceHero(placeSlug: string) {
   );
   const videos = await resolveVideos(place.videos);
   return { place, heroImages, videos };
-}
+});
 
 export type PlaceCounts = {
   activity: number;
@@ -152,7 +158,7 @@ export async function getPlaceHeader(placeSlug: string) {
   });
 }
 
-export async function getPlaceCounts(placeId: string): Promise<PlaceCounts> {
+export const getPlaceCounts = cache(async function getPlaceCounts(placeId: string): Promise<PlaceCounts> {
   const [activity, spot, eatery, accommodation, transport] =
     await Promise.all([
       prisma.activity.count({ where: { placeId, ...pub } }),
@@ -162,7 +168,7 @@ export async function getPlaceCounts(placeId: string): Promise<PlaceCounts> {
       prisma.transport.count({ where: { placeId, ...pub } }),
     ]);
   return { activity, spot, eatery, accommodation, transport };
-}
+});
 
 export type PlaceTab = {
   href: string;

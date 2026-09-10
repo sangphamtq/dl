@@ -1,9 +1,12 @@
 "use client";
 
 import Link, { useLinkStatus } from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { NavIcon, type NavIconName } from "@/components/site/nav-icons";
+import { Glyph } from "@/components/site/glyphs";
+import { R_BADGE } from "@/lib/radius";
 import { cn } from "@/lib/utils";
 import type { PlaceTab } from "@/lib/place-meta";
 
@@ -86,7 +89,17 @@ function TabLabel({ label }: { label: string }) {
 //
 // Hai nửa (mục nội dung · công cụ) tách nhau bằng hairline DỌC — một vạch là đủ,
 // không thêm mảng màu nào.
-export function PlaceTabs({ items }: { items: PlaceTab[] }) {
+export function PlaceTabs({
+  items,
+  place,
+}: {
+  items: PlaceTab[];
+  /** Cụm danh tính bên trái — CHỈ truyền ở các tab con. Trang Tổng quan đã có
+   *  hero lớn nên không cần (và không được) nhắc lại tên nơi ở đây.
+   *  Truyền prop này còn có nghĩa: cụm danh tính LÀ đường về Tổng quan, nên mục
+   *  "Tổng quan" bị bỏ khỏi dải tab (xem `navItems`). */
+  place?: { slug: string; name: string; image: string | null };
+}) {
   const pathname = usePathname();
   const tabRefs = useRef<Record<string, HTMLAnchorElement | null>>({});
 
@@ -125,8 +138,21 @@ export function PlaceTabs({ items }: { items: PlaceTab[] }) {
   // Bản đồ + Cộng đồng tách riêng → render bên phải (không cuộn mất).
   const mapTab = items.find((it) => it.icon === "map");
   const communityTab = items.find((it) => it.icon === "community");
+  // Có cụm danh tính ⇒ BỎ mục "Tổng quan" khỏi dải.
+  //
+  // Hai thứ đó trỏ CÙNG một URL và đứng cách nhau 8px: mũi tên + tên nơi bên
+  // trái, rồi ngay sau là một tab tên "Tổng quan". Giữ cả hai thì người dùng
+  // phải đoán xem chúng khác nhau chỗ nào (không khác gì cả), còn dải tab ở khổ
+  // hẹp thì mất một suất cho thứ đã có người làm.
+  // Vì sao bỏ mục TAB chứ không bỏ mũi tên: cụm danh tính còn kiêm việc nói
+  // "bạn đang ở Phan Thiết" — thứ dải tab không nói. Ngược lại, trang Tổng quan
+  // KHÔNG có cụm danh tính (nó có hero), nên ở đó mục "Tổng quan" vẫn còn để
+  // dải tab có mục đang mở.
   const navItems = items.filter(
-    (it) => it.icon !== "map" && it.icon !== "community",
+    (it) =>
+      it.icon !== "map" &&
+      it.icon !== "community" &&
+      !(place && it.icon === "overview"),
   );
 
   // Có ít nhất 2 tab, hoặc có bản đồ/cộng đồng để gắn nút → mới hiện thanh.
@@ -135,6 +161,53 @@ export function PlaceTabs({ items }: { items: PlaceTab[] }) {
   return (
     <div className="sticky top-0 lg:top-16 z-40 border-b border-border/60 bg-background">
         <div className="mx-auto flex h-12 max-w-7xl items-center gap-3 px-4 font-heading sm:px-6">
+          {/* DANH TÍNH gộp thẳng vào thanh tab thay vì đứng thành một thanh
+              riêng phía trên (`PlaceContextBar` cũ, cao 72px).
+              Lý do: 48px dính của thanh này trước đó KHÔNG nói bạn đang ở đâu —
+              nó chỉ có tên các tab — trong khi thanh mang tên nơi thì lại cuộn
+              đi mất. Gộp vào thì phần dính làm hai việc mà chiều cao không đổi,
+              và tổng khung đầu trang xuống còn 48px thay vì 120px.
+              Ở khổ hẹp chỉ còn mũi tên + ảnh nhỏ, giấu tên nơi: tên đã nằm ngay
+              trong tiêu đề mục bên dưới ("Đi đâu ở Phan Thiết"), mà mỗi ký tự ở
+              đây lấy đi một phần dải tab vốn đã phải cuộn ngang. */}
+          {place && (
+            <>
+              <Link
+                href={`/diem-den/${place.slug}`}
+                className="group -ml-1 flex min-w-0 shrink-0 items-center gap-2 pr-1 text-sm"
+                title={`Về tổng quan ${place.name}`}
+              >
+                <Glyph
+                  name="back"
+                  className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:-translate-x-0.5"
+                />
+                {place.image && (
+                  <span
+                    className={cn(
+                      R_BADGE,
+                      "relative size-7 shrink-0 overflow-hidden bg-muted",
+                    )}
+                  >
+                    <Image
+                      src={place.image}
+                      alt=""
+                      fill
+                      sizes="28px"
+                      className="object-cover"
+                    />
+                  </span>
+                )}
+                <span className="hidden truncate font-semibold tracking-tight transition-colors group-hover:text-primary sm:block">
+                  {place.name}
+                </span>
+              </Link>
+              <span
+                aria-hidden
+                className="h-5 w-px shrink-0 bg-border/70"
+              />
+            </>
+          )}
+
           {/* flex-1 để dải tab luôn chiếm hết phần trống → lớp mask chỉ ăn vào
               khoảng trống khi chưa tràn, và fade đúng chữ khi tràn. */}
           <nav

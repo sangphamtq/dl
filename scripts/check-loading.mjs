@@ -27,6 +27,14 @@ const CASES = [
   ["/dia-diem", 'a[href^="/dia-diem/"]'],
   ["/blog", 'a[href^="/blog/"]'],
   ["/lich-trinh", 'a[href^="/lich-trinh/"]'],
+  // Đổi tab trong trang điểm đến: thanh ngữ cảnh + thanh tab thuộc
+  // `(tabs)/layout.tsx` nên đứng yên, chỉ vùng nội dung vào Suspense của
+  // `(tabs)/loading.tsx`. Case này canh đúng chuyện đó — mất màn chờ ở đây
+  // nghĩa là layout chung đã bị phá.
+  [
+    "/diem-den/phan-thiet/dia-diem",
+    'a[href="/diem-den/phan-thiet/am-thuc"]',
+  ],
 ];
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

@@ -261,8 +261,12 @@ export function TransportSection({
 
   return (
     <div>
+      {/* Ghim ngay dưới thanh tab (cao 3rem; từ `lg` cộng thêm header 4rem).
+          Bản cũ để `top-28` ở mọi khổ nên trên điện thoại — nơi KHÔNG có
+          header — nó lửng lơ cách đỉnh 4rem, hở một dải nội dung chạy phía sau.
+          Cùng lỗi mà thanh lọc tab Ẩm thực đã sửa. */}
       {navItems.length > 1 && (
-        <nav className="hide-scrollbar sticky top-28 z-30 -mx-4 flex gap-2 overflow-x-auto border-b border-border/60 bg-background/85 px-4 py-2.5 backdrop-blur-lg sm:-mx-6 sm:px-6">
+        <nav className="hide-scrollbar sticky top-12 z-30 -mx-4 flex gap-2 overflow-x-auto border-b border-border/60 bg-background/85 px-4 py-2.5 backdrop-blur-lg sm:-mx-6 sm:px-6 lg:top-28">
           {navItems.map((it) => {
             const Icon = it.icon;
             return (

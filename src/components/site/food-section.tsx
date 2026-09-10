@@ -5,19 +5,15 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import {
-  MapPin,
   ChefHat,
-  Clock,
-  UtensilsCrossed,
-  ChevronRight,
-  Eye,
-  Sunrise,
-  TriangleAlert,
-  Utensils,
   X,
 } from "@/components/icons";
 import { cn } from "@/lib/utils";
+import { Glyph, type GlyphName } from "@/components/site/glyphs";
+import { FilterChip } from "@/components/site/listing-filter";
+import { compositionLine, countByLabel } from "@/lib/listing-summary";
 import { coverUrl } from "@/lib/place-image";
+import { R_BADGE, R_CARD, R_CTRL } from "@/lib/radius";
 import {
   EATERY_CATEGORY_LABELS,
   MEAL_LABELS,
@@ -144,6 +140,24 @@ export function FoodSection({
   }, [eateries, hours, now]);
 
   // Khung giờ chung — dữ kiện thật thay cho đoạn văn giới thiệu viết tay.
+  // Thành phần theo KIỂU MÓN + số quán có lưu ý — hai thứ chỉ thấy được khi
+  // nhìn cả danh sách. Đếm trên TOÀN BỘ quán, không theo bộ lọc: đây là câu mô
+  // tả cả tab, còn con số theo bộ lọc thì dòng kết quả bên dưới đã lo.
+  const composition = useMemo(
+    () =>
+      compositionLine(
+        countByLabel(
+          eateries.map((e) => label(EATERY_CATEGORY_LABELS, e.category)),
+        ),
+        eateries.length,
+      ),
+    [eateries],
+  );
+  const noticed = useMemo(
+    () => eateries.filter((e) => e.notice).length,
+    [eateries],
+  );
+
   const span = useMemo(
     () => hoursSpan(eateries.map((e) => e.openingHours)),
     [eateries],
@@ -199,24 +213,34 @@ export function FoodSection({
 
   return (
     <div>
-      {/* ── Mở đầu: tên + ba dữ kiện tính từ chính dữ liệu ── */}
+      {/* ── Mở đầu: tên + dữ kiện tính từ chính dữ liệu.
+             BỎ nhãn nhỏ "Ẩm thực": thanh tab ngay trên đã có mục đó đang sáng.
+             Mục đầu của dải đổi từ "n quán" sang THÀNH PHẦN — con số đó đã nằm
+             ở dòng kết quả ngay dưới bộ lọc (và còn đúng theo bộ lọc, trong khi
+             con số ở đây thì không). ── */}
       <header>
-        <p className="text-sm font-semibold text-warm">Ẩm thực</p>
-        <h2 className="mt-1 text-3xl font-bold tracking-tight sm:text-4xl">
+        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
           Ăn uống ở {placeName}
         </h2>
-        <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
-          <Stat icon={Utensils}>
-            <b className="font-semibold text-foreground">{eateries.length}</b> quán
+        <div className="mt-3.5 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
+          <Stat glyph="bowl">
+            {composition ?? (
+              <>
+                <b className="font-semibold text-foreground">
+                  {eateries.length}
+                </b>{" "}
+                quán
+              </>
+            )}
           </Stat>
           {withView > 0 && (
-            <Stat icon={Eye}>
+            <Stat glyph="eye">
               <b className="font-semibold text-foreground">{withView}</b> chỗ ngồi
               có view
             </Stat>
           )}
           {span && (
-            <Stat icon={Clock}>
+            <Stat glyph="clock">
               mở từ{" "}
               <b className="font-semibold text-foreground">
                 {formatMinutes(span.earliest)}
@@ -225,6 +249,12 @@ export function FoodSection({
               <b className="font-semibold text-foreground">
                 {formatMinutes(span.latest)}
               </b>
+            </Stat>
+          )}
+          {noticed > 0 && (
+            <Stat glyph="warn">
+              <b className="font-semibold text-foreground">{noticed}</b> quán có
+              lưu ý
             </Stat>
           )}
         </div>
@@ -236,23 +266,23 @@ export function FoodSection({
       <div className="sticky top-12 z-30 -mx-4 mt-8 border-b border-border/60 bg-background/90 px-4 backdrop-blur-lg sm:-mx-6 sm:px-6 lg:top-28">
         {/* Hàng chính: trạng thái mở cửa + bữa */}
         <div className="hide-scrollbar flex items-center gap-2 overflow-x-auto py-3">
-          <Chip
+          <FilterChip
             active={openOnly}
             onClick={() => setOpenOnly((v) => !v)}
             count={openCount}
-            icon={Clock}
+            glyph="clock"
             tone="live"
           >
             Đang mở
-          </Chip>
+          </FilterChip>
           <span className="h-5 w-px shrink-0 bg-border" aria-hidden />
-          <Chip active={meal === "all"} onClick={() => chooseMeal("all")}>
+          <FilterChip active={meal === "all"} onClick={() => chooseMeal("all")}>
             Mọi bữa
-          </Chip>
+          </FilterChip>
           {mealOptions.map((m) => (
-            <Chip key={m} active={meal === m} onClick={() => chooseMeal(m)}>
+            <FilterChip key={m} active={meal === m} onClick={() => chooseMeal(m)}>
               {label(MEAL_LABELS, m)}
-            </Chip>
+            </FilterChip>
           ))}
         </div>
 
@@ -264,18 +294,18 @@ export function FoodSection({
                 <span className="shrink-0 pr-0.5 text-xs font-medium text-muted-foreground/70">
                   Kiểu
                 </span>
-                <Chip small active={cat === "all"} onClick={() => setCat("all")}>
+                <FilterChip small active={cat === "all"} onClick={() => setCat("all")}>
                   Tất cả
-                </Chip>
+                </FilterChip>
                 {catOptions.map((c) => (
-                  <Chip
+                  <FilterChip
                     key={c}
                     small
                     active={cat === c}
                     onClick={() => setCat(c)}
                   >
                     {label(EATERY_CATEGORY_LABELS, c)}
-                  </Chip>
+                  </FilterChip>
                 ))}
               </>
             )}
@@ -284,15 +314,15 @@ export function FoodSection({
                 {catOptions.length > 0 && (
                   <span className="mx-1 h-4 w-px shrink-0 bg-border" aria-hidden />
                 )}
-                <Chip
+                <FilterChip
                   small
                   active={viewOnly}
                   onClick={() => setViewOnly((v) => !v)}
                   count={withView}
-                  icon={Eye}
+                  glyph="eye"
                 >
                   Có view
-                </Chip>
+                </FilterChip>
               </>
             )}
           </div>
@@ -320,7 +350,7 @@ export function FoodSection({
       </p>
 
       {list.length > 0 ? (
-        <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-6 grid gap-x-5 gap-y-9 sm:grid-cols-2 lg:grid-cols-3">
           {list.map((e) => (
             <EateryCard
               key={e.slug}
@@ -352,7 +382,7 @@ export function FoodSection({
       {experiences.length > 0 && (
         <section className="mt-16 border-t border-border/60 pt-10">
           <div className="flex items-center gap-3">
-            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-warm/10 text-warm">
+            <span className={cn(R_CARD, "grid size-10 shrink-0 place-items-center bg-warm/10 text-warm")}>
               <ChefHat className="size-5" aria-hidden />
             </span>
             <div>
@@ -360,11 +390,14 @@ export function FoodSection({
                 Trải nghiệm ẩm thực
               </h3>
               <p className="text-xs text-muted-foreground">
-                {experiences.length} trải nghiệm · không chỉ ăn, mà xem cách làm ra
+                <b className="font-semibold text-foreground">
+                  {experiences.length}
+                </b>{" "}
+                trải nghiệm — không chỉ ăn, mà xem cách làm ra
               </p>
             </div>
           </div>
-          <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-6 grid gap-x-5 gap-y-9 sm:grid-cols-2 lg:grid-cols-3">
             {experiences.map((x) => (
               <ExperienceCard key={x.slug} exp={x} />
             ))}
@@ -380,10 +413,12 @@ export function FoodSection({
           showCloseButton={false}
           className={cn(
             "w-full max-w-none gap-0 overflow-hidden border-0 p-0 shadow-2xl",
-            "top-auto bottom-0 left-0 max-h-[92dvh] translate-x-0 translate-y-0 rounded-3xl rounded-b-none",
+            // Bo góc theo bộ chung của trang (`R_CARD` 6px) thay cho 24px:
+            // popup là một KHỐI BAO, cùng hạng với thẻ quán ngay sau lưng nó.
+            "top-auto bottom-0 left-0 max-h-[92dvh] translate-x-0 translate-y-0 rounded-t-[6px]",
             "data-[state=open]:slide-in-from-bottom-6 data-[state=closed]:slide-out-to-bottom-6",
             "sm:bottom-auto sm:top-1/2 sm:left-1/2 sm:max-h-[88vh] sm:-translate-x-1/2 sm:-translate-y-1/2",
-            "sm:max-w-[min(64rem,calc(100vw-3rem))] sm:rounded-b-3xl",
+            "sm:max-w-[min(64rem,calc(100vw-3rem))] sm:rounded-b-[6px]",
             "sm:data-[state=open]:slide-in-from-bottom-0 sm:data-[state=closed]:slide-out-to-bottom-0",
           )}
         >
@@ -397,7 +432,7 @@ export function FoodSection({
               {/* Nút đóng tự dựng: nút mặc định là chữ X trần, đặt trên ảnh sẽ
                   chìm — cái này có nền mờ nên đọc được trên mọi tấm ảnh. */}
               <DialogClose
-                className="absolute right-3 top-3 z-10 grid size-9 place-items-center rounded-full bg-background/85 text-foreground shadow-sm backdrop-blur transition-colors hover:bg-background"
+                className={cn(R_CTRL, "absolute right-3 top-3 z-10 grid size-9 place-items-center bg-background/85 text-foreground shadow-sm backdrop-blur transition-colors hover:bg-background")}
                 aria-label="Đóng"
               >
                 <X className="size-4" aria-hidden />
@@ -411,15 +446,18 @@ export function FoodSection({
 }
 
 function Stat({
-  icon: Icon,
+  glyph,
   children,
 }: {
-  icon: React.ComponentType<{ className?: string }>;
+  glyph: GlyphName;
   children: React.ReactNode;
 }) {
   return (
     <span className="inline-flex items-center gap-1.5">
-      <Icon className="size-4 shrink-0 text-muted-foreground/60" aria-hidden />
+      <Glyph
+        name={glyph}
+        className="size-[1.05rem] shrink-0 text-muted-foreground/70"
+      />
       {children}
     </span>
   );
@@ -463,9 +501,14 @@ function EateryCard({
       onFocus={() => (peeking.current = true)}
       onBlur={() => (peeking.current = false)}
       aria-label={`Xem chi tiết ${e.name}`}
-      className="group flex flex-col overflow-hidden rounded-2xl bg-card text-left shadow-sm shadow-black/5 transition-shadow duration-200 hover:shadow-lg hover:shadow-black/5"
+      className="group block w-full text-left"
     >
-      <div className="relative aspect-[4/3] shrink-0 overflow-hidden bg-muted">
+      <div
+        className={cn(
+          R_CARD,
+          "relative aspect-[3/2] overflow-hidden bg-muted",
+        )}
+      >
         <Image
           src={coverUrl(e.images, e.slug)}
           alt={e.name}
@@ -497,73 +540,88 @@ function EateryCard({
           </span>
         )}
 
-        {status && <StatusBadge status={status} />}
+        {/* Huy hiệu LOẠI MÓN ở góc trái — cùng chỗ, cùng khuôn với thẻ Địa
+            điểm và Trải nghiệm. Trước đây chỗ này là huy hiệu trạng thái mở
+            cửa, còn loại món nằm dưới ảnh dạng chữ; đổi vì hai lý do: ba tab
+            danh sách phải đọc ra cùng một họ, và trạng thái mở cửa vốn là một
+            DÒNG TIN có giờ đi kèm chứ không phải một cái nhãn. */}
+        {category && (
+          <span
+            className={cn(
+              R_BADGE,
+              "absolute left-3 top-3 bg-white/95 px-2.5 py-1 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-neutral-900 shadow-sm backdrop-blur-sm",
+            )}
+          >
+            {category}
+          </span>
+        )}
         {viewLabel && (
-          <span className="absolute right-2.5 top-2.5 inline-flex items-center gap-1 rounded-full bg-background/90 px-2.5 py-1 text-xs font-semibold shadow-sm backdrop-blur-sm">
-            <Eye className="size-3 shrink-0 text-primary" aria-hidden />
+          <span
+            className={cn(
+              R_BADGE,
+              "absolute right-3 top-3 inline-flex items-center gap-1 bg-white/95 px-2.5 py-1 text-[0.6875rem] font-semibold text-neutral-900 shadow-sm backdrop-blur-sm",
+            )}
+          >
+            <Glyph name="eye" className="size-3.5 shrink-0" />
             Nhìn ra {viewLabel.toLowerCase()}
           </span>
         )}
         {menuShot && (
-          <span className="absolute bottom-2.5 left-2.5 inline-flex items-center gap-1 rounded-full bg-background/90 px-2.5 py-1 text-xs font-semibold shadow-sm backdrop-blur-sm">
-            <UtensilsCrossed className="size-3 shrink-0" aria-hidden />
+          <span
+            className={cn(
+              R_BADGE,
+              "absolute bottom-3 left-3 inline-flex items-center gap-1 bg-neutral-900/85 px-2.5 py-1 text-[0.6875rem] font-semibold text-white backdrop-blur-sm",
+            )}
+          >
+            <Glyph name="bowl" className="size-3.5 shrink-0" />
             Thực đơn
           </span>
         )}
       </div>
 
-      <div className="flex flex-1 flex-col p-4">
-        {/* Kicker: loại món · giờ mở cửa. Giờ cụ thể đứng ngay đây vì huy hiệu
-            chỉ nói "đang mở", không nói mở tới mấy giờ. */}
-        <p className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
-          {category && (
-            <span className="font-semibold text-warm">{category}</span>
-          )}
-          {category && e.openingHours && <span aria-hidden>·</span>}
-          {e.openingHours && (
-            <span className="tabular-nums">{e.openingHours}</span>
-          )}
+      <h3 className="mt-3.5 font-[family-name:var(--font-display)] text-lg font-semibold leading-snug tracking-tight underline-offset-4 group-hover:underline">
+        {e.name}
+      </h3>
+
+      {area && (
+        <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+          <Glyph name="pin" className="size-3.5 shrink-0" />
+          <span className="truncate">{area}</span>
         </p>
+      )}
 
-        <h3 className="mt-1 font-semibold leading-snug tracking-tight transition-colors group-hover:text-primary">
-          {e.name}
-        </h3>
+      {e.description && (
+        <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+          {e.description}
+        </p>
+      )}
 
-        {area && (
-          <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-            <MapPin className="size-3 shrink-0" aria-hidden />
-            <span className="truncate">{area}</span>
+      {/* Các dòng "đổi quyết định". Dòng TRẠNG THÁI đứng đầu vì nó là tin sống
+          — và nó cõng luôn giờ mở cửa, thứ trước đây phải nằm riêng ở kicker
+          ngăn bằng dấu chấm giữa (trái quy ước dải phân cách). */}
+      <div className="mt-3 space-y-1.5">
+        {(status || e.openingHours) && (
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
+            {status && <StatusLine status={status} />}
+            {e.openingHours && (
+              <span className="tabular-nums text-muted-foreground">
+                {e.openingHours}
+              </span>
+            )}
           </p>
         )}
-
-        {e.description && (
-          <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
-            {e.description}
-          </p>
-        )}
-
-        {/* Hai dòng "đổi quyết định", đẩy xuống đáy thẻ cho thẳng hàng nhau.
-            Không có dòng nào thì không chừa chỗ — nếu không thẻ trống lại thừa
-            một khoảng đệm so với thẻ bên cạnh. */}
-        <div
-          className={cn(
-            "mt-auto space-y-1.5",
-            (e.bestTime || e.notice) && "pt-3",
-          )}
-        >
           {e.bestTime && (
             <p className="flex gap-1.5 text-xs font-medium text-primary">
-              <Sunrise className="mt-px size-3.5 shrink-0" aria-hidden />
+              <Glyph name="sunrise" className="mt-px size-3.5 shrink-0" />
               <span className="line-clamp-1">{e.bestTime}</span>
             </p>
           )}
           {e.notice && (
             <p className="flex gap-1.5 text-xs text-warm">
-              <TriangleAlert className="mt-px size-3.5 shrink-0" aria-hidden />
+              <Glyph name="warn" className="mt-px size-3.5 shrink-0" />
               <span className="line-clamp-2">{e.notice}</span>
             </p>
           )}
-        </div>
       </div>
     </button>
   );
@@ -571,7 +629,23 @@ function EateryCard({
 
 // Huy hiệu trạng thái — dùng đúng token có sẵn: primary (xanh) = đang mở,
 // warm (cam) = sắp đóng, xám = đang đóng. Không thêm màu mới cho một trạng thái.
-function StatusBadge({ status }: { status: OpeningStatus }) {
+/* Trạng thái mở cửa dạng DÒNG TIN (chấm màu + chữ), thay cho huy hiệu góc ảnh.
+   Cùng bảng màu với dòng trạng thái ở popup — `statusView()` là một nguồn duy
+   nhất cho cả hai chỗ. */
+function StatusLine({ status }: { status: OpeningStatus }) {
+  const s = statusView(status);
+  return (
+    <span className={cn("inline-flex items-center gap-1.5 font-medium", s.tone)}>
+      <span
+        className={cn("size-1.5 shrink-0 rounded-full", s.dot)}
+        aria-hidden
+      />
+      {s.text}
+    </span>
+  );
+}
+
+function statusView(status: OpeningStatus) {
   const map = {
     open: { text: "Đang mở", tone: "text-primary", dot: "bg-primary" },
     closingSoon: {
@@ -590,18 +664,7 @@ function StatusBadge({ status }: { status: OpeningStatus }) {
       dot: "bg-muted-foreground/50",
     },
   } as const;
-  const s = map[status.kind];
-  return (
-    <span
-      className={cn(
-        "absolute left-2.5 top-2.5 inline-flex items-center gap-1.5 rounded-full bg-background/90 px-2.5 py-1 text-xs font-semibold shadow-sm backdrop-blur-sm",
-        s.tone,
-      )}
-    >
-      <span className={cn("size-1.5 shrink-0 rounded-full", s.dot)} aria-hidden />
-      {s.text}
-    </span>
-  );
+  return map[status.kind];
 }
 
 // Thẻ trải nghiệm — cùng khuôn thẻ quán để trang giữ một nhịp, chỉ khác ở nhãn
@@ -610,9 +673,11 @@ function ExperienceCard({ exp }: { exp: FoodExperience }) {
   return (
     <Link
       href={`/hoat-dong/${exp.slug}`}
-      className="group flex flex-col overflow-hidden rounded-2xl bg-card shadow-sm shadow-black/5 transition-shadow duration-200 hover:shadow-lg hover:shadow-black/5"
+      className="group block"
     >
-      <div className="relative aspect-[4/3] shrink-0 overflow-hidden bg-muted">
+      <div
+        className={cn(R_CARD, "relative aspect-[3/2] overflow-hidden bg-muted")}
+      >
         <Image
           src={coverUrl(exp.images, exp.slug)}
           alt={exp.name}
@@ -620,87 +685,31 @@ function ExperienceCard({ exp }: { exp: FoodExperience }) {
           sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
           className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
         />
-        <span className="absolute left-2.5 top-2.5 rounded-full bg-warm/95 px-2.5 py-1 text-xs font-semibold text-warm-foreground shadow-sm">
+        <span
+          className={cn(
+            R_BADGE,
+            "absolute left-3 top-3 bg-warm/95 px-2.5 py-1 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-warm-foreground shadow-sm",
+          )}
+        >
           Trải nghiệm
         </span>
       </div>
-      <div className="flex flex-1 flex-col p-4">
-        <h3 className="font-semibold leading-snug tracking-tight transition-colors group-hover:text-primary">
-          {exp.name}
-        </h3>
-        {exp.description && (
-          <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
-            {exp.description}
-          </p>
-        )}
-        <div className="mt-auto flex items-center justify-between pt-3">
-          {exp.durationText ? (
-            <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Clock className="size-3.5 shrink-0" aria-hidden />
-              {exp.durationText}
-            </span>
-          ) : (
-            <span />
-          )}
-          <span className="inline-flex items-center gap-0.5 text-xs font-medium text-primary">
-            Xem chi tiết
-            <ChevronRight
-              className="size-3.5 transition-transform group-hover:translate-x-0.5"
-              aria-hidden
-            />
-          </span>
-        </div>
-      </div>
+
+      <h3 className="mt-3.5 font-[family-name:var(--font-display)] text-lg font-semibold leading-snug tracking-tight underline-offset-4 group-hover:underline">
+        {exp.name}
+      </h3>
+      {exp.description && (
+        <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+          {exp.description}
+        </p>
+      )}
+      {exp.durationText && (
+        <p className="mt-3 flex gap-1.5 text-xs text-muted-foreground">
+          <Glyph name="clock" className="mt-px size-3.5 shrink-0" />
+          {exp.durationText}
+        </p>
+      )}
     </Link>
   );
 }
 
-// Chip lọc dùng chung. `tone="live"` cho "Đang mở": khi tắt vẫn mang màu primary
-// nhạt để mắt thấy ngay là có một lối lọc theo thời gian thực ở đây.
-function Chip({
-  active,
-  onClick,
-  children,
-  count,
-  icon: Icon,
-  small = false,
-  tone = "plain",
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-  count?: number | null;
-  icon?: React.ComponentType<{ className?: string }>;
-  small?: boolean;
-  tone?: "plain" | "live";
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={cn(
-        "inline-flex shrink-0 items-center gap-1.5 rounded-full font-medium transition-colors",
-        small ? "px-3 py-1 text-xs" : "px-3.5 py-2 text-sm",
-        active
-          ? "bg-foreground text-background"
-          : tone === "live"
-            ? "bg-primary/10 text-primary hover:bg-primary/15"
-            : "bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground",
-      )}
-    >
-      {Icon && <Icon className={small ? "size-3" : "size-3.5"} aria-hidden />}
-      {children}
-      {count != null && (
-        <span
-          className={cn(
-            "tabular-nums",
-            active ? "text-background/60" : "opacity-60",
-          )}
-        >
-          {count}
-        </span>
-      )}
-    </button>
-  );
-}

@@ -8,14 +8,14 @@ import {
   BadgeCheck,
   ShieldCheck,
   ShieldAlert,
-  MessageCircle,
-  BedDouble,
   ArrowRight,
   X,
 } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { coverUrl } from "@/lib/place-image";
 import { ACCOMMODATION_CATEGORY_LABELS, label } from "@/lib/listing-labels";
+import { Glyph, type GlyphName } from "@/components/site/glyphs";
+import { compositionLine, countByLabel } from "@/lib/listing-summary";
 import { Dialog, DialogContent, DialogClose } from "@/components/ui/dialog";
 import {
   AccommodationDetail,
@@ -101,7 +101,15 @@ export function AccommodationSection({
 
   // Dữ kiện thật của danh bạ, thay cho lời hứa chung chung.
   const verifiedCount = accommodations.filter((a) => a.isVerified).length;
-  const zaloCount = accommodations.filter((a) => a.zalo).length;
+  const noticed = accommodations.filter((a) => a.notice).length;
+  const composition = compositionLine(
+    countByLabel(
+      accommodations.map((a) =>
+        label(ACCOMMODATION_CATEGORY_LABELS, a.category),
+      ),
+    ),
+    accommodations.length,
+  );
 
   const filtered = accommodations.filter(
     (a) => cat === "all" || a.category === cat,
@@ -111,29 +119,34 @@ export function AccommodationSection({
 
   return (
     <div>
-      {/* ── Mở đầu: định vị + ba dữ kiện tính từ chính dữ liệu ── */}
+      {/* ── Mở đầu: định vị + dữ kiện tính từ chính dữ liệu.
+             BỎ nhãn nhỏ "Nơi lưu trú" (thanh tab ngay trên đã có mục đó đang
+             sáng), và dải dữ kiện sửa cả ba mục:
+             · "12 chỗ ở" + "9 đã xác minh" gộp thành MỘT TỈ LỆ **9/12**. Hai
+               con số rời thì cái thứ hai lặp lại y nguyên tiêu đề nhóm ngay
+               dưới ("Đã xác minh chính chủ (9)"); gộp thành tỉ lệ mới ra thứ
+               không chỗ nào khác nói — bao nhiêu phần của danh sách này đã
+               kiểm được, tức chính là sản phẩm của tab.
+             · "12 có Zalo trực tiếp" BỎ HẲN: 12/12 chỗ đều có Zalo nên nó không
+               phân biệt được gì — cùng lý do đã gỡ hàng icon liên hệ khỏi thẻ.
+               Thay bằng THÀNH PHẦN theo loại hình.
+             · Thêm "n nơi có lưu ý" (chỉ khi có). ── */}
       <header>
-        <p className="text-sm font-semibold text-primary">Nơi lưu trú</p>
-        <h2 className="mt-1 text-3xl font-bold tracking-tight text-balance sm:text-4xl">
+        <h2 className="text-3xl font-bold tracking-tight text-balance sm:text-4xl">
           Chỗ ở đã xác minh chính chủ ở {placeName}
         </h2>
-        <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
-          <Stat icon={BedDouble}>
-            <b className="font-semibold text-foreground">
-              {accommodations.length}
+        <div className="mt-3.5 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
+          <Stat glyph="check">
+            <b className="font-semibold tabular-nums text-foreground">
+              {verifiedCount}/{accommodations.length}
             </b>{" "}
-            chỗ ở
+            đã xác minh chính chủ
           </Stat>
-          {verifiedCount > 0 && (
-            <Stat icon={BadgeCheck}>
-              <b className="font-semibold text-foreground">{verifiedCount}</b> đã
-              xác minh chính chủ
-            </Stat>
-          )}
-          {zaloCount > 0 && (
-            <Stat icon={MessageCircle}>
-              <b className="font-semibold text-foreground">{zaloCount}</b> có Zalo
-              trực tiếp
+          {composition && <Stat glyph="bed">{composition}</Stat>}
+          {noticed > 0 && (
+            <Stat glyph="warn">
+              <b className="font-semibold text-foreground">{noticed}</b> nơi có
+              lưu ý
             </Stat>
           )}
         </div>
@@ -248,15 +261,18 @@ export function AccommodationSection({
 }
 
 function Stat({
-  icon: Icon,
+  glyph,
   children,
 }: {
-  icon: React.ComponentType<{ className?: string }>;
+  glyph: GlyphName;
   children: React.ReactNode;
 }) {
   return (
     <span className="inline-flex items-center gap-1.5">
-      <Icon className="size-4 shrink-0 text-muted-foreground/60" aria-hidden />
+      <Glyph
+        name={glyph}
+        className="size-[1.05rem] shrink-0 text-muted-foreground/70"
+      />
       {children}
     </span>
   );
