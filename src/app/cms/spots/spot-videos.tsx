@@ -75,7 +75,6 @@ export function SpotVideosManager({
         </div>
       )}
 
-      {/* Thêm video */}
       <div className="flex flex-col gap-2 rounded-xl border p-3 sm:flex-row sm:items-center">
         <Input
           value={input}
@@ -99,7 +98,6 @@ export function SpotVideosManager({
         </Button>
       </div>
 
-      {/* Danh sách */}
       {videos.length === 0 ? (
         <p className="text-sm text-muted-foreground">Chưa có video nào.</p>
       ) : (
@@ -144,7 +142,6 @@ function VideoRow({
 
   return (
     <li className="flex items-center gap-3 rounded-xl border p-2">
-      {/* Thumbnail dọc */}
       <div className="relative aspect-[9/16] w-12 shrink-0 overflow-hidden rounded-md bg-muted">
         {video.thumbnail ? (
           <Image
@@ -162,7 +159,6 @@ function VideoRow({
         )}
       </div>
 
-      {/* Caption + ID */}
       <div className="min-w-0 flex-1">
         <Input
           value={caption}
@@ -179,7 +175,6 @@ function VideoRow({
         </p>
       </div>
 
-      {/* Thứ tự */}
       <div className="flex flex-col">
         <Button
           type="button"
@@ -205,7 +200,6 @@ function VideoRow({
         </Button>
       </div>
 
-      {/* Xóa */}
       <Button
         type="button"
         variant="ghost"

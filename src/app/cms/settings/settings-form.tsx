@@ -59,7 +59,6 @@ export function SettingsForm({
       )}
 
       <fieldset disabled={!canEdit} className="divide-y">
-        {/* Thông tin chung */}
         <FormSection
           title="Thông tin chung"
           description="Tên & mô tả site, dùng ở header, footer và thẻ SEO."
@@ -95,7 +94,6 @@ export function SettingsForm({
           </div>
         </FormSection>
 
-        {/* Giao diện */}
         <FormSection
           title="Giao diện"
           description="Áp dụng cho toàn bộ trang điểm đến."
@@ -128,7 +126,6 @@ export function SettingsForm({
           </div>
         </FormSection>
 
-        {/* Liên hệ & mạng xã hội */}
         <FormSection
           title="Liên hệ & mạng xã hội"
           description="Hiển thị ở footer. Để trống nếu không dùng."

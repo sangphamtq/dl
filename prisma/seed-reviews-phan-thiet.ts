@@ -2,11 +2,6 @@ import "dotenv/config";
 import { prisma } from "@/lib/prisma";
 import { ReviewStance } from "@/generated/prisma/enums";
 
-// Seed vài đánh giá mẫu cho điểm đến Phan Thiết.
-// Mỗi review kèm 1 CheckIn (app chỉ hiện review khi tác giả còn đánh dấu đã đến).
-// Idempotent: upsert user theo email, checkIn theo (user,place), review theo (place,author).
-// Dùng: pnpm exec tsx prisma/seed-reviews-phan-thiet.ts
-
 type Seed = {
   name: string;
   email: string;
@@ -108,7 +103,6 @@ async function main() {
       select: { id: true },
     });
 
-    // CheckIn để review đủ điều kiện hiển thị.
     await prisma.checkIn.upsert({
       where: { userId_placeId: { userId: user.id, placeId: place.id } },
       update: {},
@@ -140,7 +134,6 @@ async function main() {
 
   console.log(`✔ Seed ${REVIEWS.length} đánh giá mẫu cho ${place.name}.`);
 
-  // Cũng seed cho một ĐỊA ĐIỂM (spot) để demo review spot — dùng lại 4 user đầu.
   const spot = await prisma.spot.findUnique({
     where: { slug: "doi-cat-bay-mui-ne" },
     select: { id: true, name: true },

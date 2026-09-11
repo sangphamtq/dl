@@ -76,21 +76,15 @@ export function MapExplorer({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [mobileView, setMobileView] = useState<"list" | "map">("list");
-  // Yêu cầu bay tới pin — CHỈ đặt khi click card (không phải click pin).
   const [flyRequest, setFlyRequest] = useState<{ id: string; token: number } | null>(null);
   const flyToken = useRef(0);
 
-  // ── Chỉ đường ──────────────────────────────────────────────────
-  // 2 chế độ: "itinerary" = lộ trình nhiều điểm (gồm cả A→B);
-  //           "nearby"    = khoảng cách từ 1 điểm tới các điểm khác.
   const [dirOpen, setDirOpen] = useState(false);
   const [dirMode, setDirMode] = useState<"itinerary" | "nearby">("itinerary");
-  // itinerary
   const [stops, setStops] = useState<GeoPoint[]>([]);
   const [adding, setAdding] = useState(false);
   const [route, setRoute] = useState<RouteResult | null>(null);
   const [routeLoading, setRouteLoading] = useState(false);
-  // nearby
   const [origin, setOrigin] = useState<GeoPoint | null>(null);
   const [pickingOrigin, setPickingOrigin] = useState(false);
   const [distances, setDistances] = useState<Record<
@@ -99,7 +93,6 @@ export function MapExplorer({
   > | null>(null);
   const [distLoading, setDistLoading] = useState(false);
 
-  // refs cho click từ pin (event handler leaflet có thể giữ closure cũ)
   const modeRef = useRef(dirMode);
   const addingRef = useRef(adding);
   const pickingOriginRef = useRef(pickingOrigin);
@@ -124,7 +117,6 @@ export function MapExplorer({
     [points, active],
   );
 
-  // Ở chế độ "khoảng cách": đưa điểm gốc lên đầu, còn lại sắp theo gần nhất.
   const listPoints = useMemo(() => {
     if (dirOpen && dirMode === "nearby" && origin && distances) {
       return [...visible].sort((a, b) => {
@@ -140,7 +132,6 @@ export function MapExplorer({
 
   const cardRefs = useRef<Map<string, HTMLLIElement>>(new Map());
 
-  // Lấy tuyến lộ trình khi có ≥2 điểm dừng.
   useEffect(() => {
     if (stops.length < 2) return;
     let cancelled = false;
@@ -158,7 +149,6 @@ export function MapExplorer({
     };
   }, [stops]);
 
-  // Tính khoảng cách từ điểm gốc tới các điểm đang hiển thị.
   useEffect(() => {
     if (!origin) return;
     let cancelled = false;
@@ -184,7 +174,6 @@ export function MapExplorer({
     };
   }, [origin, visible]);
 
-  // Chọn một điểm: tô chọn + phát yêu cầu bay (chỉ bay khi nút "bám pin" bật).
   const selectPoint = (id: string) => {
     setSelectedId(id);
     flyToken.current += 1;
@@ -213,7 +202,6 @@ export function MapExplorer({
     setPickingOrigin(false);
   };
 
-  // Click pin/card khi đang ở chế độ chỉ đường → gán điểm; ngược lại → chọn.
   const handlePick = (id: string) => {
     if (dirOpen) {
       const p = points.find((x) => x.id === id);
@@ -231,7 +219,6 @@ export function MapExplorer({
     selectPoint(id);
   };
 
-  // Khi chọn (kể cả từ pin trên map) → cuộn card tương ứng vào tầm nhìn.
   useEffect(() => {
     if (!selectedId) return;
     cardRefs.current.get(selectedId)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
@@ -252,14 +239,12 @@ export function MapExplorer({
 
   return (
     <div className="grid h-full grid-rows-[auto_1fr] lg:grid-cols-[clamp(23rem,32vw,29rem)_1fr] lg:grid-rows-1">
-      {/* ── Cột trái: danh sách ───────────────────────────────── */}
       <div
         className={cn(
           "flex min-h-0 flex-col border-border/60 lg:border-r",
           mobileView === "map" && "hidden lg:flex",
         )}
       >
-        {/* Đầu cột: breadcrumb + chip lọc */}
         <div className="border-b border-border/60 p-4">
           <Link
             href={`/diem-den/${placeSlug}`}
@@ -299,7 +284,6 @@ export function MapExplorer({
             })}
           </div>
 
-          {/* Chỉ đường — mở thẻ nổi trên bản đồ */}
           {!dirOpen && (
             <button
               type="button"
@@ -317,7 +301,6 @@ export function MapExplorer({
           )}
         </div>
 
-        {/* Danh sách — card gọn, ảnh nổi, quét nhanh */}
         <ul className="min-h-0 flex-1 space-y-1 overflow-y-auto p-2">
           {listPoints.map((p) => {
             const meta = TYPE_META[p.type];
@@ -325,7 +308,6 @@ export function MapExplorer({
             const price = label(PRICE_LABELS, p.priceRange);
             const on = p.id === selectedId;
             const sub = [meta.label, cat].filter(Boolean).join(" · ");
-            // chỉ đường: số thứ tự trong lộ trình / khoảng cách từ điểm gốc
             const stopIdx =
               dirOpen && dirMode === "itinerary"
                 ? stops.findIndex((s) => s.id === p.id)
@@ -366,7 +348,6 @@ export function MapExplorer({
                       : "hover:bg-muted/60",
                   )}
                 >
-                  {/* Ảnh — nổi, tỉ lệ 4:3 */}
                   <span className="relative aspect-[4/3] w-[7.5rem] shrink-0 overflow-hidden rounded-xl bg-muted">
                     {p.coverUrl && (
                       <Image
@@ -384,7 +365,6 @@ export function MapExplorer({
                     )}
                   </span>
 
-                  {/* Nội dung — tối giản */}
                   <span className="flex min-w-0 flex-1 flex-col py-0.5">
                     <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                       <span
@@ -444,7 +424,6 @@ export function MapExplorer({
         </ul>
       </div>
 
-      {/* ── Cột phải: bản đồ ──────────────────────────────────── */}
       <div className={cn("relative min-h-0", mobileView === "list" && "hidden lg:block")}>
         <DestinationMapInner
           points={visible}
@@ -460,10 +439,8 @@ export function MapExplorer({
           scrollZoom
         />
 
-        {/* Thẻ chỉ đường nổi trên bản đồ (kiểu app bản đồ) */}
         {dirOpen && (
           <div className="absolute left-3 top-3 z-[1000] flex max-h-[calc(100%-1.5rem)] w-[min(21rem,calc(100%-1.5rem))] flex-col overflow-hidden rounded-2xl border border-border/60 bg-background/95 shadow-xl shadow-black/10 backdrop-blur">
-            {/* Đầu thẻ: tiêu đề + đóng */}
             <div className="flex items-center justify-between gap-2 px-4 pt-3.5">
               <h2 className="flex items-center gap-2 text-base font-semibold tracking-tight">
                 <Navigation className="size-4 text-primary" aria-hidden />
@@ -482,7 +459,6 @@ export function MapExplorer({
               </button>
             </div>
 
-            {/* Tab chế độ — gạch chân */}
             <div className="mt-2 flex gap-5 border-b border-border/60 px-4">
               {(
                 [
@@ -511,13 +487,11 @@ export function MapExplorer({
             </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto p-4">
-              {/* ── Lộ trình nhiều điểm ── */}
               {dirMode === "itinerary" && (
                 <div>
                   {stops.length > 0 ? (
                     <ol className="relative before:absolute before:bottom-4 before:left-[11px] before:top-4 before:w-px before:bg-border">
                       {stops.map((s, i) => {
-                        // chặng từ điểm i → i+1 (chỉ khi route khớp số điểm hiện tại)
                         const leg =
                           route && route.legs.length === stops.length - 1
                             ? route.legs[i]
@@ -560,7 +534,6 @@ export function MapExplorer({
                                 </button>
                               </span>
                             </div>
-                            {/* chặng tới điểm kế tiếp */}
                             {i < stops.length - 1 && (
                               <div className="flex h-7 items-center pl-[2.25rem] text-xs text-muted-foreground">
                                 {leg
@@ -629,7 +602,6 @@ export function MapExplorer({
                 </div>
               )}
 
-              {/* ── Khoảng cách từ 1 điểm ── */}
               {dirMode === "nearby" && (
                 <div>
                   <RouteSlot
@@ -660,7 +632,6 @@ export function MapExplorer({
         )}
       </div>
 
-      {/* Nút chuyển List ⇄ Map (chỉ mobile) */}
       <button
         type="button"
         onClick={() => setMobileView((v) => (v === "list" ? "map" : "list"))}
@@ -680,7 +651,6 @@ export function MapExplorer({
   );
 }
 
-// Ô chọn điểm đi/điểm đến cho chỉ đường.
 function RouteSlot({
   label,
   point,

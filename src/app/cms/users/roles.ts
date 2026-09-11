@@ -6,7 +6,6 @@ export type Role = "admin" | "editor" | "user";
 
 type BadgeVariant = NonNullable<ComponentProps<typeof Badge>["variant"]>;
 
-// Cấu hình hiển thị cho từng vai trò (nhãn tiếng Việt + style badge + icon).
 export const ROLES: Record<
   Role,
   {

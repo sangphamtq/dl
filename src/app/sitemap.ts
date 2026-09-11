@@ -14,7 +14,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       prisma.spot.findMany(sel),
       prisma.accommodation.findMany(sel),
       prisma.post.findMany(sel),
-      // Lịch trình MẪU thôi — lịch trình cá nhân và bản chia sẻ đều noindex.
       prisma.trip.findMany({
         where: { ...pub, isTemplate: true, slug: { not: null } },
         select: { slug: true, updatedAt: true },
@@ -34,7 +33,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: BASE, lastModified: new Date() },
     { url: `${BASE}/diem-den`, lastModified: new Date() },
     { url: `${BASE}/blog`, lastModified: new Date() },
-    // Danh sách lịch trình mẫu — trang công khai của tính năng Lịch trình.
     { url: `${BASE}/lich-trinh`, lastModified: new Date() },
   ];
 

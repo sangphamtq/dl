@@ -98,7 +98,6 @@ export function SpecialtyForm({
       )}
 
       <div className="divide-y">
-        {/* Nơi */}
         <FormSection title="Nơi" description="Đặc sản này thuộc tỉnh/điểm đến nào.">
           <div className="space-y-2">
             <Label>Nơi (Place)</Label>
@@ -112,7 +111,6 @@ export function SpecialtyForm({
           </div>
         </FormSection>
 
-        {/* Thông tin cơ bản */}
         <FormSection
           title="Thông tin cơ bản"
           description="Đặt tên ở mức món ('Chả mực Hạ Long'), gắn địa danh khi trùng."
@@ -156,7 +154,6 @@ export function SpecialtyForm({
           </div>
         </FormSection>
 
-        {/* Ăn ở đâu */}
         <FormSection
           title="Ăn ở đâu"
           description="Liên kết vài quán tiêu biểu phục vụ món này (đề xuất, không cần đủ hết)."
@@ -173,7 +170,6 @@ export function SpecialtyForm({
           </div>
         </FormSection>
 
-        {/* Thẻ */}
         <FormSection title="Thẻ" description="Nhãn tự do để lọc & gợi ý.">
           <div className="space-y-2">
             <Label htmlFor="tags">Tags</Label>

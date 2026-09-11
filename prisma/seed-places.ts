@@ -12,7 +12,6 @@ import { PROVINCE_NAMES, slugifyVi as slugify } from "@/lib/provinces";
 const now = new Date();
 const PUB = { status: PublishStatus.published, publishedAt: now } as const;
 
-// Tỉnh nổi bật (slug) — hiện khác trên trang danh sách.
 const FEATURED_PROVINCES = new Set(["lao-cai", "quang-ninh", "lam-dong"]);
 
 async function main() {

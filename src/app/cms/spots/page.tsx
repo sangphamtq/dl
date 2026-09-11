@@ -42,7 +42,6 @@ const STATUS_FILTERS = [
   { value: "draft", label: "Bản nháp" },
 ];
 
-// Đổi filter → bỏ page (về trang 1).
 function buildHref(base: SearchParams, patch: Partial<SearchParams>) {
   const merged = { ...base, ...patch };
   const sp = new URLSearchParams();
@@ -87,7 +86,6 @@ export default async function SpotsPage({
         </Link>
       </div>
 
-      {/* Bộ lọc */}
       <div className="mt-6 flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
           {STATUS_FILTERS.map((f) => (

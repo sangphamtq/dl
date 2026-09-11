@@ -1,4 +1,3 @@
-// Nhãn hiển thị cho enum của Spot.
 export const SPOT_CATEGORIES: { value: string; label: string }[] = [
   { value: "beach", label: "Biển" },
   { value: "mountain", label: "Núi" },

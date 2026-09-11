@@ -1,8 +1,3 @@
-// Toạ độ tra cứu theo slug điểm đến — dùng cho bản đồ toàn quốc (/ban-do) khi
-// một Place chưa có listing gắn toạ độ để suy trọng tâm. Place không có lat/lng
-// riêng trong schema; đây là bảng phụ để chấm pin. Toạ độ ~ trung tâm mỗi nơi.
-//
-// Thêm điểm đến mới: bổ sung một dòng { slug: [lat, lng] } ở đây.
 export const PLACE_COORDS: Record<string, [number, number]> = {
   "sa-pa": [22.3364, 103.8438],
   "ha-long": [20.9101, 107.1839],

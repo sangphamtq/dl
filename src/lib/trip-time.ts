@@ -1,19 +1,3 @@
-// Máy tính giờ ước tính cho Lịch trình — PHẦN LÕI của tính năng.
-// Thiết kế & lý do: docs/lich-trinh.md §5.
-//
-// Ý tưởng: người dùng KHÔNG nhập giờ cho từng mục (ma sát cao, ai cũng bỏ dở).
-// Họ chỉ sắp THỨ TỰ trong ngày; ở đây cộng dồn từ giờ bắt đầu ngày:
-//
-//   t = day.startMin
-//   với mỗi mục:  đến lúc t → ở lại stayMin → lái driveMin tới mục kế tiếp
-//
-// Có mốc giờ rồi thì đối chiếu được `openingHours` → cảnh báo "chưa mở lúc bạn
-// tới". Đó là thứ mà lưu vào Google Maps không làm được, tức là lý do tồn tại
-// của cả tính năng.
-//
-// File này THUẦN LOGIC: không Prisma, không React, không "bây giờ là mấy giờ".
-// Chạy được cả server lẫn client, và test được bằng tay.
-
 import {
   parseOpeningHours,
   openingStatus,
@@ -27,9 +11,6 @@ export type TripItemKind =
   | "activity"
   | "custom";
 
-// Thời gian ở lại mặc định (phút) khi biên tập/người dùng chưa đặt `stayMin`.
-// Con số tròn, cố ý thô — mục đích là ra được một mốc giờ HỢP LÝ để cảnh báo,
-// không phải dự báo chính xác. Người dùng sửa được từng mục.
 export const DEFAULT_STAY_MIN: Record<TripItemKind, number> = {
   spot: 90,
   eatery: 60,
@@ -38,9 +19,8 @@ export const DEFAULT_STAY_MIN: Record<TripItemKind, number> = {
   custom: 60,
 };
 
-// Ngưỡng cảnh báo.
-const LONG_DRIVE_MIN = 90; // chặng lái dài
-const DAY_LATE_END = 22 * 60; // kết thúc sau 22:00
+const LONG_DRIVE_MIN = 90;
+const DAY_LATE_END = 22 * 60;
 const DAY_MAX_LENGTH = 12 * 60; // tổng ngày quá 12 tiếng
 
 // ── Đọc `Activity.durationText` thành phút ───────────────────────────────
@@ -50,12 +30,10 @@ function parseDurationMin(text: string | null | undefined): number | null {
   if (!text) return null;
   const s = text.toLowerCase().trim();
 
-  // Nhiều ngày ("2N1Đ", "2 ngày 1 đêm") — không nhét vừa một ngày, coi như trọn ngày.
   if (/(\d+)\s*n\s*\d*\s*đ/.test(s) || /\d+\s*ngày/.test(s)) return 8 * 60;
   if (/nguyên ngày|trọn ngày|cả ngày|full day/.test(s)) return 8 * 60;
   if (/nửa ngày|half day/.test(s)) return 4 * 60;
 
-  // Khoảng "3-4 giờ" → lấy cận TRÊN (thà dự trù dư còn hơn xếp lịch không kịp).
   const range = s.match(/(\d+(?:[.,]\d+)?)\s*[-–—~]\s*(\d+(?:[.,]\d+)?)\s*(giờ|tiếng|h|phút|phut|min)/);
   if (range) {
     const hi = Number(range[2].replace(",", "."));
@@ -75,21 +53,18 @@ function unitToMin(value: number, unit: string): number | null {
   return min > 0 && min <= 24 * 60 ? min : null;
 }
 
-// ── Đầu vào / đầu ra ─────────────────────────────────────────────────────
-
 export type ScheduleItemInput = {
   id: string;
   kind: TripItemKind;
   name: string;
-  stayMin: number | null; // người dùng đặt tay
-  durationText?: string | null; // chỉ Activity
+  stayMin: number | null;
+  durationText?: string | null;
   openingHours?: string | null;
   lat?: number | null;
   lng?: number | null;
 };
 
 export type TripWarning = {
-  /** high = hỏng kế hoạch (đóng cửa) · medium = nên xem lại · info = thiếu dữ liệu */
   level: "high" | "medium" | "info";
   code:
     | "closed"
@@ -107,7 +82,6 @@ export type ScheduledItem = {
   arriveMin: number;
   leaveMin: number;
   stayMin: number;
-  /** Phút lái tới mục kế tiếp; null = mục cuối, hoặc thiếu toạ độ nên không tính được */
   driveToNextMin: number | null;
   warnings: TripWarning[];
 };
@@ -116,17 +90,14 @@ export type ScheduledDay = {
   items: ScheduledItem[];
   startMin: number;
   endMin: number;
-  /** Tổng phút lái trong ngày (chỉ những chặng tính được) */
   driveMin: number;
   warnings: TripWarning[];
 };
 
-/** Khoá tra thời gian lái giữa hai mục liên tiếp. */
 export function legKey(fromId: string, toId: string): string {
   return `${fromId}->${toId}`;
 }
 
-/** Thời gian ở lại thực tế của một mục. */
 function stayMinOf(item: ScheduleItemInput): number {
   if (item.stayMin != null) return Math.max(0, item.stayMin);
   if (item.kind === "activity") {
@@ -136,11 +107,6 @@ function stayMinOf(item: ScheduleItemInput): number {
   return DEFAULT_STAY_MIN[item.kind];
 }
 
-// ── Tính lịch một ngày ───────────────────────────────────────────────────
-//
-// `drive` là bảng tra ĐÃ CÓ SẴN (phút) theo legKey — cố ý truyền vào chứ không
-// tự gọi mạng: hàm này chạy lại mỗi lần người dùng đổi thứ tự, nên phải rẻ và
-// đồng bộ. Phần lấy thời gian lái nằm ở lib/trip-route.ts.
 export function scheduleDay(
   startMin: number,
   items: ScheduleItemInput[],
@@ -155,7 +121,6 @@ export function scheduleDay(
     const arriveMin = t;
     const stay = stayMinOf(item);
 
-    // Giờ mở cửa tại thời điểm DỰ KIẾN tới (không phải "bây giờ").
     const intervals = parseOpeningHours(item.openingHours ?? null);
     const status = openingStatus(intervals, arriveMin % 1440);
     if (status) {
@@ -182,7 +147,6 @@ export function scheduleDay(
 
     t = arriveMin + stay;
 
-    // Chặng tới mục kế tiếp.
     const next = items[i + 1];
     let driveToNextMin: number | null = null;
     if (next) {
@@ -234,7 +198,6 @@ function hasCoords(i: ScheduleItemInput): boolean {
   return i.lat != null && i.lng != null;
 }
 
-/** "1 giờ 50" · "45 phút" — dùng cho chặng lái & độ dài ngày. */
 export function fmtDuration(min: number): string {
   const m = Math.max(0, Math.round(min));
   if (m < 60) return `${m} phút`;

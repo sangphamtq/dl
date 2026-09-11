@@ -3,16 +3,6 @@ import { R_BADGE } from "@/lib/radius";
 import { cn } from "@/lib/utils";
 import { feePriceLabel, type ExtraFee } from "@/lib/tickets";
 
-/* Card "Chi phí khác tại chỗ" — dùng chung cho trang Địa điểm và Hoạt động.
-
-   ĐỨNG RIÊNG, không nhập vào cuống vé của `VisitCardD`: cuống vé trả lời
-   "vào cổng bao nhiêu" và con số đó còn được in ra chip hero + thẻ danh
-   sách; đây trả lời "tới nơi rồi còn phải rút ví những khoản gì". Trộn hai
-   thứ vào một khối là làm hỏng nghĩa của cả hai (xem lib/tickets.ts).
-
-   Giữ ĐÚNG THỨ TỰ biên tập nhập, không tự đẩy khoản bắt buộc lên đầu:
-   thứ tự đó thường là thứ tự gặp trên thực địa (gửi xe ở chân dốc trước,
-   thuê gậy sau), hữu ích hơn một danh sách xếp theo mức ràng buộc. */
 export function ExtraFeesCard({
   fees,
   context = "spot",
@@ -44,10 +34,6 @@ export function ExtraFeesCard({
           const { price, unit } = feePriceLabel(f);
           return (
             <div key={i}>
-              {/* XẾP DỌC chứ không phải hàng "nhãn ——— giá" như bảng vé:
-                  tên dịch vụ ở đây là cả một cụm ("Xe ôm bản địa chở ra sống
-                  núi") còn giá là một KHOẢNG kèm đơn vị, hai bên tranh chỗ
-                  trong cột hẹp là nhãn bị bẻ giữa chừng ("Thuê xe / máy"). */}
               <dt className="text-sm font-medium">
                 {f.label}
                 {f.required && (

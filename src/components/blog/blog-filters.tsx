@@ -92,7 +92,6 @@ export function BlogFilters({
         )}
       </div>
 
-      {/* Điểm đến */}
       {destinations.length > 0 && (
         <Section
           title="Điểm đến"
@@ -134,7 +133,6 @@ export function BlogFilters({
         </Section>
       )}
 
-      {/* Chủ đề */}
       {topics.length > 0 && (
         <Section
           title="Chủ đề"
@@ -155,7 +153,6 @@ export function BlogFilters({
         </Section>
       )}
 
-      {/* Khoảng thời gian */}
       <Section
         title="Khoảng thời gian"
         open={open.time}

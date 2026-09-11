@@ -39,48 +39,18 @@ type NavData = {
   homeProvince: string | null;
 };
 
-// ĐIỀU HƯỚNG SITE — phần chính của bảng.
-// Cố ý không lặp lại 4 mục đã nằm trên thanh tab (Trang chủ · Khám phá · Bản đồ
-// · Cộng đồng): thấy hai lối vào cùng một chỗ trong một màn hình chỉ làm người
-// dùng phân vân.
-//
-// TẠM BỎ (khớp với nav desktop — trang vẫn còn, chỉ không có lối vào từ menu):
-// mục "Kiểm tra uy tín" (/kiem-tra) và bốn trang phụ của nhóm Thông tin
-// (/cau-hoi-thuong-gap, /lien-he, /dieu-khoan, /bao-mat — cả bốn đang "Sắp có").
-//
-// "Lịch trình mẫu" thêm vào khi nav desktop bỏ dropdown "Khám phá" — trước đó nó
-// CHỈ nằm trong dropdown ấy nên trên mobile không có lối vào nào.
-// KHÔNG có "Điểm đến" và "Bản đồ": hai mục đó đã nằm trên thanh tab dưới.
-// KHÔNG có "Địa điểm": nó nay là một lối duyệt nằm trong trang /diem-den, giống
-// hệt trên desktop — thêm ở đây thì mobile lại có lối vào mà desktop không có.
 const NAV = [
   { href: "/lich-trinh", label: "Lịch trình mẫu", Icon: CalendarDays },
   { href: "/blog", label: "Cẩm nang", Icon: BookOpen },
   { href: "/gioi-thieu", label: "Giới thiệu", Icon: Info },
 ];
 
-// Tiện ích của riêng người dùng — nhóm PHỤ, nằm dưới điều hướng.
 const MINE = [
   { href: "/thong-bao", label: "Thông báo", Icon: Bell, badgeUnread: true },
   { href: "/tai-khoan/da-den", label: "Đã đến", Icon: MapPinCheck },
   { href: "/lich-trinh/cua-toi", label: "Lịch trình", Icon: Route },
 ];
 
-// Bảng menu trượt từ ĐÁY màn hình, thay cho toàn bộ header ở mobile.
-//
-// Dùng Drawer (vaul) chứ không phải Sheet (Radix Dialog): vaul cho VUỐT XUỐNG
-// ĐỂ ĐÓNG đúng kiểu bảng của app native — kéo theo ngón tay, thả nửa chừng thì
-// bật lại, kéo quá ngưỡng thì đóng. Sheet chỉ có nút X và bấm ra ngoài.
-//
-// THỨ TỰ ƯU TIÊN: điều hướng site lên trên, tiện ích tài khoản xuống dưới. Đây
-// là menu của một trang thông tin — người mở nó phần lớn để đi tới một mục nội
-// dung, không phải để xem thông báo của mình.
-//
-// Dữ liệu người dùng lấy LƯỜI — chỉ gọi `/api/nav-data` lần đầu bảng được mở
-// (xem chú thích trong route đó để biết vì sao không truyền props được). Hệ quả
-// phải chấp nhận: ở mobile không còn chuông thông báo hiện số ngay trên thanh,
-// muốn biết có gì mới thì mở bảng. Đổi lại người chỉ đọc bài không phải gánh
-// thêm request nào trên mỗi trang.
 export function MobileMenuSheet({
   open,
   onOpenChange,
@@ -88,7 +58,6 @@ export function MobileMenuSheet({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Mở command palette. Bảng tự đóng trước — xem chú thích ở BottomNav. */
   onSearch: () => void;
 }) {
   const pathname = usePathname();
@@ -120,17 +89,10 @@ export function MobileMenuSheet({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      {/* `drawer.tsx` của shadcn đã có sẵn thanh kéo (handle) ở mép trên cho
-          hướng bottom — không tự vẽ thêm. */}
       <DrawerContent className="font-heading">
         <DrawerTitle className="sr-only">Menu</DrawerTitle>
 
         <div className="overflow-y-auto px-3 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
-          {/* Tìm kiếm — dựng thành Ô NHẬP GIẢ chứ không phải một hàng menu như
-              các mục dưới: hình dáng ô tìm kiếm tự nói ra công dụng, và đây là
-              hình mà header ở desktop vẫn dùng nên hai khổ màn cùng một ngôn
-              ngữ. Đứng đầu bảng vì nó là lối tắt tới BẤT KỲ đâu, khác các mục
-              bên dưới vốn chỉ dẫn tới một chỗ cố định. */}
           <button
             type="button"
             onClick={onSearch}
@@ -140,7 +102,6 @@ export function MobileMenuSheet({
             <span className="truncate">Tìm điểm đến, quán ăn, chỗ ở…</span>
           </button>
 
-          {/* ── Điều hướng site (chính) ─────────────────────────────── */}
           <nav>
             {NAV.map(({ href, label, Icon }) => (
               <Link
@@ -167,7 +128,6 @@ export function MobileMenuSheet({
 
           <hr className="my-3 border-border/60" />
 
-          {/* ── Của bạn (phụ) ───────────────────────────────────────── */}
           {!loaded ? (
             <div className="h-14 animate-pulse rounded-2xl bg-muted" />
           ) : user ? (
@@ -199,9 +159,6 @@ export function MobileMenuSheet({
                 />
               </Link>
 
-              {/* Ba tiện ích thành HÀNG NGANG, không phải ba hàng đầy đủ: giữ
-                  chúng ở đúng vai phụ và tiết kiệm chiều cao cho phần điều
-                  hướng phía trên. */}
               <div className="mt-2 grid grid-cols-3 gap-2">
                 {MINE.map(({ href, label, Icon, badgeUnread }) => (
                   <Link
@@ -250,9 +207,6 @@ export function MobileMenuSheet({
             </Link>
           )}
 
-          {/* Tỉnh của bạn — cài đặt cá nhân, nên đứng cùng nhóm "của bạn". Nó
-              đổi gợi ý điểm đến gần và cách di chuyển nên vẫn đáng nằm trong
-              menu thay vì chôn trong trang tài khoản. */}
           {loaded && data && (
             <div className="mt-3 rounded-2xl bg-muted/50 p-3">
               <p className="text-sm font-semibold">Bạn đang ở tỉnh nào?</p>
@@ -268,7 +222,6 @@ export function MobileMenuSheet({
             </div>
           )}
 
-          {/* Đăng xuất: chữ nhỏ, cuối bảng. */}
           <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 px-3 text-xs text-muted-foreground">
             {user && (
               <button

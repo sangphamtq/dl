@@ -17,8 +17,6 @@ function GridImg({ img, className }: { img: PostImage; className?: string }) {
   );
 }
 
-// Lưới ảnh kiểu Facebook: 1 / 2 / 3 / 4+ (ảnh thứ 4 phủ "+N" nếu còn nữa).
-// bleed = ảnh tràn viền card (không bo góc, không margin trên — như News Feed FB).
 export function PhotoGrid({
   images,
   bleed = false,

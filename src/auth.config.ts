@@ -10,15 +10,12 @@ import Facebook from "next-auth/providers/facebook";
 export const authConfig = {
   providers: [
     Google,
-    // Cho phép gộp với tài khoản cùng email (vd đã đăng nhập Google trước đó).
-    // An toàn vì email từ Facebook/Google đều đã xác minh.
     Facebook({ allowDangerousEmailAccountLinking: true }),
   ],
   pages: {
     signIn: "/login",
   },
   callbacks: {
-    // `user` chỉ có khi đăng nhập (từ adapter, chạy ở Node) → nhét id/role vào token.
     jwt({ token, user }) {
       if (user) {
         token.id = user.id;
@@ -26,7 +23,6 @@ export const authConfig = {
       }
       return token;
     },
-    // Copy id/role từ token sang session để dùng ở client/server component.
     session({ session, token }) {
       if (session.user) {
         session.user.id = (token.id as string | undefined) ?? session.user.id;

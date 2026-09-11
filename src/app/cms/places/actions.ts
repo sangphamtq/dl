@@ -9,7 +9,6 @@ import { slugify, RESERVED_SLUGS } from "@/lib/slug";
 
 const STAFF = ["admin", "editor"];
 
-// Một dòng "Thông tin chung": tên (label) + nội dung (value).
 export type QuickFact = { label: string; value: string };
 
 export type PlaceFormInput = {
@@ -19,19 +18,18 @@ export type PlaceFormInput = {
   parentId: string | null;
   tagline: string;
   description: string;
-  provinceCode: string; // code dạng text ("" nếu chưa chọn)
+  provinceCode: string;
   provinceName: string;
   wardCode: string;
   wardName: string;
-  lat: string; // toạ độ trung tâm ("" = chưa có)
+  lat: string;
   lng: string;
-  tags: string; // chuỗi phân tách bằng dấu phẩy
-  quickInfo: QuickFact[]; // "Thông tin chung": danh sách tên + nội dung
+  tags: string;
+  quickInfo: QuickFact[];
 };
 
 export type ActionResult = { ok: true; id: string } | { ok: false; error: string };
 
-// Toạ độ: "" → null; số hợp lệ → số; rác → null (không chặn lưu vì cả biểu mẫu).
 function coord(v: string): number | null {
   const t = v.trim();
   if (!t) return null;
@@ -45,7 +43,6 @@ async function requireStaff() {
   if (!role || !STAFF.includes(role)) throw new Error("Không có quyền.");
 }
 
-// Chuẩn hóa & kiểm tra dữ liệu form; trả về data Prisma hoặc lỗi.
 async function normalize(
   input: PlaceFormInput,
   selfId?: string,
@@ -58,15 +55,12 @@ async function normalize(
   if (RESERVED_SLUGS.has(slug))
     return { error: `Slug "${slug}" trùng tiền tố dành riêng của hệ thống.` };
 
-  // Slug duy nhất giữa mọi Place
   const dup = await prisma.place.findUnique({ where: { slug } });
   if (dup && dup.id !== selfId)
     return { error: `Slug "${slug}" đã tồn tại. Hãy đổi tên hoặc slug.` };
 
   const kind = input.kind === "province" ? PlaceKind.province : PlaceKind.destination;
 
-  // Ràng buộc cây 2 mức (CLAUDE.md): province ⇒ parentId null;
-  // destination ⇒ parentId trỏ tới một province.
   let parentId: string | null = null;
   if (kind === PlaceKind.destination) {
     if (!input.parentId)
@@ -82,7 +76,6 @@ async function normalize(
       return { error: "Cha phải là một Tỉnh (không lồng điểm đến vào điểm đến)." };
     parentId = input.parentId;
   } else {
-    // province: chặn nếu đang có con mà lại bị đổi thành province có parent — luôn null
     parentId = null;
   }
 
@@ -100,13 +93,10 @@ async function normalize(
     .map((t) => t.trim())
     .filter(Boolean);
 
-  // "Thông tin chung": bỏ dòng trống (cả tên lẫn nội dung rỗng), trim.
   const quickInfo = (input.quickInfo ?? [])
     .map((f) => ({ label: f.label.trim(), value: f.value.trim() }))
     .filter((f) => f.label || f.value);
 
-  // Chỉ gồm trường NỘI DUNG. Các AdminFields (status/isFeatured/order) được
-  // quản lý riêng ở trang chi tiết, không đụng tới khi tạo/sửa nội dung.
   return {
     data: {
       name,
@@ -129,14 +119,6 @@ async function normalize(
   };
 }
 
-// Mọi thay đổi trên một Place đều ảnh hưởng các trang CÔNG KHAI, không chỉ CMS:
-// danh sách điểm đến, trang chi tiết của chính nó, và trang chi tiết của tỉnh
-// cha (thẻ con hiện ở đó). Các trang này chạy ISR — có cache — nên không xoá
-// cache thì biên tập sẽ gặp cảnh "sửa xong mà trang không đổi", kiểu lỗi rất
-// khó đoán ra nguyên nhân.
-//
-// Gom vào một chỗ thay vì rải `revalidatePath` trong từng action: thêm một
-// action mới mà quên một dòng là lại đúng cái lỗi đó.
 function revalidatePublic(slug?: string | null) {
   revalidatePath("/diem-den");
   if (slug) revalidatePath(`/diem-den/${slug}`);
@@ -159,7 +141,6 @@ export async function updatePlace(
 ): Promise<ActionResult> {
   await requireStaff();
 
-  // Nếu đổi sang province nhưng vẫn còn con là destination — vẫn hợp lệ (con trỏ về nó).
   const res = await normalize(input, id);
   if ("error" in res) return { ok: false, error: res.error };
 
@@ -178,7 +159,6 @@ export async function updatePlace(
 export async function deletePlace(id: string): Promise<ActionResult> {
   await requireStaff();
 
-  // Không cho xóa Tỉnh còn điểm đến con (tránh mồ côi listing). Yêu cầu xóa con trước.
   const childCount = await prisma.place.count({ where: { parentId: id } });
   if (childCount > 0)
     return {
@@ -195,9 +175,6 @@ export async function deletePlace(id: string): Promise<ActionResult> {
   return { ok: true, id };
 }
 
-// ── AdminFields: điều khiển nhanh (không đụng nội dung) ──────────────────────
-
-// Đổi nhanh trạng thái xuất bản (dùng ở danh sách & trang chi tiết).
 export async function togglePublish(
   id: string,
   publish: boolean,
@@ -217,7 +194,6 @@ export async function togglePublish(
   return { ok: true, id };
 }
 
-// Đổi nhanh đánh dấu nổi bật.
 export async function toggleFeatured(
   id: string,
   featured: boolean,
@@ -234,8 +210,6 @@ export async function toggleFeatured(
   return { ok: true, id };
 }
 
-// Đổi nhanh cờ "tỉnh này tự nó là một điểm đến" — chỉ có nghĩa với province,
-// xem chú thích ở `Place.treatAsDestination` trong `schema.prisma`.
 export async function toggleTreatAsDestination(
   id: string,
   value: boolean,
@@ -252,7 +226,6 @@ export async function toggleTreatAsDestination(
   return { ok: true, id };
 }
 
-// Cập nhật thứ tự sắp xếp thủ công (rỗng = bỏ đặt).
 export async function updateOrder(
   id: string,
   order: string,

@@ -6,8 +6,6 @@ import { DatabaseZap, RotateCw, TriangleAlert } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 
-// Nhận diện lỗi mất kết nối DB từ phía client (chỉ dựa vào message — ở production
-// Next.js che message nên coi như lỗi chung).
 function looksLikeDbError(message: string): boolean {
   return /ECONNREFUSED|ENOTFOUND|ETIMEDOUT|EAI_AGAIN|Can't reach database|Connection terminated|prisma|P10\d\d/i.test(
     message,

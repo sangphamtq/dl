@@ -16,22 +16,11 @@ import {
 const MICRO = "text-[0.6rem] font-semibold uppercase tracking-[0.14em]";
 
 
-/**
- * Lọc + sắp xếp cho danh sách lịch trình mẫu.
- *
- * Chip độ dài SINH TỪ DỮ LIỆU (`lengths`), không phải danh sách cứng 1/2/3/4+:
- * bày một chip mà bấm vào ra rỗng thì tệ hơn là không có chip đó. Cũng vì vậy
- * cả thanh này TỰ ẨN khi chỉ có một nhóm độ dài — lúc đó lọc không chia được gì.
- *
- * Trạng thái nằm ở URL (`?ngay=`, `?sap-xep=`) chứ không phải `useState`: cùng
- * cách với `/dia-diem`, và nhờ vậy chia sẻ được đường dẫn đã lọc.
- */
 export function TripControls({
   lengths,
   days,
   sort,
 }: {
-  /** Các độ dài CÓ THẬT trong dữ liệu, đã sắp tăng dần. */
   lengths: number[];
   days: number | null;
   sort: TripSortKey;

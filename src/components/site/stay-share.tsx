@@ -11,8 +11,6 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 
-// Nút chia sẻ trang lưu trú: QR (để khách quét), sao chép link, Messenger.
-// Dành cho chủ homestay gửi/in link trang đã-xác-minh cho khách.
 export function StayShare({
   title,
   className,

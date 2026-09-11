@@ -52,8 +52,8 @@ type Props = {
     image?: string | null;
     role?: string;
   };
-  provinces: string[]; // danh sách tỉnh/thành để chọn "tỉnh của bạn"
-  homeProvince: string | null; // tỉnh đang chọn
+  provinces: string[];
+  homeProvince: string | null;
 };
 
 export function UserMenu({ user, provinces, homeProvince }: Props) {
@@ -151,8 +151,6 @@ export function UserMenu({ user, provinces, homeProvince }: Props) {
   );
 }
 
-// "Tỉnh của bạn" — submenu có ô tìm kiếm không dấu. Cập nhật lạc quan rồi lưu
-// (cookie + đồng bộ User) qua server action, refresh để gợi ý cập nhật theo tỉnh.
 function HomeProvinceSubmenu({
   provinces,
   value,
@@ -189,7 +187,6 @@ function HomeProvinceSubmenu({
           {selected ?? "Chọn"}
         </span>
       </DropdownMenuSubTrigger>
-      {/* stopPropagation: để cmdk xử lý gõ/di chuyển, không bị typeahead của menu chặn */}
       <DropdownMenuSubContent
         className="w-64 p-0"
         onKeyDown={(e) => e.stopPropagation()}

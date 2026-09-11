@@ -6,16 +6,6 @@ import { Glyph, type GlyphName } from "@/components/site/glyphs";
 import { R_CARD, R_CTRL } from "@/lib/radius";
 import { cn } from "@/lib/utils";
 
-/* Bộ máy dùng chung của HAI tab danh sách — Địa điểm và Trải nghiệm: lọc theo
-   loại (kèm đồng bộ `?cat=`), đổi kiểu xem lưới/danh sách (kèm cookie), và
-   trạng thái rỗng.
-
-   Vì sao tách ra thay vì chép: hai tab đó khác nhau ở NỘI DUNG THẺ (địa điểm có
-   giờ đẹp + cảnh báo, hoạt động có thời lượng + mùa), còn khung thì giống hệt.
-   Bài học vừa trả giá ở chỗ khác trong chính dự án này: hai bản hero được chép
-   ra hai file rồi trôi mỗi bản một kiểu, tới lúc sửa thì phải sửa hai nơi và
-   một nơi luôn bị quên. */
-
 export type Categorized = {
   category: string | null;
   categoryLabel: string | null;
@@ -23,14 +13,12 @@ export type Categorized = {
 
 export type ListViewMode = "grid" | "list";
 
-/** Lọc theo loại + giữ trạng thái trong `?cat=`. */
 export function useCatFilter<T extends Categorized>(items: T[]) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [cat, setCat] = useState<string>(() => searchParams.get("cat") ?? "all");
 
-  // Loại có thật trong dữ liệu + số mục; nhiều nhất lên trước.
   const cats = useMemo(() => {
     const map = new Map<string, { label: string; count: number }>();
     for (const it of items) {
@@ -57,8 +45,6 @@ export function useCatFilter<T extends Categorized>(items: T[]) {
     [items, effective],
   );
 
-  // Dùng GIÁ TRỊ enum (beach, water…) chứ không phải nhãn tiếng Việt: URL sạch
-  // và không vỡ khi đổi chữ hiển thị.
   const chooseCat = (v: string) => {
     setCat(v);
     const params = new URLSearchParams(searchParams.toString());
@@ -71,9 +57,6 @@ export function useCatFilter<T extends Categorized>(items: T[]) {
   return { cats, activeCat, effective, filtered, chooseCat };
 }
 
-/** Kiểu xem là SỞ THÍCH của người dùng → lưu cookie, server render đúng ngay từ
- *  lần tải đầu (khỏi nháy một nhịp lưới rồi mới đổi sang danh sách). Khoá dùng
- *  chung cho cả hai tab: chọn một lần, cả hai cùng theo. */
 export function useListView(initial: ListViewMode = "grid") {
   const [view, setView] = useState<ListViewMode>(initial);
   const choose = (v: ListViewMode) => {
@@ -82,10 +65,6 @@ export function useListView(initial: ListViewMode = "grid") {
   };
   return [view, choose] as const;
 }
-
-/* ── Vật liệu ──────────────────────────────────────────────────────
-   Chip HAIRLINE VUÔNG (R_CTRL 4px) theo đúng bộ điều khiển của trang cha
-   `/diem-den` và của `/ban-do`, không phải viên tròn xám. */
 
 export function CatChipRow({
   cats,
@@ -124,15 +103,6 @@ export function CatChipRow({
   );
 }
 
-/* Chip lọc — VẬT LIỆU DÙNG CHUNG cho mọi tab có bộ lọc (Địa điểm · Trải nghiệm
-   · Ẩm thực). Hairline vuông `R_CTRL`, đang chọn thì nền `foreground`.
-
-   Con số đi kèm là lý do dùng chip thay vì segmented: biết trước bấm vào còn
-   bao nhiêu thì không ai phải thử từng loại.
-
-   `tone="live"` dành cho bộ lọc theo THỜI GIAN THỰC ("Đang mở") — lúc chưa bật
-   nó đã có màu, vì đó là thứ đang đúng NGAY BÂY GIỜ chứ không phải một loại
-   tĩnh; bật lên thì về nền đặc như mọi chip khác. */
 export function FilterChip({
   active,
   onClick,
@@ -181,8 +151,6 @@ export function FilterChip({
   );
 }
 
-/* Nhiều nút chung một khung có viền: bo ở KHUNG + `overflow-hidden`, nút con để
-   vuông — bo từng nút thì nền của nút đang chọn thành mảng lửng lơ bên trong. */
 export function ViewToggle({
   view,
   onChange,
@@ -245,9 +213,6 @@ function ViewBtn({
   );
 }
 
-/** Trạng thái rỗng khi lọc ra không còn gì. Trong thực tế gần như không chạm
- *  tới (chip chỉ dựng từ loại CÓ THẬT, và `?cat=` lạ đã rơi về "tất cả") — giữ
- *  làm lưới an toàn. */
 export function EmptyFilter({
   categoryLabel,
   unit,

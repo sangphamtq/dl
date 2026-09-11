@@ -56,7 +56,6 @@ const listingImages = {
   select: { url: true, isCover: true },
 } as const;
 
-// Zalo có thể là SĐT hoặc link — chuẩn hoá thành URL chat zalo.me.
 function zaloHref(v: string): string {
   if (/^https?:\/\//i.test(v)) return v;
   const digits = v.replace(/[^\d]/g, "");
@@ -123,7 +122,6 @@ export default async function AccommodationPublicPage({
               images: listingImages,
             },
           },
-          // Điểm tham quan cùng điểm đến — để tính "gần đây" theo toạ độ.
           spots: {
             where: pub,
             orderBy: [{ isFeatured: "desc" }, { order: "asc" }, { name: "asc" }],
@@ -154,7 +152,6 @@ export default async function AccommodationPublicPage({
 
   const peers = await getListingPeers("accommodation", acc.placeId);
 
-  // Ảnh cho stack hero.
   const heroImages: HeroImage[] = acc.images.map((i) => ({
     url: i.url,
     alt: i.alt,
@@ -169,8 +166,6 @@ export default async function AccommodationPublicPage({
   const mapEmbedSrc = hasMap ? googleEmbedSrc(acc.lat!, acc.lng!, 13) : null;
   const nearby = acc.place.accommodations;
 
-  // Điểm tham quan gần đây: lọc thô bằng chim bay → đo đường lái xe (cache 30
-  // ngày theo toạ độ) → xếp gần→xa, bỏ mục xa quá bán kính "gần", lấy 6.
   const origin = { lat: acc.lat, lng: acc.lng };
   const preSpots = withDistance(acc.place.spots, origin, 8);
   const drivingSpots =
@@ -182,7 +177,6 @@ export default async function AccommodationPublicPage({
       : {};
   const nearbySpots = rankNearby(preSpots, drivingSpots, 6);
 
-  // Mục cho thanh điều hướng dính (chỉ mục có dữ liệu).
   const navItems: SectionItem[] = [
     acc.description && { id: "gioi-thieu", label: "Giới thiệu" },
     acc.depositPolicy && { id: "dat-phong", label: "Đặt phòng & cọc" },
@@ -200,7 +194,6 @@ export default async function AccommodationPublicPage({
       />
 
       <main className="flex-1">
-        {/* Hero — chung mô-típ nền ambient với các trang chi tiết khác */}
         <HeroFrame images={heroImages.map((i) => i.url)}>
           <div className="mx-auto max-w-7xl px-4 pb-10 pt-6 sm:px-6 sm:pb-6 sm:pt-5">
             <div className="grid items-center gap-10 lg:grid-cols-[1fr_1.4fr] lg:gap-12">
@@ -318,7 +311,6 @@ export default async function AccommodationPublicPage({
                 </section>
               )}
 
-              {/* Gallery — mosaic biên tập: ảnh đầu lớn, phần còn lại lấp lưới */}
               {acc.images.length > 1 && (
                 <section id="thu-vien" className="scroll-mt-32">
                   <h2 className="mb-6 text-xl font-bold tracking-tight sm:text-2xl">
@@ -348,7 +340,6 @@ export default async function AccommodationPublicPage({
 
             </div>
 
-            {/* Sidebar — liên hệ chính chủ + bản đồ (dính khi cuộn) */}
             <aside className="space-y-6 lg:sticky lg:top-32 lg:self-start">
               <div className="rounded-2xl border border-border/60 bg-card p-5">
                 <div className="flex items-center justify-between gap-2">
@@ -446,7 +437,6 @@ export default async function AccommodationPublicPage({
             </aside>
           </div>
 
-          {/* Điểm tham quan gần đây (theo khoảng cách chim bay) */}
           {nearbySpots.length > 0 && (
             <div
               id="quanh-day"
@@ -493,7 +483,6 @@ export default async function AccommodationPublicPage({
             </div>
           )}
 
-          {/* Chỗ nghỉ khác cùng điểm đến */}
           {nearby.length > 0 && (
             <div className="mt-16 border-t border-border/60 pt-14">
               <div className="mb-6 flex items-end justify-between gap-4">

@@ -18,11 +18,6 @@ import {
   UserRole,
 } from "@/generated/prisma/enums";
 
-// Seed điểm đến Phan Thiết (Lâm Đồng — Bình Thuận đã sáp nhập vào Lâm Đồng từ
-// 1/7/2025): Place + Spot + Activity + Eatery + Specialty.
-// Idempotent: upsert theo slug; ảnh demo (picsum) tạo lại mỗi lần chạy.
-// Dùng: pnpm seed:phan-thiet
-
 const now = new Date();
 const PUB = { status: PublishStatus.published, publishedAt: now } as const;
 
@@ -34,11 +29,8 @@ type ImageOwner =
   | { specialtyId: string }
   | { accommodationId: string };
 
-// Ảnh của một mục — ĐỂ TRỐNG để tự điền. Mỗi ảnh: { url, alt?, caption? }.
-// Ảnh đầu mảng tự thành ảnh bìa (isCover). Mảng rỗng → trang dùng ảnh fallback.
 type ImageInput = { url: string; alt?: string; caption?: string };
 
-// Ghi lại toàn bộ ảnh cho một owner (xóa ảnh cũ trước để khỏi nhân bản khi seed lại).
 async function setImages(
   where: ImageOwner,
   images: readonly ImageInput[],
@@ -61,17 +53,6 @@ async function setImages(
   );
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// ẢNH CHO TỪNG MỤC — TỰ ĐIỀN Ở ĐÂY (key = slug). Mỗi mục một mảng ảnh; ảnh đầu
-// mảng là ảnh bìa. Bỏ trống / để mảng rỗng → trang dùng ảnh fallback tạm.
-// Mỗi ảnh: { url: "https://…", alt?: "mô tả", caption?: "chú thích" }
-// Ví dụ:
-//   "bai-bien-mui-ne": [
-//     { url: "https://…/1.jpg", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },
-//     { url: "https://…/2.jpg" },
-//   ],
-// ────────────────────────────────────────────────────────────────────────────
-// Pool ảnh ẩm thực (tất cả là ảnh món ăn/quán) — tái dùng để dựng gallery nhiều ảnh.
 const F = "https://y3m837otke.ufs.sh/f/";
 const FOOD = {
   banhCan: F + "m9VMJOw4aGbVHOHsVwgtLGTBS2Zs017p36DzeKQXcnfw5yNm",
@@ -87,8 +68,6 @@ const FOOD = {
   mucMotNang: F + "m9VMJOw4aGbVwxgIA6xPfv7TtDnqG58WPEKwhlSVOiFgU1ZI",
 };
 
-// Pool ảnh CẢNH (dùng lại ảnh của các Spot) — dành riêng cho quán nước, nơi thứ
-// khách "mua" là tầm nhìn chứ không phải món, nên ảnh bìa phải là cảnh.
 const SCENE = {
   bien: F + "m9VMJOw4aGbVVLFiMOGrfcH3IL5QbghBD7ty4wjlxu80KkaJ",
   bauTrang: F + "m9VMJOw4aGbVFQeJkN5pDvbxdNjE48eVyfrl2qSG5oOt3ksu",
@@ -96,7 +75,6 @@ const SCENE = {
   doiCat: F + "m9VMJOw4aGbVOcQgLKNlS9oC6u4I8lqYVhvJFnANpGZDfxky",
 };
 
-// Pool ảnh lưu trú (resort/khách sạn/phòng) — tái dùng để dựng gallery nhiều ảnh.
 const STAY = {
   anantara: F + "m9VMJOw4aGbV88W20kNtSa4RYZ1IFnoHwL8POAuJXU9lpqre",
   cliff: F + "m9VMJOw4aGbVKjSeN0eoDPNw8b4hMBxe3vjfX0JlqIyC7mio",
@@ -109,11 +87,9 @@ const STAY = {
 };
 
 const IMAGES: Record<string, ImageInput[]> = {
-  // Place
   "lam-dong": [],
   "phan-thiet": [],
 
-  // Địa điểm (Spot)
   "bai-bien-mui-ne": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVVLFiMOGrfcH3IL5QbghBD7ty4wjlxu80KkaJ", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
   "doi-cat-bay-mui-ne": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVOcQgLKNlS9oC6u4I8lqYVhvJFnANpGZDfxky", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
   "bau-trang": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVFQeJkN5pDvbxdNjE48eVyfrl2qSG5oOt3ksu", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
@@ -123,7 +99,6 @@ const IMAGES: Record<string, ImageInput[]> = {
   "hon-rom": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVIZuBizOJ3i9vQ1fIPbaTDodWErlMtRmUSn2j", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
   "bai-da-ong-dia": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVnUQ9AOkyNpVrswG2bXt7P5uIACShYzTBO4cQ", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
 
-  // Hoạt động (Activity)
   "truot-cat-mui-ne": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVrE9lesYb8jagp6cK5uSRW3FnfXEZDVh1xAqB", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
   "luot-van-dieu-mui-ne": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbV8MLQRGSNtSa4RYZ1IFnoHwL8POAuJXU9lpqr", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
   "jeep-binh-minh-doi-cat": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVwzBbByPfv7TtDnqG58WPEKwhlSVOiFgU1ZIQ", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
@@ -133,7 +108,6 @@ const IMAGES: Record<string, ImageInput[]> = {
   "tham-quan-thap-cham": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbVXa7aoKriSgYjdfKV9N46zZEP0aCvqmulRbGy", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
   "san-hoang-hon-phan-thiet": [{ url: "https://y3m837otke.ufs.sh/f/m9VMJOw4aGbV7oEMwfcsduBOTVW6GbCrSo4ZJg8lncNqKxmR", alt: "Bãi biển Mũi Né", caption: "Sáng sớm" },],
 
-  // Quán ăn (Eatery)
   "banh-can-cay-phuong": [
     { url: FOOD.banhCan, alt: "Bánh căn Cây Phượng", caption: "Khuôn bánh nóng hổi" },
     { url: FOOD.banhXeo, alt: "Bánh đổ khuôn đất" },
@@ -210,7 +184,6 @@ const IMAGES: Record<string, ImageInput[]> = {
     { url: FOOD.thanhLong, alt: "Nước ép thanh long" },
   ],
 
-  // Đặc sản (Specialty)
   "banh-can-phan-thiet": [
     { url: FOOD.banhCan, alt: "Bánh căn Phan Thiết" },
     { url: FOOD.banhCanh, alt: "Ăn kèm xíu mại, trứng" },
@@ -244,7 +217,6 @@ const IMAGES: Record<string, ImageInput[]> = {
     { url: FOOD.haiSan, alt: "Đặc sản vùng cát" },
   ],
 
-  // Lưu trú (Accommodation)
   "anantara-mui-ne-resort": [
     { url: STAY.anantara, alt: "Anantara Mũi Né Resort", caption: "Hồ bơi hướng biển" },
     { url: STAY.sailing, alt: "Khuôn viên resort" },
@@ -283,8 +255,6 @@ const IMAGES: Record<string, ImageInput[]> = {
 };
 
 async function main() {
-  // 1) Tỉnh Lâm Đồng — từ 1/7/2025 gồm cả Bình Thuận cũ (Phan Thiết, Mũi Né)
-  // và Đắk Nông cũ, nên trải từ cao nguyên Đà Lạt xuống tận biển.
   const lamDong = await prisma.place.upsert({
     where: { slug: "lam-dong" },
     update: {},
@@ -300,8 +270,6 @@ async function main() {
   });
   await setImages({ placeId: lamDong.id }, IMAGES["lam-dong"] ?? [], "Lâm Đồng");
 
-  // 2) Điểm đến Phan Thiết
-  // Câu đầu là lede (đoạn dẫn) — trang sẽ tách & phóng to.
   const phanThietDesc =
     "Nắng vàng, biển xanh và những đồi cát đổi màu — Phan Thiết là thành phố biển quyến rũ bậc nhất duyên hải Nam Trung Bộ. Từ những ngày nghỉ dưỡng thư thái bên biển Mũi Né đến hành trình khám phá làng chài, văn hóa địa phương và các thắng cảnh thiên nhiên, Phan Thiết mang đến nhiều trải nghiệm phù hợp cho mọi du khách. Với khí hậu nắng ấm quanh năm và vị trí thuận tiện từ TP.HCM, đây là một trong những điểm đến biển hấp dẫn hàng đầu Việt Nam.";
   const phanThiet = await prisma.place.upsert({
@@ -326,10 +294,9 @@ async function main() {
   });
   await setImages({ placeId: phanThiet.id }, IMAGES["phan-thiet"] ?? [], "Phan Thiết");
 
-  // 3) Spots
   type HighlightSeed = {
     title: string;
-    body?: string; // văn xuôi thuần; sẽ bọc <p> thành rich text khi ghi
+    body?: string;
   };
   type SpotSeed = {
     slug: string;
@@ -610,7 +577,6 @@ async function main() {
         ...rest,
         placeId: phanThiet.id,
         ...PUB,
-        // sửa: xoá điểm nhấn cũ rồi tạo lại theo thứ tự
         highlights: hl ? { deleteMany: {}, create: hl } : undefined,
       },
       create: {
@@ -626,8 +592,6 @@ async function main() {
     await setImages({ spotId: row.id }, IMAGES[slug] ?? [], name);
   }
 
-  // 4) Activities (M:N tới Spot)
-  // spots[].blurb = nội dung RIÊNG của hoạt động này TẠI spot đó (qua SpotActivity).
   type ActivitySeed = {
     slug: string;
     name: string;
@@ -876,7 +840,6 @@ async function main() {
     await setImages({ activityId: row.id }, IMAGES[slug] ?? [], name);
   }
 
-  // 5) Eateries
   const eateries = [
     {
       slug: "banh-can-cay-phuong",
@@ -915,7 +878,6 @@ async function main() {
       slug: "hai-san-bo-ke-24",
       name: "Hải sản Bờ Kè 24",
       category: EateryCategory.seafood,
-      // Vẫn là quán ĂN — nhưng bàn sát biển là thứ khách tranh nhau, nên có view.
       viewType: ViewType.sea,
       bestTime: "Chập tối, khi vừa lên đèn dọc bờ kè",
       meals: [Meal.dinner, Meal.latenight],
@@ -1172,18 +1134,6 @@ async function main() {
     await setImages({ eateryId: row.id }, IMAGES[slug] ?? [], name);
   }
 
-  // ──────────────────────────────────────────────────────────────────────
-  // 6) Đặc sản (Specialty) — MÓN ĂN dùng lại, gắn quán tiêu biểu
-  //
-  // PHẠM VI: chỉ MÓN ĂN TẠI CHỖ, và chỉ tạo khi món **gắn được địa danh** và
-  // **chỉ được ít nhất một quán** (xem CLAUDE.md). Vì vậy ba bản ghi của lần
-  // seed đầu đã bị bỏ, có bước dọn bên dưới:
-  //   · nước mắm, thanh long → thuần QUÀ, không ăn tại quán. Dự án không làm
-  //     phần quà, nên chúng không có chỗ nào cả. (Trước đây bản sắc này sống ở
-  //     `Place.foodIntro` + mẹo cuối trang; hai trường đó đã bị xoá khỏi schema.)
-  //   · cơm gà → món phổ thông cả nước, không có gì riêng của Phan Thiết;
-  //     nội dung đã nằm đủ trong mô tả quán `com-ga-ta-vi`.
-  // ──────────────────────────────────────────────────────────────────────
   const specialties: {
     slug: string;
     name: string;
@@ -1262,8 +1212,6 @@ async function main() {
     },
   ];
 
-  // Dọn ba bản ghi của lần seed đầu (lý do ở chú thích mục 6). Xoá theo slug nên
-  // chỉ đụng đúng ba cái này, không ảnh hưởng gì do biên tập tự thêm trong CMS.
   await prisma.specialty.deleteMany({
     where: {
       slug: {
@@ -1302,7 +1250,6 @@ async function main() {
     await setImages({ specialtyId: row.id }, IMAGES[slug] ?? [], name);
   }
 
-  // 7) Accommodations
   const accommodations = [
     {
       slug: "anantara-mui-ne-resort",
@@ -1453,12 +1400,9 @@ async function main() {
     await setImages({ accommodationId: row.id }, IMAGES[slug] ?? [], name);
   }
 
-  // 7b) Di chuyển (Transport) — getTo: cách đến từ ngoài; getAround: tại chỗ.
-  // Không có slug → idempotent bằng deleteMany theo placeId rồi tạo lại.
   const D = TransportDirection;
   const M = TransportMode;
   const transports = [
-    // ── Đến nơi: nhóm theo điểm xuất phát (origin) ──
     {
       direction: D.getTo,
       mode: M.bus,
@@ -1533,7 +1477,6 @@ async function main() {
       description:
         "Khách ở xa bay tới Cam Ranh (Nha Trang) hoặc Tân Sơn Nhất (TP.HCM), rồi đi xe/limousine về Phan Thiết – Mũi Né.",
     },
-    // ── Đi lại tại chỗ ──
     {
       direction: D.getAround,
       mode: M.motorbike,
@@ -1592,7 +1535,6 @@ async function main() {
     });
   }
 
-  // 8) Blog giới thiệu Phan Thiết (gắn PostRef → Place để hiện thẻ "Bài giới thiệu")
   const author =
     (await prisma.user.findFirst({
       where: { role: { in: [UserRole.admin, UserRole.editor] } },

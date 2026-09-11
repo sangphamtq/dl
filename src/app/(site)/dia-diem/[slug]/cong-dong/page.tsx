@@ -87,9 +87,7 @@ export default async function SpotCommunityPage({
   const sp = await searchParams;
   const type = sp.type && isThreadType(sp.type) ? sp.type : "all";
   const sort = sp.sort && isThreadSort(sp.sort) ? sp.sort : "active";
-  // Phạm vi (2 lựa chọn): all = cả điểm đến lớn + địa điểm; spot = chỉ địa điểm.
   const scope: "all" | "spot" = sp.scope === "spot" ? "spot" : "all";
-  // Đối số lọc theo phạm vi cho getFeed, và where tương ứng cho groupBy đếm.
   const feedScope =
     scope === "spot"
       ? { spotId: spot.id }
@@ -133,7 +131,6 @@ export default async function SpotCommunityPage({
         where: { status: "published", refs: { some: { spotId: spot.id } } },
         select: { id: true },
       }),
-      // "Quanh đây" có dữ liệu không (để mục nav khớp trang chi tiết).
       Promise.all([
         prisma.spot.count({
           where: { placeId: spot.placeId, status: "published", slug: { not: slug } },
@@ -145,7 +142,6 @@ export default async function SpotCommunityPage({
       ]).then(([s, e, a]) => s + e + a),
     ]);
 
-  // ── Dữ liệu hero (dùng chung component SpotHero với trang chi tiết) ──
   const heroImages: HeroImage[] = spot.images.map((i) => ({
     url: i.url,
     alt: i.alt,
@@ -167,8 +163,6 @@ export default async function SpotCommunityPage({
   ].filter((f): f is SpotQuickFact => Boolean(f.value));
   const checkIn = { checked: !!checkInRow, isAuthed };
 
-  // Mục nav: giống trang chi tiết, nhưng các mục nội dung là link về
-  // "/dia-diem/[slug]#id"; "Cộng đồng" là trang hiện tại (currentId).
   const navItems = buildSpotNavItems(
     spot.slug,
     spot.place.slug,
@@ -202,7 +196,6 @@ export default async function SpotCommunityPage({
     return `${base}${qs ? `?${qs}` : ""}`;
   };
 
-  // Bộ lọc phạm vi (2 lựa chọn): cả điểm đến lớn hoặc chỉ địa điểm này.
   const scopeOptions: { value: "all" | "spot"; label: string }[] = [
     { value: "all", label: spot.place.name },
     { value: "spot", label: "Địa điểm" },
@@ -215,7 +208,6 @@ export default async function SpotCommunityPage({
         event="feed:changed"
         enabled={rt}
       />
-      {/* Bài của điểm đến cha cũng hiển thị ở đây → nghe kênh của place để tự mới */}
       <RealtimeRefresher
         channelKey={placeFeedChannel(spot.place.slug)}
         event="feed:changed"
@@ -254,7 +246,6 @@ export default async function SpotCommunityPage({
             </div>
 
             <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem] lg:gap-10">
-              {/* Cột feed */}
               <div className="min-w-0">
                 <PostComposer
                   isAuthed={isAuthed}
@@ -262,7 +253,6 @@ export default async function SpotCommunityPage({
                   fixedSpotId={spot.id}
                 />
 
-                {/* Thanh công cụ: lọc theo loại; hàng dưới = phạm vi + sắp xếp */}
                 <div className="mt-6">
                   <CommunityFilter
                     current={type}
@@ -270,7 +260,6 @@ export default async function SpotCommunityPage({
                     hrefFor={(v) => hrefWith({ type: v })}
                   />
                   <div className="mt-2.5 flex items-center justify-between gap-3">
-                    {/* Phạm vi: cả điểm đến lớn hoặc chỉ địa điểm này */}
                     <div className="inline-flex flex-wrap gap-1 rounded-xl border border-border/60 bg-card p-1 text-sm">
                       {scopeOptions.map((o) => (
                         <Link
@@ -325,7 +314,6 @@ export default async function SpotCommunityPage({
                 )}
               </div>
 
-              {/* Sidebar */}
               <aside className="lg:sticky lg:top-32 lg:self-start">
                 <CommunitySidebar
                   about={{

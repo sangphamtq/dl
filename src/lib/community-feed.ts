@@ -4,7 +4,6 @@ import type { ThreadType } from "@/generated/prisma/enums";
 import type { PostData } from "@/components/community/post-card";
 import type { ReplyNode } from "@/components/community/reply-section";
 
-// Select cho một trả lời (kèm số like + mình đã like chưa).
 function replySelect(meId: string) {
   return {
     select: {
@@ -49,8 +48,6 @@ function threadSelect(meId: string) {
   } satisfies Prisma.ThreadSelect;
 }
 
-// Cây trả lời (lồng 1 cấp) của một chủ đề — dùng cho lazy-load ở ReplySection và
-// cho trang permalink (SSR sẵn).
 export async function getReplyTree(
   threadId: string,
   currentUserId: string | null,
@@ -114,7 +111,6 @@ type RawThread = {
   likes: { id: string }[];
 };
 
-// replies để rỗng: feed không tải cây reply (lazy-load qua getReplyTree).
 function shape(t: RawThread): PostData & { isHidden: boolean } {
   return {
     id: t.id,
@@ -139,13 +135,11 @@ function shape(t: RawThread): PostData & { isHidden: boolean } {
   };
 }
 
-// Feed: danh sách bài (ghim trước, rồi mới nhất theo hoạt động).
 export async function getFeed(opts: {
   placeId?: string;
   spotId?: string;
-  // Khi lọc theo spotId, GỘP thêm bài của điểm đến cha (OR spot ∪ place).
   includeParentPlaceId?: string;
-  nearProvince?: string; // lọc bài ở các điểm đến thuộc tỉnh này ("Gần bạn")
+  nearProvince?: string;
   type?: ThreadType;
   sort?: "active" | "new";
   skip?: number;
@@ -167,7 +161,6 @@ export async function getFeed(opts: {
       : {}),
     ...(opts.type ? { type: opts.type } : {}),
   };
-  // 'new' = theo ngày tạo; 'active' (mặc định) = theo cập nhật gần nhất.
   const orderBy: Prisma.ThreadOrderByWithRelationInput[] =
     opts.sort === "new"
       ? [{ isPinned: "desc" }, { createdAt: "desc" }]
@@ -187,7 +180,6 @@ export async function getFeed(opts: {
   return { posts: (rows as RawThread[]).map(shape), total };
 }
 
-// Bài "tìm bạn đồng hành" mới nhất (cho sidebar).
 export async function getTrips(opts: {
   placeId?: string;
   spotId?: string;
@@ -220,7 +212,6 @@ export async function getTrips(opts: {
   });
 }
 
-// Một bài theo slug (cho trang permalink). Giữ cờ isHidden để gate staff.
 export async function getThread(
   slug: string,
   currentUserId: string | null,
@@ -232,23 +223,13 @@ export async function getThread(
   });
   if (!row) return null;
   const post = shape(row as RawThread);
-  // Permalink: tải sẵn cây trả lời để SSR (ReplySection nhận preloaded).
   post.replies = await getReplyTree(post.id, currentUserId);
   return post;
 }
 
-// Tóm tắt cộng đồng của MỘT điểm đến — cho khối xem trước ở trang tổng quan.
-//
-// KHÔNG dùng `getFeed` cho việc này: feed trả về `PostData` đầy đủ (ảnh, like,
-// hồ sơ CTV, cờ ghim/khoá…) để dựng thẻ bài tương tác được, trong khi khối xem
-// trước chỉ cần vài dòng chữ và mấy con số. Truy vấn riêng nhẹ hơn hẳn và nói rõ
-// ý định.
 export type CommunityDigest = {
-  /** Tổng số bài của điểm đến (gồm cả rao dịch vụ) — chỉ số "có người". */
   total: number;
-  /** Số người từng đăng bài — "có bao nhiêu người", khác hẳn số bài. */
   people: number;
-  /** Hoạt động gần nhất — chỉ số "còn sống hay đã nguội". */
   lastAt: Date | null;
   threads: {
     slug: string;
@@ -272,10 +253,6 @@ export async function getPlaceCommunityDigest(
       select: { lastActivityAt: true },
     }),
     prisma.thread.findMany({
-      // BỎ `sale`: rao dịch vụ là quảng cáo của CTV, không phải bằng chứng có
-      // cộng đồng. Để nó chiếm chỗ trong khối xem trước là biếu không một suất
-      // quảng cáo ngay trang tổng quan — và nó thường là bài mới nhất nên gần
-      // như luôn đứng đầu nếu không loại ra.
       where: { ...base, type: { not: "sale" } },
       orderBy: { lastActivityAt: "desc" },
       take,

@@ -1,10 +1,3 @@
-// Kiểm phép tính vị trí của kéo–thả lịch trình (applyMove trong trip-dnd.ts).
-// Chạy: pnpm check:trip-dnd
-//
-// Vì sao có file này: đây là chỗ ĐÃ SAI một lần — kéo xuống trong cùng một ngày
-// bị lệch một vị trí vì chỉ số đích được tính SAU khi đã gỡ mục ra. Lỗi kiểu đó
-// không lộ ra qua typecheck, cũng không thấy được bằng ảnh chụp.
-
 import { applyMove } from "@/components/trip/trip-dnd";
 
 

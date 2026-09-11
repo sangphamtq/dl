@@ -23,16 +23,6 @@ import {
   type PlanOptions,
 } from "@/app/(site)/lich-trinh/actions";
 
-// "Lên lịch trình đi {điểm đến}" — thay cho "Thêm vào lịch trình" ở trang Place.
-//
-// Vì sao khác các trang chi tiết khác: một điểm đến là NƠI CHỨA các điểm dừng,
-// không phải một điểm dừng — không có giờ mở cửa để cảnh báo, toạ độ chỉ là
-// trọng tâm, và "ở lại Phan Thiết 2 tiếng" thì vô nghĩa (docs/lich-trinh.md §6b).
-//
-// Đổi lại, nút này làm được việc lớn hơn: nó đặt CHUYẾN ĐANG LÊN LỊCH TRÌNH
-// ngay tại nơi người dùng quyết định "tôi muốn đi đây". Từ đó mọi nút "Thêm vào
-// lịch trình" ở các trang địa điểm/quán ăn trong vùng sẽ rơi đúng chuyến.
-
 const INTENT_KEY = "halivivu:plan-intent";
 
 export function PlanTripButton({
@@ -45,22 +35,9 @@ export function PlanTripButton({
 }: {
   placeId: string;
   placeName: string;
-  /** Bỏ trống = chưa biết; bấm rồi server báo mới mở cửa đăng nhập. */
   isAuthed?: boolean;
   className?: string;
-  /**
-   * Bỏ tên nơi khỏi nhãn ("Lên lịch trình" thay vì "Lên lịch trình đi Phan
-   * Thiết"). Dùng khi nút nằm ở thanh trên của hero: ở đó tên điểm đến đã là
-   * chữ lớn nhất màn hình, nhắc lại trong nút vừa thừa vừa dài gấp đôi mọi
-   * nút khác trong cùng một hàng.
-   */
   compact?: boolean;
-  /**
-   * Nội dung trigger tuỳ biến (vd một THẺ ẢNH điểm đến ở `/lich-trinh`). Bỏ
-   * trống thì vẫn là nút cam "Lên lịch trình đi X" như ở trang điểm đến.
-   * Có prop này để chỗ khác dùng lại NGUYÊN hộp thoại + cửa đăng nhập bên dưới,
-   * thay vì chép lại luồng "tiếp tục chuyến / bắt đầu từ mẫu / tạo mới".
-   */
   children?: React.ReactNode;
 }) {
   const router = useRouter();
@@ -80,7 +57,6 @@ export function PlanTripButton({
 
   function go(id: string) {
     setOptions(null);
-    // Chuyến đang lên lịch vừa đổi → cái túi nổi phải đổi tên chuyến theo.
     tripBagChanged();
     router.push(`/lich-trinh/cua-toi/${id}`);
   }
@@ -98,7 +74,6 @@ export function PlanTripButton({
         return;
       }
 
-      // Chưa có gì để chọn → tạo thẳng, khỏi bắt bấm thêm một lần nữa.
       if (res.data.trips.length === 0 && res.data.templates.length === 0) {
         const made = await startTripForPlace(placeId);
         if (!made.ok) {
@@ -113,7 +88,6 @@ export function PlanTripButton({
     });
   }
 
-  // Vừa đăng nhập xong mà đang chờ đúng nơi này → mở lại luôn.
   useEffect(() => {
     if (isAuthed === false || claimed.current) return;
     let pendingId: string | null = null;
@@ -139,8 +113,6 @@ export function PlanTripButton({
     open();
   }
 
-  // Hộp thoại + cửa đăng nhập DÙNG CHUNG cho cả hai kiểu trigger (nút cam mặc
-  // định và trigger tuỳ biến) — tách ra hằng để khỏi chép luồng làm hai bản.
   const dialogs = (
     <>
         <Dialog open={options !== null} onOpenChange={(o) => !o && setOptions(null)}>
@@ -286,9 +258,6 @@ export function PlanTripButton({
       <Button
         onClick={onClick}
         disabled={pending}
-        // MÉP VUÔNG như mọi nút khác trong bộ vật liệu biên tập. Giữ nền CAM:
-        // đây vẫn là CTA cam duy nhất của trang điểm đến (quy ước ở
-        // docs/lich-trinh.md §6b) — đổi hình, không đổi vai.
         className={cn(
           "rounded-[4px] bg-warm text-warm-foreground hover:bg-warm/90",
           className,
@@ -299,9 +268,6 @@ export function PlanTripButton({
         ) : (
           <Route className="size-4" aria-hidden />
         )}
-        {/* Gói cả nhãn trong MỘT phần tử: để rời thì `gap` của Button chen vào
-            giữa thành khoảng trắng đôi. Tên nơi chỉ hiện từ `sm` — "Lên lịch
-            trình đi Phan Thiết" ở 320px sẽ rớt dòng. */}
         <span>
           Lên lịch trình
           {!compact && (

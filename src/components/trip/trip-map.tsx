@@ -15,8 +15,6 @@ const TripMapInner = dynamic(() => import("@/components/trip/trip-map-inner"), {
   ),
 });
 
-// Bản đồ của MỘT ngày (không phải cả chuyến): pin đánh số theo thứ tự + tuyến
-// đường nối. Vẽ cả 4 ngày lên một bản đồ thành mớ bòng bong — xem docs §6.
 export function TripMap({
   points,
   dayLabel,
@@ -24,13 +22,10 @@ export function TripMap({
 }: {
   points: TripMapPoint[];
   dayLabel: string;
-  /** Mục chưa xếp ngày có toạ độ — chấm mờ, để thấy chúng nằm gần tuyến nào. */
   ghosts?: { id: string; name: string; lat: number; lng: number }[];
 }) {
   const [route, setRoute] = useState<[number, number][] | null>(null);
 
-  // Hình tuyến đường lấy từ OSRM (chỉ để VẼ). Thời gian/quãng đường dùng cho
-  // tính lịch thì lấy từ ORS ở server — xem lib/trip-route.ts.
   useEffect(() => {
     let alive = true;
     // Dưới 2 điểm thì không có tuyến để vẽ — thoát mà KHÔNG setState (gọi

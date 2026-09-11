@@ -80,7 +80,6 @@ export function EateryForm({
     mode === "edit" && Boolean(initial?.slug),
   );
 
-  // Xã/phường của tỉnh đang chọn (nạp qua cache client → server action).
   const [wards, setWards] = useState<Ward[]>([]);
   const [wardsLoading, setWardsLoading] = useState(false);
 
@@ -90,7 +89,6 @@ export function EateryForm({
     setValues((p) => ({ ...p, [key]: v }));
   }
 
-  // Nạp xã/phường mỗi khi provinceCode đổi (gồm cả lần đầu khi sửa).
   useEffect(() => {
     const c = Number(values.provinceCode);
     if (!values.provinceCode || !Number.isFinite(c)) return;
@@ -109,7 +107,6 @@ export function EateryForm({
     };
   }, [values.provinceCode]);
 
-  // Chọn Nơi chứa → tự điền vị trí hành chính theo địa điểm cha (vẫn sửa được).
   function onPlaceChange(placeId: string) {
     const p = places.find((x) => x.id === placeId);
     setWards([]);
@@ -186,7 +183,6 @@ export function EateryForm({
       )}
 
       <div className="divide-y">
-        {/* Phân loại & nơi */}
         <FormSection
           title="Phân loại"
           description="Kiểu quán và nơi (tỉnh/điểm đến) chứa quán."
@@ -274,7 +270,6 @@ export function EateryForm({
           </div>
         </FormSection>
 
-        {/* Quán view — lý do đến là cảnh, không phải món */}
         <FormSection
           title="Tầm nhìn"
           description="Chỉ điền khi lý do khách đến là CẢNH (cà phê view thung lũng, quán hải sản sát biển…). Bỏ trống nếu quán không có view đáng kể."
@@ -329,7 +324,6 @@ export function EateryForm({
           </div>
         </FormSection>
 
-        {/* Thông tin cơ bản */}
         <FormSection
           title="Thông tin cơ bản"
           description="Tên, đường dẫn và mô tả quán."
@@ -373,7 +367,6 @@ export function EateryForm({
           </div>
         </FormSection>
 
-        {/* Vị trí & thực địa */}
         <FormSection
           title="Vị trí & thông tin thực địa"
           description="Địa chỉ hành chính (tự điền theo nơi chứa), địa chỉ chi tiết, toạ độ, giờ/giá và lưu ý. Tùy chọn."
@@ -511,7 +504,6 @@ export function EateryForm({
           </div>
         </FormSection>
 
-        {/* Thẻ */}
         <FormSection title="Thẻ" description="Nhãn tự do để lọc & gợi ý.">
           <div className="space-y-2">
             <Label htmlFor="tags">Tags</Label>

@@ -1,4 +1,3 @@
-// Phân loại bài viết (editorial). value lưu DB, label hiển thị.
 export const POST_CATEGORIES: { value: string; label: string }[] = [
   { value: "cam-nang", label: "Cẩm nang" },
   { value: "am-thuc", label: "Ẩm thực" },

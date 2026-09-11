@@ -23,16 +23,12 @@ type TargetKind = "place" | "spot";
 // Pill mờ cho các nút chia sẻ ngoài hero (StaySeek, ShareMap…). Hero điểm đến
 // KHÔNG dùng nữa — ở đó nút là hành động editorial trần (xem className bên dưới).
 const PILL_BASE =
-  // `rounded-[4px]` = `R_CTRL`. Viết thẳng số vì file này nằm trong chuỗi
-  // hằng chuỗi ghép sẵn, không qua `cn()` ở mọi nơi dùng.
   "inline-flex h-9 items-center gap-1.5 rounded-[4px] border px-4 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-60";
 const PILL_SURFACE =
   "border-border/60 bg-background/70 text-foreground backdrop-blur-sm hover:bg-muted";
 
 export { PILL_BASE, PILL_SURFACE };
 
-// Hành động editorial trần — phân cấp bằng màu/độ đậm, không bằng hộp. Đồng bộ
-// với link "‹ quay lại" trên cùng hero; nền hero là ảnh blur + phủ sáng nên chữ đọc rõ.
 const ACTION_BASE =
   "group inline-flex items-center gap-1.5 rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-60";
 
@@ -61,25 +57,11 @@ export function CheckInButton({
   redirectTo: string;
   initialChecked: boolean;
   isAuthed: boolean;
-  // Có đánh giá được không (điểm đến lớn & spot = true; tỉnh = false → toggle trực tiếp).
   reviewable?: boolean;
-  // "onDark": nút nằm thẳng trên ảnh (hero full-bleed) → chữ trắng thay vì foreground.
   tone?: "default" | "onDark";
-  /** "solid": nút có nền (CTA chính trên ảnh). Màu do component quyết theo trạng
-   *  thái — chưa đến: nền trắng chữ đậm (nổi nhất trên ảnh); đã đến: chip mờ
-   *  viền mảnh (xác nhận xong thì không cần hét nữa). */
   variant?: "bare" | "solid";
-  /** Chỉ icon (nhãn chuyển thành aria-label/title) — dùng khi chỗ đặt quá hẹp. */
   iconOnly?: boolean;
-  /**
-   * "sm": nhãn ẩn dưới breakpoint sm, chỉ còn icon (aria-label vẫn đủ cho trình
-   * đọc màn hình). Khác `iconOnly` ở chỗ nó đổi theo BỀ NGANG chứ không cố định
-   * — cần vậy khi nút nằm trong một hàng đông đúc như thanh trên của hero, mà
-   * dựng HAI bản rồi ẩn bớt bằng CSS thì hai bản có state riêng và lệch nhau
-   * ngay sau lần bấm đầu.
-   */
   labelFrom?: "always" | "sm";
-  /** Ghi đè hình dáng nút (vd viên tròn hairline ở hero). Đặt sau nên thắng. */
   className?: string;
 }) {
   const [checked, setChecked] = useState(initialChecked);
@@ -89,7 +71,6 @@ export function CheckInButton({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [openKey, setOpenKey] = useState(0);
 
-  // Review được gửi (từ form này hoặc từ section) → đã đến.
   useEffect(() => {
     function onCheckedin(e: Event) {
       if ((e as CustomEvent<{ id: string }>).detail?.id !== targetId) return;
@@ -106,11 +87,9 @@ export function CheckInButton({
     }
     if (!checked) {
       if (reviewable) {
-        // Đánh dấu đã đến = viết đánh giá trước (huỷ → không đánh dấu).
         setOpenKey((k) => k + 1);
         setReviewOpen(true);
       } else {
-        // Tỉnh: đánh dấu trực tiếp.
         startTransition(async () => {
           const res = await toggleCheckIn({ kind: targetKind, id: targetId });
           if (!res.ok) {
@@ -124,7 +103,6 @@ export function CheckInButton({
       }
       return;
     }
-    // Bỏ đánh dấu — mở popup xác nhận.
     setConfirmOpen(true);
   }
 

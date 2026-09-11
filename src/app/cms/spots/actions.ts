@@ -17,27 +17,21 @@ import {
 
 const STAFF = ["admin", "editor"];
 
-// TipTap trả về "<p></p>" khi trống → coi như rỗng để lưu null (tránh
-// hiển thị section HTML rỗng ở trang công khai).
 function emptyableHtml(html: string): string | null {
   const stripped = html.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim();
   return stripped ? html.trim() : null;
 }
 
-// Một dòng loại vé ở form (giá nhập text); chuẩn hóa thành number ở normalize.
 export type TicketTierInput = { label: string; price: string; note: string };
 
-// Một điểm nhấn ở form (tiêu đề + mô tả rich text).
 export type HighlightInput = {
   title: string;
   body: string;
 };
 
-// Nội dung của một hoạt động TẠI spot này (sửa từ phía Spot).
-// Liên kết (activity nào) được quản từ phía Activity; ở đây chỉ sửa nội dung.
 export type SpotActivityContentInput = {
   activityId: string;
-  name: string; // chỉ để hiển thị
+  name: string;
   blurb: string;
   imageUrl: string;
   imageAlt: string;
@@ -48,7 +42,7 @@ export type SpotFormInput = {
   slug: string;
   tagline: string;
   description: string;
-  category: string; // "" = none
+  category: string;
   placeId: string;
   address: string;
   lat: string;
@@ -66,11 +60,11 @@ export type SpotFormInput = {
   extraFees: ExtraFeeInput[];
   notice: string;
   gettingThere: string;
-  tips: string; // mỗi dòng một mẹo
+  tips: string;
   highlights: HighlightInput[];
   activityContent: SpotActivityContentInput[];
   tags: string;
-  provinceCode: string; // "" = none
+  provinceCode: string;
   provinceName: string;
   wardCode: string;
   wardName: string;
@@ -90,7 +84,6 @@ function num(v: string): number | null {
   return Number.isFinite(n) ? n : NaN;
 }
 
-// Mã hành chính đến từ selector — bỏ qua giá trị rác thay vì báo lỗi.
 function code(v: string): number | null {
   if (v.trim() === "") return null;
   const n = Number(v);
@@ -148,13 +141,11 @@ async function normalize(
     .map((t) => t.trim())
     .filter(Boolean);
 
-  // Mẹo: mỗi dòng một gạch đầu dòng.
   const tips = input.tips
     .split("\n")
     .map((t) => t.trim())
     .filter(Boolean);
 
-  // Điểm nhấn: bỏ dòng thiếu tiêu đề; order theo thứ tự nhập.
   const highlights: HighlightData[] = [];
   for (const h of input.highlights) {
     const title = h.title.trim();
@@ -166,7 +157,6 @@ async function normalize(
     });
   }
 
-  // Loại vé: bỏ dòng trống, validate giá; miễn phí vào cửa thì không lưu tiers.
   const tiers: TicketTier[] = [];
   if (!input.ticketFree) {
     for (const t of input.ticketTiers) {
@@ -181,9 +171,6 @@ async function normalize(
     }
   }
 
-  // Chi phí tại chỗ: danh sách RIÊNG, không dính vào ticketTiers (xem
-  // lib/tickets.ts). Vẫn lưu kể cả khi miễn phí vào cửa — chỗ vào cửa tự
-  // do vẫn có thể mất tiền gửi xe.
   const extra = normalizeExtraFees(input.extraFees);
   if ("error" in extra) return { error: extra.error };
 
@@ -235,7 +222,7 @@ export async function createSpot(input: SpotFormInput): Promise<ActionResult> {
   });
   revalidatePath("/cms/spots");
   revalidateListingPages();
-  updateTag(ORS_CACHE_TAG); // toạ độ mới → làm mới khoảng cách "quanh đây"
+  updateTag(ORS_CACHE_TAG);
   return { ok: true, id: spot.id };
 }
 
@@ -246,7 +233,6 @@ export async function updateSpot(
   await requireStaff();
   const res = await normalize(input, id);
   if ("error" in res) return { ok: false, error: res.error };
-  // Điểm nhấn: xoá hết rồi tạo lại theo thứ tự mới (danh sách nhỏ).
   await prisma.spot.update({
     where: { id },
     data: {
@@ -254,8 +240,6 @@ export async function updateSpot(
       highlights: { deleteMany: {}, create: res.highlights },
     },
   });
-  // Nội dung hoạt động theo spot: cập nhật blurb/ảnh cho các link đã có
-  // (không tạo/xoá link — việc đó quản từ phía Activity).
   for (const c of input.activityContent) {
     await prisma.spotActivity.updateMany({
       where: { spotId: id, activityId: c.activityId },
@@ -270,7 +254,7 @@ export async function updateSpot(
   revalidateListingPages();
   revalidatePath(`/cms/spots/${id}`);
   revalidatePath(`/cms/spots/${id}/edit`);
-  updateTag(ORS_CACHE_TAG); // toạ độ có thể đổi → làm mới khoảng cách
+  updateTag(ORS_CACHE_TAG);
   return { ok: true, id };
 }
 

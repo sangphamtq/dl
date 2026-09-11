@@ -99,7 +99,6 @@ export default async function PlaceDetailPage({
 
   if (!place) notFound();
 
-  // Video TikTok + thumbnail (oEmbed, cache trong helper).
   const videoRows = await prisma.placeVideo.findMany({
     where: { placeId: id },
     orderBy: [{ order: "asc" }, { createdAt: "asc" }],
@@ -122,7 +121,6 @@ export default async function PlaceDetailPage({
 
   return (
     <div className="p-6 sm:p-8">
-      {/* Breadcrumb + tiêu đề + hành động */}
       <Link
         href="/cms/places"
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
@@ -187,10 +185,8 @@ export default async function PlaceDetailPage({
         </div>
       </div>
 
-      {/* Bố cục 2 cột: nội dung + sidebar meta */}
       <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="space-y-8 lg:col-span-2">
-          {/* Ảnh */}
           <section>
             {cover ? (
               <div className="flex max-w-2xl gap-3">
@@ -237,7 +233,6 @@ export default async function PlaceDetailPage({
             )}
           </section>
 
-          {/* Mô tả */}
           <section>
             <h2 className="text-lg font-semibold tracking-tight">Mô tả</h2>
             {place.description ? (
@@ -251,7 +246,6 @@ export default async function PlaceDetailPage({
             )}
           </section>
 
-          {/* Thông tin chung (quickInfo) */}
           {quickInfo.length > 0 && (
             <section>
               <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight">
@@ -271,7 +265,6 @@ export default async function PlaceDetailPage({
             </section>
           )}
 
-          {/* Video TikTok */}
           <section>
             <h2 className="text-lg font-semibold tracking-tight">
               Video TikTok ({place._count.videos})
@@ -317,7 +310,6 @@ export default async function PlaceDetailPage({
             )}
           </section>
 
-          {/* Điểm đến con (chỉ tỉnh) */}
           {isProvince && (
             <section>
               <h2 className="text-lg font-semibold tracking-tight">
@@ -354,7 +346,6 @@ export default async function PlaceDetailPage({
             </section>
           )}
 
-          {/* Listing gắn trực tiếp */}
           <section>
             <h2 className="text-lg font-semibold tracking-tight">
               Listing gắn trực tiếp
@@ -380,7 +371,6 @@ export default async function PlaceDetailPage({
           </section>
         </div>
 
-        {/* Sidebar meta */}
         <aside className="space-y-4">
           <PlaceAdminControls
             id={place.id}

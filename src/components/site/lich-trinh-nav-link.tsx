@@ -6,12 +6,8 @@ import { NavIcon } from "./nav-icons";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
-// Nút "Lịch trình của tôi" trên header — cùng kiểu nút chuông; tô nền brand
-// nhạt khi đang ở trang lịch trình (trạng thái active).
 export function LichTrinhNavLink() {
   const pathname = usePathname();
-  // Sáng khi đang ở BẤT KỲ đâu trong tính năng, kể cả trang mẫu công khai —
-  // người dùng không phân biệt nhánh, họ chỉ biết "mình đang ở phần lịch trình".
   const active = pathname === "/lich-trinh" || pathname.startsWith("/lich-trinh/");
 
   return (

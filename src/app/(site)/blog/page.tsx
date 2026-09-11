@@ -35,23 +35,15 @@ const dateFmt = new Intl.DateTimeFormat("vi-VN", {
   year: "numeric",
 });
 
-// Nhãn nhỏ đầu khối — MỘT khuôn cho cả trang. Cỡ 0.6rem là hằng `MICRO` dùng
-// chung với `/diem-den` (`destination-filter.tsx`) và `/dia-diem`; bản trước ở
-// đây là 0.7rem, tức cùng một vai nhưng to hơn nửa bậc so với hai trang kia.
 const MICRO = "text-[0.6rem] font-semibold uppercase tracking-[0.14em]";
 
-// Khung ảnh dùng chung. MÉP VUÔNG — cùng hình khối với thẻ ở `/diem-den` và
-// `/dia-diem`; bản trước bo `rounded-2xl`/`rounded-3xl`.
 const SHOT = `${R_CARD} overflow-hidden bg-muted`;
-// Vành sáng mảnh vẽ bên trong mép ảnh, đậm lên khi rê chuột — đúng vành của thẻ
-// điểm đến (`ring-white/12` → `ring-white/55`), thay cho vành mực tĩnh.
 const RING =
   "pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/12 transition-[box-shadow] duration-300 group-hover:ring-white/55 motion-reduce:transition-none";
 // Vành cho ảnh KHÔNG có chữ đè lên (thẻ trong lưới): vẫn cần một nét ngăn ảnh
 // trời sáng với nền trang trắng.
 const RING_PLAIN =
   "pointer-events-none absolute inset-0 ring-1 ring-inset ring-black/10";
-// Lớp phủ đáy cho ảnh có chữ đè lên — cùng công thức với thẻ điểm đến.
 const SCRIM =
   "absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,0.84)_0%,rgba(0,0,0,0.7)_22%,rgba(0,0,0,0.54)_44%,rgba(0,0,0,0.32)_64%,rgba(0,0,0,0.1)_84%,rgba(0,0,0,0.04)_100%)] opacity-80 transition-opacity duration-300 group-hover:opacity-[0.92] motion-reduce:transition-none";
 
@@ -184,14 +176,10 @@ export default async function BlogPage({
       ? prisma.post.findMany({
           where: { status: "published" },
           orderBy: [{ isFeatured: "desc" }, { publishedAt: "desc" }],
-          // 1 thẻ lead + 3 thẻ phụ. BA chứ không hai: hai thẻ chia đôi chiều
-          // cao thẻ lead thì mỗi ảnh cao ~230px trong khi chỉ rộng 192px —
-          // thành ảnh ĐỨNG, lệch hẳn với mọi ảnh ngang khác trên trang.
           take: 4,
           select: cardSelect,
         })
       : Promise.resolve([] as Card[]),
-    // Ngày bài mới nhất — dữ kiện THẬT thay cho lời hứa "Cập nhật hàng tuần".
     prisma.post.findFirst({
       where: { status: "published" },
       orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
@@ -204,8 +192,6 @@ export default async function BlogPage({
     v === "all"
       ? totalPublished
       : (grouped.find((g) => g.category === v)?._count._all ?? 0);
-
-  // Ảnh đại diện cho từng danh mục (dùng ở "Chủ đề nổi bật").
 
   const liveTopics = CATEGORIES.filter(
     (c) => c.value !== "all" && countOf(c.value) > 0,
@@ -231,18 +217,9 @@ export default async function BlogPage({
   const featRest = featured.slice(1);
 
   return (
-    // Nền TRẮNG như `/diem-den` và `/dia-diem`. Bản trước dùng nền be `muted/40`
-    // để "đọc ra như một ấn phẩm tách khỏi phần tra cứu" — nhưng ba trang danh
-    // sách này giờ dùng chung một bộ vật liệu, mà nền là thứ đầu tiên mắt nhận
-    // ra: một trang be giữa hai trang trắng thì đọc ra là site khác, không phải
-    // mục khác.
     <div className="flex flex-1 flex-col">
 
       <main className="flex-1">
-        {/* Container ĐÚNG BẰNG container của header: `max-w-7xl px-4 sm:px-6`.
-            Trước đây trang này dùng `max-w-[81.25rem]` + `lg:px-8` riêng, nên ở
-            màn rộng logo/nav lại thụt vào một khoảng khác nội dung bên dưới —
-            hai mép lệch nhau chừng 70px, đủ để đọc ra là hai trang khác nhau. */}
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <nav className={cn(MICRO, "flex items-center pt-6 text-muted-foreground")}>
             <Link href="/" className="transition-colors hover:text-primary">
@@ -254,34 +231,14 @@ export default async function BlogPage({
             <span className="text-foreground">Cẩm nang</span>
           </nav>
 
-          {/* Masthead — MỘT CỘT, không còn ảnh.
-              Đã gỡ hai thứ, mỗi thứ một lý do:
-                · nhãn eyebrow "Cẩm nang du lịch" nằm giữa breadcrumb vừa ghi
-                  "Cẩm nang" và tiêu đề — ba dòng cho một cái tên;
-                · ảnh masthead 30rem bên phải. Nó lấy bìa của MỘT BÀI BẤT KỲ
-                  (`catCoverRows` trừ bài lead), tức là một tấm ảnh không nói gì
-                  về trang — và tệ hơn, đúng tấm đó xuất hiện lại ngay bên dưới
-                  ở "Chủ đề nổi bật" VÀ ở thẻ phụ của "Bài viết nổi bật". Ba lần
-                  cùng một bức ảnh trong một màn hình.
-              Bỏ ảnh thì đầu trang còn ~180px thay vì ~380px: lưới chủ đề và bài
-              nổi bật — vốn đã đầy ảnh thật, đúng ngữ cảnh — lên thẳng tầm mắt. */}
           <section className="mt-5 max-w-3xl">
             <h1 className="text-balance font-[family-name:var(--font-display)] text-[clamp(1.75rem,4.4vw,3.25rem)] font-normal uppercase leading-[1.15] tracking-[0.1em] sm:tracking-[0.14em]">
               Kinh nghiệm cho mọi hành trình
             </h1>
-            {/* `max-w-2xl`: ở `max-w-xl` câu này rớt đúng hai chữ cuối xuống
-                dòng hai, tốn thêm một dòng cho đầu trang vừa cố rút gọn. */}
             <p className="mt-3 max-w-2xl leading-relaxed text-muted-foreground">
               Lịch trình gợi ý, review điểm đến, quán xá và những mẹo hữu ích cho
               chuyến đi khắp Việt Nam.
             </p>
-            {/* DỮ KIỆN, không phải lời hứa. Bản trước có hai chip "Cập nhật
-                hàng tuần" và "Nội dung chọn lọc" — không ai kiểm được, và cái
-                đầu còn có thể sai bất cứ lúc nào. Ngày bài mới nhất thì luôn
-                đúng vì nó đọc thẳng từ dữ liệu. */}
-            {/* Hàng dữ kiện: nhãn nhỏ in hoa, SỐ về màu chữ chính — cùng cách
-                `/diem-den` viết meta ("16 điểm đến"). Bỏ ba icon: ở cỡ chữ này
-                chúng to ngang chữ và không thêm nghĩa nào. */}
             <div
               className={cn(
                 MICRO,
@@ -303,10 +260,6 @@ export default async function BlogPage({
         </div>
 
         <div className="mx-auto mt-9 max-w-7xl px-4 pb-16 sm:px-6">
-          {/* DANH MỤC: hàng ngang thay cho cột dọc.
-              Bỏ cột lọc để nội dung trải hết container, nhưng danh mục là LỐI
-              DUYỆT chính của blog nên giữ lại — chỉ đổi trục. Vẫn là link
-              (`buildHref`) chứ không phải nút: bấm ra một URL chia sẻ được. */}
           <nav
             aria-label="Danh mục bài viết"
             className="-mx-1 flex items-center gap-2 overflow-x-auto px-1 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -342,14 +295,6 @@ export default async function BlogPage({
           </nav>
 
           <div className="mt-8">
-            {/* KHÔNG có khối "Chủ đề nổi bật" ở đây nữa.
-                Nó render đúng `liveTopics` = `CATEGORIES` đã lọc bỏ mục rỗng —
-                cùng danh sách, cùng link, cùng số đếm với hàng chip danh mục
-                ngay phía trên, chỉ khác là có ảnh. Hai khối cạnh nhau nói y hệt
-                một điều. Giữ hàng chip vì nó ĐẦY ĐỦ hơn (có cả "Tất cả" và mục
-                chưa có bài), gọn hơn (~50px thay vì ~250px) và hiện được mục
-                đang chọn — thứ mà lưới ảnh không làm được. */}
-            {/* Bài viết nổi bật */}
             {lead && (
               <section className="mt-12">
                 <SectionHead title="Bài viết nổi bật" />
@@ -369,10 +314,6 @@ export default async function BlogPage({
                       <span aria-hidden className={SCRIM} />
                     </div>
                     <span aria-hidden className={RING} />
-                    {/* Huy hiệu "Nổi bật" y hệt thẻ điểm đến: khối TRẮNG bo nhẹ,
-                        chữ mực, ngôi sao cam đậm — thay cho viên cam bo tròn.
-                        Trên một tấm ảnh, khối trắng đọc rõ hơn mà không giành
-                        vai với chính tấm ảnh. */}
                     <span className={cn(R_BADGE, "absolute right-3 top-3 inline-flex items-center gap-1.5 bg-white/95 py-1 pl-2.5 pr-3 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-neutral-900 shadow-sm backdrop-blur-sm")}>
                       <Star className="size-3 shrink-0 text-[#a34c00]" aria-hidden />
                       Nổi bật
@@ -403,16 +344,6 @@ export default async function BlogPage({
                       <Link
                         key={p.slug}
                         href={`/blog/${p.slug}`}
-                        // `flex-1`: hai thẻ phụ chia đều chiều cao của cột, tức
-                        // là bằng đúng chiều cao thẻ lead bên trái. Để chúng tự
-                        // cao theo nội dung thì cột phải hụt gần 200px so với
-                        // ảnh lớn bên cạnh, hở một mảng trống ở đáy.
-                        //
-                        // KHÔNG bọc viền: bản trước là một hộp `border` với ảnh
-                        // dán sát mép trong — thành khuôn thẻ THỨ BA trên cùng
-                        // một trang (thẻ lead chữ-trên-ảnh, thẻ lưới ảnh-trên-
-                        // chữ, và cái hộp này). Nay ảnh có khung bo + vành
-                        // hairline riêng y như thẻ lưới, chỉ khác trục.
                         className="group grid flex-1 grid-cols-[minmax(0,9rem)_1fr] items-stretch gap-4 sm:grid-cols-[minmax(0,11rem)_1fr]"
                       >
                         <div className={cn(SHOT, "relative h-full min-h-[5.5rem]")}>
@@ -446,7 +377,6 @@ export default async function BlogPage({
               </section>
             )}
 
-            {/* Tất cả bài viết */}
             <section className="mt-12">
               <SectionHead title="Tất cả bài viết" right={<SortSelect value={sort} />} />
 
@@ -469,10 +399,6 @@ export default async function BlogPage({
                         <span aria-hidden className={RING_PLAIN} />
                       </div>
                       <div className="mt-4 flex min-w-0 flex-col">
-                        {/* `warm-ink` chứ không `warm`: đây là CHỮ trên nền
-                            sáng, và luật màu của dự án là nền/huy hiệu đặc dùng
-                            `--warm`, chữ trên nền sáng dùng bản ink (4.87:1 thay
-                            vì ~2:1). */}
                         {p.category && (
                           <span className={cn(MICRO, "mb-2 text-warm-ink")}>
                             {label(POST_CATEGORY_LABELS, p.category)}
@@ -527,11 +453,6 @@ export default async function BlogPage({
   );
 }
 
-/**
- * Tiêu đề một mục — serif in hoa giãn chữ trên một đường kẻ mảnh, đúng khuôn
- * tiêu đề miền ở `/diem-den`. Bản trước ba tiêu đề này là nhãn `MICRO` xám, tức
- * cùng cỡ với chú thích bên dưới chúng: không có tầng nào cả.
- */
 function SectionHead({
   title,
   right,

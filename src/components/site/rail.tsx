@@ -27,8 +27,6 @@ export function Rail({
 }: {
   children: React.ReactNode;
   itemClassName?: string;
-  /** Bo góc/viền của KHUNG bọc cặp mũi tên — khung mới là thứ nhìn thấy, bo
-   *  riêng từng nút bên trong thì nền hover sẽ lệch khỏi khung. */
   arrowWrapClassName?: string;
   arrowClassName?: string;
   progress?: boolean;

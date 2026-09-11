@@ -1,6 +1,3 @@
-// AUTO-GENERATED — Hoàng Sa & Trường Sa, đặt theo tâm địa lý (cùng phép chiếu
-// với vietnam-map-paths.ts), xích gần bờ + cỡ nhỏ gọn.
-// Hoàng Sa → Đà Nẵng, Trường Sa → Khánh Hòa.
 export const VN_MAP_VIEWBOX_WIDE = "0 0 741 1016";
 export type IslandShape = { label: string; parentSlug: string; d: string };
 export const VN_ISLANDS: IslandShape[] = [

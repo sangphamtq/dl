@@ -8,7 +8,6 @@ import { SettingsForm } from "./settings-form";
 import { RevalidateButton } from "./revalidate-button";
 import type { SettingsInput } from "./actions";
 
-// Kiểm tra DB có kết nối được không (đơn giản).
 async function dbOk(): Promise<boolean> {
   try {
     await prisma.$queryRaw`SELECT 1`;
@@ -68,7 +67,6 @@ export default async function SettingsPage() {
         <SettingsForm initial={initial} canEdit={isAdmin} />
       </div>
 
-      {/* Công cụ & trạng thái (không cần lưu trữ) */}
       <div className="border-t">
         <FormSection
           title="Hệ thống"

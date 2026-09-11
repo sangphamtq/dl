@@ -23,8 +23,6 @@ export function SortSelect({ value }: { value: string }) {
     router.push(qs ? `${pathname}?${qs}` : pathname);
   };
 
-  // Ô VUÔNG viền mảnh, sáng lên bằng mực khi rê/focus — cùng vật liệu với ô sắp
-  // xếp của `/dia-diem` và `/diem-den`; bản trước bo góc + vòng sáng xanh.
   return (
     <label className="inline-flex items-center gap-2 text-[0.8125rem]">
       <span className="text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">

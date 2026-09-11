@@ -7,8 +7,6 @@ export type PeerItem = {
   images: { url: string; isCover: boolean }[];
 };
 
-// Mọi điểm đến lớn (đã xuất bản) gom theo miền — cho thanh chuyển nhanh ở
-// trang điểm đến và các trang danh sách listing của nó.
 export async function getDestinationPeerGroups(): Promise<
   { label: string; items: PeerItem[] }[]
 > {
@@ -30,8 +28,6 @@ export async function getDestinationPeerGroups(): Promise<
   })).filter((g) => g.items.length > 0);
 }
 
-// Các listing CÙNG LOẠI, CÙNG nơi (place), đã xuất bản — gồm cả chính nó để
-// thanh chuyển nhanh làm nổi mục đang xem.
 export async function getListingPeers(
   model: "spot" | "activity" | "accommodation",
   placeId: string,

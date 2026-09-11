@@ -3,8 +3,6 @@ import type { LucideIcon } from "@/components/icons";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-// Khối "Sắp có" dùng chung cho các trang placeholder (Bản đồ, Lịch trình…).
-// Trang gọi tự bọc <SiteHeader/> và <SiteFooter/> quanh component này.
 export function ComingSoon({
   icon: Icon,
   title,
@@ -16,7 +14,6 @@ export function ComingSoon({
 }) {
   return (
     <main className="relative flex flex-1 items-center justify-center overflow-hidden bg-gradient-to-b from-sky-100/70 via-sky-50/40 to-background dark:from-muted/30 dark:via-muted/10">
-      {/* Họa tiết vòng tròn đồng tâm (sau nội dung) */}
       <div
         aria-hidden
         className="pointer-events-none absolute -right-40 top-0 -z-10 size-[36rem] rounded-full border border-primary/10 [mask-image:radial-gradient(circle,black,transparent_70%)]"

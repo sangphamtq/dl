@@ -41,9 +41,6 @@ export default async function DiaDiemPage({
     return (Array.isArray(v) ? v[0] : v)?.trim() || "";
   };
 
-  // Loại hình đến từ URL nên phải KIỂM lại với enum thật: `?loai=<gì đó>` là
-  // thứ ai cũng gõ được, mà nhét thẳng vào `where` là Prisma ném lỗi và trang
-  // trắng. Giá trị lạ thì coi như không lọc.
   const catRaw = one("loai");
   const cat =
     catRaw && catRaw in SpotCategory ? (catRaw as SpotCategory) : null;
@@ -54,14 +51,6 @@ export default async function DiaDiemPage({
     : "noi-bat";
   const page = Math.max(1, Number(one("trang")) || 1);
 
-  // Tìm kiếm KHÔNG DẤU phải đi qua SQL thô: `contains` của Prisma chỉ bỏ qua
-  // hoa/thường, nên gõ "mui ne" sẽ không ra "Mũi Né" — đúng thứ người Việt gõ
-  // nhiều nhất. `unaccent` là extension đã có sẵn trong DB này (xem
-  // `lib/search.ts`).
-  //
-  // Chạy riêng một truy vấn lấy slug rồi mới lọc, thay vì viết cả câu SQL cho
-  // trang: phần còn lại (lọc loại hình, sắp xếp, phân trang, lấy ảnh bìa) để
-  // Prisma lo thì vẫn type-safe.
   let slugs: string[] | null = null;
   if (q) {
     const like = `%${q}%`;
@@ -107,9 +96,6 @@ export default async function DiaDiemPage({
     }),
     prisma.spot.count({ where }),
     prisma.place.count({ where: { kind: "destination", ...pub } }),
-    // Số lượng theo loại hình đếm trên TOÀN BỘ danh sách đã xuất bản, không
-    // theo bộ lọc đang bật: hàng chip phải nói "chọn cái này thì được bao
-    // nhiêu", mà đếm trong phạm vi đang lọc thì mọi chip khác đều ra 0.
     prisma.spot.groupBy({
       by: ["category"],
       where: pub,

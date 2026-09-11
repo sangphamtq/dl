@@ -40,7 +40,6 @@ function timeAgo(date: Date): string {
   return dateFmt.format(new Date(date));
 }
 
-// Ô monogram vuông (phẳng, không bo tròn) — dấu ấn editorial thay avatar tròn.
 function Monogram({ name, small }: { name: string | null; small?: boolean }) {
   return (
     <span
@@ -255,7 +254,6 @@ export function CommentSection({
   const router = useRouter();
   const [live, setLive] = useState(false);
 
-  // Làm mới ngay khi quay lại tab (bù cho lúc mất kết nối/ẩn tab).
   useEffect(() => {
     const onFocus = () => {
       if (document.visibilityState === "visible") router.refresh();
@@ -264,8 +262,6 @@ export function CommentSection({
     return () => window.removeEventListener("focus", onFocus);
   }, [router]);
 
-  // Realtime push qua Ably: nhận tín hiệu "comments:changed" → tự làm mới.
-  // Nếu chưa cấu hình Ably → rơi về polling mỗi 20s.
   useEffect(() => {
     if (!realtimeEnabled) {
       const id = window.setInterval(() => {

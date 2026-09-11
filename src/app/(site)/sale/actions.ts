@@ -31,14 +31,12 @@ async function requireUserId(): Promise<string> {
   return id;
 }
 
-// Route con tĩnh dưới /sale (không được để slug hồ sơ che mất).
 const SALE_SUBROUTES = new Set(["dang-ky"]);
 
 async function uniqueSaleSlug(text: string, selfId?: string): Promise<string> {
   const base = slugify(text).slice(0, 60) || "ctv";
   let slug = base;
   let n = 1;
-  // Tránh trùng slug (trong Sale), tiền tố dành riêng và route con tĩnh.
   while (true) {
     if (!RESERVED_SLUGS.has(slug) && !SALE_SUBROUTES.has(slug)) {
       const dup = await prisma.saleProfile.findUnique({
@@ -53,8 +51,6 @@ async function uniqueSaleSlug(text: string, selfId?: string): Promise<string> {
   return slug;
 }
 
-// Tạo/cập nhật hồ sơ CTV của chính người đăng nhập. Luôn về trạng thái chờ
-// duyệt (pending) trừ khi đang approved mà không đổi kênh liên hệ đã bảo chứng.
 export async function submitSaleProfile(
   input: SaleFormInput,
 ): Promise<ActionResult> {
@@ -105,7 +101,6 @@ export async function submitSaleProfile(
     },
   });
 
-  // Đổi kênh liên hệ đã được bảo chứng → phải xác minh lại (rớt về pending).
   const contactChanged =
     existing?.status === "approved" &&
     (existing.zalo !== zalo ||
@@ -129,7 +124,6 @@ export async function submitSaleProfile(
     avatarUrl,
     evidenceUrls,
     status,
-    // Về pending thì xoá dấu xác minh & lý do từ chối cũ.
     ...(status === "pending" ? { verifiedAt: null, rejectReason: null } : {}),
   };
 

@@ -16,7 +16,6 @@ async function requireStaff() {
   if (!role || !STAFF.includes(role)) throw new Error("Không có quyền.");
 }
 
-// Lấy fileKey từ URL UploadThing (…/f/<key>) để xóa khỏi storage.
 function keyFromUrl(url: string): string | null {
   const m = url.match(/\/f\/([^/?]+)/);
   return m ? m[1] : null;
@@ -38,7 +37,6 @@ export async function deleteImage(
   });
   if (!img) return { ok: false, error: "Ảnh không tồn tại." };
 
-  // Xóa file trên UploadThing (bỏ qua lỗi để vẫn dọn được DB).
   const key = keyFromUrl(img.url);
   if (key) {
     try {
@@ -50,7 +48,6 @@ export async function deleteImage(
 
   await prisma.image.delete({ where: { id: imageId } });
 
-  // Nếu vừa xóa ảnh bìa → chọn ảnh order nhỏ nhất còn lại làm bìa.
   if (img.isCover && img.placeId) {
     const next = await prisma.image.findFirst({
       where: { placeId: img.placeId },
@@ -74,7 +71,6 @@ export async function setCoverImage(
 ): Promise<Result> {
   await requireStaff();
 
-  // Đảm bảo đúng 1 ảnh bìa cho Place này.
   await prisma.$transaction([
     prisma.image.updateMany({
       where: { placeId, isCover: true },

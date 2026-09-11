@@ -84,7 +84,6 @@ export default async function KiemTraPage() {
     <div className="flex flex-1 flex-col">
 
       <main className="flex-1">
-        {/* ─── HERO khối màu ───────────────────────────────── */}
         <section className="bg-primary text-primary-foreground">
           <div className="mx-auto max-w-4xl px-4 pb-28 pt-14 sm:px-6 sm:pb-32 sm:pt-20">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-foreground/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide backdrop-blur">
@@ -101,7 +100,6 @@ export default async function KiemTraPage() {
           </div>
         </section>
 
-        {/* ─── Công cụ nổi (đè lên hero) ───────────────────── */}
         <div className="relative z-10 mx-auto -mt-20 max-w-4xl px-4 sm:px-6">
           <TrustChecker isAuthed={isAuthed} />
 
@@ -131,7 +129,6 @@ export default async function KiemTraPage() {
           )}
         </div>
 
-        {/* ─── Cách đọc kết quả ────────────────────────────── */}
         <section className="mx-auto max-w-4xl px-4 py-14 sm:px-6 sm:py-16">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             Cách đọc kết quả
@@ -156,7 +153,6 @@ export default async function KiemTraPage() {
           </div>
         </section>
 
-        {/* ─── Cảnh báo đã xác nhận ────────────────────────── */}
         {reports.length > 0 && (
           <section className="mx-auto max-w-4xl px-4 pb-16 sm:px-6">
             <div className="flex items-baseline justify-between gap-3">
@@ -187,7 +183,6 @@ export default async function KiemTraPage() {
           </section>
         )}
 
-        {/* ─── Cảnh giác & an toàn ─────────────────────────── */}
         <section className="border-t border-border/60 bg-muted/30">
           <div className="mx-auto grid max-w-4xl gap-12 px-4 py-14 sm:px-6 sm:py-16 lg:grid-cols-2 lg:gap-16">
             <div>

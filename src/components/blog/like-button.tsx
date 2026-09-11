@@ -26,7 +26,6 @@ export function LikeButton({
   const base =
     "inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-medium transition-colors";
 
-  // Chưa đăng nhập → dẫn tới trang đăng nhập (vẫn hiện số lượt tim).
   if (!isAuthed) {
     return (
       <Link
@@ -41,7 +40,6 @@ export function LikeButton({
   }
 
   const onClick = () => {
-    // Optimistic.
     const next = !liked;
     setLiked(next);
     setCount((c) => c + (next ? 1 : -1));
@@ -51,7 +49,6 @@ export function LikeButton({
         setLiked(res.data.liked);
         setCount(res.data.count);
       } else {
-        // Revert nếu lỗi.
         setLiked(!next);
         setCount((c) => c + (next ? -1 : 1));
       }

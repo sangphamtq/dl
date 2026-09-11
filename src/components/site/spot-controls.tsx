@@ -17,11 +17,6 @@ import {
 
 const MICRO = "text-[0.6rem] font-semibold uppercase tracking-[0.14em]";
 
-// Điều khiển của trang địa điểm. Không giữ danh sách, không lọc gì — chỉ đọc và
-// ghi URL; việc lọc nằm ở server (xem `(site)/dia-diem/page.tsx`).
-//
-// Nhờ vậy mỗi bộ lọc là một ĐỊA CHỈ: dán được cho người khác, quay lại được
-// bằng nút back, và bộ máy tìm kiếm index được từng loại hình.
 export function SpotControls({
   categories,
   cat,
@@ -38,9 +33,6 @@ export function SpotControls({
   const params = useSearchParams();
   const [draft, setDraft] = useState(q);
 
-  // Ô tìm kiếm giữ chữ đang gõ trong state riêng rồi mới đẩy lên URL sau 350ms.
-  // Ghi thẳng từng phím là mỗi ký tự một lần điều hướng — server chạy lại truy
-  // vấn cho từng chữ cái, và lịch sử trình duyệt đầy những bước nửa vời.
   const draftRef = useRef(draft);
   draftRef.current = draft;
   useEffect(() => {
@@ -52,8 +44,6 @@ export function SpotControls({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draft, q]);
 
-  // Mỗi lần đổi bộ lọc đều xoá `trang`: kết quả đã khác, mà giữ số trang cũ thì
-  // người dùng rơi vào trang 3 của một danh sách chỉ còn một trang.
   function push(next: Record<string, string | null>) {
     const sp = new URLSearchParams(params.toString());
     for (const [k, v] of Object.entries(next)) {

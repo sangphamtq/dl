@@ -13,9 +13,6 @@ import {
 } from "@/components/ui/carousel";
 import type { HeroImage } from "@/components/site/place-hero-stack";
 
-// Lightbox full-screen dùng chung cho mọi hero (deck polaroid, full-bleed…):
-// carousel kéo/vuốt + phím mũi tên + dải thumbnail. Portal ra body để thoát mọi
-// stacking context của hero (header z-50 → lightbox z-60).
 export function HeroLightbox({
   images,
   index,
@@ -41,7 +38,6 @@ export function HeroLightbox({
     return () => window.removeEventListener("keydown", onKey);
   }, [api, onClose]);
 
-  // Đồng bộ slide carousel → index của hero (đóng lại vẫn đúng ảnh đang xem).
   useEffect(() => {
     if (!api) return;
     const onSel = () => onIndexChange(api.selectedScrollSnap());
@@ -58,7 +54,6 @@ export function HeroLightbox({
       className="fixed inset-0 z-[60] flex flex-col bg-black/95 backdrop-blur-sm"
       onClick={onClose}
     >
-      {/* Thanh trên */}
       <div className="flex items-center justify-between gap-4 px-4 py-3 sm:px-6">
         <span className="rounded-full bg-white/10 px-3 py-1 text-sm font-medium tabular-nums text-white/80">
           {index + 1} / {n}
@@ -73,7 +68,6 @@ export function HeroLightbox({
         </button>
       </div>
 
-      {/* Ảnh — carousel chiếm phần giữa */}
       <div className="relative min-h-0 flex-1">
         <Carousel
           setApi={setApi}
@@ -83,7 +77,6 @@ export function HeroLightbox({
           <CarouselContent className="ml-0 h-full">
             {images.map((img, i) => (
               <CarouselItem key={i} className="h-full pl-0">
-                {/* Vùng letterbox quanh ảnh: click để đóng; click ảnh thì không. */}
                 <div className="flex h-full items-center justify-center p-4">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -127,7 +120,6 @@ export function HeroLightbox({
         )}
       </div>
 
-      {/* Caption + dải thumbnail */}
       <div className="shrink-0 space-y-3 px-4 pb-5 pt-2 sm:px-6">
         {active.caption && (
           <p className="mx-auto max-w-2xl truncate text-center text-sm text-white/80">

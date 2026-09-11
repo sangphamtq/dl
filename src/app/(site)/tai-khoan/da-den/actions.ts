@@ -6,13 +6,6 @@ import { prisma } from "@/lib/prisma";
 import { parseMapCardOptions, type MapCardOptions } from "@/lib/map-card";
 import type { ActionResult } from "@/app/(site)/blog/actions";
 
-/**
- * Lưu tuỳ chỉnh trang "Nơi đã đến" cho CHÍNH người đang đăng nhập.
- *
- * Chạy qua `parseMapCardOptions()` trước khi ghi — cùng một hàm dùng lúc đọc,
- * nên cột Json không bao giờ chứa thứ mà giao diện không đọc lại được (hex
- * hỏng, chữ nhiều dòng, cả hai công tắc cùng tắt).
- */
 export async function saveMapCardOptions(
   input: MapCardOptions,
 ): Promise<ActionResult<MapCardOptions>> {

@@ -8,11 +8,6 @@ import { Label } from "@/components/ui/label";
 import { parseLatLng, isShortMapUrl } from "@/lib/map-url";
 import { resolveMapLink } from "@/lib/map-actions";
 
-// Ô "Link Google Maps": dán link là tự tách & điền Vĩ độ/Kinh độ (onPick).
-// - Link đầy đủ (có @lat,lng hoặc !3d!4d) → tách ngay tại client.
-// - Link rút gọn (maps.app.goo.gl…) → gọi server giải redirect rồi tách.
-// Dùng controlled (value/onValueChange) khi muốn lưu link (vd field mapUrl),
-// hoặc uncontrolled (chỉ onPick) khi chỉ cần lấy toạ độ.
 export function MapLinkField({
   value,
   onValueChange,

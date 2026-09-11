@@ -12,7 +12,6 @@ import { ExportButton } from "./export-button";
 
 export const metadata = { title: "Xuất Excel" };
 
-// Xuất toàn bộ Điểm đến + Listing ra một file Excel nhiều sheet (mỗi loại 1 sheet).
 export default async function ExportPage() {
   const [places, activities, spots, eateries, accommodations, transports] =
     await prisma.$transaction([

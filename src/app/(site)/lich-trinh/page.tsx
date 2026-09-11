@@ -17,42 +17,12 @@ import { Curtain, Rise, RiseInView } from "@/components/site/reveal";
 import { HeroLink } from "@/components/site/hero-link";
 import { getPlanningTripId } from "@/app/(site)/lich-trinh/actions";
 
-// `/lich-trinh` — trang CÔNG KHAI của cả tính năng lịch trình.
-//
-// Trước đây chỗ này là danh sách chuyến CÁ NHÂN và `redirect("/login")` ngay
-// dòng đầu, nên lịch trình mẫu — thứ dựng để làm đòn bẩy SEO — lại không có
-// trang index nào. Nay phần cá nhân ở `/lich-trinh/cua-toi`, chỗ này cho khách.
-// Xem docs/lich-trinh.md §4 và §7a.
-//
-// ── VÌ SAO BỎ BỘ DUYỆT (TripBrowser) ────────────────────────────────────────
-// Bản trước dựng cả bộ máy catalogue quanh nội dung: ô tìm kiếm + lọc số ngày +
-// sắp xếp + chip điểm đến + công tắc lưới/danh sách + "tải thêm" theo trang 9.
-// Đo trên dữ liệu thật: **8 ô điều khiển cho 2 lịch trình** — và đúng 2 cái đó
-// trang chủ đã bày sẵn. Lọc 2 mục thì không phải là lọc, chỉ là đồ đạc.
-//
-// Quan trọng hơn: trang CŨ GIẢI THÍCH cách tự xếp lịch trình ("bấm Thêm vào
-// lịch trình ở bất kỳ địa điểm nào rồi kéo vào ngày") bằng một đoạn văn ở đáy
-// trang, trong khi site đã có sẵn nút một-chạm "Lên lịch trình đi X" mà trang
-// này không hề mời. Nay đoạn văn đó thành HÀNH ĐỘNG THẬT: lưới điểm đến, bấm
-// một cái là mở đúng hộp "tiếp tục chuyến đang có / bắt đầu từ mẫu / tạo mới".
-//
-// Bộ duyệt đã xoá (`components/trip/trip-browser.tsx`) — khi nào số mẫu vượt
-// ~8 thì lấy lại trong lịch sử git, đừng dựng lại từ đầu.
-//
-// ── PHONG CÁCH: LẤY NGUYÊN CỦA `/diem-den` ──────────────────────────────────
-// Tiêu đề in hoa giãn chữ (`--font-display`), nhãn `MICRO`, bo góc theo bộ
-// chung, và thẻ LẤY ẢNH LÀM CHỦ: tên đặt GIỮA ảnh dưới lớp phủ tối, hàng dữ
-// kiện ngăn bằng khoảng trắng ở đáy ảnh. Một lịch trình và một điểm đến là hai mặt của cùng một
-// chuyến đi, người dùng đi qua lại giữa hai trang — chúng không được là hai sản
-// phẩm khác nhau.
-
 export const metadata = {
   title: "Lịch trình mẫu",
   description:
     "Lịch trình gợi ý theo từng điểm đến — xem chi tiết từng ngày, giờ ước tính, rồi sao về tài khoản và sửa theo ý bạn.",
 };
 
-// CÙNG một hằng với `destination-filter.tsx` — đừng chế biến thể riêng.
 const MICRO = "text-[0.6rem] font-semibold uppercase tracking-[0.14em]";
 
 const coverSel = {
@@ -63,7 +33,6 @@ const coverSel = {
 
 const pub = { status: "published" as const };
 
-/** "3 ngày 2 đêm" — đúng cách người Việt gọi độ dài một chuyến. */
 function lengthLabel(days: number): string {
   return days > 1 ? `${days} ngày ${days - 1} đêm` : "1 ngày";
 }
@@ -103,10 +72,6 @@ export default async function TripTemplatesPage({
             id: true,
             title: true,
             _count: { select: { items: true } },
-            // Ảnh bìa của từng mục — dùng làm ảnh DỰ PHÒNG cho mẫu chưa có ảnh
-            // bìa riêng, và làm ảnh cho dải mở đầu (xem `heroUrl`). Số mẫu đếm
-            // trên đầu ngón tay nên vài chục dòng ảnh ở đây rẻ hơn một truy vấn
-            // thứ hai.
             items: {
               orderBy: { order: "asc" },
               select: {
@@ -123,9 +88,6 @@ export default async function TripTemplatesPage({
     getPlanningTripId(),
   ]);
 
-  // Chuyến đang lên lịch trình — chỉ tra khi CÓ cookie và người dùng đã đăng
-  // nhập. `ownerId` trong điều kiện là để cookie của phiên trước (hoặc của máy
-  // dùng chung) không lôi ra chuyến của người khác.
   const planning =
     isAuthed && planningId
       ? await prisma.trip.findFirst({
@@ -138,9 +100,6 @@ export default async function TripTemplatesPage({
         })
       : null;
 
-  // Lọc + sắp xếp làm Ở ĐÂY chứ không trong truy vấn: số mẫu đếm trên đầu ngón
-  // tay, mà `lengths` (các độ dài có thật) phải tính trên TOÀN BỘ mẫu — lọc ở
-  // tầng DB thì chip "2 ngày" sẽ biến mất ngay khi đang đứng ở "3 ngày".
   const lengths = [...new Set(rows.map((t) => t.days.length))].sort(
     (a, b) => a - b,
   );
@@ -157,7 +116,7 @@ export default async function TripTemplatesPage({
       if (sort === "ngan-nhat") return a.days.length - b.days.length;
       if (sort === "dai-nhat") return b.days.length - a.days.length;
       if (sort === "nhieu-diem") return stopsOf(b) - stopsOf(a);
-      return 0; // "noi-bat" — giữ đúng thứ tự truy vấn đã sắp
+      return 0;
     });
 
   const covers = rows.map((t) => coverOf(t));
@@ -181,11 +140,6 @@ export default async function TripTemplatesPage({
   return (
     <div className="flex flex-1 flex-col">
       <main className="flex-1 overflow-x-clip">
-        {/* ── Dải mở đầu ───────────────────────────────────────────────────
-            Cùng khuôn với `/diem-den`: ảnh tràn viền + lớp phủ hình bầu dục,
-            tên trang bằng serif in hoa giãn chữ, hai nút kính bên dưới.
-            Nền TỐI vẽ sẵn dưới ảnh — không có ảnh (chưa mẫu nào có ảnh điểm
-            dừng) thì chữ trắng vẫn đọc được, thay vì trắng trên trắng. */}
         <section className="relative isolate overflow-hidden bg-[#0b1a12]">
           {heroUrl && (
             <Image
@@ -222,16 +176,6 @@ export default async function TripTemplatesPage({
           </div>
         </section>
 
-        {/* DẢI TRẠNG THÁI của CHÍNH NGƯỜI ĐANG XEM, không phải một thẻ nội dung.
-            Hai thứ nói "đây là của bạn", cả hai đều cần:
-              · ẢNH ĐẠI DIỆN — dấu hiệu mạnh nhất, không cần đọc chữ cũng hiểu;
-              · CÂU Ở NGÔI THỨ HAI viết thường ("Bạn đang lên lịch trình …").
-                Bản trước dùng nhãn IN HOA NHỎ `MICRO`, mà đó đúng là kiểu chữ
-                của nhãn phân loại ở các hàng mẫu ("BÌNH THUẬN · 3 NGÀY 2 ĐÊM")
-                — nên nó đọc ra như metadata của một mẫu, không phải lời hệ
-                thống nói với người dùng.
-            Nền phớt màu đã tự tách khối nên KHÔNG thêm đường kẻ. Đặt ngay dưới
-            hero: người quay lại giữa chừng cần đường về trước, chưa cần mẫu mới. */}
         {planning && (
           <Link
             href={`/lich-trinh/cua-toi/${planning.id}`}
@@ -280,12 +224,6 @@ export default async function TripTemplatesPage({
 
         <div className="mx-auto max-w-7xl px-4 pb-16 pt-10 sm:px-6 sm:pb-24 sm:pt-14">
 
-          {/* ── Lịch trình mẫu ─────────────────────────────────────────────
-              MỖI MẪU MỘT HÀNG TRÀN NGANG, không phải thẻ teaser trong lưới:
-              hai mẫu xếp thành thẻ thì bỏ trống nửa hàng và không nói được gì
-              hơn tên + số ngày. Nửa trái là THẺ ẢNH đúng khuôn `/diem-den`
-              (tên giữa ảnh, dữ kiện gạch mảnh ở đáy), nửa phải là thứ chỉ lịch
-              trình mới có: TỪNG NGÀY. */}
           {rows.length > 0 ? (
             <section>
               <SectionHead title="Lịch trình mẫu" />
@@ -303,9 +241,6 @@ export default async function TripTemplatesPage({
               <ul className="mt-6 divide-y divide-border">
                 {visible.map((t) => {
                   const days = t.days;
-                  // Luôn có ảnh: bìa mẫu → ảnh điểm dừng đầu tiên → ảnh dự
-                  // phòng theo slug. Thẻ ở /diem-den cũng vậy, nên hai trang
-                  // không bao giờ có cái nào là ô xám trống.
                   const cover =
                     coverOf(t) ?? coverUrl([], t.slug ?? t.id, 900, 600);
                   const stops = days.reduce((n, d) => n + d._count.items, 0);
@@ -317,10 +252,6 @@ export default async function TripTemplatesPage({
                           href={`/lich-trinh/${t.slug}`}
                           className="group grid gap-4 py-7 focus-visible:outline-none sm:grid-cols-[minmax(0,19rem)_1fr] sm:gap-7 sm:py-8"
                         >
-                          {/* Ảnh CAO BẰNG cột chữ (`sm:h-full`), không đặt tỉ lệ
-                              cố định: mẫu 1 ngày có cột chữ ngắn, mẫu 3 ngày dài
-                              hơn — để `aspect-[4/3]` thì hàng nào cũng thừa hoặc
-                              thiếu chỗ. `min-h` giữ ảnh không bị bẹp ở mẫu ngắn. */}
                           <span
                             className={cn(
                               R_CARD,
@@ -424,13 +355,11 @@ export default async function TripTemplatesPage({
   );
 }
 
-/** Tiêu đề mục — serif in hoa giãn chữ + nhãn nhỏ bên phải, khuôn của `Rail`. */
 function SectionHead({
   title,
   meta,
 }: {
   title: string;
-  /** Dữ kiện phụ bên phải tiêu đề. Bỏ trống thì tiêu đề đứng một mình. */
   meta?: React.ReactNode;
 }) {
   return (
@@ -446,17 +375,6 @@ function SectionHead({
 }
 
 
-/**
- * Ảnh của một mẫu: bìa riêng → ảnh bìa của ĐIỂM DỪNG ĐẦU TIÊN có ảnh → **null**.
- *
- * ⚠ KHÔNG rơi về `coverUrl()` (ảnh giữ chỗ picsum). Đã thử và bỏ — mẫu Tà Xùa,
- * một chuyến LÊN NÚI SĂN MÂY, nhận về một tấm bờ biển bão tố (docs §7a). Trả
- * null để chỗ gọi để trống ô ảnh (chỉ còn khuôn chữ trên nền `muted`).
- *
- * Nấc giữa là nấc đáng giá: ảnh của một điểm dừng trong CHÍNH chuyến đó vừa có
- * thật vừa đúng chuyện, mà bản cũ bỏ qua (nó chỉ dùng ảnh điểm dừng cho dải mở
- * đầu, còn thẻ thì để trống).
- */
 function coverOf(t: {
   slug: string | null;
   images: { url: string }[];

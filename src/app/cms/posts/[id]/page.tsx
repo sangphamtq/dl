@@ -86,7 +86,6 @@ export default async function PostDetailPage({
 
   return (
     <div className="p-6 sm:p-8">
-      {/* Breadcrumb + tiêu đề + hành động */}
       <Link
         href="/cms/posts"
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
@@ -149,10 +148,8 @@ export default async function PostDetailPage({
         </div>
       </div>
 
-      {/* Bố cục 2 cột: nội dung dài bên trái + thông tin bên phải */}
       <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="space-y-8 lg:col-span-2">
-          {/* Ảnh bìa */}
           <section>
             {cover ? (
               <div className="flex max-w-2xl gap-3">
@@ -199,7 +196,6 @@ export default async function PostDetailPage({
             )}
           </section>
 
-          {/* Nội dung (rich text) */}
           <section>
             <h2 className="text-lg font-semibold tracking-tight">Nội dung</h2>
             {post.content.trim() ? (
@@ -215,7 +211,6 @@ export default async function PostDetailPage({
           </section>
         </div>
 
-        {/* Sidebar: thông tin & liên kết */}
         <aside className="space-y-4">
           <PostAdminControls
             id={post.id}

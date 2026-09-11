@@ -1,5 +1,3 @@
-// Tiện ích hiển thị dùng chung (an toàn cho cả server & client component).
-
 export function initials(name: string | null): string {
   if (!name) return "?";
   const parts = name.trim().split(/\s+/);
@@ -15,7 +13,6 @@ const dateFmt = new Intl.DateTimeFormat("vi-VN", {
   year: "numeric",
 });
 
-// "5 phút trước", "2 giờ trước"… quá 7 ngày thì hiện ngày cụ thể.
 export function timeAgo(date: Date): string {
   const diff = (Date.now() - new Date(date).getTime()) / 1000;
   if (diff < 60) return "vừa xong";
@@ -25,7 +22,5 @@ export function timeAgo(date: Date): string {
   return dateFmt.format(new Date(date));
 }
 
-// Tiền Việt: "1.800.000đ". Không dùng `style: "currency"` — nó ra "1.800.000 ₫"
-// với dấu cách và ký hiệu ₫ mà người Việt gõ/đọc ít hơn hẳn chữ "đ".
 export const formatVnd = (n: number): string =>
   new Intl.NumberFormat("vi-VN").format(Math.round(n)) + "đ";

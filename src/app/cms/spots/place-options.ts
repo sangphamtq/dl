@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import type { PlaceOption } from "./spot-form";
 
-// Danh sách Place để chọn "nơi chứa" (gồm cả tỉnh & điểm đến), kèm gợi ý ngữ cảnh.
 export async function getPlaceOptions(): Promise<PlaceOption[]> {
   const places = await prisma.place.findMany({
     orderBy: [{ kind: "asc" }, { name: "asc" }],

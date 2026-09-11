@@ -3,8 +3,6 @@
 import { useEffect } from "react";
 import { captureEntityView } from "@/lib/analytics";
 
-// Đếm 1 lượt xem/phiên cho một listing. useEffect chỉ chạy khi thật sự điều
-// hướng tới trang (không chạy lúc prefetch); sessionStorage chống đếm lại khi F5.
 export function ListingViewTracker({
   type,
   id,
@@ -19,7 +17,6 @@ export function ListingViewTracker({
   provinceName?: string | null;
 }) {
   useEffect(() => {
-    // PostHog: bắn mỗi lần xem (không dedup) để có event giàu thuộc tính.
     captureEntityView({
       entityType: type,
       entityId: id,
@@ -28,7 +25,6 @@ export function ListingViewTracker({
       provinceName,
     });
 
-    // Beacon nội bộ (ViewStat + popularity): dedup 1 lần/phiên.
     const key = `viewed:${type}:${id}`;
     try {
       if (sessionStorage.getItem(key)) return;

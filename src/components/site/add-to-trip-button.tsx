@@ -21,16 +21,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-// Nút "Thêm vào lịch trình" — đặt ở TRANG CHI TIẾT và POPUP, cố ý CHƯA đưa vào
-// lưới thẻ (docs/lich-trinh.md §6: thẻ lưu trú đã qua ba vòng cắt gọt, thêm nút
-// vào đó là đi ngược lại; lưới là lúc so sánh, chưa phải lúc chọn).
-//
-// Vì lịch trình bắt đăng nhập, nút này là một BỨC TƯỜNG. Nếu bấm mà văng sang
-// /login rồi quay về tay trắng thì tính năng chết ngay tại đây. Nên:
-//   1. chưa đăng nhập → mở LoginDrawer TẠI CHỖ (không điều hướng thẳng)
-//   2. ghi ý định vào sessionStorage + quay lại đúng trang cũ
-//   3. quay về → tự thêm, báo "đã thêm vào lịch trình"
-
 const INTENT_KEY = "halivivu:trip-intent";
 
 type PendingIntent = { kind: ItemTarget["kind"]; id: string };
@@ -45,16 +35,8 @@ export function AddToTripButton({
 }: {
   target: Exclude<ItemTarget, { kind: "custom" }>;
   name: string;
-  /** Đường quay lại sau khi đăng nhập. Bỏ trống → dùng URL đang xem. */
   redirectTo?: string;
-  /**
-   * Biết trước đã đăng nhập hay chưa thì truyền vào để bấm phát ăn ngay.
-   * KHÔNG truyền cũng chạy đúng: bấm → gọi thử → server báo cần đăng nhập →
-   * mở LoginDrawer. Nhờ vậy nút dùng được trong popup (Quán ăn, Lưu trú) mà
-   * không phải luồn `isAuthed` qua ba lớp component client.
-   */
   isAuthed?: boolean;
-  /** "outline" = nút viền đứng cạnh CTA khác · "bare" = hành động trần trên ảnh */
   variant?: "outline" | "bare";
   className?: string;
 }) {
@@ -64,7 +46,6 @@ export function AddToTripButton({
   const [loginOpen, setLoginOpen] = useState(false);
   const [pending, start] = useTransition();
   const claimed = useRef(false);
-  // Bộ chọn "Đổi chuyến": mở từ toast ngay sau khi thêm.
   const [pickerOpen, setPickerOpen] = useState(false);
   const [trips, setTrips] = useState<{ id: string; title: string; count: number }[]>([]);
   const lastItemId = useRef<string | null>(null);
@@ -112,7 +93,6 @@ export function AddToTripButton({
     start(async () => {
       const res = await addItem(target);
       if (!res.ok) {
-        // Chưa đăng nhập → không quăng lỗi đỏ, mở luôn cửa đăng nhập.
         if (res.error.includes("đăng nhập")) {
           rememberIntent();
           setLoginOpen(true);
@@ -124,14 +104,8 @@ export function AddToTripButton({
       setAdded(true);
       setTripId(res.data.tripId);
       lastItemId.current = res.data.itemId;
-      // Báo cho TÚI LỊCH TRÌNH (nút nổi ở mọi trang) nạp lại — nếu không, cái
-      // túi vẫn hiện con số cũ và người dùng lại rơi vào đúng cảnh "thêm rồi mà
-      // không thấy đâu" mà cái túi sinh ra để chấm dứt.
       tripBagChanged();
 
-      // Có nhiều chuyến thì lời mời hữu ích nhất là ĐỔI CHUYẾN: người dùng không
-      // nhìn thấy mình đang lên lịch cho chuyến nào cho tới đúng khoảnh khắc này.
-      // Chỉ có một chuyến thì đổi cũng chẳng để làm gì.
       const canSwitch = res.data.tripCount > 1 && res.data.itemId != null;
       toast.success(
         res.data.duplicate
@@ -151,8 +125,6 @@ export function AddToTripButton({
     });
   }
 
-  // Vừa đăng nhập xong và có ý định đang chờ đúng mục này → thêm luôn.
-  // isAuthed === false nghĩa là CHẮC CHẮN chưa đăng nhập → khỏi thử.
   useEffect(() => {
     if (isAuthed === false || claimed.current) return;
     let intent: PendingIntent | null = null;

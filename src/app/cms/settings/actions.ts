@@ -29,8 +29,6 @@ export type SettingsInput = {
   heroLayout: HeroLayout;
 };
 
-// Lưu cấu hình site (upsert singleton). Revalidate toàn site vì header/footer/
-// metadata dùng chung ở root layout.
 export async function updateSettings(input: SettingsInput): Promise<Result> {
   await requireAdmin();
 
@@ -58,18 +56,10 @@ export async function updateSettings(input: SettingsInput): Promise<Result> {
   });
 
   revalidatePath("/", "layout");
-  // Kiểu hero đổi → mọi trang điểm đến phải render lại (revalidate cả route động).
   revalidatePath("/diem-den/[placeSlug]", "page");
   return { ok: true };
 }
 
-// Mọi route ĐỘNG công khai. `revalidatePath("/", "layout")` chỉ quét các đường
-// dẫn TĨNH — nó không chạm tới các trang sinh từ tham số, nên từng mẫu route
-// phải khai riêng ở đây (đó cũng là lý do `updateSettings` bên trên phải gọi
-// thêm một dòng cho `/diem-den/[placeSlug]`).
-//
-// Ba nhánh của lịch trình cố ý KHÔNG có mặt: `/lich-trinh/cua-toi/…` và
-// `/lich-trinh/s/…` là dữ liệu riêng của từng người, luôn đọc tươi.
 const PUBLIC_DYNAMIC_ROUTES = [
   "/diem-den/[placeSlug]",
   "/diem-den/[placeSlug]/[loai]",

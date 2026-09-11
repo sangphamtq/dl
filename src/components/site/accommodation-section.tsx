@@ -18,10 +18,6 @@ import {
 
 type Stay = AccommodationDetailData;
 
-// Khu vực hiển thị trên thẻ: đoạn cuối của địa chỉ SAU KHI bỏ những đoạn chỉ
-// nhắc lại tên điểm đến ("TP. Phan Thiết"). Không bỏ thì mọi thẻ đều ghi đúng
-// một chữ "TP. Phan Thiết" — vô nghĩa vì cả trang đã là Phan Thiết rồi; bỏ đi
-// thì ra "Mũi Né" / "Hàm Tiến", tức là thứ khách thật sự cân nhắc.
 function areaOf(address: string | null, placeName: string): string | null {
   if (!address) return null;
   const strip = (s: string) =>
@@ -38,34 +34,6 @@ function areaOf(address: string | null, placeName: string): string | null {
   return parts.length > 1 ? parts[parts.length - 1] : null;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// TAB NƠI LƯU TRÚ — danh bạ chỗ ở ĐÃ XÁC MINH CHÍNH CHỦ, không phải OTA.
-//
-// Cả mục này chỉ có một lý do tồn tại (xem CLAUDE.md): thứ mà group Facebook
-// không làm được là **niềm tin có cấu trúc** — đúng chủ, đúng kênh, cảnh báo cọc.
-// Nên thiết kế đặt trạng thái xác minh làm XƯƠNG SỐNG chứ không phải một huy
-// hiệu nhỏ ở góc ảnh:
-//
-//  · Danh sách TÁCH LÀM HAI NHÓM — "Đã xác minh chính chủ" và "Chưa xác minh",
-//    mỗi nhóm có một câu nói rõ điều đó nghĩa là gì. Trộn chung rồi phân biệt
-//    bằng một cái badge thì người đọc lướt qua sẽ không thấy sự khác nhau —
-//    mà sự khác nhau đó chính là sản phẩm.
-//  · Vì đã tách nhóm nên BỎ nút lọc "chỉ chỗ đã xác minh": nó thành thừa.
-//  · THẺ GIỮ TỐI THIỂU: ảnh + huy hiệu xác minh, loại hình · khu vực, tên, mô
-//    tả. Kênh liên hệ, tag và chính sách cọc đều đã gỡ khỏi thẻ — chúng sống ở
-//    popup / trang chi tiết, tức là đúng lúc khách đã chọn một chỗ cụ thể để
-//    cân nhắc, chứ không phải khi còn đang lướt so sánh cả chục thẻ.
-//
-// HAI ĐÍCH mỗi thẻ, tách bằng VỊ TRÍ để khỏi giẫm nhau:
-//  · Bấm bất kỳ đâu trong thẻ → trang chi tiết `/luu-tru/[slug]` (đích chia sẻ,
-//    chủ nhà dán vào group FB). Link thật gắn ở TÊN quán rồi `after:inset-0`
-//    trải vùng bấm ra cả thẻ — trình đọc màn hình vẫn đọc đúng tên, không phải
-//    một cái "link" trống.
-//  · "Xem nhanh" → popup, `z-10` để nổi trên vùng bấm đó. Có HAI bản, tách
-//    bằng `@media (pointer: …)`: máy có chuột thì lúc nghỉ thẻ SẠCH TRƠN, rê
-//    vào ảnh mới hiện nhãn giữa khung; máy cảm ứng (không có hover) thì một
-//    viên nhỏ luôn hiện ở góc ảnh.
-// ═══════════════════════════════════════════════════════════════════════════
 export function AccommodationSection({
   accommodations,
   placeName,
@@ -93,7 +61,6 @@ export function AccommodationSection({
     );
   }, [accommodations]);
 
-  // Dữ kiện thật của danh bạ, thay cho lời hứa chung chung.
   const verifiedCount = accommodations.filter((a) => a.isVerified).length;
   const noticed = accommodations.filter((a) => a.notice).length;
   const composition = compositionLine(
@@ -113,18 +80,6 @@ export function AccommodationSection({
 
   return (
     <div>
-      {/* ── Mở đầu: định vị + dữ kiện tính từ chính dữ liệu.
-             BỎ nhãn nhỏ "Nơi lưu trú" (thanh tab ngay trên đã có mục đó đang
-             sáng), và dải dữ kiện sửa cả ba mục:
-             · "12 chỗ ở" + "9 đã xác minh" gộp thành MỘT TỈ LỆ **9/12**. Hai
-               con số rời thì cái thứ hai lặp lại y nguyên tiêu đề nhóm ngay
-               dưới ("Đã xác minh chính chủ (9)"); gộp thành tỉ lệ mới ra thứ
-               không chỗ nào khác nói — bao nhiêu phần của danh sách này đã
-               kiểm được, tức chính là sản phẩm của tab.
-             · "12 có Zalo trực tiếp" BỎ HẲN: 12/12 chỗ đều có Zalo nên nó không
-               phân biệt được gì — cùng lý do đã gỡ hàng icon liên hệ khỏi thẻ.
-               Thay bằng THÀNH PHẦN theo loại hình.
-             · Thêm "n nơi có lưu ý" (chỉ khi có). ── */}
       <header>
         <h2 className="text-3xl font-bold tracking-tight text-balance sm:text-4xl">
           Chỗ ở đã xác minh chính chủ ở {placeName}
@@ -163,8 +118,6 @@ export function AccommodationSection({
         </div>
       </div>
 
-      {/* ── Lọc theo loại hình. Không còn nút "chỉ chỗ đã xác minh": danh sách
-             đã tách sẵn hai nhóm nên nút đó thành thừa. ── */}
       {catOptions.length > 1 && (
         <div className="hide-scrollbar mt-6 flex items-center gap-2 overflow-x-auto">
           <FilterChip active={cat === "all"} onClick={() => setCat("all")}>
@@ -218,9 +171,6 @@ export function AccommodationSection({
         </div>
       )}
 
-      {/* Popup chi tiết — cùng khuôn với tab Ẩm thực: dưới `sm` dán đáy màn
-          hình và trượt lên, từ `sm` là popup giữa màn đủ rộng cho bố cục hai
-          cột ảnh | nội dung. */}
       <Dialog
         open={selected !== null}
         onOpenChange={(o) => !o && setSelected(null)}
@@ -239,7 +189,6 @@ export function AccommodationSection({
           {active && (
             <>
               <AccommodationDetail data={active} />
-              {/* Nút đóng tự dựng: chữ X trần mặc định chìm nghỉm trên ảnh. */}
               <DialogClose
                 className={cn(R_CTRL, "absolute right-3 top-3 z-10 grid size-9 place-items-center bg-background/85 text-foreground shadow-sm backdrop-blur transition-colors hover:bg-background")}
                 aria-label="Đóng"
@@ -272,8 +221,6 @@ function Stat({
   );
 }
 
-// Một nhóm theo trạng thái xác minh — tiêu đề nói rõ trạng thái đó NGHĨA LÀ GÌ.
-// "Đã xác minh" mà không giải thích thì cũng chỉ là một cái nhãn tự phong.
 function StayGroup({
   tone,
   title,
@@ -331,11 +278,6 @@ function StayGroup({
   );
 }
 
-// ── Thẻ chỗ ở: MỘT khuôn duy nhất ──
-// Bản cũ có hai khuôn (một thẻ "Đề xuất" lớn + hàng ngang cho phần còn lại),
-// mà thẻ lớn chỉ to hơn chứ không mang thêm thông tin gì; tệ hơn, "đề xuất" chỉ
-// là phần tử đầu danh sách nên nó ĐỔI theo bộ lọc — một nhãn hứa hẹn sự tuyển
-// chọn biên tập vốn không tồn tại.
 function StayCard({
   a,
   placeName,
@@ -392,15 +334,6 @@ function StayCard({
           </span>
         )}
 
-        {/* ── Xem nhanh — hai bản, mỗi thiết bị chỉ thấy đúng MỘT ──
-            Tách bằng `@media (pointer: …)` chứ không phải breakpoint bề ngang:
-            cái quyết định ở đây là CÓ CHUỘT HAY KHÔNG, không phải màn to hay
-            nhỏ (máy tính bảng có cảm ứng vẫn màn rộng). Dùng `display` để ẩn
-            chứ không dùng `opacity`, nhờ vậy cái bị ẩn cũng biến khỏi cây trợ
-            năng — trình đọc màn hình chỉ gặp một nút, không phải hai. */}
-
-        {/* Chuột: lúc nghỉ thẻ sạch trơn; rê vào thì ảnh tối nhẹ và nhãn hiện
-            giữa khung. Cũng hiện khi tab tới bằng bàn phím. */}
         <button
           type="button"
           onClick={onOpen}
@@ -412,8 +345,6 @@ function StayCard({
           </span>
         </button>
 
-        {/* Cảm ứng: không có hover nên phải luôn hiện — viên nhỏ ở góc, không
-            phủ ảnh. */}
         <button
           type="button"
           onClick={onOpen}
@@ -424,8 +355,6 @@ function StayCard({
         </button>
       </div>
 
-      {/* Kicker: loại hình + khu vực, ngăn bằng KHOẢNG TRẮNG RỘNG chứ không
-          phải dấu chấm giữa (quy ước dải phân cách của dự án). */}
       <p className="mt-3.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
         <span className="font-semibold text-primary">{category}</span>
         {area && (
@@ -436,8 +365,6 @@ function StayCard({
         )}
       </p>
 
-        {/* Mũi tên "đi tiếp" nằm ngay cạnh TÊN — đó mới là chỗ mắt dừng lại, và
-            nhờ vậy khỏi cần một hàng CTA riêng ở đáy thẻ. */}
       <h4 className="mt-1 flex items-start justify-between gap-2 font-[family-name:var(--font-display)] text-lg font-semibold leading-snug tracking-tight">
         <Link
           href={`/luu-tru/${a.slug}`}
@@ -451,13 +378,6 @@ function StayCard({
         />
       </h4>
 
-        {/* THẺ CHỈ CÒN BỐN THỨ: loại hình · khu vực → tên → mô tả.
-            Đã lần lượt bỏ khỏi thẻ: hàng icon kênh liên hệ (12/12 chỗ đều có
-            Zalo nên nó không phân biệt được thẻ nào với thẻ nào), hàng tag (mô
-            tả đã nói cùng ý bằng câu văn đọc được), và dòng chính sách cọc.
-            Cọc & kênh liên hệ vẫn còn nguyên ở popup và trang chi tiết — tức là
-            đúng lúc khách đã chọn một chỗ cụ thể để cân nhắc, chứ không phải khi
-            còn đang lướt so sánh mười hai thẻ. */}
       {a.description && (
         <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
           {a.description}

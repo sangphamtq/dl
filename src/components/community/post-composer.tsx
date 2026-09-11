@@ -42,14 +42,13 @@ export function PostComposer({
   defaultType?: ThreadTypeValue;
   canPostSale?: boolean;
 }) {
-  // CTV đã duyệt được thêm lựa chọn "Rao dịch vụ".
   const typeOptions = canPostSale
     ? [...COMPOSER_THREAD_TYPES, { value: "sale", label: "Rao dịch vụ" }]
     : COMPOSER_THREAD_TYPES;
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
-  const submitting = useRef(false); // khoá chống đăng trùng (double-click)
+  const submitting = useRef(false);
   const [expanded, setExpanded] = useState(false);
   const [html, setHtml] = useState("");
   const [type, setType] = useState<ThreadTypeValue>(defaultType);
@@ -148,7 +147,6 @@ export function PostComposer({
   const isEmpty = stripLen(html) === 0;
   const canSubmit = (!isEmpty || urls.length > 0) && !pending && !isUploading;
 
-  // ── Thu gọn ──────────────────────────────────────────────
   if (!expanded) {
     const open = () => {
       setExpanded(true);
@@ -175,13 +173,11 @@ export function PostComposer({
     );
   }
 
-  // ── Mở rộng ──────────────────────────────────────────────
   const addBtn =
     "grid size-9 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground";
 
   return (
     <div className="rounded-2xl border border-border/60 bg-card p-4">
-      {/* Người đăng */}
       <div className="flex items-center gap-3">
         <span
           aria-hidden
@@ -197,7 +193,6 @@ export function PostComposer({
         </div>
       </div>
 
-      {/* Chọn loại bài — pill có icon */}
       <div className="mt-3 flex gap-1.5 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {typeOptions.map((t) => {
           const Icon = threadTypeIcon(t.value);
@@ -221,7 +216,6 @@ export function PostComposer({
         })}
       </div>
 
-      {/* Ô nhập WYSIWYG */}
       <div className="relative mt-3">
         {isEmpty && (
           <span className="pointer-events-none absolute left-0 top-0 text-[0.95rem] text-muted-foreground">
@@ -240,7 +234,6 @@ export function PostComposer({
         />
       </div>
 
-      {/* Ảnh đã chọn */}
       {urls.length > 0 && (
         <div className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-6">
           {urls.map((u, i) => (
@@ -259,7 +252,6 @@ export function PostComposer({
         </div>
       )}
 
-      {/* Gắn điểm đến (chỉ ở feed tổng) */}
       {places && places.length > 0 && (
         <select
           value={placeId}
@@ -275,7 +267,6 @@ export function PostComposer({
         </select>
       )}
 
-      {/* Bài "Tìm bạn đồng hành": ngày khởi hành + số chỗ (tùy chọn) */}
       {type === "trip" && (
         <div className="mt-3 grid grid-cols-2 gap-2">
           <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
@@ -304,7 +295,6 @@ export function PostComposer({
 
       {error && <p className="mt-2 text-xs text-destructive">{error}</p>}
 
-      {/* Thanh "Thêm vào bài" */}
       <div className="relative mt-3 flex items-center justify-between rounded-xl border border-border/60 px-3 py-1.5">
         <span className="text-sm font-medium text-muted-foreground">
           Thêm vào bài
@@ -372,7 +362,6 @@ export function PostComposer({
         )}
       </div>
 
-      {/* Hành động */}
       <div className="mt-3 flex items-center justify-end gap-2">
         <button
           type="button"

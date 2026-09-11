@@ -20,13 +20,6 @@ export type HeroImage = {
   href?: string | null;
 };
 
-// Hero "chồng ảnh polaroid" cho trang chi tiết: 3 thẻ ảnh viền trắng xếp lệch
-// theo chiều sâu (2 thẻ sau nghiêng, ló góc ra), autoplay cyclic 5s, glass
-// controls, vuốt ngang / tap mở gallery.
-
-// Chiều sâu của deck: 2 thẻ sau nhỏ dần, đẩy lên và nghiêng ngược chiều nhau →
-// góc ló ra ở hai bên mép trên (không thò xuống che nội dung bên dưới).
-// Thẻ rơi khỏi 3 lớp đầu giữ transform của lớp cuối và mờ đi tại chỗ.
 const DEPTH = [
   {
     transform: "translate(0,0) rotate(0deg) scale(1)",
@@ -57,13 +50,11 @@ export function PlaceHeroStack({
   const next = useCallback(() => setIndex((i) => (i + 1) % n), [n]);
   const prev = useCallback(() => setIndex((i) => (i - 1 + n) % n), [n]);
 
-  // Báo ảnh đang xem lên khung hero → nền ambient crossfade theo.
   const setAmbient = useHeroAmbient();
   useEffect(() => {
     setAmbient?.(index);
   }, [index, setAmbient]);
 
-  // Tôn trọng prefers-reduced-motion: tắt autoplay.
   useEffect(() => {
     const m = window.matchMedia("(prefers-reduced-motion: reduce)");
     const update = () => setReduced(m.matches);
@@ -72,7 +63,6 @@ export function PlaceHeroStack({
     return () => m.removeEventListener("change", update);
   }, []);
 
-  // Autoplay: timer reset mỗi khi đổi slide / pause / mở lightbox.
   const playing = !paused && !lightbox && !reduced && n > 1;
   useEffect(() => {
     if (!playing) return;
@@ -80,7 +70,6 @@ export function PlaceHeroStack({
     return () => clearTimeout(t);
   }, [index, playing, intervalMs, next]);
 
-  // Gesture: vuốt ngang ≥45px đổi slide; tap (không kéo) mở gallery.
   const down = useRef<{ x: number; y: number } | null>(null);
   const onPointerDown = (e: React.PointerEvent) => {
     down.current = { x: e.clientX, y: e.clientY };
@@ -105,8 +94,6 @@ export function PlaceHeroStack({
 
   return (
     <>
-      {/* Padding = chỗ chừa cho 2 thẻ sau ló ra (không cắt bằng overflow-hidden);
-          thẻ trước sau khi trừ padding vẫn xấp xỉ 16/9. */}
       <div className="group/heroframe relative aspect-[16/10] w-full px-1 pt-7 sm:pt-9">
         <div className="relative h-full w-full">
           {images.map((img, i) => {
@@ -141,7 +128,6 @@ export function PlaceHeroStack({
                     draggable={false}
                   />
 
-                  {/* Thẻ sau lùi lại bằng một lớp phủ nhạt */}
                   {!isActive && (
                     <div
                       aria-hidden
@@ -151,10 +137,8 @@ export function PlaceHeroStack({
 
                   {isActive && (
                     <>
-                      {/* Gradient đáy cho tên + góc trên-phải cho nút */}
                       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-2/5 bg-gradient-to-t from-black/70 via-black/15 to-transparent" />
 
-                      {/* Lớp nhận gesture (dưới controls) */}
                       <button
                         type="button"
                         aria-label="Mở thư viện ảnh"
@@ -163,7 +147,6 @@ export function PlaceHeroStack({
                         className="absolute inset-0 z-20 cursor-pointer"
                       />
 
-                      {/* Tạm dừng / tiếp tục — góc trên phải */}
                       {n > 1 && (
                         <button
                           type="button"
@@ -179,7 +162,6 @@ export function PlaceHeroStack({
                         </button>
                       )}
 
-                      {/* Prev / Next — ẩn, hover mới hiện (desktop); mobile vuốt */}
                       {n > 1 && (
                         <>
                           <button
@@ -201,14 +183,12 @@ export function PlaceHeroStack({
                         </>
                       )}
 
-                      {/* Đếm i/n — góc dưới-phải, ẩn/hover (mobile vẫn hiện) */}
                       {n > 1 && (
                         <span className="absolute bottom-5 right-4 z-30 text-sm font-medium tabular-nums text-white/90 opacity-100 drop-shadow transition-opacity sm:opacity-0 sm:group-hover/heroframe:opacity-100">
                           {index + 1} / {n}
                         </span>
                       )}
 
-                      {/* Tên ảnh — cụm trái, luôn hiện; click sang địa điểm */}
                       {img.caption &&
                         (img.href ? (
                           <Link
@@ -235,7 +215,6 @@ export function PlaceHeroStack({
           })}
         </div>
 
-        {/* Bản caption cho screen-reader */}
         <p className="sr-only" aria-live="polite">
           Ảnh {index + 1} trên {n}
           {active.caption ? `: ${active.caption}` : ""}

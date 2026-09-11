@@ -73,7 +73,6 @@ export function PlaceImages({
         </div>
       )}
 
-      {/* Vùng tải lên */}
       <div
         role="button"
         tabIndex={0}
@@ -121,7 +120,6 @@ export function PlaceImages({
         />
       </div>
 
-      {/* Gallery */}
       {images.length === 0 ? (
         <p className="text-sm text-muted-foreground">Chưa có ảnh nào.</p>
       ) : (

@@ -15,11 +15,6 @@ import {
   TransportMode,
 } from "@/generated/prisma/enums";
 
-// Seed điểm đến Tà Xùa (xã Tà Xùa, Sơn La): Place + Spot + Activity + Eatery +
-// Specialty + Transport.
-// Idempotent: upsert theo slug; ảnh ghi đè mỗi lần chạy (xem IMAGES bên dưới).
-// Dùng: pnpm seed:ta-xua
-
 const now = new Date();
 const PUB = { status: PublishStatus.published, publishedAt: now } as const;
 
@@ -30,17 +25,14 @@ type ImageOwner =
   | { eateryId: string }
   | { specialtyId: string };
 
-// Ảnh của một mục — ĐỂ TRỐNG để tự điền. Mỗi ảnh: { url, alt?, caption? }.
-// Ảnh đầu mảng tự thành ảnh bìa (isCover). Mảng rỗng → trang dùng ảnh fallback.
 type ImageInput = { url: string; alt?: string; caption?: string };
 
-// Ghi lại toàn bộ ảnh cho một owner (xóa ảnh cũ trước để khỏi nhân bản khi seed lại).
 async function setImages(
   where: ImageOwner,
   images: readonly ImageInput[],
   fallbackAlt: string,
 ) {
-  if (images.length === 0) return; // chưa có ảnh → giữ nguyên ảnh đã có trong CMS
+  if (images.length === 0) return;
   await prisma.image.deleteMany({ where });
   await Promise.all(
     images.map((im, i) =>
@@ -58,22 +50,10 @@ async function setImages(
   );
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// ẢNH CHO TỪNG MỤC — TỰ ĐIỀN Ở ĐÂY (key = slug). Mỗi mục một mảng ảnh; ảnh đầu
-// mảng là ảnh bìa. Để mảng rỗng → seed KHÔNG đụng tới ảnh của mục đó (giữ ảnh
-// đã upload trong CMS); trang công khai dùng ảnh fallback nếu chưa có ảnh nào.
-// Ví dụ:
-//   "song-lung-khung-long-ta-xua": [
-//     { url: "https://…/1.jpg", alt: "Sống lưng khủng long", caption: "Biển mây sáng sớm" },
-//     { url: "https://…/2.jpg" },
-//   ],
-// ────────────────────────────────────────────────────────────────────────────
 const IMAGES: Record<string, ImageInput[]> = {
-  // Place
   "son-la": [],
   "ta-xua": [],
 
-  // Địa điểm (Spot)
   "song-lung-khung-long-ta-xua": [],
   "mom-ca-heo-ta-xua": [],
   "dinh-ta-xua": [],
@@ -84,7 +64,6 @@ const IMAGES: Record<string, ImageInput[]> = {
   "ruong-bac-thang-xim-vang": [],
   "thac-rong-ta-xua": [],
 
-  // Hoạt động (Activity)
   "san-may-ta-xua": [],
   "trekking-dinh-ta-xua": [],
   "trekking-rung-reu-ta-xua": [],
@@ -95,7 +74,6 @@ const IMAGES: Record<string, ImageInput[]> = {
   "ngam-hoa-do-quyen-ta-xua": [],
   "check-in-song-lung-khung-long": [],
 
-  // Quán ăn (Eatery)
   "bep-homestay-ta-xua": [],
   "lau-ga-den-ta-xua": [],
   "quan-com-doi-che-ta-xua": [],
@@ -104,7 +82,6 @@ const IMAGES: Record<string, ImageInput[]> = {
   "ca-phe-ngam-may-ta-xua": [],
   "quan-pho-sang-bac-yen": [],
 
-  // Đặc sản (Specialty)
   "che-shan-tuyet-ta-xua": [],
   "ga-den-ta-xua": [],
   "thit-trau-gac-bep-ta-xua": [],
@@ -116,7 +93,6 @@ const IMAGES: Record<string, ImageInput[]> = {
 };
 
 async function main() {
-  // 1) Tỉnh Sơn La
   const sonLa = await prisma.place.upsert({
     where: { slug: "son-la" },
     update: {},
@@ -132,16 +108,6 @@ async function main() {
   });
   await setImages({ placeId: sonLa.id }, IMAGES["son-la"] ?? [], "Sơn La");
 
-  // 2) Điểm đến Tà Xùa
-  // CÂU ĐẦU là lede — trang Place tách riêng và phóng to (xem splitLede ở
-  // src/app/diem-den/[placeSlug]/page.tsx). Viết câu đầu đứng độc lập được,
-  // dài ~110–150 ký tự. Phần còn lại là thân bài, ~600–700 ký tự: cột trái
-  // còn chứa cả khối Thông tin chung nên chừng này mới cân với cột video bên
-  // cạnh. Ngắt đoạn bằng dòng trống.
-  // Chi tiết dài (lịch trình, mẹo) đã có ở trang từng địa điểm/trải nghiệm.
-  // KHÔNG lặp ý của `tagline` ("đứng trên mây") — tagline đã hiện ở hero; lede
-  // mở sang góc khác. Cũng tránh nhắc lại số liệu đã có trong quickInfo
-  // (độ cao 1.600m, khoảng cách 240km): người đọc thấy ngay bên dưới.
   const taXuaDesc = [
     "Tà Xùa là một xã người Mông vắt trên sống núi Bắc Yên, nơi mọi buổi sáng đẹp trời đều bắt đầu bằng việc dậy từ 4h30 và chạy xe trong bóng tối.",
     "Phần thưởng cho sự dậy sớm ấy là cả thung lũng chìm dưới lớp mây trắng dày, chỉ còn vài chỏm núi nhô lên như đảo — nhìn rõ nhất từ sống lưng khủng long, dải sống núi hẹp vắt giữa hai vực.",
@@ -188,11 +154,8 @@ async function main() {
   });
   await setImages({ placeId: taXua.id }, IMAGES["ta-xua"] ?? [], "Tà Xùa");
 
-  // 3) Spots
   type HighlightSeed = {
     title: string;
-    // Văn xuôi thuần, viết dài như một đoạn blog. Truyền mảng để tách nhiều
-    // đoạn — mỗi phần tử sẽ thành một thẻ <p> khi ghi vào rich text.
     body?: string | string[];
   };
   type SpotSeed = {
@@ -688,7 +651,6 @@ async function main() {
         extraFees: ef,
         placeId: taXua.id,
         ...PUB,
-        // sửa: xoá điểm nhấn cũ rồi tạo lại theo thứ tự
         highlights: hl ? { deleteMany: {}, create: hl } : undefined,
       },
       create: {
@@ -706,8 +668,6 @@ async function main() {
     await setImages({ spotId: row.id }, IMAGES[slug] ?? [], name);
   }
 
-  // 4) Activities (M:N tới Spot)
-  // spots[].blurb = nội dung RIÊNG của hoạt động này TẠI spot đó (qua SpotActivity).
   type ActivitySeed = {
     slug: string;
     name: string;
@@ -728,9 +688,6 @@ async function main() {
       note?: string;
     }[];
     description?: string;
-    // Thân bài chi tiết dạng blog — mảng các khối HTML (<h2>, <p>, <ul>,
-    // <blockquote>…) sẽ được nối lại thành rich text. Xem proseClass để biết
-    // các thẻ được style trên trang công khai.
     content?: string[];
     tags?: string[];
     spots: { slug: string; blurb?: string }[];
@@ -885,9 +842,6 @@ async function main() {
       category: ActivityCategory.adventure,
       durationText: "Nửa ngày – 1 ngày",
       seasonText: "Quanh năm; tránh ngày mưa lớn",
-      // Chạy đèo thì không mất phí gì — hai khoản dưới là dịch vụ thuê tại
-      // bản, nên nằm ở extraFees. Để trong ticketTiers thì chip ngoài trang
-      // ghi "Từ 100.000đ" như thể phải mua vé mới được đi cung đèo.
       ticketFree: true,
       extraFees: [
         {
@@ -1147,21 +1101,6 @@ async function main() {
     await setImages({ activityId: row.id }, IMAGES[slug] ?? [], name);
   }
 
-  // ──────────────────────────────────────────────────────────────────────
-  // 5) Quán ăn (Eatery)
-  //
-  // Ẩm thực Tà Xùa KHÔNG giống một phố biển: cả xã chỉ có một con đường độc
-  // đạo, quán xá đếm trên đầu ngón tay và phần lớn khách ăn ngay tại bếp
-  // homestay (đặt cơm trước từ chiều). Danh sách dưới đây tôn trọng thực tế
-  // đó — thà ít mà đúng còn hơn dựng ra một "khu ẩm thực" không tồn tại.
-  //
-  // CHỦ Ý KHÔNG có `phone`/`bookingUrl`: số điện thoại là dữ liệu phải xác
-  // minh với chính chủ (xem định vị "danh bạ đã xác minh" trong CLAUDE.md).
-  // Seed ra một dãy số bịa là tiếp tay cho chính cái mà sản phẩm này muốn
-  // chống. Biên tập điền sau trong CMS khi đã gọi kiểm chứng.
-  // Toạ độ là VỊ TRÍ TƯƠNG ĐỐI quanh trung tâm bản, đủ để bản đồ không vỡ —
-  // cũng cần chỉnh lại khi khảo sát thực địa.
-  // ──────────────────────────────────────────────────────────────────────
   const LOC = {
     provinceName: "Sơn La",
     wardName: "Tà Xùa",
@@ -1295,17 +1234,6 @@ async function main() {
     await setImages({ eateryId: row.id }, IMAGES[slug] ?? [], name);
   }
 
-  // ──────────────────────────────────────────────────────────────────────
-  // 6) Đặc sản (Specialty) — MÓN ĂN dùng lại, gắn 2–4 quán tiêu biểu
-  //
-  // Đúng mô hình trong CLAUDE.md: đặc sản là "món", quán là "chỗ" — không tạo
-  // kiểu "gà đen quán X".
-  //
-  // PHẠM VI: chỉ MÓN ĂN TẠI CHỖ. Dự án KHÔNG làm phần đặc sản mua làm quà, nên
-  // sản vật đóng gói (táo mèo, rượu táo mèo) không có mặt ở đây — lần seed đầu
-  // có, nay đã bỏ và có bước dọn bên dưới. Sản vật nào vẫn cần kể thì sống ở
-  // nơi khác: chè Shan tuyết là `Activity` "Thưởng trà" + `Eatery` "Nhà trà".
-  // ──────────────────────────────────────────────────────────────────────
   const specialties: {
     slug: string;
     name: string;
@@ -1382,9 +1310,6 @@ async function main() {
     },
   ];
 
-  // Dọn hai bản ghi của lần seed đầu: sản vật đóng gói, không phải món ăn tại
-  // chỗ → ngoài phạm vi (xem chú thích mục 6). Xoá theo slug nên chỉ đụng đúng
-  // hai cái này, không ảnh hưởng gì do biên tập tự thêm trong CMS.
   await prisma.specialty.deleteMany({
     where: { slug: { in: ["tao-meo-bac-yen", "ruou-tao-meo-hang-chu"] } },
   });
@@ -1414,12 +1339,9 @@ async function main() {
     await setImages({ specialtyId: row.id }, IMAGES[slug] ?? [], name);
   }
 
-  // 7) Di chuyển (Transport) — getTo: cách đến từ ngoài; getAround: tại chỗ.
-  // Không có slug → idempotent bằng deleteMany theo placeId rồi tạo lại.
   const D = TransportDirection;
   const M = TransportMode;
   const transports = [
-    // ── Đến nơi ──
     {
       direction: D.getTo,
       mode: M.bus,
@@ -1477,7 +1399,6 @@ async function main() {
       description:
         "Hợp khách đang đi cung Mộc Châu – Sơn La muốn ghép thêm Tà Xùa. Bắt xe về Bắc Yên rồi đi tiếp lên bản.",
     },
-    // ── Đi lại tại chỗ ──
     {
       direction: D.getAround,
       mode: M.motorbike,

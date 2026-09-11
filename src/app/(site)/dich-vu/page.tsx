@@ -3,7 +3,6 @@ import { ComingSoon } from "@/components/site/coming-soon";
 
 export const metadata = { title: "Dịch vụ" };
 
-// Placeholder — hub dịch vụ du lịch (lưu trú, thuê xe, tour…) đang phát triển.
 export default function DichVuPage() {
   return (
     <div className="flex flex-1 flex-col">

@@ -22,21 +22,6 @@ import { MICRO } from "@/components/trip/trip-rail";
 import { AvatarGroup, AvatarGroupCount } from "@/components/ui/avatar";
 import type { TripPerson } from "@/lib/trip";
 
-// MỘT popover cho cả hai mức chia sẻ, không phải hai nút cạnh nhau:
-//
-//   1. CÙNG SỬA  — mời bằng email, người được mời sửa được nội dung.
-//   2. AI CÓ LINK — chỉ đọc, không cần tài khoản.
-//
-// Xếp "cùng sửa" lên trước vì đó là hành động mạnh hơn và là thứ người ta mở
-// popover này để làm; link chỉ-đọc là tiện ích.
-//
-// Chủ chuyến mới mời/gỡ và bật/tắt link được. Người ĐƯỢC MỜI chỉ thấy danh sách
-// và nút rời chuyến — nếu họ mời tiếp được thì chủ chuyến mất kiểm soát danh
-// sách của chính mình.
-//
-// Ngoài popover còn một cụm AVATAR CHỒNG đứng cạnh nút, mở cùng popover đó
-// (kiểu Docs/Figma): ai đang cùng sửa phải THẤY ĐƯỢC mà không cần bấm gì. Nó
-// đọc thẳng từ props server nên hiện ngay, không chờ `listTripMembers`.
 const FACES = 4;
 const initial = (name: string | null) => (name?.trim().charAt(0) || "?").toUpperCase();
 
@@ -53,7 +38,6 @@ export function TripShare({
   shareId: string | null;
   shared: boolean;
   isOwner: boolean;
-  /** Chủ chuyến + người đã tham gia. Một mình thì cụm avatar tự ẩn. */
   people: TripPerson[];
 }) {
   const [open, setOpen] = useState(false);
@@ -62,10 +46,6 @@ export function TripShare({
   const [copied, setCopied] = useState(false);
   const [pending, start] = useTransition();
 
-  // Dựng sẵn từ props server để mở popover là THẤY NGAY — cùng nguồn với cụm
-  // avatar bên ngoài. Vẫn gọi `listTripMembers` khi mở, nhưng chỉ để bổ sung
-  // thứ `people` không có: email và các LỜI MỜI CÒN TREO (người chưa đăng nhập
-  // lần nào nên chưa thành member).
   const [members, setMembers] = useState<TripMemberRow[]>(() =>
     people.map((p) => ({ ...p, email: null, pending: false })),
   );
@@ -155,8 +135,6 @@ export function TripShare({
       }}
     >
       <div className="flex items-center gap-2.5">
-        {/* Chỉ hiện khi có người khác: một avatar của chính mình thì không nói
-            lên điều gì, chỉ thêm một vật tròn cạnh nút. */}
         {people.length > 1 && (
           <button
             type="button"
@@ -189,7 +167,6 @@ export function TripShare({
       </div>
 
       <PopoverContent align="end" className="max-h-[min(80vh,34rem)] w-80 overflow-y-auto">
-        {/* ── 1. Cùng sửa ──────────────────────────────────── */}
         <h3 className={cn(MICRO, "text-muted-foreground")}>Cùng chỉnh sửa</h3>
 
         {isOwner && (
@@ -202,7 +179,6 @@ export function TripShare({
               aria-label="Email người muốn mời"
               className="h-9 rounded-lg"
             />
-            {/* h-9 cho cả hai: Button size="sm" là h-8, đứng cạnh Input là lệch. */}
             <Button
               type="submit"
               variant="outline"
@@ -279,7 +255,6 @@ export function TripShare({
           </button>
         )}
 
-        {/* ── 2. Link chỉ đọc ──────────────────────────────── */}
         <div className="mt-5 border-t pt-4">
           <div className="flex items-start justify-between gap-3">
             <div>

@@ -14,8 +14,6 @@ import {
 import { ROLES, ROLE_ORDER, type Role } from "./roles";
 import { updateUserRole } from "./actions";
 
-// Badge tĩnh hiển thị vai trò (dùng cho viewer không phải admin, hoặc dòng của
-// chính mình — không cho tự đổi).
 function RoleBadge({ role }: { role: Role }) {
   const { label, variant, icon: Icon } = ROLES[role];
   return (
@@ -26,7 +24,6 @@ function RoleBadge({ role }: { role: Role }) {
   );
 }
 
-// Badge có thể bấm để đổi vai trò (chỉ admin thấy, trừ dòng của chính mình).
 function RoleMenu({
   userId,
   role,

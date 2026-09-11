@@ -24,8 +24,6 @@ export type TransportItem = {
   description: string | null;
 };
 
-// Mode → HỌ phương tiện (xem ghi chú ở `glyphs.tsx`): mười ba mode dùng chung
-// bảy hình. Nhãn chữ ngay cạnh vẫn nói chính xác là gì.
 const MODE_GLYPH: Record<string, GlyphName> = {
   car: "car",
   taxi: "car",
@@ -58,7 +56,6 @@ const MODE_LABEL: Record<string, string> = {
   other: "Khác",
 };
 
-// "50.000 – 120.000đ" / "Từ 50.000đ" / null.
 function formatPrice(t: TransportItem): string | null {
   const cur = t.currency === "VND" || !t.currency ? "đ" : ` ${t.currency}`;
   const fmt = (n: number) => n.toLocaleString("vi-VN") + cur;
@@ -69,8 +66,6 @@ function formatPrice(t: TransportItem): string | null {
   return null;
 }
 
-// Các mẩu meta trả về RỜI, không nối bằng dấu chấm giữa — quy ước dải phân
-// cách của dự án là ngăn bằng khoảng trắng rộng.
 function metaParts(t: TransportItem): string[] {
   return [
     MODE_LABEL[t.mode] ?? t.mode,
@@ -90,8 +85,6 @@ function PhoneLink({ phone }: { phone: string }) {
   );
 }
 
-// Một lựa chọn — mọi phương tiện đồng cấp: huy hiệu icon + tên + meta thanh lịch,
-// mô tả, cảnh báo, đơn vị · hotline · đặt. Ngăn nhau bằng hairline của danh sách.
 function Option({ t }: { t: TransportItem }) {
   const price = formatPrice(t);
   return (
@@ -159,7 +152,6 @@ function Option({ t }: { t: TransportItem }) {
   );
 }
 
-// Nhóm "đến nơi" theo điểm xuất phát (giữ nguyên thứ tự — mọi cách đồng cấp).
 function groupByOrigin(items: TransportItem[]): [string, TransportItem[]][] {
   const map = new Map<string, TransportItem[]>();
   for (const t of items) {
@@ -187,8 +179,6 @@ function GroupHead({ glyph, title }: { glyph: GlyphName; title: string }) {
   );
 }
 
-// "Đi lại thế nào": "Đến nơi" nhóm theo điểm xuất phát (các cách đồng cấp); "Tại
-// chỗ" theo đặc tính. Thanh nhảy dính để không "chôn" phần tại chỗ khi list dài.
 export function TransportSection({
   transports,
   placeName,
@@ -213,8 +203,6 @@ export function TransportSection({
   const jumpingRef = useRef<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Scroll-spy: sáng chip theo mục đang xem. Khi nhảy có chủ đích thì khóa để
-  // chip không "nháy" qua mục giữa đường (mở khóa khi mục đích tới / sau timeout).
   useEffect(() => {
     if (navItems.length < 2) return;
     const els = navItems
@@ -253,7 +241,6 @@ export function TransportSection({
     setActive(id);
     jumpingRef.current = id;
     if (timerRef.current) clearTimeout(timerRef.current);
-    // Dự phòng: mở khóa sau khi cuộn xong (phòng mục đích không chạm vùng quan sát).
     timerRef.current = setTimeout(() => {
       jumpingRef.current = null;
     }, 700);

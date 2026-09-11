@@ -10,13 +10,11 @@ const utapi = new UTApi();
 
 type Result = { ok: true } | { ok: false; error: string };
 
-// Lấy fileKey từ URL UploadThing (…/f/<key>) để xóa khỏi storage.
 function keyFromUrl(url: string): string | null {
   const m = url.match(/\/f\/([^/?]+)/);
   return m ? m[1] : null;
 }
 
-// Cập nhật metadata ảnh: alt, caption, nguồn (credit).
 export async function updateMediaImage(
   id: string,
   data: { alt: string; caption: string; credit: string },
@@ -38,7 +36,6 @@ export async function updateMediaImage(
   return { ok: true };
 }
 
-// Xóa một ảnh khỏi thư viện (cả file trên UploadThing lẫn bản ghi DB).
 export async function deleteMediaImage(id: string): Promise<Result> {
   const session = await auth();
   const role = session?.user?.role;

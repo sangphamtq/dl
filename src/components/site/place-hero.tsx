@@ -19,8 +19,6 @@ type PlaceHeroData = {
   parent: { slug: string; name: string } | null;
 };
 
-// Hero dùng chung cho trang chi tiết điểm đến & trang danh sách listing.
-// back: link "quay lại" do từng trang truyền vào (danh sách điểm đến / trang điểm đến).
 export function PlaceHero({
   place,
   heroImages,
@@ -40,11 +38,8 @@ export function PlaceHero({
 }) {
   return (
     <HeroFrame images={heroImages.map((i) => i.url)}>
-      {/* pb rộng: HeroFrame có overflow-hidden nên bóng của deck ảnh phải rơi
-          trọn trong section, không thì bị cắt ngang ở mép thanh tab sticky. */}
       <div className="mx-auto max-w-7xl px-4 pb-14 pt-6 sm:px-6 sm:pb-12 sm:pt-5">
         <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-[1fr_1.4fr] lg:gap-12">
-          {/* Trái: chữ */}
           <div>
             <div className="mb-5 flex items-center justify-between gap-3">
               {back ? (
@@ -78,10 +73,6 @@ export function PlaceHero({
               </div>
             </div>
 
-            {/* Eyebrow (cam): tỉnh cha / ngữ cảnh. Cùng font display với tên
-                điểm đến ngay dưới, nhỏ hơn một bậc rõ rệt (20px vs 36–48px) —
-                trước đây là chữ viết tay nên cỡ 30–36px mới cân, sans ở cỡ đó
-                thành dòng tiêu đề thứ hai tranh chỗ với chính tên điểm đến. */}
             <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
               {place.parent ? (
                 <Link
@@ -106,7 +97,6 @@ export function PlaceHero({
               </p>
             )}
 
-            {/* Hành động chính của trang — xem ghi chú ở bản hero canh giữa. */}
             {checkIn && (
               <div className="mt-6">
                 <PlanTripButton
@@ -118,13 +108,6 @@ export function PlaceHero({
               </div>
             )}
 
-            {/* Dải thống kê + Vivu-er đã đến + tổng quan đánh giá (CÙNG HÀNG).
-                Giữ được một hàng xuống tới màn 320px bằng cách bỏ CHỮ chứ không
-                bỏ số: dưới `sm` chỉ còn icon + con số ("👁 70", "★ 3,8 · 8"),
-                avatar co xuống 24px và bỏ nhãn "Vivu-er đã đến" (xem `dense`
-                trong CheckInFaces). Đủ ba dữ kiện, chỉ mất phần chú thích mà
-                icon đã nói thay. Nguyên bản đủ chữ rộng ~490px — quá gấp rưỡi
-                bề ngang khả dụng của màn 320px, nên chắc chắn rớt dòng. */}
             {(stats.length > 0 ||
               (visitors && visitors.total > 0) ||
               (reviews && reviews.total > 0)) && (
@@ -184,9 +167,6 @@ export function PlaceHero({
             )}
           </div>
 
-          {/* Phải: chồng ảnh. z chỉ có tác dụng trong section (HeroFrame đã
-              `isolate`) — đủ để bóng đè lên cột chữ; muốn bóng không bị cắt thì
-              phải chừa pb ở khung ngoài, xem ghi chú trên. */}
           <div className="relative z-10">
             <PlaceHeroStack images={heroImages} />
           </div>

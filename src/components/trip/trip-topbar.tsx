@@ -22,21 +22,11 @@ export type TripChrome = {
   people: TripPerson[];
 };
 
-// Thanh tiêu đề của MỘT lịch trình — dùng chung cho mục Lịch trình và mọi mục
-// khác (ghi chú, đồ mang theo…). Tách khỏi trip-editor vì các mục kia không nạp
-// ngày/mục nhưng vẫn phải có đúng thanh này; để mỗi trang tự dựng là chúng trôi
-// khác nhau ngay lần sửa thứ hai.
-//
-// Trang soạn là chỗ LÀM VIỆC nên không dùng ảnh bìa như trang công khai. Nhưng
-// cũng không dùng dải gradient xanh nhạt như bản trước — thứ đó không nói gì,
-// chỉ tô màu. Ở đây phân cấp bằng CHỮ: nhãn micro, tên chuyến to, dữ kiện ngăn
-// bằng vạch dọc mảnh.
 export function TripTopbar({
   trip,
   facts,
 }: {
   trip: TripChrome;
-  /** Dữ kiện đếm được của mục đang mở (vd "3 ngày", "21 mục"). */
   facts?: string[];
 }) {
   const [pending, start] = useTransition();
@@ -59,9 +49,6 @@ export function TripTopbar({
         </Link>
 
         <div className="mt-3 flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
-          {/* min-w để cụm nút bên phải XUỐNG DÒNG ở khổ hẹp thay vì bóp tên
-              chuyến. Tên là một <input> nên bị bóp thì nó cắt cụt giữa chữ, không
-              có dấu ba chấm — nhìn như hỏng. */}
           <div className="min-w-[13rem] flex-1">
             <TitleField
               value={trip.title}
@@ -108,8 +95,6 @@ export function TripTopbar({
             </div>
           </div>
 
-          {/* Dưới `lg` menu các mục sống ở đây chứ không phải một dải riêng —
-              xem trip-side-nav.tsx. */}
           <div className="flex items-center gap-2.5">
             <TripSectionSheet tripId={trip.id} />
             <TripShare

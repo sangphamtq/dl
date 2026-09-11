@@ -94,7 +94,6 @@ export function PostForm({
         </div>
       )}
 
-      {/* Tiêu đề + nội dung */}
       <div className="space-y-5">
         <div className="space-y-2">
           <Label htmlFor="title">Tiêu đề</Label>
@@ -117,7 +116,6 @@ export function PostForm({
       </div>
 
       <div className="divide-y border-t">
-        {/* Tóm tắt */}
         <FormSection
           title="Tóm tắt"
           description="Đoạn mô tả ngắn hiển thị ở card blog & kết quả tìm kiếm."
@@ -137,12 +135,10 @@ export function PostForm({
           </div>
         </FormSection>
 
-        {/* Search engine listing */}
         <FormSection
           title="Hiển thị trên công cụ tìm kiếm"
           description="Xem trước cách bài hiển thị trên Google & tinh chỉnh đường dẫn."
         >
-          {/* Preview kiểu Google SERP */}
           <div className="rounded-lg border bg-card p-4">
             <p className="truncate text-xs text-[#006621] dark:text-emerald-400">
               hanhtrinhviet.vn › blog › {slugPreview || "duong-dan"}
@@ -171,7 +167,6 @@ export function PostForm({
           </div>
         </FormSection>
 
-        {/* Liên kết địa điểm (PostRef) */}
         <FormSection
           title="Địa điểm liên kết"
           description="Gắn các điểm đến / quán / món… được nhắc trong bài. Hiển thị ở cuối bài & ở trang đó."
@@ -188,7 +183,6 @@ export function PostForm({
           </div>
         </FormSection>
 
-        {/* Phân loại & thẻ */}
         <FormSection
           title="Phân loại & thẻ"
           description="Giúp lọc và gợi ý bài liên quan."

@@ -27,7 +27,6 @@ export type CheckInPerson = {
   stance?: ReviewStance | null;
 };
 
-// Pill cảm nhận: tích cực xanh, tiêu cực xám (khớp danh sách review).
 function stancePill(stance: ReviewStance) {
   const { tone } = stanceMeta(stance);
   return tone === "positive" || tone === "posSoft"
@@ -36,14 +35,10 @@ function stancePill(stance: ReviewStance) {
 }
 
 const FACES = 5;
-// Ở chế độ `dense` (hàng số liệu hero phải vừa màn 320px) chỉ hiện 3 mặt.
-// Không thể cắt bằng CSS rồi giữ nguyên bong bóng "+N": số đó phải đổi theo,
-// nên render CẢ HAI bong bóng và để `display` chọn cái đúng theo bề ngang.
 const DENSE_FACES = 3;
 const initial = (name: string | null) =>
   (name?.trim().charAt(0) || "?").toUpperCase();
 
-// Avatar stack các Vivu-er đã check-in + mở dialog xem toàn bộ danh sách.
 export function CheckInFaces({
   people,
   total,
@@ -53,16 +48,8 @@ export function CheckInFaces({
 }: {
   people: CheckInPerson[];
   total: number;
-  /** Nhãn cạnh avatar — hero full-bleed truyền vào dạng "128 Vivu-er". */
   label?: string;
-  /** "onDark": stack nằm thẳng trên ảnh → nhãn chữ trắng. */
   tone?: "default" | "onDark";
-  /**
-   * Dùng khi cụm này phải nằm CHUNG MỘT HÀNG với các số liệu khác ở hero:
-   * dưới `sm` thì avatar co từ 32px xuống 24px và bỏ nhãn chữ. Nguyên cụm
-   * 5 avatar + nhãn "Vivu-er đã đến" rộng ~270px — một mình nó đã chiếm gần
-   * hết bề ngang khả dụng của màn 320px.
-   */
   dense?: boolean;
 }) {
   const [open, setOpen] = useState(false);

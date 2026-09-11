@@ -55,7 +55,6 @@ function ReplyForm({
   const [value, setValue] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  // Khoá đồng bộ chống gửi trùng (state `pending` không cập nhật kịp trong 1 handler).
   const submitting = useRef(false);
 
   const submit = () => {
@@ -82,14 +81,12 @@ function ReplyForm({
 
   return (
     <div>
-      {/* Ô nhập bình luận dạng pill kiểu Facebook */}
       <div className="flex items-end gap-1.5 rounded-2xl bg-muted px-3 py-1">
         <textarea
           value={value}
           autoFocus={autoFocus}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={(e) => {
-            // Bỏ qua Enter khi đang gõ IME (tiếng Việt) để không gửi non.
             if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
               e.preventDefault();
               submit();
@@ -162,7 +159,6 @@ function ReplyItem({
     <div className="group/r flex gap-2">
       <Avatar name={reply.author.name} size={isChild ? 8 : 9} />
       <div className="min-w-0 flex-1">
-        {/* Bong bóng bình luận kiểu Facebook */}
         <div className="inline-block max-w-full rounded-2xl bg-muted px-3 py-2">
           <span className="block text-[13px] font-semibold leading-tight">
             {reply.author.name ?? "Ẩn danh"}
@@ -261,7 +257,7 @@ export function ReplySection({
   threadSlug: string;
   locked: boolean;
   replies: ReplyNode[];
-  preloaded?: boolean; // true = replies đã SSR sẵn (permalink); false = feed, tự tải
+  preloaded?: boolean;
   currentUserId: string | null;
   isStaff: boolean;
   isAuthed: boolean;
@@ -272,21 +268,17 @@ export function ReplySection({
   const [replies, setReplies] = useState<ReplyNode[]>(initialReplies);
   const [loaded, setLoaded] = useState(preloaded);
 
-  // Tải (hoặc làm mới) cây trả lời từ server.
   const reload = useCallback(async () => {
     const data = await fetchReplies(threadId);
     setReplies(data);
     setLoaded(true);
   }, [threadId]);
 
-  // Lần đầu mở (feed chưa preload) → tải cây trả lời. setState diễn ra sau await
-  // (bất đồng bộ), không gây cascading render.
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!preloaded) void reload();
   }, [preloaded, reload]);
 
-  // Sau khi thêm/xóa trả lời: cập nhật cây tại chỗ + làm mới trang (đếm ở thẻ bài).
   const onChanged = useCallback(() => {
     void reload();
     router.refresh();
@@ -312,12 +304,11 @@ export function ReplySection({
     (async () => {
       try {
         const Ably = await import("ably");
-        if (cancelled) return; // đã unmount trong lúc import
+        if (cancelled) return;
         client = new Ably.Realtime({ authUrl: "/api/ably/token" });
         client.connection.on("connected", () => setLive(true));
         client.connection.on("disconnected", () => setLive(false));
         client.connection.on("suspended", () => setLive(false));
-        // subscribe() trả về Promise (attach) — nuốt lỗi khi đóng lúc đang kết nối.
         void client.channels
           .get(`thread:${threadSlug}`)
           .subscribe("replies:changed", () => void reload())
@@ -340,7 +331,6 @@ export function ReplySection({
 
   return (
     <section id="tra-loi" className="scroll-mt-24">
-      {/* Ô nhập */}
       {locked ? (
         <div className="inline-flex items-center gap-2 rounded-full bg-muted/60 px-3 py-1.5 text-xs text-muted-foreground">
           <Lock className="size-3.5" aria-hidden />

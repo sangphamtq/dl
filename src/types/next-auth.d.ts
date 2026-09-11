@@ -9,7 +9,6 @@ declare module "next-auth" {
     } & DefaultSession["user"];
   }
 
-  // Bổ sung `role` cho User (adapter trả về kèm cột role).
   interface User {
     role?: UserRole;
   }

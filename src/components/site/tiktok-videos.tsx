@@ -13,7 +13,6 @@ export type PlaceVideo = {
   thumbnail?: string | null;
 };
 
-// Logo TikTok đơn sắc (lucide không có icon brand) — tô theo currentColor.
 export function TikTokGlyph({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden className={className}>
@@ -22,7 +21,6 @@ export function TikTokGlyph({ className }: { className?: string }) {
   );
 }
 
-/* ── Modal player + danh sách thumbnail chọn clip ───────────────── */
 function VideoModal({
   videos,
   placeName,
@@ -101,7 +99,6 @@ function VideoModal({
           </div>
         )}
 
-        {/* Tìm thêm video trên TikTok */}
         <a
           href={tiktokSearchUrl(placeName)}
           target="_blank"
@@ -117,7 +114,6 @@ function VideoModal({
   );
 }
 
-/* ── Card video nổi (hero) ──────────────────────────────────────── */
 export function PlaceVideos({
   videos,
   placeName,

@@ -4,14 +4,10 @@ import Image from "next/image";
 import { createContext, useContext, useState } from "react";
 import { cn } from "@/lib/utils";
 
-// Setter để PlaceHeroStack báo ảnh đang xem → nền ambient đổi theo.
 type SetActive = (index: number) => void;
 const HeroAmbientCtx = createContext<SetActive | null>(null);
 export const useHeroAmbient = () => useContext(HeroAmbientCtx);
 
-// Khung hero: giữ index ảnh đang xem (chung với PlaceHeroStack qua context) và
-// render nền ambient — các lớp ảnh blur mạnh, crossfade theo ảnh hero bên phải.
-// ambient=false → nền phẳng bg-background (dùng cho trang chi tiết điểm đến).
 export function HeroFrame({
   images,
   children,
@@ -43,7 +39,6 @@ export function HeroFrame({
                 )}
               />
             ))}
-            {/* Phủ nền sáng → "màu nền mở" mềm, chữ vẫn đọc rõ */}
             <div className="absolute inset-0 bg-background/75 dark:bg-background/82" />
             <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-transparent to-background" />
           </div>

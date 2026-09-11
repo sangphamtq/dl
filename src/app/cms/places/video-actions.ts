@@ -24,7 +24,6 @@ async function revalidate(placeId: string) {
   if (p) revalidatePath(`/diem-den/${p.slug}`);
 }
 
-// Thêm video: nhận link TikTok hoặc ID. Caption rỗng → lấy tạm tiêu đề từ oEmbed.
 export async function addVideo(
   placeId: string,
   input: string,
@@ -89,7 +88,6 @@ export async function updateVideoCaption(
   return { ok: true };
 }
 
-// Đổi thứ tự: hoán đổi `order` với video liền kề theo hướng dir (-1 lên, +1 xuống).
 export async function moveVideo(
   id: string,
   placeId: string,
@@ -111,7 +109,7 @@ export async function moveVideo(
     orderBy: { order: dir < 0 ? "desc" : "asc" },
     select: { id: true, order: true },
   });
-  if (!neighbor) return { ok: true }; // đã ở đầu/cuối
+  if (!neighbor) return { ok: true };
 
   await prisma.$transaction([
     prisma.placeVideo.update({

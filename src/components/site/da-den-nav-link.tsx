@@ -6,9 +6,6 @@ import { NavIcon } from "./nav-icons";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
-// Nút "Nơi đã đến" trên header — icon tròn, đồng bộ với nút lịch trình & chuông.
-// Icon lấy từ `nav-icons.tsx` (bộ vẽ tay dùng chung với thanh tab dưới): đang ở
-// trang này thì đổi sang bản ĐẶC, y như cách thanh tab iOS báo mục đang mở.
 export function DaDenNavLink() {
   const pathname = usePathname();
   const active = pathname.startsWith("/tai-khoan/da-den");

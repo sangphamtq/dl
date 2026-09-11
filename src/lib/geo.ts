@@ -1,17 +1,9 @@
-// Gom các Listing có toạ độ (Spot, Eatery, Accommodation) của một Place về một
-// mảng GeoPoint phẳng để chấm pin lên bản đồ. Tâm bản đồ của MỘT điểm đến vẫn
-// suy bằng fitBounds ở client (xem destination-map-inner.tsx).
 import { prisma } from "@/lib/prisma";
 import { regionOf } from "@/lib/regions";
 import { PLACE_COORDS } from "@/lib/place-coords";
 
 export type GeoType = "spot" | "eatery" | "accommodation";
 
-// Một điểm đến (Place) trên bản đồ toàn quốc. Toạ độ lấy theo thứ tự:
-//   1. `Place.lat/lng` — nguồn chân lý, sửa được trong CMS;
-//   2. bảng tra `PLACE_COORDS`;
-//   3. TRỌNG TÂM các listing có toạ độ gắn trực tiếp vào nơi đó.
-// Không có nguồn nào thì nơi đó không lên bản đồ.
 export type MapPlacePoint = {
   slug: string;
   name: string;
@@ -60,7 +52,6 @@ export async function getDestinationMapPoints(): Promise<MapPlacePoint[]> {
     prisma.accommodation.findMany({ where: geoScope, select: { placeId: true, lat: true, lng: true } }),
   ]);
 
-  // placeId → tích luỹ toạ độ để tính trọng tâm
   const acc = new Map<string, { lat: number; lng: number; n: number }>();
   for (const g of [...spots, ...eateries, ...accommodations]) {
     if (g.lat == null || g.lng == null) continue;
@@ -91,7 +82,7 @@ export async function getDestinationMapPoints(): Promise<MapPlacePoint[]> {
       lat = a.lat / a.n;
       lng = a.lng / a.n;
     } else {
-      continue; // chưa xác định được vị trí → bỏ qua
+      continue;
     }
     const provinceSlug =
       pl.kind === "province" ? pl.slug : (pl.parent?.slug ?? pl.slug);
@@ -112,7 +103,6 @@ export async function getDestinationMapPoints(): Promise<MapPlacePoint[]> {
     });
   }
   const total = (p: MapPlacePoint) => p.spotCount + p.eateryCount + p.stayCount;
-  // Nổi bật trước → nhiều nội dung → theo tên.
   points.sort(
     (x, y) =>
       Number(y.isFeatured) - Number(x.isFeatured) ||
@@ -148,10 +138,7 @@ const cover = {
   select: { url: true, alt: true },
 } as const;
 
-// Lấy mọi điểm có toạ độ của một Place. Nếu là tỉnh (province), gom thêm điểm
-// của các điểm đến con (destination thuộc tỉnh). Lọc sẵn published + lat/lng ≠ null.
 export async function getPlaceGeoPoints(placeId: string): Promise<GeoPoint[]> {
-  // id của Place gốc + mọi con đã xuất bản (rỗng với destination).
   const children = await prisma.place.findMany({
     where: { parentId: placeId, ...pub },
     select: { id: true },
@@ -200,7 +187,6 @@ export async function getPlaceGeoPoints(placeId: string): Promise<GeoPoint[]> {
     }[],
   ) => {
     for (const r of rows) {
-      // lat đã lọc not null; lng có thể null trên dữ liệu cũ → bỏ qua.
       if (r.lat == null || r.lng == null) continue;
       points.push({
         id: r.id,

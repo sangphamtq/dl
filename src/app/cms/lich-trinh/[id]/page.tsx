@@ -61,8 +61,6 @@ export default async function CmsTripTemplateEditPage({
         </p>
       </div>
 
-      {/* Nội dung từng ngày dùng CHÍNH trình soạn công khai — mẫu do editor sở
-          hữu nên vào được. Khỏi dựng lại một trình soạn thứ hai trong CMS. */}
       <div className="flex items-center justify-between gap-3 rounded-2xl border bg-muted/30 p-4">
         <div>
           <p className="font-medium">Soạn nội dung từng ngày</p>

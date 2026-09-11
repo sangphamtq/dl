@@ -3,12 +3,6 @@
 import { useEffect } from "react";
 import { toast } from "sonner";
 
-// Đăng ký service worker (/sw.js) — phần "app" của PWA: mở lại nhanh, còn xem
-// được trang đã đọc khi mất sóng.
-//
-// CHỈ chạy ở production. Ở dev thì làm ngược lại: gỡ mọi service worker và xoá
-// cache cũ, vì SW còn sót trên localhost sẽ trả bản build cũ và gây ra những lỗi
-// "sửa code mà không thấy đổi" rất khó lần.
 export function PwaRegister() {
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
@@ -29,7 +23,6 @@ export function PwaRegister() {
 
     let refreshing = false;
     const onControllerChange = () => {
-      // SW mới đã tiếp quản → nạp lại một lần để trang chạy đúng bản mới.
       if (refreshing) return;
       refreshing = true;
       window.location.reload();
@@ -40,7 +33,6 @@ export function PwaRegister() {
       try {
         const reg = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
 
-        // Có bản mới đang chờ → mời người dùng tải lại, không tự ý cắt ngang.
         const promptUpdate = (worker: ServiceWorker) => {
           toast("Đã có phiên bản mới", {
             description: "Tải lại để dùng bản mới nhất.",
@@ -58,7 +50,6 @@ export function PwaRegister() {
           const next = reg.installing;
           if (!next) return;
           next.addEventListener("statechange", () => {
-            // `controller` tồn tại ⇒ đây là bản cập nhật, không phải lần cài đầu.
             if (next.state === "installed" && navigator.serviceWorker.controller) {
               promptUpdate(next);
             }
@@ -69,7 +60,6 @@ export function PwaRegister() {
       }
     };
 
-    // Đợi trang tải xong mới đăng ký để không tranh băng thông với nội dung.
     if (document.readyState === "complete") register();
     else window.addEventListener("load", register, { once: true });
 

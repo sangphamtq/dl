@@ -16,7 +16,6 @@ async function requireStaff(): Promise<string> {
   return id;
 }
 
-// Xác nhận báo cáo → tính vào kết quả kiểm tra công khai.
 export async function confirmScamReport(
   id: string,
   note?: string,
@@ -39,7 +38,6 @@ export async function confirmScamReport(
   return { ok: true };
 }
 
-// Bác bỏ báo cáo.
 export async function rejectScamReport(
   id: string,
   note?: string,
@@ -62,7 +60,6 @@ export async function rejectScamReport(
   return { ok: true };
 }
 
-// Xoá hẳn báo cáo.
 export async function deleteScamReport(id: string): Promise<ActionResult> {
   try {
     await requireStaff();

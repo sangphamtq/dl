@@ -3,24 +3,12 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Nới container lớn nhất (max-w-7xl) rộng hơn trên màn hình lớn.
-   max-w là mức trần nên chỉ có hiệu lực khi viewport > 1280px. */
-@theme {
-  --container-7xl: 90rem;
-}
-
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
-  /* Chồng chữ mono CỦA HỆ THỐNG, không tải font nào. `font-mono` chỉ dùng ở
-     /cms, trang lỗi và /kiem-tra để hiện slug/mã — không đáng một font web
-     preload trên mọi trang công khai (Geist Mono từng tốn 37 KB ở đó). */
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
     "Liberation Mono", monospace;
-  /* Tiêu đề dùng CHUNG họ chữ với font display (xem layout.tsx). Giữ hai tên
-     biến riêng vì hai vai trò khác nhau — muốn tách lại thành hai font thì chỉ
-     đổi dòng này. */
   --font-heading: var(--font-display);
   --font-rounded: var(--font-rounded);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -68,13 +56,6 @@
   --popover-foreground: #1f2226;
   --primary: #2e871c;
   --primary-foreground: #ffffff;
-  /* Xanh THƯƠNG HIỆU cho vật thể ĐỤC — nút CTA trên header, huy hiệu đặt trên
-     ảnh. Cùng sắc với --primary bản sáng, nhưng cố ý KHÔNG khai báo lại trong
-     .dark (giống --warm-bright): --primary tự sáng lên trong scope
-     tối để chữ/nền xanh còn đọc được trên nền gần đen, còn một viên nút đục thì
-     không cần — nó tự mang nền của nó đi. Dùng --primary ở đó chỉ khiến cùng một
-     nút ra xanh bạc hà trên trang có hero và xanh rừng trên trang nền sáng.
-     Chữ trắng trên nền này được ~4.6:1, đạt AA ở mọi bối cảnh. */
   --brand: #2e871c;
   --brand-foreground: #ffffff;
   --warm: #ff8800;
@@ -85,19 +66,6 @@
      Dùng hex thay oklch: oklch(.82 .18 62) bị ép về gamut sRGB thành #ffaf62 —
      cam phấn, nhạt hơn cả --warm chứ không nổi hơn. */
   --warm-bright: #ff9a1f;
-  /* HAI MÀU "INK" — dành riêng cho vai trò CHỮ trên nền SÁNG.
-     --warm (#ff8800) và --primary (#2e871c) được chỉnh cho nền tối và cho mảng
-     nền đặc: trong dải đêm --warm-bright đo được 9,3:1, còn chữ trắng trên nền
-     --primary được ~4,6:1. Nhưng dùng chính chúng làm CHỮ trên nền sáng thì
-     trượt AA, và đó là chỗ chúng đang bị dùng nhiều nhất — nhãn loại 9,6–12px,
-     số đếm tab, số thứ tự: đo được 1,7–2,8:1, tức là lớp quét mắt của trang.
-     Hai token dưới đây tối đủ để đạt 4,5:1 trên CẢ nền trắng LẪN dải --muted
-     (#edeae4, nền chặt hơn):
-       --warm-ink    #a34c00 → 5,85:1 trên trắng · 4,87:1 trên muted
-       --primary-ink #26701a → 6,15:1 trên trắng · 5,12:1 trên muted
-     LUẬT: nền/huy hiệu đặc dùng --warm/--primary; CHỮ trên nền sáng dùng bản
-     -ink. Trong scope .dark hai token này lật về bản sáng (xem .dark bên dưới),
-     nên dải đêm không đổi một pixel nào. */
   --warm-ink: #a34c00;
   --primary-ink: #26701a;
   --secondary: #edeae4;
@@ -117,23 +85,11 @@
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
 
-  /* Chỗ mà thanh nav dưới (BottomNav) đang chiếm. Mặc định 0 — chỉ có giá trị
-     thật khi thanh đó thực sự hiển thị (mobile + không phải trang bị ẩn).
-     Mọi phần tử `fixed` bám đáy (nút lên đầu trang, lời mời cài app, dock
-     chuyển nhanh điểm đến) cộng biến này vào `bottom` để tự xếp lên trên thanh
-     nav, thay vì mỗi nơi tự đoán một con số. */
   --bottom-nav-h: 0px;
 }
 
-/* `data-bottom-nav` do chính BottomNav gắn/gỡ trên <html> khi mount. Bọc trong
-   media query vì từ lg thanh đó `lg:hidden` — attribute còn đó nhưng không
-   chiếm chỗ nữa. Con số khớp khối giữ chỗ trong bottom-nav.tsx. */
 @media (max-width: 1023px) {
   :root[data-bottom-nav] {
-    /* 49pt (chuẩn tab bar iOS) + hairline 1px + đệm đáy (vùng home indicator,
-       tối thiểu 8px, cộng 6px thở thêm) + phần đáy bị thanh công cụ trình duyệt
-       che. `--browser-bottom-chrome` do BottomNav đo bằng visualViewport rồi
-       ghi lên <html>; mặc định 0px nên trình duyệt không che thì không ai lệch. */
     --bottom-nav-h: calc(
       3.125rem + max(env(safe-area-inset-bottom), 0.5rem) + 0.375rem +
         var(--browser-bottom-chrome, 0px)
@@ -152,9 +108,6 @@
   --primary-foreground: oklch(0.16 0.05 145);
   --warm: oklch(0.72 0.17 50);
   --warm-foreground: oklch(0.18 0.04 60);
-  /* Trên nền tối thì "chữ nhấn" phải SÁNG lên, không tối đi — nên hai token ink
-     lật về đúng bản dùng cho nền tối. Nhờ vậy cùng một class `text-warm-ink`
-     đọc đúng ở cả dải sáng lẫn dải đêm. */
   --warm-ink: #ff9a1f;
   --primary-ink: oklch(0.72 0.16 145);
   --secondary: oklch(0.269 0 0);
@@ -396,7 +349,7 @@
   top: 0.5rem;
   right: 0.5rem;
   padding: 0.2rem 0.45rem;
-  border-radius: 3px; /* = R_BADGE */
+  border-radius: 3px;
   background: rgb(255 255 255 / 0.95);
   color: #171717;
   font-size: 0.6rem;
@@ -516,9 +469,6 @@
   float: left;
 }
 
-/* Thư viện ảnh: 1..N ảnh rộng bằng nhau trên một hàng, tự xuống hàng, cùng tỉ
-   lệ 3:2 (object-cover) nên cân nhau. Dùng ở trang công khai; editor style bằng
-   Tailwind trong NodeView. data-image-group là định dạng CŨ (tương thích ngược). */
 [data-gallery],
 [data-image-group] {
   display: flex;
@@ -538,21 +488,12 @@
   margin: 0;
   aspect-ratio: 3 / 2;
   object-fit: cover;
-  border-radius: 0.5rem; /* = rounded-lg mặc định của Tailwind */
+  border-radius: 0.5rem;
 }
 
-/* Màn chờ điều hướng (`PageLoading`): HOÃN rồi mới hiện.
-   PHẢI khai qua class, không đặt `animation` bằng inline style: không có CSS
-   nào tham chiếu tới @keyframes thì Lightning CSS sẽ loại nó khi build.
-
-   Suspense fallback bật lên NGAY khi bấm link, mà phần lớn cú chuyển trang xong
-   dưới ngưỡng này — hiện luôn thì thành một hình nháy lên rồi tắt, giật hơn cả
-   không có gì. `backwards` giữ opacity 0 trong lúc còn hoãn.
-
-   Đây là NGOẠI LỆ có chủ ý của luật "keyframe không đụng opacity" ghi ở khối
-   hero ngay dưới: ở đó opacity quyết định chữ có đọc được không, còn ở đây nó
-   CHÍNH LÀ nội dung của hiệu ứng — và tắt animation (reduced-motion) thì màn
-   chờ hiện ngay, không mất. */
+/* Keyframes PHẢI được một class trong file này dùng tới. Đặt `animation` bằng
+   inline style thôi thì không có CSS nào tham chiếu, và Lightning CSS loại
+   @keyframes đó khi build — hiệu ứng chết im lặng ở production. */
 @keyframes page-loading-in {
   from {
     opacity: 0;
@@ -570,18 +511,6 @@
   }
 }
 
-/* ─── HERO TRANG CHỦ: ba hiệu ứng mở màn ───────────────────────────────────
-   PHẢI khai báo qua class chứ đừng đặt `animation` bằng inline style: không có
-   CSS nào tham chiếu tới @keyframes thì Lightning CSS sẽ loại nó khi build.
-
-   LUẬT CHUNG (đã trả giá một lần, xem chú thích ở `hero-slideshow` cũ): hiệu
-   ứng KHÔNG được là điều kiện để chữ nhìn thấy được. Cả ba keyframe dưới đây
-   chỉ đụng tới `transform` / `stroke-dashoffset`, không đụng `opacity` — hỏng
-   animation thì cùng lắm chữ lệch vài px, không biến mất. */
-
-/* 1. Từng DÒNG tiêu đề trồi lên từ sau một khung cắt (`overflow-hidden` ở thẻ
-      cha). Đây là lý do không cần fade: chữ bị KHUNG che chứ không bị làm mờ,
-      nên lúc nghỉ nó vẫn là chữ đặc, đọc rõ. */
 @keyframes hero-line {
   from {
     transform: translateY(105%);
@@ -594,8 +523,6 @@
   animation: hero-line 0.85s cubic-bezier(0.22, 1, 0.36, 1) backwards;
 }
 
-/* 2. Các khối còn lại (nhãn, câu dẫn, nút, dải câu hỏi) nhích lên 14px, lệch
-      pha nhau bằng `[animation-delay:…]` ngay tại chỗ dùng. */
 @keyframes hero-rise {
   from {
     transform: translateY(14px);
@@ -608,9 +535,6 @@
   animation: hero-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) backwards;
 }
 
-/* 3. Nét gạch chân vẽ tay dưới "mười tab": vẽ từ trái sang phải một lần.
-      `stroke-dasharray` đặt sẵn 220 (dài hơn path) nên lúc chưa chạy là nét
-      rỗng; chạy xong `stroke-dashoffset` về 0 và nét nằm nguyên đó. */
 @keyframes hero-underline {
   from {
     stroke-dashoffset: 220;
@@ -624,9 +548,6 @@
   animation: hero-underline 0.9s 0.6s cubic-bezier(0.4, 0, 0.2, 1) backwards;
 }
 
-/* 4. Ảnh hero trôi rất chậm (Ken Burns) — 7% trong 22 giây, đảo chiều liên tục
-      nên không bao giờ "hết phim" rồi đứng khựng. Đủ để tấm ảnh còn thở, chưa
-      đủ để ai kịp nhận ra nó đang chuyển động. */
 @keyframes hero-pan {
   from {
     transform: scale(1);

@@ -1,4 +1,3 @@
-// Nhãn hiển thị cho enum Listing — dùng chung cho trang công khai.
 export const SPOT_CATEGORY_LABELS: Record<string, string> = {
   beach: "Biển",
   mountain: "Núi",
@@ -33,7 +32,6 @@ export const EATERY_CATEGORY_LABELS: Record<string, string> = {
   other: "Khác",
 };
 
-// Hướng nhìn — nhãn chip lọc của section quán nước.
 export const VIEW_TYPE_LABELS: Record<string, string> = {
   sea: "Biển",
   valley: "Thung lũng",

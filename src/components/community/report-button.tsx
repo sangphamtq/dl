@@ -23,8 +23,6 @@ const REASONS = [
   { value: "other", label: "Khác" },
 ] as const;
 
-// Dialog báo cáo — điều khiển từ ngoài (nút hoặc mục menu). Đúng 1 trong
-// threadId/replyId.
 export function ReportDialog({
   open,
   onOpenChange,
@@ -42,7 +40,6 @@ export function ReportDialog({
   const [done, setDone] = useState(false);
   const [pending, start] = useTransition();
 
-  // Đóng dialog + reset form (không dùng effect để tránh setState-in-effect).
   const setOpen = (v: boolean) => {
     if (!v) {
       setReason("");
@@ -147,7 +144,6 @@ export function ReportDialog({
   );
 }
 
-// Nút "Báo cáo" độc lập (dùng cho bình luận) — tự quản trạng thái mở.
 export function ReportButton({
   threadId,
   replyId,

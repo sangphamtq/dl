@@ -1,9 +1,3 @@
-// Nhóm 34 tỉnh (đơn vị hành chính từ 1/7/2025) theo miền — slug theo seed.
-// Dùng chung cho trang danh sách điểm đến và thanh chuyển nhanh.
-//
-// Sau sáp nhập, MIỀN là trục duyệt bền hơn TỈNH: một tỉnh mới có thể ôm hai kiểu
-// chuyến khác hẳn nhau (Lâm Đồng gồm cả Đà Lạt cao nguyên lẫn Mũi Né biển; Gia
-// Lai gồm cả Pleiku lẫn Quy Nhơn), còn miền thì không đổi nghĩa.
 export const REGIONS = [
   {
     label: "Miền Bắc",
@@ -30,10 +24,8 @@ export const REGIONS = [
   },
 ] as const;
 
-// Thứ tự miền (kèm "Khác" cho tỉnh chưa map).
 export const REGION_LABELS = [...REGIONS.map((r) => r.label), "Khác"];
 
-// Suy miền từ slug tỉnh.
 export function regionOf(provinceSlug?: string | null): string {
   if (!provinceSlug) return "Khác";
   const r = REGIONS.find((x) =>

@@ -149,7 +149,6 @@ export function ActivityForm({
       )}
 
       <div className="divide-y">
-        {/* Phân loại & nơi */}
         <FormSection
           title="Phân loại"
           description="Loại trải nghiệm và nơi (tỉnh/điểm đến) của hoạt động."
@@ -203,7 +202,6 @@ export function ActivityForm({
           </div>
         </FormSection>
 
-        {/* Thông tin cơ bản */}
         <FormSection
           title="Thông tin cơ bản"
           description="Đặt tên ở mức trải nghiệm (vd 'Chèo kayak'), không nhúng tên địa điểm."
@@ -261,7 +259,6 @@ export function ActivityForm({
           </div>
         </FormSection>
 
-        {/* Địa điểm diễn ra (M:N) */}
         <FormSection
           title="Diễn ra ở đâu"
           description="Liên kết các Địa điểm nhỏ mà hoạt động này diễn ra (M:N)."
@@ -281,7 +278,6 @@ export function ActivityForm({
           </div>
         </FormSection>
 
-        {/* Chi tiết trải nghiệm */}
         <FormSection
           title="Chi tiết trải nghiệm"
           description="Thời lượng, mùa — thông tin khách luôn hỏi."
@@ -308,7 +304,6 @@ export function ActivityForm({
           </div>
         </FormSection>
 
-        {/* Đơn vị & đặt chỗ */}
         <FormSection
           title="Đơn vị & đặt chỗ"
           description="Đơn vị khai thác / giá vé / liên hệ (nếu có)."
@@ -351,7 +346,6 @@ export function ActivityForm({
             </div>
           </div>
 
-          {/* Giá vé / phí tham gia */}
           <div className="flex items-center justify-between gap-3 rounded-lg border px-4 py-3">
             <div className="space-y-0.5">
               <Label htmlFor="ticketFree">Miễn phí tham gia</Label>
@@ -426,9 +420,6 @@ export function ActivityForm({
           )}
         </FormSection>
 
-        {/* Chi phí khác tại chỗ — tách khỏi bảng giá tham gia phía trên:
-            giá tham gia còn được in ra chip "Từ …đ" ở hero và thẻ danh
-            sách, một dòng "thuê áo phao 20k" lọt vào đó là sai hết. */}
         <FormSection
           title="Chi phí khác tại chỗ"
           description="Thuê đồ, gửi xe, gửi đồ, xe ôm chặng cuối… — khoản khách trả thêm ngoài giá tham gia."
@@ -440,7 +431,6 @@ export function ActivityForm({
           />
         </FormSection>
 
-        {/* Thẻ */}
         <FormSection title="Thẻ" description="Nhãn tự do để lọc & gợi ý.">
           <div className="space-y-2">
             <Label htmlFor="tags">Tags</Label>

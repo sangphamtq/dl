@@ -5,8 +5,6 @@ import { toast } from "sonner";
 import { Download, RefreshCw } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 
-// Tải file Excel qua /api/cms/export. Fetch blob để hiển thị trạng thái đang
-// tạo (workbook mất vài giây) rồi kích hoạt tải xuống.
 export function ExportButton() {
   const [pending, setPending] = useState(false);
 

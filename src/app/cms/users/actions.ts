@@ -8,9 +8,6 @@ import type { Role } from "./roles";
 
 type Result = { ok: true } | { ok: false; error: string };
 
-// Đổi vai trò một user. Chỉ admin được phép; không tự đổi role của chính mình
-// (tránh tự khóa quyền). Sau khi đổi, user mục tiêu cần đăng nhập lại để JWT
-// cập nhật role mới (role nằm trong token).
 export async function updateUserRole(
   userId: string,
   role: Role,

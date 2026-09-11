@@ -21,7 +21,6 @@ import {
 
 export type ComboboxOption = { value: string; label: string };
 
-// Select có ô tìm kiếm (shadcn Combobox = Command + Popover). Lọc theo label.
 export function Combobox({
   options,
   value,

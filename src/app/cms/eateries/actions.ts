@@ -57,7 +57,6 @@ function num(v: string): number | null {
   return Number.isFinite(n) ? n : NaN;
 }
 
-// Mã hành chính đến từ selector — bỏ qua giá trị rác thay vì báo lỗi.
 function code(v: string): number | null {
   if (v.trim() === "") return null;
   const n = Number(v);

@@ -3,8 +3,6 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-// Tự làm mới (router.refresh) khi nhận sự kiện Ably trên kênh; nếu chưa cấu hình
-// Ably thì rơi về polling. Không render UI. Dùng cho trang danh sách cộng đồng.
 export function RealtimeRefresher({
   channelKey,
   event,
@@ -29,9 +27,8 @@ export function RealtimeRefresher({
     (async () => {
       try {
         const Ably = await import("ably");
-        if (cancelled) return; // đã unmount trong lúc import
+        if (cancelled) return;
         client = new Ably.Realtime({ authUrl: "/api/ably/token" });
-        // subscribe() trả về Promise (attach) — nuốt lỗi khi đóng lúc đang kết nối.
         void client.channels
           .get(channelKey)
           .subscribe(event, () => router.refresh())

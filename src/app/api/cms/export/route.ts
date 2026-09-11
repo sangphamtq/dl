@@ -1,8 +1,6 @@
 import { auth } from "@/auth";
 import { buildExportWorkbook, exportFileName } from "@/lib/export-workbook";
 
-// GET /api/cms/export → tải file Excel toàn bộ Điểm đến + Listing.
-// Chỉ staff (admin/editor). Chạy nodejs runtime (exceljs cần Node API).
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 

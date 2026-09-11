@@ -3,7 +3,6 @@ import { ArrowDownWideNarrow } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { THREAD_SORTS } from "@/lib/community";
 
-// Chọn cách sắp xếp feed: theo cập nhật / theo ngày tạo.
 export function CommunitySort({
   current,
   hrefFor,

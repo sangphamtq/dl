@@ -7,22 +7,15 @@ import { MapContainer, TileLayer, Marker, Popup, Polyline, ZoomControl, useMap }
 import type { TripItemKind } from "@/lib/trip-time";
 import { CARTO_ATTRIBUTION, cartoTileUrl } from "@/lib/basemap";
 
-// Bản đồ một ngày trong lịch trình. Khác DestinationMapInner ở một điểm cốt
-// lõi: pin ở đây ĐÁNH SỐ THEO THỨ TỰ, vì thứ tự chính là nội dung của lịch
-// trình. Vì vậy không tái dùng được component kia (pin ở đó phân theo LOẠI).
-
 export type TripMapPoint = {
   id: string;
-  order: number; // 1-based, hiện trong pin
+  order: number;
   name: string;
   kind: TripItemKind;
   lat: number;
   lng: number;
 };
 
-// Pin RỖNG cho mục chưa xếp ngày: cùng hình tròn nhưng viền đứt, nền trắng,
-// không số. Đọc ra là "đã lưu, chưa đưa vào lịch" — và cho thấy nó nằm ở đâu so
-// với tuyến của ngày đang xem, thứ mà một danh sách không nói được.
 let ghostIcon: L.DivIcon | null = null;
 function makeGhostIcon(): L.DivIcon {
   ghostIcon ??= L.divIcon({
@@ -35,7 +28,6 @@ function makeGhostIcon(): L.DivIcon {
   return ghostIcon;
 }
 
-// Pin tròn số thứ tự. Cache theo số để khỏi dựng lại DOM mỗi lần render.
 const iconCache = new Map<number, L.DivIcon>();
 function numberIcon(n: number): L.DivIcon {
   const cached = iconCache.get(n);
@@ -87,7 +79,6 @@ export default function TripMapInner({
 }: {
   points: TripMapPoint[];
   route: [number, number][] | null;
-  /** Mục CHƯA xếp ngày (có toạ độ) — chấm rỗng, không tính vào khung nhìn. */
   ghosts?: { id: string; name: string; lat: number; lng: number }[];
 }) {
   const dark = useIsDark();
@@ -114,7 +105,6 @@ export default function TripMapInner({
       <ZoomControl position="bottomright" />
       <FitBounds points={points} />
 
-      {/* Tuyến thật khi OSRM trả lời; không thì nối thẳng để vẫn thấy hướng đi. */}
       {route ? (
         <Polyline positions={route} pathOptions={{ color: "var(--primary)", weight: 4, opacity: 0.85 }} />
       ) : points.length >= 2 ? (
@@ -124,8 +114,6 @@ export default function TripMapInner({
         />
       ) : null}
 
-      {/* Vẽ TRƯỚC các pin đánh số để chúng luôn nằm dưới — chấm mờ là nền, không
-          phải nội dung chính của bản đồ. */}
       {ghosts.map((g) => (
         <Marker key={`ghost-${g.id}`} position={[g.lat, g.lng]} icon={makeGhostIcon()}>
           <Popup>

@@ -1,19 +1,13 @@
 import { unstable_cache } from "next/cache";
 
-// Khoảng cách/thời gian lái xe thật qua OpenRouteService Matrix API.
-// Đọc key từ env ORS_API_KEY; thiếu key hoặc lỗi → trả map rỗng (caller tự
-// fallback về đường chim bay). Kết quả ổn định theo toạ độ → cache 30 ngày.
-
 const ORS_MATRIX_URL =
   "https://api.openrouteservice.org/v2/matrix/driving-car";
 
-// Tag chung để xoá toàn bộ cache khoảng cách qua revalidateTag(ORS_CACHE_TAG).
 export const ORS_CACHE_TAG = "ors-matrix";
 
 export type Ride = { km: number; min: number };
 export type LatLng = { lat: number; lng: number };
 
-// Khoá ổn định cho một toạ độ (làm tròn 6 chữ số ~ 0.1m).
 export function coordKey(lat: number, lng: number): string {
   return `${lat.toFixed(6)},${lng.toFixed(6)}`;
 }
@@ -25,7 +19,6 @@ async function fetchMatrix(
   const key = process.env.ORS_API_KEY;
   if (!key || points.length === 0) return {};
 
-  // ORS dùng thứ tự [lng, lat]; phần tử 0 là nguồn, còn lại là đích.
   const locations = [
     [origin.lng, origin.lat],
     ...points.map((p) => [p.lng, p.lat]),
@@ -58,7 +51,7 @@ async function fetchMatrix(
     const out: Record<string, Ride> = {};
     points.forEach((p, i) => {
       const km = dist[i];
-      if (km == null) return; // đích không nối được mạng đường → bỏ qua
+      if (km == null) return;
       out[coordKey(p.lat, p.lng)] = { km, min: (dur[i] ?? 0) / 60 };
     });
     return out;
@@ -67,8 +60,6 @@ async function fetchMatrix(
   }
 }
 
-// Khoảng cách lái xe từ `origin` tới từng điểm, keyed theo coordKey(điểm).
-// Bọc unstable_cache (POST không vào Data Cache của Next) — key gồm mọi toạ độ.
 export function getDrivingDistances(
   origin: LatLng,
   points: LatLng[],

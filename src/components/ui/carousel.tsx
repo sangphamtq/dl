@@ -138,7 +138,6 @@ function CarouselContent({
   viewportClassName,
   ...props
 }: React.ComponentProps<"div"> & {
-  /** Class cho KHUNG CẮT (`overflow-hidden`) bọc ngoài hàng slide. */
   viewportClassName?: string
 }) {
   const { carouselRef, orientation } = useCarousel()

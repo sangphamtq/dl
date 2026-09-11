@@ -288,9 +288,6 @@ export function DestinationFilter({
                   contentClassName="xl:pl-[var(--bleed)]"
                   viewportClassName="transition-[clip-path,translate] duration-500 ease-out motion-reduce:transition-none xl:mr-[calc(-1*var(--bleed))] xl:[clip-path:inset(0_calc(2*var(--bleed))_0_var(--bleed))] xl:group-hover/mien:-translate-x-[var(--bleed)] xl:group-hover/mien:[clip-path:inset(0_0_0_var(--bleed))]"
                   itemClassName="basis-[86%] sm:basis-[60%] lg:basis-[44%] xl:basis-[27rem]"
-                  // Bo ở KHUNG bọc + cắt tràn, nút bên trong để vuông: nhờ
-                  // vậy nền hover phủ kín ô rồi bị chính khung bo lại, thay
-                  // vì là một mảng bo góc lửng lơ trong một cái khung vuông.
                   arrowWrapClassName={cn(R_CTRL, "overflow-hidden")}
                   arrowClassName="hover:bg-foreground/90"
                   progress
@@ -381,13 +378,6 @@ function DestCard({ d }: { d: DestItem }) {
   const names = d.isProvince ? (d.childNames ?? []) : [];
   const total = d.childTotal ?? d.childCount ?? 0;
 
-  // Dòng dữ kiện ở đáy thẻ: TÊN các nơi bên trong (với tỉnh) hoặc số lượng nội
-  // dung (với điểm đến). MỘT hàng, ngăn nhau bằng KHOẢNG TRẮNG.
-  //
-  // Bản trước chia thành lưới 2–3 cột, mỗi ô một gạch ngang phía trên — nên mỗi
-  // thẻ tự vẽ thêm một cái bảng con bên trong khung ảnh vốn đã là hình chữ
-  // nhật, và phải độn thêm ô trống vô hình cho các cột thẳng hàng. Dấu chấm nói
-  // đúng cùng một ý (đây là các mẩu rời) mà không kẻ thêm nét nào.
   const NAME_SLOTS = 3;
   const FACT_SLOTS = 4;
   const meta: { key: string; text: React.ReactNode; dim?: boolean }[] =

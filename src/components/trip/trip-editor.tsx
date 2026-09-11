@@ -96,36 +96,15 @@ type TripHeader = {
   partySize: number | null;
   shareId: string | null;
   visibility: "private" | "unlisted";
-  /** Nơi bấm "Lên lịch trình đi X" — dùng làm đường quay lại khi chuyến còn trống. */
   place: { slug: string; name: string } | null;
-  /** Mẫu do biên tập soạn. CHỈ mẫu mới có tên ngày & ghi chú ngày — xem DayBlock. */
   isTemplate: boolean;
-  /** Khoá lạc quan, gửi lại khi kéo–thả (docs/lich-trinh-cong-tac.md §3). */
   version: number;
-  /** Chủ chuyến mới được xoá chuyến / bật chia sẻ / quản lý thành viên. */
   isOwner: boolean;
-  /** Chủ chuyến + người đã tham gia — cụm avatar chồng cạnh nút Chia sẻ. */
   people: TripPerson[];
 };
 
 const STAY_PRESETS = [15, 30, 45, 60, 90, 120, 180, 240, 360];
 
-// Bố cục hai cột giống map-explorer: trái là dòng thời gian, phải là bản đồ.
-// Dưới `lg` chỉ hiện một bên, đổi bằng cặp nút "Lịch trình / Bản đồ".
-// Trình soạn giữ CẢ BỐN MỤC đã render sẵn (lịch trình · ghi chú · đồ mang theo
-// · chi phí) và chuyển mục hoàn toàn ở client:
-//
-//   • Sidebar đổi URL bằng `history.pushState` (Next hỗ trợ shallow routing —
-//     `usePathname` cập nhật theo) chứ KHÔNG điều hướng: không vòng server nào
-//     giữa hai cú bấm, chuyển mục là tức thì.
-//   • Mục đang mở chọn bằng CSS `hidden` chứ không unmount, nên trạng thái dở
-//     tay (ô soạn ghi chú đang mở, nhóm gợi ý đang bung) giữ nguyên khi đảo qua
-//     đảo lại.
-//   • Deep-link/F5 vẫn chạy: route `[muc]` render đúng component này.
-//
-// Đổi lại, trang đầu nạp dữ liệu của cả bốn mục một lượt — ba mục kia đều nhẹ
-// (vài chục dòng DB), phần nặng duy nhất (ORS cho các chặng) vốn đã phải trả
-// cho mục Lịch trình.
 export function TripEditor({
   trip,
   days,
@@ -145,29 +124,18 @@ export function TripEditor({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  // Token mục đang mở, suy từ URL — pushState của sidebar đổi được nó mà không
-  // cần vòng server.
   const tab = pathname?.startsWith(`/lich-trinh/cua-toi/${trip.id}/`)
     ? pathname.slice(`/lich-trinh/cua-toi/${trip.id}/`.length).replace(/\/+$/, "")
     : null;
   const [pending, start] = useTransition();
   const [activeDayId, setActiveDayId] = useState(days[0]?.id ?? "");
 
-  // ── Làm mờ cột GIỜ: chỉ đúng ngày bị đụng tới, và chỉ khi chờ LÂU ──────────
-  // Bản trước truyền thẳng `stale={pending}` cho MỌI ngày, nên mỗi lần kéo thả
-  // là cả trang xám giờ đi một nhịp — kể cả những ngày không liên quan, và kể
-  // cả khi server trả về sau 80ms. Hai lớp chặn:
-  //   · `staleDays` — chỉ ngày nguồn và ngày đích mới có giờ đổi;
-  //   · `slow` — chờ quá 350ms mới báo. Dưới ngưỡng đó người ta không kịp thấy
-  //     cái nháy, mà cái nháy mới là thứ làm giao diện có cảm giác chậm.
   const [staleDays, setStaleDays] = useState<string[]>([]);
   const slow = useDelayedFlag(pending, 350);
   const fields = useTripFields();
 
   const activeDay = days.find((d) => d.id === activeDayId) ?? days[0] ?? null;
 
-  // Bấm viên ngày: đổi ngày cho bản đồ VÀ cuộn tới khối ngày đó. Chỉ đổi bản đồ
-  // thôi thì ở chuyến dài, người dùng bấm xong chẳng thấy gì động đậy.
   function pickDay(id: string) {
     setActiveDayId(id);
     document.getElementById(`day-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -184,15 +152,10 @@ export function TripEditor({
     });
   }
 
-  // ── Kéo–thả ────────────────────────────────────────────────────────────
   const dnd = useTripBoard(days, backlog);
 
   const sensors = useSensors(
-    // Chuột: phải rê 6px mới coi là kéo, nếu không thì mọi cú bấm vào nút tròn
-    // đều bị nuốt thành thao tác kéo.
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    // Cảm ứng: giữ 220ms mới kéo — dưới ngưỡng đó vẫn là vuốt để CUỘN trang,
-    // nếu không người dùng không cuộn nổi danh sách trên điện thoại.
     useSensor(TouchSensor, { activationConstraint: { delay: 220, tolerance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
@@ -206,8 +169,6 @@ export function TripEditor({
     if (!over) return;
     const from = dnd.containerOf(String(e.active.id));
     const to = dnd.containerOf(String(over.id));
-    // Chỉ dời khi ĐỔI vùng chứa; đổi chỗ trong cùng vùng để dành cho lúc thả,
-    // gọi ở đây sẽ làm danh sách rung liên tục theo con trỏ.
     if (from && to && from !== to) dnd.moveLocal(String(e.active.id), String(over.id));
   }
 
@@ -215,25 +176,15 @@ export function TripEditor({
     const id = String(e.active.id);
     dnd.endDrag();
 
-    // Ngày NGUỒN đọc từ `byId` (dựng từ props = trạng thái server trước cú thả).
     const fromDayId = dnd.byId.get(id)?.dayId ?? null;
     const at = dnd.commitMove(id, e.over ? String(e.over.id) : null);
     setStaleDays([fromDayId, at?.dayId ?? null].filter((x): x is string => !!x));
-    // Gửi kèm phiên bản client đang thấy: thao tác này theo VỊ TRÍ, người khác
-    // vừa sửa là chỉ số trỏ sai chỗ. Lệch ⇒ server từ chối.
-    //
-    // Khi đó phải `router.refresh()` chứ KHÔNG chỉ `resetFromProps()`: props
-    // hiện tại chính là bản cũ đã lệch, dựng lại bàn từ đó thì vẫn sai. Và vì
-    // action bị từ chối TRƯỚC khi ghi, nó không `revalidatePath` — không tự
-    // làm mới thì người dùng kẹt với dữ liệu cũ, thao tác nào cũng bị chối.
     if (at)
       run(async () => {
         const res = await moveItem(id, at.dayId, at.index, trip.version);
         if (!res.ok && res.stale) {
           dnd.resetFromProps();
           router.refresh();
-          // Báo NHẸ, không phải toast đỏ: người dùng không làm gì sai, chỉ là
-          // có người khác nhanh tay hơn. Trả `ok` để `run` khỏi báo lỗi lần nữa.
           toast(res.error);
           return { ok: true };
         }
@@ -245,11 +196,7 @@ export function TripEditor({
 
   return (
     <DndContext
-      // id CỐ ĐỊNH, bắt buộc: dnd-kit sinh `aria-describedby="DndDescribedBy-N"`
-      // bằng một bộ đếm ở mức module (useUniqueId). Server đếm một lần, client
-      // ở chế độ Strict lại chạy thân component hai lần nên đếm tới 1 — ra lệch
-      // 0 vs 1 và React báo hydration mismatch. Truyền id thì nó dùng thẳng
-      // chuỗi này, hai bên khớp nhau.
+      // `id` CỐ ĐỊNH — xem chú thích cùng chỗ ở `trip-dock.tsx`.
       id="trip-dnd"
       sensors={sensors}
       collisionDetection={closestCorners}
@@ -293,8 +240,6 @@ export function TripEditor({
                   <strong className="font-medium text-foreground">Thêm vào lịch trình</strong> ở
                   trang địa điểm, quán ăn hay chỗ ở để gom vào đây trước, xếp ngày sau.
                 </p>
-                {/* Chuyến tạo từ trang điểm đến thì biết đường quay về đúng nơi
-                    đó — lời mời chung chung ở trên không nói được đi đâu. */}
                 {trip.place && (
                   <div className="mt-3 grid gap-1.5">
                     <Link
@@ -332,7 +277,6 @@ export function TripEditor({
           })}
         main={
           <>
-          {/* Bốn mục render SẴN, ẩn/hiện bằng display — xem chú thích đầu component. */}
           <div className={tab === null ? undefined : "hidden"}>
             <div className="sticky top-0 z-20 -mx-4 flex items-center gap-3 border-b bg-background/90 px-4 pt-2 backdrop-blur sm:-mx-6 sm:px-6">
               <div className="min-w-0 flex-1">
@@ -414,8 +358,6 @@ export function TripEditor({
             })}
       />
 
-      {/* Bản nổi theo con trỏ — không có nó thì mục đang kéo biến mất khỏi
-          danh sách và người dùng mất dấu thứ mình đang cầm. */}
       <DragOverlay dropAnimation={null}>
         {activeItem ? (
           <div className="flex items-center gap-3 rounded-xl border bg-card px-3 py-2 shadow-lg shadow-black/10">
@@ -429,8 +371,6 @@ export function TripEditor({
     </DndContext>
   );
 }
-
-// ── Chưa xếp ngày: vùng THẢ + danh sách kéo được ────────────────────────────────
 
 function BacklogList({
   ids,
@@ -486,7 +426,6 @@ function BacklogRow({
         isDragging && "opacity-40",
       )}
     >
-      {/* Ảnh là tay cầm phụ (chỉ listeners) — tín hiệu nhìn thấy được là grip. */}
       <span
         {...listeners}
         className="shrink-0 cursor-grab touch-none active:cursor-grabbing"
@@ -546,10 +485,6 @@ function BacklogRow({
   );
 }
 
-// ── Một ngày ─────────────────────────────────────────────────────────────
-// Ngày ngăn nhau bằng hairline + khoảng trống rộng; ngày đang chọn có vạch CAM
-// mảnh bên trái. Danh sách mục là một vùng THẢ, kể cả khi rỗng.
-
 function DayBlock({
   day,
   isTemplate,
@@ -584,12 +519,6 @@ function DayBlock({
       onMouseDown={onFocus}
       className={cn(
         "group/day relative scroll-mt-28 border-t border-border/60 py-9 first:border-t-0 first:pt-1 lg:scroll-mt-24",
-        // Ngày mà BẢN ĐỒ đang vẽ. Một vạch NGẮN ngang tầm tiêu đề, nằm trong lề
-        // trái — KHÔNG phải viền chạy hết chiều cao khối như bản trước. Vạch
-        // full-height là mảng màu đậm nhất màn hình trong khi nó chỉ nhắc lại
-        // điều dải chọn ngày (dính trên đầu, luôn thấy) đã nói bằng chữ cam +
-        // gạch chân; tệ hơn, nó dán sát mép cột trái nên đọc ra như đường viền
-        // của sidebar chứ không phải dấu của ngày.
         active &&
           "before:absolute before:-left-3 before:top-9 before:h-7 before:w-1 before:rounded-full before:bg-warm first:before:top-1 sm:before:-left-5",
       )}
@@ -604,7 +533,6 @@ function DayBlock({
         // khí (ẩn bằng `opacity` KHÔNG gỡ khỏi bố cục).
         titleNode={
           isTemplate ? (
-            // Vẫn phải là <h2>: bản chỉ-đọc dùng h2 cho tên ngày.
             <h2>
               <InlineEdit
                 value={day.title}
@@ -617,10 +545,6 @@ function DayBlock({
           ) : undefined
         }
         dateLabel={day.dateLabel}
-        // `span` để trống: giờ bắt đầu–kết thúc gộp vào chính ô chọn bên dưới.
-        // Bản trước hiện "14:00 – 19:51" ngay cạnh ô chọn đang để "14:00" —
-        // cùng một con số xuất hiện hai lần, một chỗ sửa được một chỗ không,
-        // nhìn không ra là hai thứ hay một thứ.
         span={null}
         right={
           <div className="flex items-center gap-1">
@@ -737,15 +661,6 @@ function DayBlock({
   );
 }
 
-// Tay cầm kéo NHÌN THẤY ĐƯỢC.
-//
-// Bản trước chỉ lấy nút tròn đánh số làm tay cầm, không có dấu hiệu gì: trên
-// máy tính chỉ đổi con trỏ khi rê trúng, còn trên cảm ứng thì KHÔNG có tín hiệu
-// nào — khách không thể biết là kéo được. Tối giản đến mức giấu mất tính năng
-// thì không phải tối giản.
-//
-// Hiện theo đúng luật đã dùng cho hàng nút thao tác: rê chuột / tab tới mới
-// hiện, còn máy cảm ứng (`pointer: coarse`) thì luôn hiện.
 function DragGrip({
   label,
   attributes,
@@ -769,7 +684,6 @@ function DragGrip({
   );
 }
 
-/** RailItem + khả năng kéo. */
 function SortableRailItem({
   item,
   index,
@@ -809,19 +723,10 @@ function SortableRailItem({
       dragging={isDragging}
       innerRef={setNodeRef}
       style={{ transform: CSS.Translate.toString(transform), transition }}
-      // Nút tròn là tay cầm PHỤ (chỉ listeners — attributes nằm ở grip nên bàn
-      // phím chỉ có một tab stop).
       handleProps={listeners}
     />
   );
 }
-
-// ── Thao tác trên một mục ────────────────────────────────────────────────
-// Chỉ HIỆN KHI RÊ CHUỘT hoặc tab tới (`group-hover` / `group-focus-within` của
-// RailItem). Đây là cùng bài học đã ghi ở thẻ lưu trú: một hàng nút LUÔN hiện
-// trên mỗi dòng thì với chuyến 8 mục là 24 nút xám nằm chờ, đọc ra thành nhiễu
-// chứ không thành công cụ. Máy cảm ứng không có hover nên vẫn hiện — dò bằng
-// `pointer: coarse`, đúng cách đã dùng ở thẻ lưu trú.
 
 function ItemActions({
   item,
@@ -847,8 +752,6 @@ function ItemActions({
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
-          {/* Hàng preset "Ở lại" đã chuyển ra StayPicker — đặt ngay trên con số
-              đang hiển thị, nơi người dùng thật sự đi tìm nó. */}
           <DropdownMenuLabel>Chuyển sang</DropdownMenuLabel>
           {allDays
             .filter((d) => d.id !== day.id)
@@ -885,14 +788,6 @@ function ItemActions({
   );
 }
 
-// ── Thời gian ở lại ─────────────────────────────────────────────────────
-// Đặt NGAY TRÊN con số đang hiển thị ("🕐 30 phút"), không chôn trong menu "…".
-// Bản trước để hàng preset trong menu đó: không ai tìm ra, và cũng KHÔNG có
-// cách nhập một số bất kỳ — chỉ chọn được trong chín mốc dựng sẵn.
-//
-// Popover có cả hai: preset cho nhanh, ô nhập phút cho những trường hợp preset
-// không với tới (75 phút, 20 phút…). Và một lối về mặc định, vì mặc định là con
-// số suy theo loại chứ không phải người dùng đặt (xem DEFAULT_STAY_MIN).
 function StayPicker({
   item,
   run,
@@ -965,7 +860,6 @@ function StayPicker({
             aria-label="Số phút ở lại"
             className="h-9 rounded-lg tabular-nums"
           />
-          {/* h-9 cho cả hai: Button size="sm" là h-8, đứng cạnh Input h-9 là lệch. */}
           <Button type="submit" variant="outline" className="h-9 shrink-0 rounded-lg px-3">
             Đặt
           </Button>
@@ -985,14 +879,6 @@ function StayPicker({
   );
 }
 
-// ── Sửa TẠI CHỖ ─────────────────────────────────────────────────────────
-// Dùng cho ghi chú của mục, tên ngày và ghi chú ngày.
-//
-// Lúc nghỉ chỉ là CHỮ, không phải ô nhập: cả cột đã dày chữ rồi, mà một cột
-// toàn khung input thì đọc ra là biểu mẫu khai báo chứ không phải một lịch
-// trình. Bấm vào mới thành ô. Khi chưa có nội dung thì mời bằng một dòng mờ,
-// hiện theo đúng luật của hàng nút thao tác: rê chuột / tab tới mới hiện, máy
-// cảm ứng thì luôn hiện.
 function InlineEdit({
   value,
   placeholder,
@@ -1030,7 +916,6 @@ function InlineEdit({
           setDraft(value ?? "");
           setEditing(false);
         }
-        // Enter lưu ở ô một dòng; ô nhiều dòng cần Enter để xuống dòng.
         if (e.key === "Enter" && !multiline) (e.target as HTMLElement).blur();
       },
     };
@@ -1118,10 +1003,6 @@ function fromTimeValue(v: string): number | null {
  */
 function useDelayedFlag(active: boolean, delayMs: number): boolean {
   const [on, setOn] = useState(false);
-  // Tắt cờ NGAY TRONG RENDER khi hết chờ, không phải trong effect: gọi
-  // `setState` đồng bộ bên trong effect vừa tốn một vòng render thừa vừa bị
-  // eslint chặn đúng chỗ đó. Đây là mẫu "adjusting state when props change"
-  // của React, cùng cách `trip-dock` nhận lại trạng thái từ server.
   const [wasActive, setWasActive] = useState(active);
   if (wasActive !== active) {
     setWasActive(active);

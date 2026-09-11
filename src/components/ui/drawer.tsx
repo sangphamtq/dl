@@ -58,10 +58,6 @@ function DrawerContent({
         className={cn(
           "group/drawer-content fixed z-50 flex h-auto flex-col bg-background",
           "data-[vaul-drawer-direction=top]:inset-x-0 data-[vaul-drawer-direction=top]:top-0 data-[vaul-drawer-direction=top]:mb-24 data-[vaul-drawer-direction=top]:max-h-[80vh] data-[vaul-drawer-direction=top]:rounded-b-lg data-[vaul-drawer-direction=top]:border-b",
-          // Sửa so với bản gốc shadcn: `svh` thay `vh` (trên iOS `vh` là khung
-          // nhìn LỚN NHẤT, tính theo nó thì lúc thanh công cụ Safari bung ra
-          // bảng bị tràn khỏi phần thấy được), và bo góc lớn cho khớp ngôn ngữ
-          // hình khối của dự án.
           "data-[vaul-drawer-direction=bottom]:inset-x-0 data-[vaul-drawer-direction=bottom]:bottom-0 data-[vaul-drawer-direction=bottom]:mt-24 data-[vaul-drawer-direction=bottom]:max-h-[85svh] data-[vaul-drawer-direction=bottom]:rounded-t-3xl data-[vaul-drawer-direction=bottom]:border-t",
           "data-[vaul-drawer-direction=right]:inset-y-0 data-[vaul-drawer-direction=right]:right-0 data-[vaul-drawer-direction=right]:w-3/4 data-[vaul-drawer-direction=right]:border-l data-[vaul-drawer-direction=right]:sm:max-w-sm",
           "data-[vaul-drawer-direction=left]:inset-y-0 data-[vaul-drawer-direction=left]:left-0 data-[vaul-drawer-direction=left]:w-3/4 data-[vaul-drawer-direction=left]:border-r data-[vaul-drawer-direction=left]:sm:max-w-sm",
@@ -69,8 +65,6 @@ function DrawerContent({
         )}
         {...props}
       >
-        {/* Thanh kéo. Thu về đúng khổ của iOS (36×5) thay vì 100×8 của bản gốc:
-            nó là dấu hiệu "kéo được", không phải một thanh trang trí. */}
         <div className="mx-auto mt-3 mb-1 hidden h-1.5 w-9 shrink-0 rounded-full bg-border group-data-[vaul-drawer-direction=bottom]/drawer-content:block" />
         {children}
       </DrawerPrimitive.Content>

@@ -77,7 +77,7 @@ export type ReviewListItem = {
   highlights: string[];
   caveats: string[];
   content: string | null;
-  createdAt: string; // ISO
+  createdAt: string;
   isMine: boolean;
 };
 
@@ -88,7 +88,6 @@ export type MyReview = {
   content: string | null;
 };
 
-// Thanh biểu đồ — chỉ 1 accent: tích cực = xanh lá (2 sắc), tiêu cực = xám (2 sắc).
 const BAR_TONE: Record<StanceTone, string> = {
   positive: "bg-primary",
   posSoft: "bg-primary/45",
@@ -101,18 +100,15 @@ const PILL_TONE: Record<StanceTone, string> = {
   negSoft: "bg-warm/10 text-warm",
   negative: "bg-destructive/10 text-destructive",
 };
-// Card cảm nhận khi được chọn trong FORM viết đánh giá — cả card nhuộm tông.
 const STANCE_SELECTED: Record<StanceTone, string> = {
   positive: "border-primary/40 bg-primary/10 text-primary",
   posSoft: "border-primary/30 bg-primary/10 text-primary",
   negSoft: "border-warm/40 bg-warm/10 text-warm",
   negative: "border-destructive/40 bg-destructive/10 text-destructive",
 };
-// Chip nhãn trong form (chọn điểm cộng / cần lưu ý).
 const HL_CHIP = "bg-primary/10 text-primary";
 const CV_CHIP = "bg-warm/10 text-warm";
 
-// Màu CHỮ của mức cảm nhận trên danh sách review (không nền, không viền).
 const STANCE_TEXT: Record<StanceTone, string> = {
   positive: "text-primary",
   posSoft: "text-primary-ink",
@@ -123,7 +119,6 @@ const STANCE_TEXT: Record<StanceTone, string> = {
 const initial = (name: string | null) =>
   (name?.trim().charAt(0) || "?").toUpperCase();
 
-// Chỉ hiện ngày — giờ trong ngày không có giá trị với người đọc đánh giá.
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString("vi-VN", {
     day: "numeric",
@@ -132,7 +127,6 @@ function fmtDate(iso: string) {
   });
 }
 
-// Đích đánh giá: điểm đến (place) hoặc địa điểm (spot).
 export type ReviewTarget = {
   kind: "place" | "spot";
   id: string;
@@ -145,7 +139,6 @@ function targetHref(t: ReviewTarget) {
   return t.kind === "place" ? `/diem-den/${t.slug}` : `/dia-diem/${t.slug}`;
 }
 
-// ── Section chính ─────────────────────────────────────────────────
 export function ReviewsSection({
   target,
   summary,
@@ -159,19 +152,16 @@ export function ReviewsSection({
   reviews: ReviewListItem[];
   myReview: MyReview | null;
   isAuthed: boolean;
-  /** Dùng giọng tiêu đề serif của trang điểm đến (xem `SectionHeading`). */
   serif?: boolean;
 }) {
   const [loginOpen, setLoginOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
-  const [openKey, setOpenKey] = useState(0); // đổi mỗi lần mở → remount form
+  const [openKey, setOpenKey] = useState(0);
   const [showAll, setShowAll] = useState(false);
   const [stanceFilter, setStanceFilter] = useState<ReviewStance | null>(null);
   const [contentOnly, setContentOnly] = useState(false);
   const router = useRouter();
 
-  // Đồng bộ khi check-in/bỏ đánh dấu xảy ra ở nơi khác (nút hero, form khác):
-  // refresh để danh sách + tổng hợp cập nhật (review hiện/ẩn theo check-in).
   useEffect(() => {
     function onSync(e: Event) {
       if ((e as CustomEvent<{ id: string }>).detail?.id !== target.id) return;
@@ -186,7 +176,6 @@ export function ReviewsSection({
     };
   }, [target.id, router]);
 
-  // Mở form đánh giá (đánh giá = xác nhận đã đến — submit sẽ tự check-in).
   function onWrite() {
     if (!isAuthed) {
       setLoginOpen(true);
@@ -218,36 +207,18 @@ export function ReviewsSection({
 
   return (
     <section id="danh-gia" className="scroll-mt-32">
-      {/* Cùng khuôn tiêu đề với MỌI mục khác của trang (nhãn viết tay + tiêu đề
-          display + đường bay + con số). Đây là cái tên của một mục trong cùng
-          một trang, nên nó phải đọc ra như các mục kia — không phải chỗ để tôi
-          tự ý dùng biến thể khác. Không truyền `href`: đánh giá không có trang
-          danh mục riêng, chỗ đó dành cho nút viết đánh giá. */}
       <SectionHeading
         serif={serif}
         title={`Vivu-er nói gì về ${target.name}`}
         count={hasReviews ? summary.total : undefined}
         unit="đánh giá"
         actions={writeBtn}
-        // Chưa có đánh giá nào → xuống TẦNG PHỤ. Ở điểm đến thưa (Tà Xùa) mục
-        // này là dải cuối cùng của trang và nội dung của nó vỏn vẹn một thẻ
-        // "chưa có gì": mặc tiêu đề 40px ngang hàng với mục 15 quán thì trang
-        // KẾT THÚC bằng một lời thông báo trống, phóng to.
         size={hasReviews ? "lead" : "minor"}
       />
 
       {hasReviews ? (
         <div className="mt-6 grid grid-cols-1 gap-8 md:grid-cols-[2fr_3fr] md:gap-10 lg:gap-12">
-          {/* Trái: tổng hợp (dính khi cuộn trên desktop) */}
           <div className="lg:sticky lg:top-28 lg:self-start">
-            {/* Mặt thẻ cho cả hai cột. Đây là section DUY NHẤT của trang không
-                có thẻ nào: mọi mục khác (Địa điểm, Ẩm thực, Lưu trú, Cộng đồng)
-                đều lấp dải bằng ô ảnh hoặc khung `bg-card`, nền `muted` chỉ lộ
-                ra ở khe. Ở đây chữ và vạch mảnh nằm thẳng trên nền nên gần như
-                cả dải là màu `muted` — cùng một tông ấy mà đọc ra tối và đục
-                hơn hẳn các mục trên. Giải pháp không phải bỏ tint (sẽ vỡ nhịp
-                trắng–nhạt xen kẽ của trang) mà là trả section về đúng ngôn ngữ
-                thẻ của các mục còn lại. */}
             <div className={cn(R_CARD, "border border-border bg-card p-5 sm:p-6")}>
               <Summary
                 summary={summary}
@@ -259,7 +230,6 @@ export function ReviewsSection({
             </div>
           </div>
 
-          {/* Phải: danh sách đánh giá */}
           <div className={cn(R_CARD, "border border-border bg-card p-5 sm:p-6")}>
             <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-2">
               {stanceFilter && (
@@ -369,9 +339,6 @@ export function ReviewsSection({
   );
 }
 
-// ── Panel hero tổng hợp — "mặt" biên tập, đúng ngôn ngữ design system ─
-// Nút ⓘ giải thích cách tính điểm — tự đọc trọng số SCORE_POS/SCORE_NEG (đổi
-// trọng số trong review-meta là bảng này tự cập nhật).
 function ScoreInfo() {
   return (
     <Popover>
@@ -379,9 +346,6 @@ function ScoreInfo() {
         <button
           type="button"
           aria-label="Cách tính điểm đáng đi"
-          // Icon 16×16 là đích chạm 16×16 — dưới xa ngưỡng 44. `before:-inset-3`
-          // nới vùng chạm ra ~40px mỗi chiều mà không đổi hình khối; icon vẫn là
-          // một dấu ⓘ nhỏ nằm cạnh con số.
           className="relative text-muted-foreground transition-colors before:absolute before:-inset-3 before:content-[''] hover:text-foreground"
         >
           <Info className="size-4" aria-hidden />
@@ -424,9 +388,6 @@ function ScoreInfo() {
   );
 }
 
-// Phân bố 4 mức — mỗi hàng là một nút lọc. Nhãn + số + % viết thẳng, thanh mảnh
-// bên dưới. Không chấm màu, không viên chip: nhãn đã nói rõ mức nào, thêm một
-// chấm màu cạnh nó chỉ là màu cho có.
 function StanceRows({
   summary,
   active,
@@ -475,9 +436,6 @@ function StanceRows({
                 {s.pct}%
               </span>
             </div>
-            {/* Vạch VUÔNG: cả site chạy ngôn ngữ hình khối vuông (bo tối đa
-                6px), mà một thanh cao 4px bo `rounded-full` thì hai đầu thành
-                nửa hình tròn — hình duy nhất trên trang không thuộc hệ. */}
             <div className="mt-1.5 h-1 w-full overflow-hidden bg-muted">
               <div
                 className={cn("h-full", BAR_TONE[s.tone])}
@@ -491,11 +449,6 @@ function StanceRows({
   );
 }
 
-/* Nhãn nổi bật: một dòng tiêu đề + các nhãn ngăn nhau bằng KHOẢNG TRẮNG RỘNG.
-   Không chip (bản trước đóng mỗi nhãn thành một viên màu — bốn nhãn thành bốn
-   viên, cộng chip trên từng đánh giá bên phải thì cả mục thành một rổ viên
-   thuốc) và không dấu chấm giữa (quy ước `design`: ngăn bằng khoảng trắng, mốc
-   bắt đầu mỗi mẩu là từ khoá). */
 function AspectGroup({
   title,
   items,
@@ -518,12 +471,6 @@ function AspectGroup({
   );
 }
 
-// Cột tổng hợp. Không bọc card nổi có đổ bóng: nó là một khối chữ + mấy thanh
-// mảnh, dựng thành thẻ nổi chỉ để trông "có thiết kế".
-//
-// KHÔNG in câu kết luận kiểu "Gần như ai cũng thấy đáng đi": đó là một câu do
-// hàm if-else sinh ra theo ngưỡng phần trăm, đọc như lời biên tập mà không ai
-// viết. Số liệu tự nói đủ.
 function Summary({
   summary,
   activeStance,
@@ -569,7 +516,6 @@ function Summary({
   );
 }
 
-// ── Một review ────────────────────────────────────────────────────
 function ReviewCard({
   review,
   target,
@@ -653,9 +599,6 @@ function ReviewCard({
           )}
         </div>
 
-        {/* Mức cảm nhận: CHỮ có màu theo tông, không viên chip. Mỗi đánh giá một
-            viên chip màu, cạnh cột tổng hợp cũng đầy chip, thì cả mục thành một
-            rổ viên thuốc. */}
         <p className={cn("mt-1 text-sm font-medium", STANCE_TEXT[meta.tone])}>
           {meta.label}
         </p>
@@ -666,8 +609,6 @@ function ReviewCard({
           </p>
         )}
 
-        {/* Nhãn của một đánh giá — ngăn bằng khoảng trắng rộng, không dấu
-            chấm giữa. */}
         {hlLabels.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
             {hlLabels.map((l) => (
@@ -690,8 +631,6 @@ function ReviewCard({
   );
 }
 
-// ── Form viết / sửa ───────────────────────────────────────────────
-// Target rút gọn cho form (không cần slug/region) — dùng chung ReviewsSection & CheckInButton.
 export type ReviewFormTarget = {
   kind: "place" | "spot";
   id: string;
@@ -722,9 +661,6 @@ export function ReviewForm({
   );
   const [caveats, setCaveats] = useState<string[]>(initial?.caveats ?? []);
   const [content, setContent] = useState(initial?.content ?? "");
-  // Bung chi tiết khi: mở ở chế độ full (từ section) HOẶC review đã có nhãn/nội
-  // dung (để thấy điều mình từng viết). Form được remount mỗi lần mở (key ở
-  // PlaceReviews) nên các giá trị khởi tạo luôn đúng theo từng lần mở.
   const hasExisting = Boolean(
     initial &&
       (initial.highlights.length || initial.caveats.length || initial.content),
@@ -757,7 +693,6 @@ export function ReviewForm({
         toast.error(res.error);
         return;
       }
-      // Gửi review = đã xác nhận "đã đến": báo cho nút check-in + section cập nhật.
       window.dispatchEvent(
         new CustomEvent("halivivu:checkedin", { detail: { id: target.id } }),
       );
@@ -770,7 +705,6 @@ export function ReviewForm({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={cn(R_CARD, "max-h-[88vh] max-w-lg gap-0 overflow-hidden p-0")}>
-        {/* Header — bối cảnh nơi + xác nhận đã đánh dấu */}
         <div className="flex items-center gap-3 border-b border-border/60 px-5 py-3 pr-12">
           <div className={cn(R_BADGE, "relative size-10 shrink-0 overflow-hidden bg-muted")}>
             {target.image ? (
@@ -809,9 +743,7 @@ export function ReviewForm({
           cảm nhận nếu muốn.
         </DialogDescription>
 
-        {/* Body cuộn */}
         <div className="max-h-[62vh] space-y-5 overflow-y-auto px-5 py-5">
-          {/* Cảm nhận chung */}
           <fieldset>
             <legend className="text-sm font-semibold">
               Cảm nhận chung của bạn <span className="text-warm">*</span>
@@ -859,7 +791,6 @@ export function ReviewForm({
             </div>
           </fieldset>
 
-          {/* Chi tiết tùy chọn — ẩn để đánh giá nhanh, mở khi muốn nói thêm */}
           {showDetails ? (
             <>
               <ChipPicker
@@ -926,7 +857,6 @@ export function ReviewForm({
           )}
         </div>
 
-        {/* Footer */}
         <div className="flex items-center justify-between gap-3 border-t border-border/60 px-5 py-3">
           <p className="hidden text-xs leading-snug text-muted-foreground sm:block">
             {initial

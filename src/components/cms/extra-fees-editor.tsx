@@ -7,12 +7,6 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import type { ExtraFeeInput } from "@/lib/tickets";
 
-/* Bộ nhập "Chi phí khác tại chỗ" — dùng chung cho form Địa điểm và Hoạt động
-   (hai bảng cùng cột `extraFees`, cùng luật validate ở `normalizeExtraFees`).
-
-   Mỗi khoản là một khối chứ không phải một hàng như bảng loại vé: một dịch
-   vụ cần tới sáu ô (tên · khoảng giá · đơn vị · ghi chú · cờ bắt buộc), nhồi
-   ngần đó vào một hàng thì ô nào cũng hẹp tới mức không đọc nổi placeholder. */
 export function ExtraFeesEditor({
   value,
   onChange,

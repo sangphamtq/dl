@@ -137,8 +137,6 @@ export async function updateAccommodation(
   await requireStaff();
   const res = await normalize(input, id);
   if ("error" in res) return { ok: false, error: res.error };
-  // verifiedAt chỉ đổi khi trạng thái xác minh đổi: bật lần đầu → đặt mốc;
-  // tắt → xoá; giữ nguyên nếu vẫn đang xác minh (không reset mốc mỗi lần lưu).
   const current = await prisma.accommodation.findUnique({
     where: { id },
     select: { verifiedAt: true },

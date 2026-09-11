@@ -1,7 +1,3 @@
-// Lấy metadata video TikTok qua oEmbed công khai (không cần API key).
-// Chỉ cần video ID — username trong URL có thể là placeholder, TikTok tự
-// resolve theo ID. Trả thumbnail/title/author; cache 1 ngày (revalidate).
-
 type TikTokOembed = {
   thumbnail_url?: string;
   title?: string;
@@ -16,11 +12,9 @@ export type TikTokInfo = {
 
 const EMPTY: TikTokInfo = { thumbnail: null, title: null, author: null };
 
-// Lấy videoId TikTok từ URL (…/video/<id>, vt.tiktok.com/…) hoặc chuỗi ID thuần.
-// Trả null nếu không nhận ra.
 export function parseTikTokId(input: string): string | null {
   const s = input.trim();
-  if (/^\d{6,}$/.test(s)) return s; // đã là ID
+  if (/^\d{6,}$/.test(s)) return s;
   const m = s.match(/\/video\/(\d+)/) ?? s.match(/(\d{6,})/);
   return m ? m[1] : null;
 }
@@ -38,8 +32,6 @@ export function tiktokPlayerSrc(id: string): string {
   return `${PLAYER_BASE}/${id}?${PLAYER_PARAMS}`;
 }
 
-// Link tìm kiếm TikTok theo điểm đến — lối ra cho người muốn xem thêm clip
-// ngoài vài video đã biên tập. Dùng chung cho modal ở hero và player ở "Đôi nét".
 export function tiktokSearchUrl(placeName: string): string {
   return `https://www.tiktok.com/search?q=${encodeURIComponent(`du lịch ${placeName}`)}`;
 }

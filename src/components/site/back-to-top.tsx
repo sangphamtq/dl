@@ -4,8 +4,6 @@ import { useEffect, useState } from "react";
 import { ArrowUp } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
-// Nút "lên đầu trang" toàn site: hiện khi cuộn quá ~600px, cuộn mượt về đầu.
-// z-40 (dưới header/modal z-50+) để không đè lên lớp phủ.
 export function BackToTop() {
   const [shown, setShown] = useState(false);
 
@@ -27,8 +25,6 @@ export function BackToTop() {
         window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
       }}
       className={cn(
-        // `--bottom-nav-h` = chiều cao thanh nav dưới khi có (xem globals.css);
-        // bằng 0 ở desktop và ở trang không có thanh đó.
         "fixed bottom-[calc(1.25rem+var(--bottom-nav-h))] right-5 z-40 grid size-11 place-items-center rounded-full border border-border/60 bg-background/80 text-foreground shadow-lg shadow-black/10 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:text-primary",
         shown
           ? "translate-y-0 opacity-100"

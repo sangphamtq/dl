@@ -15,15 +15,6 @@ export type SpotItem = {
   images: { url: string; isCover: boolean }[];
 };
 
-// Thẻ địa điểm — cùng khuôn poster ngang với thẻ điểm đến ở /diem-den: ảnh 3/2,
-// bo nhẹ, chữ căn giữa, lớp phủ tắt dần lên đỉnh, hover phóng ảnh + gạch chân tên.
-//
-// Khác hai chỗ, cả hai do nội dung quyết định:
-//   · huy hiệu góc trên phải là LOẠI HÌNH, không phải "Nổi bật" — loại hình
-//     khác nhau ở gần như mọi thẻ nên nó mang tin; ngôi sao chỉ thêm vào khi
-//     thẻ đó nổi bật;
-//   · KHÔNG có bảng dữ kiện ở đáy: một địa điểm không chứa gì bên trong để mà
-//     đếm. Chỗ đó nhường cho tagline.
 export function SpotCard({ s }: { s: SpotItem }) {
   return (
     <Link

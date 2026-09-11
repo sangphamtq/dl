@@ -4,10 +4,6 @@ import path from "node:path";
 import { prisma } from "@/lib/prisma";
 import { buildExportWorkbook, exportFileName } from "@/lib/export-workbook";
 
-// Xuất toàn bộ Điểm đến (Place) + các Listing ra MỘT file Excel nhiều sheet.
-// Dùng: pnpm export:excel → exports/du-lieu-YYYYMMDD-HHmm.xlsx (thư mục đã gitignore).
-// Cùng logic với chức năng CMS (/cms/export) qua @/lib/export-workbook.
-
 async function main() {
   const { workbook, counts } = await buildExportWorkbook();
 

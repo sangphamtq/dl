@@ -5,21 +5,6 @@ import { Eye } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
-// Chọn xem MỖI MỤC hiện những gì.
-//
-// Vì sao có: mỗi người xếp lịch theo một thứ khác nhau. Người đi ăn cần giờ mở
-// cửa; người đi chơi cần thời gian ở lại; người đã thuộc đường thì chỉ muốn một
-// danh sách tên cho gọn. Trước đây mỗi lần thấy chật là gỡ hẳn một trường ra
-// khỏi code — cách đó chỉ đúng cho một kiểu người dùng.
-//
-// KHÔNG cho tắt: giờ đến, tên, và CẢNH BÁO. Hai cái đầu là danh tính của mục;
-// cảnh báo là lý do tồn tại của cả tính năng (docs/lich-trinh.md §1) — cho tắt
-// thì người dùng tự tay bỏ đi thứ đáng giá nhất mà không biết.
-//
-// Lưu ở localStorage, KHÔNG ở DB: đây là sở thích xem, không phải dữ liệu
-// chuyến đi. Đọc bằng useSyncExternalStore để không lệch hydration — cùng cách
-// header-chrome.tsx theo dõi vị trí cuộn.
-
 export type TripField = "image" | "stay" | "hours" | "note" | "leg";
 
 export type TripFields = Record<TripField, boolean>;
@@ -42,7 +27,6 @@ const LABELS: { id: TripField; label: string; hint: string }[] = [
 
 const KEY = "halivivu:trip-fields";
 
-// ── Kho nhỏ quanh localStorage ──────────────────────────────────────────
 let cache: TripFields = ALL_ON;
 let cacheRaw: string | null = null;
 const listeners = new Set<() => void>();
@@ -54,8 +38,6 @@ function read(): TripFields {
   } catch {
     return ALL_ON;
   }
-  // Trả về CÙNG một object khi chuỗi lưu không đổi — getSnapshot mà trả object
-  // mới mỗi lần gọi thì React sẽ render lại vô tận.
   if (raw !== cacheRaw) {
     cacheRaw = raw;
     try {
@@ -69,7 +51,6 @@ function read(): TripFields {
 
 function subscribe(cb: () => void) {
   listeners.add(cb);
-  // Nhiều tab / nhiều thẻ cùng mở một chuyến vẫn khớp nhau.
   window.addEventListener("storage", cb);
   return () => {
     listeners.delete(cb);
@@ -91,8 +72,6 @@ function write(next: TripFields) {
 export function useTripFields(): TripFields {
   return useSyncExternalStore(subscribe, read, () => ALL_ON);
 }
-
-// ── Nút chọn ────────────────────────────────────────────────────────────
 
 export function TripFieldsMenu() {
   const fields = useTripFields();

@@ -20,7 +20,6 @@ async function requireUser(): Promise<{ id: string; role: string }> {
   return { id, role: session.user.role ?? "user" };
 }
 
-// Tim / bỏ tim một bài. Trả về trạng thái mới + tổng lượt tim.
 export async function toggleLike(
   postId: string,
   postSlug: string,
@@ -48,7 +47,6 @@ export async function toggleLike(
   return { ok: true, data: { liked: !existing, count } };
 }
 
-// Thêm bình luận (hoặc trả lời nếu có parentId — chỉ lồng 1 cấp).
 export async function addComment(input: {
   postId: string;
   postSlug: string;
@@ -67,7 +65,6 @@ export async function addComment(input: {
   if (content.length > MAX_COMMENT)
     return { ok: false, error: `Bình luận tối đa ${MAX_COMMENT} ký tự.` };
 
-  // Reply: parent phải tồn tại, cùng bài, và là comment gốc (lồng tối đa 1 cấp).
   let parentId: string | null = null;
   let parentAuthorId: string | null = null;
   if (input.parentId) {
@@ -77,7 +74,6 @@ export async function addComment(input: {
     });
     if (!parent || parent.postId !== input.postId)
       return { ok: false, error: "Bình luận gốc không hợp lệ." };
-    // Nếu reply vào một reply → quy về comment gốc của nó.
     parentId = parent.parentId ?? input.parentId;
     parentAuthorId = parent.authorId;
   }
@@ -86,7 +82,6 @@ export async function addComment(input: {
     data: { postId: input.postId, authorId: user.id, content, parentId },
   });
 
-  // Thông báo: trả lời bình luận blog → tác giả bình luận gốc.
   if (parentAuthorId)
     await notify({
       userId: parentAuthorId,
@@ -101,7 +96,6 @@ export async function addComment(input: {
   return { ok: true };
 }
 
-// Xóa bình luận — tác giả bình luận hoặc staff. Xóa kèm các reply (cascade).
 export async function deleteComment(
   commentId: string,
   postSlug: string,

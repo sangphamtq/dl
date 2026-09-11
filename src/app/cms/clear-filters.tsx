@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { X } from "@/components/icons";
 
-// Nút xóa toàn bộ filter — về lại đường dẫn gốc (không query). Chỉ hiện khi đang lọc.
 export function ClearFilters({ href, show }: { href: string; show: boolean }) {
   if (!show) return null;
   return (

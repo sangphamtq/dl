@@ -24,15 +24,12 @@ import {
   label,
 } from "@/lib/listing-labels";
 
-// Màu pin theo loại — dùng token theme (spot=primary, eatery=warm); lưu trú dùng
-// một tông trung tính lạnh để tách khỏi 2 màu brand.
 const TYPE_COLOR: Record<GeoType, string> = {
   spot: "var(--primary)",
   eatery: "var(--warm)",
   accommodation: "#64748b",
 };
 
-// SVG icon (lucide) đặt trong pin — stroke trắng, viewBox 24.
 const TYPE_SVG: Record<GeoType, string> = {
   spot: '<path d="m8 3 4 8 5-5 5 15H2L8 3z"/>',
   eatery:
@@ -66,7 +63,6 @@ function pinIcon(type: GeoType): L.DivIcon {
   return icon;
 }
 
-// Ôm khung theo các điểm. 1 điểm → setView; nhiều điểm → fitBounds.
 function fitToPoints(map: L.Map, points: GeoPoint[]) {
   if (points.length === 0) return;
   if (points.length === 1) {
@@ -77,7 +73,6 @@ function fitToPoints(map: L.Map, points: GeoPoint[]) {
   map.fitBounds(bounds, { padding: [48, 48], maxZoom: 15 });
 }
 
-// Tự ôm khung khi tập điểm đổi (lọc chip…).
 function FitBounds({ points }: { points: GeoPoint[] }) {
   const map = useMap();
   useEffect(() => {
@@ -86,7 +81,6 @@ function FitBounds({ points }: { points: GeoPoint[] }) {
   return null;
 }
 
-// Theo dõi dark mode (class .dark trên <html>) để đổi basemap cho khớp.
 function useIsDark(): boolean {
   const [dark, setDark] = useState(false);
   useEffect(() => {
@@ -100,8 +94,6 @@ function useIsDark(): boolean {
   return dark;
 }
 
-// Lớp tile theo nền đang chọn. Đường phố: CARTO (sạch, tối giản, tự đổi
-// sáng/tối theo theme) thay vì OSM thô; vệ tinh: Esri World Imagery.
 function BaseTiles({
   basemap,
   dark,
@@ -121,7 +113,6 @@ function BaseTiles({
   const style = dark ? "dark_all" : "voyager";
   return (
     <TileLayer
-      // key ép remount khi đổi theme để đổi hẳn bộ tile.
       key={style}
       attribution={CARTO_ATTRIBUTION}
       url={cartoTileUrl(style)}
@@ -131,8 +122,6 @@ function BaseTiles({
   );
 }
 
-// Nút điều khiển nổi trên bản đồ: đổi nền vệ tinh + về vị trí ban đầu +
-// (chỉ chế độ explorer) toggle focus khi chọn pin.
 function MapControls({
   points,
   basemap,
@@ -150,7 +139,6 @@ function MapControls({
 }) {
   const map = useMap();
   const ref = useRef<HTMLDivElement>(null);
-  // Chặn click/scroll trên cụm nút khỏi lan xuống bản đồ.
   useEffect(() => {
     if (ref.current) {
       L.DomEvent.disableClickPropagation(ref.current);
@@ -160,7 +148,6 @@ function MapControls({
 
   const btn =
     "grid size-10 place-items-center rounded-xl border border-border/60 bg-background text-foreground shadow-lg shadow-black/10 transition-colors hover:bg-muted";
-  // Tooltip hover (nhãn ngắn) bên trái nút.
   const tip =
     "pointer-events-none absolute right-[calc(100%+0.5rem)] top-1/2 -translate-y-1/2 z-10 whitespace-nowrap rounded-md bg-foreground px-2 py-1 text-xs text-background opacity-0 shadow-lg transition-opacity group-hover:opacity-100";
 
@@ -208,7 +195,6 @@ function MapControls({
           >
             <Crosshair className="size-5" aria-hidden />
           </button>
-          {/* Lần chọn đầu tiên: bong bóng giới thiệu (đè tooltip hover) */}
           {showHint ? (
             <span className="pointer-events-none absolute right-[calc(100%+0.5rem)] top-1/2 z-10 w-52 -translate-y-1/2 rounded-lg bg-foreground px-3 py-2 text-xs leading-relaxed text-background shadow-lg">
               Bật nút này để bản đồ <strong>tự động bám</strong> theo địa điểm
@@ -272,9 +258,6 @@ const TOOLTIP_OPTS: L.TooltipOptions = {
   opacity: 1,
 };
 
-// Điều khiển trạng thái marker bằng tay (không remount, không đổi icon → không
-// nháy): toggle class active + zIndex; pin active dùng tooltip permanent (tên
-// luôn hiện kể cả khi rời chuột), pin thường dùng tooltip hover.
 function MarkerStates({
   points,
   hoveredId,
@@ -292,7 +275,6 @@ function MarkerStates({
       if (!m) continue;
       const active = p.id === selectedId || p.id === hoveredId;
       m.setZIndexOffset(active ? 1000 : 0);
-      // Phóng to + quầng sáng pin đang chọn/hover (class trên .dl-pin trong divIcon).
       m.getElement()
         ?.querySelector(".dl-pin")
         ?.classList.toggle("dl-pin--active", active);
@@ -308,7 +290,6 @@ function MarkerStates({
   return null;
 }
 
-// Khi có tuyến đường → ôm khung vừa tuyến.
 function FitRoute({ route }: { route?: [number, number][] | null }) {
   const map = useMap();
   useEffect(() => {
@@ -344,18 +325,15 @@ export default function DestinationMapInner({
   );
   const [showHint, setShowHint] = useState(false);
 
-  // Lưu trạng thái nút bám pin mỗi khi đổi.
   useEffect(() => {
     localStorage.setItem("map-auto-focus", focusOnSelect ? "1" : "0");
   }, [focusOnSelect]);
 
-  // Hiện gợi ý vài giây rồi tự ẩn.
   useEffect(() => {
     if (!showHint) return;
     const t = setTimeout(() => setShowHint(false), 5000);
     return () => clearTimeout(t);
   }, [showHint]);
-  // Tâm tạm thời (sẽ bị FitBounds ghi đè ngay) — Việt Nam.
   const center: [number, number] = points[0]
     ? [points[0].lat, points[0].lng]
     : [16.0, 107.5];
@@ -401,7 +379,6 @@ export default function DestinationMapInner({
       {route && route.length > 1 && (
         <>
           <FitRoute route={route} />
-          {/* casing trắng dưới + tuyến primary trên cho dễ nhìn */}
           <Polyline positions={route} pathOptions={{ color: "#fff", weight: 8, opacity: 0.9 }} />
           <Polyline
             positions={route}
@@ -427,7 +404,6 @@ export default function DestinationMapInner({
               }
             }}
           >
-            {/* Popup chỉ ở chế độ section (không có list): explorer click pin → cuộn list, không popup */}
             {!onSelect && (
               <Popup>
                 <Link href={p.href} className="block no-underline">

@@ -113,7 +113,6 @@ export function SaleRegisterForm({
 
   return (
     <div className="space-y-6">
-      {/* Băng trạng thái */}
       {status === "approved" && (
         <StatusBanner
           icon={BadgeCheck}
@@ -156,7 +155,6 @@ export function SaleRegisterForm({
         />
       )}
 
-      {/* Ảnh đại diện */}
       <div className="space-y-2">
         <Label>Ảnh đại diện</Label>
         <div className="flex items-center gap-4">
@@ -213,7 +211,6 @@ export function SaleRegisterForm({
         />
       </Field>
 
-      {/* Dịch vụ */}
       <div className="space-y-2">
         <Label>Dịch vụ cung cấp</Label>
         <div className="flex flex-wrap gap-2">
@@ -238,7 +235,6 @@ export function SaleRegisterForm({
         </div>
       </div>
 
-      {/* Khu vực phục vụ */}
       <div className="space-y-2">
         <Label>Khu vực phục vụ</Label>
         <Combobox
@@ -272,7 +268,6 @@ export function SaleRegisterForm({
         )}
       </div>
 
-      {/* Kênh liên hệ */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="Zalo (SĐT hoặc link)">
           <Input value={zalo} onChange={(e) => setZalo(e.target.value)} />
@@ -292,7 +287,6 @@ export function SaleRegisterForm({
         </Field>
       </div>
 
-      {/* Bằng chứng xác minh (nội bộ) */}
       <div className="space-y-2 rounded-2xl border border-border/60 bg-muted/30 p-4">
         <div className="flex items-center gap-2">
           <ShieldCheck className="size-4 text-primary" />

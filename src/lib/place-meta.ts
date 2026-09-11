@@ -9,8 +9,6 @@ import { type PlaceVideo } from "@/components/site/tiktok-videos";
 
 const pub = { status: "published" as const };
 
-// ── Hero dùng chung: GIỮ NGUYÊN trên mọi tab của trang điểm đến ──────────────
-// Gộp ảnh điểm đến + ảnh bìa "địa điểm con" (điểm đến con + spot), khử trùng URL.
 type HeroImgRow = { url: string; alt: string | null; caption: string | null };
 type HeroCoverRow = { slug: string; name: string; images: { url: string }[] };
 
@@ -58,7 +56,6 @@ export function buildHeroImages(
   return heroImages;
 }
 
-// Lấy thumbnail TikTok thật (oEmbed, dedupe, cache trong helper).
 export async function resolveVideos(
   rows: { videoId: string; caption: string | null }[],
 ): Promise<PlaceVideo[]> {
@@ -72,10 +69,6 @@ export async function resolveVideos(
   return seed.map((v) => ({ ...v, thumbnail: thumbById.get(v.id) ?? null }));
 }
 
-// Header + hero (ảnh gộp + video) đồng nhất cho trang danh sách listing.
-// `cache()`: từ khi các tab con dùng LAYOUT chung, layout và page trong cùng
-// một request đều cần dữ liệu này. Bọc lại thì hai lần gọi chỉ còn một truy
-// vấn — không bọc thì mỗi lần mở tab là chạy đôi.
 export const getPlaceHero = cache(async function getPlaceHero(
   placeSlug: string,
 ) {
@@ -135,7 +128,6 @@ export type PlaceCounts = {
 };
 
 
-// Dữ liệu header dùng chung cho trang Place & trang danh sách listing.
 export async function getPlaceHeader(placeSlug: string) {
   return prisma.place.findUnique({
     where: { slug: placeSlug },
@@ -173,14 +165,11 @@ export const getPlaceCounts = cache(async function getPlaceCounts(placeId: strin
 export type PlaceTab = {
   href: string;
   label: string;
-  icon?: "overview" | "map" | "community"; // tab đặc biệt (Tổng quan / Bản đồ / Cộng đồng)
+  icon?: "overview" | "map" | "community";
 };
 
-// Tabs sticky: "Tổng quan" về trang Place + mỗi loại listing có dữ liệu → trang "xem tất cả".
-// Tab "Ẩm thực" = Quán ăn + Quán nước (phần Đặc sản đang tắt).
 export function buildPlaceTabs(placeSlug: string, counts: PlaceCounts): PlaceTab[] {
   const base = `/diem-den/${placeSlug}`;
-  // Mục đầu = "Tổng quan" dạng icon (gọn); chỉ hiện khi có ≥1 loại listing.
   const tabs: PlaceTab[] = [{ href: base, label: "Tổng quan", icon: "overview" }];
   // `counts` chỉ để QUYẾT ĐỊNH có tab hay không — thanh chỉ liệt kê loại NÀO
   // CÓ dữ liệu, nên không bao giờ có tab rỗng dẫn tới trang trống. Con số
@@ -192,14 +181,8 @@ export function buildPlaceTabs(placeSlug: string, counts: PlaceCounts): PlaceTab
   if (counts.activity > 0) add("hoat-dong", "Trải nghiệm");
   if (counts.eatery > 0) add("am-thuc", "Ẩm thực");
   if (counts.accommodation > 0) add("luu-tru", "Nơi lưu trú");
-  // Di chuyển: màn hình riêng trong route động [loai] (không có trang chi tiết per-item).
   if (counts.transport > 0) add("di-chuyen", "Di chuyển");
 
-  // Cộng đồng: TẠM ẨN khỏi thanh tab (route `/diem-den/[slug]/cong-dong` vẫn
-  // còn và vẫn vào được bằng URL). Bật lại: bỏ comment dòng dưới.
-  // tabs.push({ href: `${base}/cong-dong`, label: "Cộng đồng", icon: "community" });
-
-  // Bản đồ: dạng icon, hiện khi có loại có toạ độ (Spot/Eatery/Accommodation).
   if (counts.spot + counts.eatery + counts.accommodation > 0)
     tabs.push({ href: `${base}/ban-do`, label: "Bản đồ", icon: "map" });
 
@@ -214,8 +197,6 @@ export function buildPlaceStats(viewCount: number): PlaceStat[] {
   return [{ icon: Eye, value: viewCount, label: "lượt xem" }];
 }
 
-// "Vivu-er đã đến" cho hero: tổng số check-in + N người mới nhất (avatar stack).
-// Dùng cho cả điểm đến (place) và địa điểm (spot).
 export async function getVisitors(
   kind: "place" | "spot",
   id: string,
@@ -234,7 +215,6 @@ export async function getVisitors(
             id: true,
             name: true,
             image: true,
-            // Cảm nhận của họ cho chính nơi này (nếu có review công khai).
             reviews: {
               where: { ...where, isHidden: false },
               select: { stance: true },
@@ -256,8 +236,6 @@ export async function getVisitors(
   };
 }
 
-// Tổng hợp đánh giá (stars/total…) cho hero — chỉ review công khai của tác giả
-// HIỆN còn đánh dấu đã đến. Dùng chung mọi trang có hero (tab tổng quan & tab khác).
 export async function getReviewSummary(kind: "place" | "spot", id: string) {
   const target = kind === "place" ? { placeId: id } : { spotId: id };
   const rows = await prisma.review.findMany({
@@ -267,15 +245,9 @@ export async function getReviewSummary(kind: "place" | "spot", id: string) {
   return summarizeReviews(rows);
 }
 
-// Tổng hợp đánh giá cho NHIỀU spot cùng lúc (danh sách địa điểm) — 1 truy vấn,
-// cùng bộ lọc "tác giả HIỆN còn đánh dấu đã đến chính spot đó".
 export async function getSpotReviewSummaries(
   spotIds: string[],
 ): Promise<Map<string, { stars: number; total: number; worthGoing: number }>> {
-  // `worthGoing` là SỐ ĐẾM (không phải %), cố ý: danh sách địa điểm hầu như chỉ
-  // có 1–4 đánh giá mỗi nơi, mà ở cỡ mẫu đó "100%" nghe như một sự đồng thuận
-  // trong khi sự thật là "một người". "3/4 khách thấy đáng đi" tự mang theo cỡ
-  // mẫu nên không nói quá.
   const out = new Map<
     string,
     { stars: number; total: number; worthGoing: number }
@@ -304,7 +276,6 @@ export async function getSpotReviewSummaries(
   >();
   for (const r of rows) {
     if (!r.spotId) continue;
-    // Chỉ tính review khi tác giả còn đánh dấu đã đến chính spot này.
     if (!r.author.checkIns.some((c) => c.spotId === r.spotId)) continue;
     const arr = bySpot.get(r.spotId) ?? [];
     arr.push({ stance: r.stance, highlights: r.highlights, caveats: r.caveats });

@@ -13,9 +13,6 @@ function subscribe(onChange: () => void) {
   };
 }
 
-// Nút "Thử lại" của trang /offline. Ngoài việc bấm tay, tự tải lại ngay khi
-// trình duyệt báo có mạng trở lại — khách đi đường vào lại vùng sóng là trang
-// tự hồi, không phải làm gì thêm.
 export function OfflineRetry() {
   const online = useSyncExternalStore(
     subscribe,
@@ -23,9 +20,6 @@ export function OfflineRetry() {
     () => true, // lúc render trên server: coi như có mạng
   );
 
-  // Chỉ tải lại khi thực sự CHUYỂN từ mất mạng sang có mạng. Nếu tải lại ngay
-  // lúc mount (navigator.onLine có thể vẫn báo true, vd wifi cổng đăng nhập)
-  // thì trang sẽ tự nạp lại vô tận.
   const wasOffline = useRef(false);
   useEffect(() => {
     if (!online) {

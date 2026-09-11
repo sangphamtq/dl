@@ -1,32 +1,8 @@
 import "dotenv/config";
 import { prisma } from "@/lib/prisma";
 
-// Seed một LỊCH TRÌNH MẪU cho Phan Thiết (Trip.isTemplate = true).
-// Chạy: pnpm seed:trip-phan-thiet   — chạy lại nhiều lần được (xoá & tạo lại).
-//
-// Mẫu được xếp bám vào dữ liệu thật: giờ mở cửa của quán và `bestTime` của
-// điểm — ví dụ đồi cát đi lúc tinh mơ, bánh mì thịt nướng chỉ bán 5:30–10:00,
-// hải sản Bờ Kè mở từ 16:00. Trang mẫu KHÔNG còn cảnh báo ĐỎ nào.
-//
-// Các mốc thời lượng dưới đây do CHÍNH máy tính giờ bắt lỗi rồi mới chỉnh (bản
-// viết tay đầu tiên tới Rooftop lúc 14:38 và Ốc nướng 16:24 — cả hai chưa mở):
-//   · Ngày 2: Bàu Trắng 90′, cà phê 60′, nghỉ trưa 195′
-//   · Ngày 3 bắt đầu 7:30, không phải 7:00
-//
-// ⚠ KIỂM BẰNG TRANG THẬT, ĐỪNG KIỂM BẰNG SCRIPT. Script chạy ngoài Next không
-// gọi được ORS (unstable_cache cần runtime của Next) nên rơi về ước lượng chim
-// bay — mà chim bay ở đây CHẬM HƠN đường thật, khiến mọi mốc dôi ra ~45 phút và
-// tưởng là an toàn. Mở /lich-trinh/phan-thiet-3n2d rồi soi giờ trên đó.
-//
-// Hai cảnh báo CAM còn lại là ĐÚNG, cố ý giữ: Bàu Trắng cách thành phố ~1,5 giờ
-// lái thật, và ngày 2 dậy 4:30 rồi ăn tối thì đúng là một ngày dài.
-//
-// Chủ sở hữu = một staff (admin/editor) — mẫu do biên tập soạn.
-
 const SLUG = "phan-thiet-3n2d";
 
-// Mỗi ngày: giờ bắt đầu + danh sách mục theo THỨ TỰ.
-// `ref` là slug của entity, `kind` cho biết tra ở bảng nào.
 type Ref = {
   kind: "spot" | "eatery" | "accommodation" | "activity";
   slug: string;
@@ -70,7 +46,6 @@ const PLAN: {
   {
     title: "Tháp Chăm & đường về",
     note: "Buổi sáng nhẹ trong thành phố, ăn trưa món đặc trưng rồi lên đường.",
-    // 7:30 chứ không phải 7:00: sớm hơn thì tới Lẩu thả Hồng Ngọc trước giờ mở (10:00).
     startMin: 7 * 60 + 30,
     items: [
       { kind: "eatery", slug: "banh-mi-thit-nuong-phan-thiet", stayMin: 30 },
@@ -81,8 +56,6 @@ const PLAN: {
   },
 ];
 
-// Túi đồ: gợi ý thêm, chưa xếp ngày. Người dùng nhân bản mẫu sẽ nhận luôn
-// những mục này để tự cân nhắc nhét vào đâu.
 const BACKLOG: Ref[] = [
   { kind: "spot", slug: "hon-rom" },
   { kind: "spot", slug: "lang-chai-mui-ne", note: "Chỉ đẹp 5–7h sáng — đổi chỗ với đồi cát nếu muốn." },
@@ -126,7 +99,6 @@ async function main() {
   if (!owner)
     throw new Error("Chưa có user nào. Đăng nhập một lần rồi chạy `pnpm set-role <email> admin`.");
 
-  // Xoá bản cũ để chạy lại được (Cascade dọn luôn days/items/images).
   await prisma.trip.deleteMany({ where: { slug: SLUG } });
 
   const trip = await prisma.trip.create({
@@ -198,7 +170,6 @@ async function main() {
     added++;
   }
 
-  // Ảnh bìa: mượn ảnh bìa của đồi cát — dùng lại URL đã có, không upload mới.
   const cover = await prisma.image.findFirst({
     where: { spot: { slug: "doi-cat-bay-mui-ne" }, isCover: true },
     select: { url: true, alt: true },

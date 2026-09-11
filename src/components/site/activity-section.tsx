@@ -20,37 +20,16 @@ export type ActivityListItem = {
   slug: string;
   name: string;
   description: string | null;
-  category: string | null; // giá trị enum — khoá lọc & tham số ?cat=
+  category: string | null;
   categoryLabel: string | null;
-  duration: string | null; // "2 ngày 1 đêm", "nửa buổi"
-  season: string | null; // "Tháng 10 – 4", "Quanh năm"
-  price: string | null; // giá tham gia đã định dạng (null = không thu phí)
-  operator: string | null; // đơn vị khai thác
-  spots: { slug: string; name: string }[]; // diễn ra ở những địa điểm nào
+  duration: string | null;
+  season: string | null;
+  price: string | null;
+  operator: string | null;
+  spots: { slug: string; name: string }[];
   images: { url: string; isCover: boolean }[];
 };
 
-/* ──────────────────────────────────────────────────────────────────
-   Tab TRẢI NGHIỆM của một điểm đến.
-   Trước đây tab này dùng `ListingView` — một component "danh sách listing
-   chung chung" mà thẻ của nó chỉ có ảnh, tên, một dòng mô tả và giá. Với một
-   HOẠT ĐỘNG thì đó là ba câu hỏi bị bỏ trống:
-
-     · **đi mất bao lâu** — `durationText` có ở 17/19 hoạt động trong dữ liệu
-       thật ("2 ngày 1 đêm" khác hẳn "30–60 phút", và nó quyết định xem việc đó
-       có nhét vừa chuyến hay không);
-     · **mùa nào làm được** — `seasonText` có ở 15/19 ("Tháng 2 – 4" cho hoa đỗ
-       quyên, "Tháng 10 – 4" cho săn mây). Đi sai mùa là đi hụt;
-     · **làm ở đâu** — quan hệ M:N `Activity ↔ Spot` là XƯƠNG SỐNG của phần này
-       theo CLAUDE.md, mà tab lại không hiện lấy một cái tên.
-
-   Cả ba đều đã nằm trong DB từ đầu. Thẻ ở đây mang hai cái đầu; cái thứ ba là
-   phần thưởng của dạng DANH SÁCH (cột chữ rộng gấp ba), đúng như tab Địa điểm
-   dùng cột rộng để hiện "Làm gì" — hai tab là hai chiều của cùng một quan hệ.
-
-   Khung (lọc theo loại · đổi kiểu xem · trạng thái rỗng) dùng chung với tab
-   Địa điểm qua `listing-filter.tsx`; chỉ nội dung thẻ là khác.
-   ────────────────────────────────────────────────────────────────── */
 export function ActivitySection({
   activities,
   placeName,
@@ -65,8 +44,6 @@ export function ActivitySection({
   const [view, chooseView] = useListView(initialView);
   const items = filtered;
 
-  // Dải dữ kiện đếm trên TẬP ĐANG HIỆN — lọc còn 3 mà dòng trên vẫn ghi 10 thì
-  // con số đó nói về một danh sách khác với thứ đang nhìn thấy.
   const paid = items.filter((a) => a.price).length;
   const organized = items.filter((a) => a.operator).length;
   const composition =
@@ -162,10 +139,6 @@ function Stat({
   );
 }
 
-/* Hai dòng "đổi quyết định" của một hoạt động, dùng chung cho lưới và danh sách.
-   MÙA để màu xanh, THỜI LƯỢNG để xám — cùng luật với thẻ địa điểm bên tab kia:
-   dòng xanh luôn là "đi lúc nào cho đúng". Nhờ vậy hai tab đọc ra cùng một
-   ngôn ngữ dù nói về hai loại dữ liệu khác nhau. */
 function FactLines({ a }: { a: ActivityListItem }) {
   if (!a.season && !a.duration) return null;
   return (
@@ -206,9 +179,6 @@ function Cover({ a, sizes }: { a: ActivityListItem; sizes: string }) {
           {a.categoryLabel}
         </span>
       )}
-      {/* Huy hiệu giá CHỈ cho hoạt động có thu phí — phần lớn hoạt động là việc
-          tự làm được, dán "Miễn phí" lên gần hết thẻ thì chữ đó thành nền. Số
-          nơi có thu phí đã gộp lên dải dữ kiện đầu mục. */}
       {a.price && (
         <span
           className={cn(
@@ -249,13 +219,6 @@ function ActivityCard({ a }: { a: ActivityListItem }) {
   );
 }
 
-/* Hàng danh sách — ảnh trái, chữ phải. Cột chữ rộng gấp ba thẻ lưới nên gánh
-   thêm hai thứ lưới không có chỗ: **diễn ra ở đâu** (quan hệ M:N tới `Spot`) và
-   **đơn vị tổ chức**. Đó là lý do tồn tại của dạng này, không phải "cùng nội
-   dung xếp khác kiểu".
-
-   Chip dùng NỀN chứ không viền: cả hàng đã là một link, chip có viền sẽ mời bấm
-   vào một thứ không bấm được. */
 function ActivityRow({ a }: { a: ActivityListItem }) {
   return (
     <Link
@@ -265,14 +228,9 @@ function ActivityRow({ a }: { a: ActivityListItem }) {
       <div
         className={cn(
           R_CARD,
-          // Khổ điện thoại: ảnh nhỏ, hàng nằm ngang — đó mới là lý do tồn tại
-          // của dạng danh sách. Ảnh tràn ngang rồi xếp dọc thì hàng gần như
-          // trùng khít thẻ lưới.
           "relative aspect-[3/2] w-28 shrink-0 self-start overflow-hidden bg-muted sm:w-52 lg:w-64",
         )}
       >
-        {/* Ở khổ hẹp ô ảnh chỉ rộng 112px — hai huy hiệu sẽ đè lên nhau và che
-            gần hết ảnh, nên chúng chỉ hiện từ `sm`. */}
         <div className="hidden sm:contents">
           <Cover
             a={a}

@@ -147,7 +147,6 @@ export function MediaCard({ item }: { item: MediaItem }) {
         )}
       </div>
 
-      {/* Dialog sửa thông tin ảnh */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent>
           <DialogHeader>
@@ -215,7 +214,6 @@ export function MediaCard({ item }: { item: MediaItem }) {
         </DialogContent>
       </Dialog>
 
-      {/* Xác nhận xóa */}
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

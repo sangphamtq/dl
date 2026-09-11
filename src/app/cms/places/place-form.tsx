@@ -70,12 +70,10 @@ export function PlaceForm({
     ...EMPTY,
     ...initial,
   });
-  // slug tự suy từ name cho tới khi người dùng tự sửa slug
   const [slugTouched, setSlugTouched] = useState(
     mode === "edit" && Boolean(initial?.slug),
   );
 
-  // Xã/phường của tỉnh đang chọn (nạp qua cache client → server action).
   const [wards, setWards] = useState<Ward[]>([]);
   const [wardsLoading, setWardsLoading] = useState(false);
 
@@ -85,7 +83,6 @@ export function PlaceForm({
     setValues((p) => ({ ...p, [key]: v }));
   }
 
-  // "Thông tin chung" — thêm/sửa/xóa từng dòng tên + nội dung.
   function addFact() {
     setValues((p) => ({
       ...p,
@@ -107,7 +104,6 @@ export function PlaceForm({
     }));
   }
 
-  // Nạp xã/phường mỗi khi provinceCode đổi (gồm cả lần đầu khi sửa).
   useEffect(() => {
     const code = Number(values.provinceCode);
     if (!values.provinceCode || !Number.isFinite(code)) return;
@@ -137,7 +133,6 @@ export function PlaceForm({
         wardCode: "",
         wardName: "",
       };
-      // Tỉnh: tên địa điểm chính là tên tỉnh, slug tự tạo theo tên đó.
       if (prev.kind === "province" && p) next.name = p.name;
       return next;
     });
@@ -154,8 +149,6 @@ export function PlaceForm({
   }
 
   function onKindChange(kind: PlaceFormValues["kind"]) {
-    // Tỉnh chỉ giữ vị trí cấp tỉnh — xóa xã/phường đã chọn; nếu đã chọn tỉnh
-    // thì lấy luôn tên tỉnh làm tên địa điểm.
     if (kind === "province") {
       setValues((prev) => ({
         ...prev,
@@ -209,7 +202,6 @@ export function PlaceForm({
       )}
 
       <div className="divide-y">
-        {/* Phân loại & quan hệ */}
         <FormSection
           title="Phân loại"
           description="Đây là tỉnh gốc hay một điểm đến lớn thuộc tỉnh?"
@@ -263,7 +255,6 @@ export function PlaceForm({
           )}
         </FormSection>
 
-        {/* Vị trí hành chính */}
         <FormSection
           title="Vị trí"
           description={
@@ -321,9 +312,6 @@ export function PlaceForm({
             )}
           </div>
 
-          {/* Toạ độ trung tâm — Lịch trình dùng để ước tính quãng đường giữa
-              các điểm dừng. Thiếu thì mục kiểu "Điểm đến" trong lịch trình chỉ
-              hiện "chưa ước tính được đường đi". */}
           <MapLinkField
             onPick={(lat, lng) => {
               set("lat", lat);
@@ -357,7 +345,6 @@ export function PlaceForm({
           </div>
         </FormSection>
 
-        {/* Thông tin cơ bản */}
         <FormSection
           title="Thông tin cơ bản"
           description="Tên hiển thị, đường dẫn và câu slogan ngắn."
@@ -411,7 +398,6 @@ export function PlaceForm({
           </div>
         </FormSection>
 
-        {/* Mô tả */}
         <FormSection
           title="Mô tả"
           description="Giới thiệu tổng quan, hiển thị ở hero trang chi tiết."
@@ -428,7 +414,6 @@ export function PlaceForm({
           </div>
         </FormSection>
 
-        {/* Thẻ */}
         <FormSection
           title="Thẻ"
           description="Nhãn tự do để lọc & gợi ý (vd: biển, view đẹp)."
@@ -447,7 +432,6 @@ export function PlaceForm({
           </div>
         </FormSection>
 
-        {/* Thông tin chung — danh sách tên + nội dung */}
         <FormSection
           title="Thông tin chung"
           description="Vài thông tin nổi bật nhất về nơi này, hiển thị cạnh phần giới thiệu (vd: Thời điểm đẹp — Tháng 11 đến tháng 4). Nội dung ngắn gọn, mỗi dòng một ý."
@@ -491,7 +475,6 @@ export function PlaceForm({
         </FormSection>
       </div>
 
-      {/* Thanh hành động — dính đáy khi cuộn */}
       <div className="sticky bottom-0 z-10 mt-2 flex items-center justify-end gap-3 border-t bg-background/90 py-4 backdrop-blur">
         <Button
           type="button"

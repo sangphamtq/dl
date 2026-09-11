@@ -1,5 +1,3 @@
-// Hàng form 2 cột: tiêu đề + mô tả bên trái, các trường nhập bên phải.
-// Dùng cho trang tạo/sửa trong CMS (kiểu settings, nhiều khoảng trắng).
 export function FormSection({
   title,
   description,

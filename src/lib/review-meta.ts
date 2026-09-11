@@ -1,16 +1,11 @@
-// Bộ giá trị & helper cho Review điểm đến (vocab định nghĩa trong code — xem
-// CLAUDE.md "Phân loại & tag"). Muốn admin tự thêm nhãn sau này → nâng thành Tag.
 import type { ReviewStance } from "@/generated/prisma/enums";
 
 export type { ReviewStance };
 
 export type AspectOption = { value: string; label: string };
 export type AspectCount = AspectOption & { count: number };
-// Gradient 4 mức: 2 tích cực (positive → posSoft) · 2 tiêu cực (negSoft → negative).
 export type StanceTone = "positive" | "posSoft" | "negSoft" | "negative";
 
-// Cảm nhận chung — chọn 1 (bắt buộc), thang 4 mức thay cho số sao. Thứ tự =
-// thứ tự hiển thị (tốt → tệ). 2 mức đầu = "đáng đi" (dùng cho headline tổng hợp).
 export const REVIEW_STANCES = [
   { value: "love", label: "Tuyệt vời, muốn quay lại", tone: "positive" },
   { value: "worthOnce", label: "Đáng đi một lần", tone: "posSoft" },
@@ -22,12 +17,8 @@ export const REVIEW_STANCES = [
   tone: StanceTone;
 }>;
 
-// 2 mức đầu được coi là "đáng đi" (dùng cho headline % tổng hợp).
 const WORTH_GOING: ReviewStance[] = ["love", "worthOnce"];
 
-// "Điểm đáng đi" (0–100) = trọng-số-dương / (dương + âm). Mỗi review luôn đẩy
-// điểm một hướng cố định (dương → tăng, âm → giảm), theo tỉ lệ trọng số.
-// ĐỔI TRỌNG SỐ Ở ĐÂY — hiện: love ×2, worthOnce ×1 (dương); meh ×1, bad ×2 (âm).
 export const SCORE_POS: Record<ReviewStance, number> = {
   love: 2,
   worthOnce: 1,
@@ -41,7 +32,6 @@ export const SCORE_NEG: Record<ReviewStance, number> = {
   bad: 2,
 };
 
-// Nhãn "điểm cộng" — chọn nhiều (tùy chọn).
 export const REVIEW_HIGHLIGHTS = [
   { value: "scenery", label: "Cảnh đẹp" },
   { value: "fresh-air", label: "Trong lành, mát mẻ" },
@@ -57,7 +47,6 @@ export const REVIEW_HIGHLIGHTS = [
   { value: "worth-it", label: "Đáng công đi" },
 ] as const satisfies ReadonlyArray<AspectOption>;
 
-// Nhãn "cần lưu ý" — chọn nhiều (tùy chọn).
 export const REVIEW_CAVEATS = [
   { value: "crowded", label: "Đông cuối tuần / lễ" },
   { value: "hard-road", label: "Đường đèo dốc khó đi" },
@@ -86,7 +75,6 @@ export function stanceMeta(value: ReviewStance) {
   return REVIEW_STANCES.find((s) => s.value === value) ?? REVIEW_STANCES[0];
 }
 
-// Lọc input người dùng về đúng tập nhãn hợp lệ (bỏ giá trị lạ, khử trùng, giới hạn số lượng).
 export function sanitizeAspects(input: unknown, kind: "highlights" | "caveats"): string[] {
   if (!Array.isArray(input)) return [];
   const allowed = kind === "highlights" ? HIGHLIGHT_VALUES : CAVEAT_VALUES;
@@ -98,7 +86,6 @@ export function sanitizeAspects(input: unknown, kind: "highlights" | "caveats"):
   return out;
 }
 
-// Nhãn hiển thị cho một value (bỏ qua value lạ). Giữ đúng thứ tự option gốc.
 export function labelsFor(kind: "highlights" | "caveats", values: string[]): AspectOption[] {
   const list = kind === "highlights" ? REVIEW_HIGHLIGHTS : REVIEW_CAVEATS;
   return list.filter((o) => values.includes(o.value));
@@ -112,17 +99,15 @@ type ReviewRow = {
 
 export type ReviewSummary = {
   total: number;
-  worthGoingPct: number; // % "đáng đi" (love + worthOnce) — headline thay số sao
-  lovePct: number; // % "muốn quay lại" (love)
-  score: number; // điểm đáng đi 0–100 (trọng số, xem SCORE_POS/SCORE_NEG) — engine
-  stars: number; // = score/20, làm tròn 1 số lẻ (0–5) — dạng hiển thị
+  worthGoingPct: number;
+  lovePct: number;
+  score: number;
+  stars: number;
   stance: { value: ReviewStance; label: string; tone: StanceTone; count: number; pct: number }[];
   highlights: AspectCount[];
   caveats: AspectCount[];
 };
 
-// Tổng hợp các review ĐANG HIỆN (đã lọc isHidden ở tầng query) thành % cảm nhận
-// + số đếm nhãn (sắp giảm dần, bỏ nhãn 0).
 export function summarizeReviews(rows: ReviewRow[]): ReviewSummary {
   const total = rows.length;
   const stanceCount = Object.fromEntries(

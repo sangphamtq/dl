@@ -25,7 +25,6 @@ export type CheckResult = {
 
 export type CheckResponse = CheckResult | { ok: false; error: string };
 
-// Phần chữ số có ý nghĩa (bỏ số 0 đầu) để lọc thô mọi biến thể định dạng.
 function phoneNeedle(norm: string): string {
   return norm.replace(/^0/, "");
 }
@@ -34,7 +33,7 @@ async function findVerified(
   channel: TrustChannel,
   valueNorm: string,
 ): Promise<VerifiedMatch | null> {
-  if (channel === "bank_account") return null; // không giữ STK chính chủ
+  if (channel === "bank_account") return null;
 
   if (channel === "phone") {
     const needle = phoneNeedle(valueNorm);
@@ -55,7 +54,6 @@ async function findVerified(
         select: { displayName: true, slug: true, phone: true, zalo: true },
       }),
     ]);
-    // Xác nhận lại bằng chuẩn hoá đầy đủ (contains có thể khớp lỏng).
     const confirm = (a?: string | null, b?: string | null) =>
       [a, b].some((x) => x && normalizeValue("phone", x) === valueNorm);
     if (acc && confirm(acc.phone, acc.zalo))
@@ -84,7 +82,6 @@ async function findVerified(
     return null;
   }
 
-  // website — chỉ CTV có trường website
   const sale = await prisma.saleProfile.findFirst({
     where: { status: "approved", website: { contains: valueNorm } },
     select: { displayName: true, slug: true, website: true },
@@ -94,8 +91,6 @@ async function findVerified(
   return null;
 }
 
-// Tra một SĐT / FB / website / STK: khớp danh bạ đã xác minh (dương) và đếm
-// báo cáo lừa đảo đã duyệt (âm).
 export async function checkTrust(
   rawValue: string,
   rawChannel?: string,

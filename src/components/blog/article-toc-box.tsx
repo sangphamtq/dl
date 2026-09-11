@@ -4,8 +4,6 @@ import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import type { TocItem } from "@/lib/toc";
 
-// Mục lục — khối tint bên trong thẻ summary (bám style trang tham khảo):
-// nền #f7faf6, tiêu đề "Mục lục", link mờ, mục đang đọc đậm + gạch chân.
 export function ArticleTocBox({ items }: { items: TocItem[] }) {
   const [active, setActive] = useState<string>(items[0]?.id ?? "");
 

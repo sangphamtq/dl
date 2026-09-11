@@ -40,13 +40,10 @@ const INK = "#0f172a";
 const MUTED = "#64748b";
 const W = 1360;
 
-// Checklist (giống danh sách ngoài trang): ô tròn tích + tên, căn trái, cột dọc.
 const ITEM_FS = 22;
-const ITEM_H = 37; // dòng siết lại, bớt khoảng trống dọc
+const ITEM_H = 37;
 const CIRCLE_R = 13;
-const ITEM_GAP = 12; // khoảng cách ô tròn → chữ
-
-// Font viết tay Mali (nhúng vào ảnh) cho phần checklist.
+const ITEM_GAP = 12;
 const MICRO = "text-[0.6rem] font-semibold uppercase tracking-[0.14em]";
 
 const LIST_FONT = "'MaliShare', 'Be Vietnam Pro', system-ui, sans-serif";
@@ -57,11 +54,6 @@ function escapeXml(s: string): string {
   );
 }
 
-/* Một mục checklist "☐/☑ Tên" tại (x, cy).
-   Ô VUÔNG bo 3px — cùng hình với ô đánh dấu trên chính trang `/tai-khoan/da-den`
-   sinh ra tấm ảnh này. Bản trước dùng ô TRÒN ở đây trong khi trang dùng ô vuông
-   (hoặc ngược lại tuỳ đợt), nên người dùng tải ảnh về là thấy một danh sách hơi
-   khác thứ vừa bấm. */
 function checklistItem(
   x: number,
   cy: number,
@@ -124,12 +116,10 @@ function listBlock(
   visited: Set<string>,
 ) {
   const leftX = Math.round(centerX - colW / 2);
-  // 3 cột ở khổ thường; rộng hơn thì thêm cột.
   const cols = Math.max(3, Math.round(colW / 300));
   const colWidth = colW / cols;
 
   let y = top;
-  // Tiêu đề căn TRÁI, khớp danh sách ngoài trang.
   let svg = `<text x="${leftX}" y="${y + 18}" font-size="21" font-weight="800" fill="${INK}">Năm nay bạn đã đi được những đâu?</text>`;
   y += 44;
 
@@ -141,10 +131,8 @@ function listBlock(
       }))
       .sort((a, b) => a.name.localeCompare(b.name, "vi"));
     const done = items.filter((i) => i.visited).length;
-    // Tên miền căn TRÁI: nhãn màu nhấn + số đã đến/tổng (xám), như ngoài trang.
     svg += `<text x="${leftX}" y="${y + 13}" font-size="17" font-weight="700" letter-spacing="1.2" fill="${accent}">${escapeXml(region.label.toUpperCase())} <tspan fill="${MUTED}" font-weight="600">${done}/${region.slugs.length}</tspan></text>`;
 
-    // Xếp theo CỘT DỌC (fill từng cột từ trên xuống) — giống CSS columns.
     const rowsPerCol = Math.ceil(items.length / cols);
     items.forEach((it, i) => {
       const col = Math.floor(i / rowsPerCol);
@@ -166,7 +154,6 @@ function buildShareCard(
 ) {
   const { accent, showMap, showList } = opts;
 
-  // ── Header (eyebrow + headline + tên) ──
   const hasName = opts.name.trim().length > 0;
   const count = `${total}/${PROVINCE_COUNT}`;
   const parts = MAP_CARD_TEXT.headline.split("{n}");
@@ -181,7 +168,6 @@ function buildShareCard(
     header += `<text x="${W / 2}" y="226" text-anchor="middle" font-size="27" font-style="italic" fill="${MUTED}">— ${escapeXml(opts.name.trim())}</text>`;
   const contentTop = (hasName ? 256 : 220) + 36;
 
-  // ── Thân (bản đồ và/hoặc danh sách) ──
   let body = "";
   let contentBottom = contentTop;
 
@@ -232,7 +218,6 @@ function buildShareCard(
   return { svg, w: W, h: H };
 }
 
-// Nhúng font Mali (woff2 base64) để chữ checklist hiện đúng font khi xuất ảnh.
 const MALI_SUBSETS = [
   {
     file: "mali-latin.woff2",
@@ -274,7 +259,6 @@ async function svgToPngBlob(svg: string, w: number, h: number): Promise<Blob> {
   const url = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
   const img = new Image();
   img.src = url;
-  // decode() chờ ảnh + font nhúng giải mã xong (đáng tin hơn onload cho font).
   try {
     await img.decode();
   } catch {
@@ -299,18 +283,11 @@ async function svgToPngBlob(svg: string, w: number, h: number): Promise<Blob> {
   );
 }
 
-/* ── Xuất ảnh PNG từ bộ tuỳ chọn ĐANG LƯU ───────────────────────────────────
-   Tách hẳn khỏi hộp thoại tuỳ chỉnh. Trước đây "Tải ảnh" là nút chính NẰM TRONG
-   hộp thoại, nên muốn lấy lại tấm ảnh với đúng thiết lập cũ vẫn phải mở bảng
-   điều khiển, đi qua sáu ô nhập rồi mới tới nút — trong khi chỉnh là việc làm
-   một lần còn xuất ảnh là việc làm lại nhiều lần. */
 async function exportCard(
   visited: string[],
   total: number,
   opts: MapCardOptions,
 ) {
-  // Font Mali nhúng vào SVG để chữ checklist trong ảnh đúng nét viết tay như
-  // ngoài trang. Tải hỏng thì vẫn xuất được, chỉ rơi về font hệ thống.
   const fontCss = await loadMaliFontCss().catch(() => "");
   const card = buildShareCard(new Set(visited), total, opts, fontCss);
   const blob = await svgToPngBlob(card.svg, card.w, card.h);
@@ -324,7 +301,6 @@ async function exportCard(
   URL.revokeObjectURL(url);
 }
 
-/** Nút XUẤT ẢNH — một chạm, không hộp thoại. Dùng đúng thiết lập đã lưu. */
 export function MapExportButton({
   visited,
   total,
@@ -362,7 +338,6 @@ export function MapExportButton({
   );
 }
 
-/** Nút TUỲ CHỈNH — mở bảng điều khiển, lưu VĨNH VIỄN theo người dùng. */
 export function MapCustomizeButton({
   visited,
   total,
@@ -373,7 +348,6 @@ export function MapCustomizeButton({
   visited: string[];
   total: number;
   opts: MapCardOptions;
-  /** Tên trên tài khoản — chỗ "Đặt lại" quay về. */
   accountName: string;
   onSaved: (next: MapCardOptions) => void;
 }) {
@@ -401,13 +375,6 @@ export function MapCustomizeButton({
   );
 }
 
-/* ── Bảng điều khiển + xem trước ────────────────────────────────────────────
-   Hai nhóm, tách bằng một đường kẻ và một nhãn, vì chúng KHÔNG cùng phạm vi:
-     · **Màu nhấn** đổi cả TRANG (bản đồ, vạch tiến độ, ô đánh dấu, con số lớn)
-       lẫn tấm ảnh — đây mới là phần "tuỳ chỉnh trang này";
-     · **Chữ trên ảnh** chỉ sống trong tấm ảnh xuất ra.
-   Trộn hai nhóm vào một cột đều tăm tắp như bản trước thì người dùng không đoán
-   được thứ mình vừa sửa sẽ hiện ở đâu. */
 function CustomizeDialog({
   visited,
   total,
@@ -425,8 +392,6 @@ function CustomizeDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
-  // Font Mali (nhúng) giữ ở ĐÂY, không ở trong `Editor`: `Editor` bị tháo mỗi
-  // lần đóng hộp thoại, để font trong đó thì mở lại là tải lại vài trăm KB.
   const [fontCss, setFontCss] = useState("");
   useEffect(() => {
     if (open && !fontCss) loadMaliFontCss().then(setFontCss).catch(() => {});
@@ -444,11 +409,6 @@ function CustomizeDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {/* `Editor` nằm TRONG `DialogContent` nên Radix tháo nó khi đóng, và
-            bản nháp được gieo lại từ `saved` ở lần mở sau một cách tự nhiên —
-            khỏi cần một `useEffect` chỉ để đồng bộ state với prop (mẫu mà
-            `react-hooks/set-state-in-effect` chặn, và chặn đúng: nó gây thêm
-            một vòng render mỗi lần mở). */}
         <Editor
           visited={visited}
           total={total}
@@ -463,13 +423,6 @@ function CustomizeDialog({
   );
 }
 
-/* Bảng điều khiển + xem trước. Hai nhóm, tách bằng một đường kẻ và một nhãn, vì
-   chúng KHÔNG cùng phạm vi:
-     · **Màu nhấn** đổi cả TRANG (bản đồ, vạch tiến độ, ô đánh dấu) lẫn tấm ảnh
-       — đây mới là phần "tuỳ chỉnh trang này";
-     · **Chữ trên ảnh** chỉ sống trong tấm ảnh xuất ra.
-   Trộn hai nhóm vào một cột đều tăm tắp như bản trước thì người dùng không đoán
-   được thứ mình vừa sửa sẽ hiện ở đâu. */
 function Editor({
   visited,
   total,
@@ -487,8 +440,6 @@ function Editor({
   onSaved: (next: MapCardOptions) => void;
   onClose: () => void;
 }) {
-  // NHÁP: mọi thay đổi chỉ nằm trong hộp thoại cho tới khi bấm Lưu — đóng ngang
-  // thì trang trở lại đúng thứ đang lưu.
   const [draft, setDraft] = useState<MapCardOptions>(saved);
   const [saving, startSave] = useTransition();
   const set = <K extends keyof MapCardOptions>(k: K, v: MapCardOptions[K]) =>
@@ -517,7 +468,6 @@ function Editor({
 
   return (
     <div className="grid max-h-[78vh] gap-0 overflow-hidden sm:grid-cols-[1fr_300px]">
-      {/* Xem trước */}
       <div className="overflow-auto bg-muted/40 p-4">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -527,7 +477,6 @@ function Editor({
         />
       </div>
 
-      {/* Điều khiển */}
       <div className="overflow-auto border-t border-border p-5 sm:border-l sm:border-t-0">
         <Field label="Màu nhấn">
           <div className="flex flex-wrap items-center gap-2">
@@ -537,9 +486,6 @@ function Editor({
                 type="button"
                 aria-label={`Màu ${c}`}
                 onClick={() => set("accent", c)}
-                // Ô màu VUÔNG, và ô đang chọn đánh dấu bằng một vòng `ring`
-                // cách ra ngoài chứ không bằng viền dày: viền dày ăn vào chính
-                // mảng màu đang xem, làm nó nhìn khác với màu sẽ in ra.
                 className={cn(
                   R_BADGE,
                   "size-7 transition-shadow",
@@ -570,13 +516,6 @@ function Editor({
           ngoài trang, không chỉ trong ảnh.
         </p>
 
-        {/* ── Ảnh chia sẻ ────────────────────────────────────────────────
-            Bản trước là BỐN ô nhập tự do (dòng nhãn, tiêu đề, tên, dòng chân)
-            xếp thành một cột đều tăm tắp. Nay chỉ còn **một ô: TÊN** — ba dòng
-            kia cố định trong `MAP_CARD_TEXT` (xem lý do ở đó).
-            Không bày ba dòng cố định ra đây dưới dạng ô khoá: bản xem trước bên
-            trái đã in chúng to rõ, thêm ba ô xám không bấm được chỉ là ba dòng
-            chữ mời người ta thử bấm rồi thất vọng. */}
         <div className="mt-6 border-t border-border pt-5">
           <p className={cn(MICRO, "text-muted-foreground")}>Ảnh chia sẻ</p>
 
@@ -605,9 +544,6 @@ function Editor({
         </div>
 
         <div className="mt-6 flex gap-2 border-t border-border pt-4">
-          {/* "Đặt lại" chỉ đổi BẢN NHÁP — vẫn phải bấm Lưu mới ghi. Đặt lại mà
-              ghi thẳng thì một cú bấm nhầm xoá sạch thiết lập đã lưu, và không
-              có đường lui. */}
           <Button
             type="button"
             variant="ghost"

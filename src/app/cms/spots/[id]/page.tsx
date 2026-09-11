@@ -136,7 +136,6 @@ export default async function SpotDetailPage({
 
   return (
     <div className="p-6 sm:p-8">
-      {/* Breadcrumb + tiêu đề + hành động */}
       <Link
         href="/cms/spots"
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
@@ -200,7 +199,6 @@ export default async function SpotDetailPage({
         </div>
       </div>
 
-      {/* Cảnh báo */}
       {spot.notice && (
         <div className="mt-6 flex items-start gap-2 rounded-xl border border-amber-500/40 bg-amber-500/5 px-4 py-3 text-sm">
           <TriangleAlert
@@ -211,10 +209,8 @@ export default async function SpotDetailPage({
         </div>
       )}
 
-      {/* Bố cục 2 cột: nội dung + sidebar meta */}
       <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="space-y-8 lg:col-span-2">
-          {/* Ảnh */}
           <section>
             {cover ? (
               <div className="flex max-w-2xl gap-3">
@@ -261,7 +257,6 @@ export default async function SpotDetailPage({
             )}
           </section>
 
-          {/* Mô tả */}
           <section>
             <h2 className="text-lg font-semibold tracking-tight">Mô tả</h2>
             {spot.description ? (
@@ -275,7 +270,6 @@ export default async function SpotDetailPage({
             )}
           </section>
 
-          {/* Điểm nhấn */}
           {spot.highlights.length > 0 && (
             <section>
               <h2 className="text-lg font-semibold tracking-tight">
@@ -297,7 +291,6 @@ export default async function SpotDetailPage({
             </section>
           )}
 
-          {/* Thời điểm đẹp — diễn giải */}
           {spot.bestTimeNote && (
             <section>
               <h2 className="text-lg font-semibold tracking-tight">
@@ -309,7 +302,6 @@ export default async function SpotDetailPage({
             </section>
           )}
 
-          {/* Cách đến */}
           {spot.gettingThere && (
             <section>
               <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight">
@@ -323,7 +315,6 @@ export default async function SpotDetailPage({
             </section>
           )}
 
-          {/* Mẹo / kinh nghiệm */}
           {spot.tips.length > 0 && (
             <section>
               <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight">
@@ -344,7 +335,6 @@ export default async function SpotDetailPage({
             </section>
           )}
 
-          {/* Hoạt động liên kết (read-only) */}
           <section>
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-lg font-semibold tracking-tight">
@@ -384,7 +374,6 @@ export default async function SpotDetailPage({
           </section>
         </div>
 
-        {/* Sidebar meta */}
         <aside className="space-y-4">
           <SpotAdminControls
             id={spot.id}

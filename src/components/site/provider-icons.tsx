@@ -1,5 +1,3 @@
-// Icon nhà cung cấp đăng nhập — dùng chung cho trang /login và login drawer.
-
 export function GoogleIcon() {
   return (
     <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden>

@@ -71,7 +71,6 @@ export default async function CmsSalesPage({
         </p>
       </div>
 
-      {/* Tabs trạng thái */}
       <div className="mt-6 flex flex-wrap gap-2">
         {STATUS_TABS.map((t) => (
           <Link
@@ -188,7 +187,6 @@ export default async function CmsSalesPage({
                 )}
               </div>
 
-              {/* Bằng chứng nội bộ */}
               {r.evidenceUrls.length > 0 && (
                 <div className="mt-3">
                   <p className="text-xs font-medium text-muted-foreground">

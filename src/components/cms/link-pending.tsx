@@ -4,8 +4,6 @@ import { useLinkStatus } from "next/link";
 import { Loader2 } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
-// Đặt BÊN TRONG <Link>: hiện spinner ngay khi bấm, trong lúc chờ điều hướng.
-// Trả về icon thay thế (vd icon mặc định) khi không pending.
 export function LinkPending({
   fallback,
   className,

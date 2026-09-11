@@ -116,7 +116,6 @@ export default async function ActivityPublicPage({
   const tiers = parseTicketTiers(activity.ticketTiers);
   const extraFees = parseExtraFees(activity.extraFees);
 
-  // Ảnh cho hero stack (chung mô-típ với trang Địa điểm / Điểm đến).
   const heroImages: HeroImage[] = activity.images.map((i) => ({
     url: i.url,
     alt: i.alt,
@@ -129,7 +128,6 @@ export default async function ActivityPublicPage({
     });
   }
 
-  // Thông tin thực tế — gộp chung card với giá ở sidebar (thời lượng / mùa / đơn vị).
   const infoRows = [
     { icon: Clock, label: "Thời lượng", value: activity.durationText },
     { icon: CalendarDays, label: "Mùa / thời điểm", value: activity.seasonText },
@@ -152,13 +150,10 @@ export default async function ActivityPublicPage({
       />
 
       <main className="flex-1">
-        {/* Hero — chung mô-típ nền ambient sáng với trang Địa điểm / Điểm đến */}
         <HeroFrame images={heroImages.map((i) => i.url)}>
           <div className="mx-auto max-w-7xl px-4 pb-10 pt-6 sm:px-6 sm:pb-6 sm:pt-5">
             <div className="grid items-center gap-10 lg:grid-cols-[1fr_1.4fr] lg:gap-12">
-              {/* Trái: chữ */}
               <div>
-                {/* Quay lại + chia sẻ */}
                 <div className="mb-5 flex items-center justify-between gap-3">
                   <Link
                     href={`/diem-den/${activity.place.slug}/hoat-dong`}
@@ -202,7 +197,6 @@ export default async function ActivityPublicPage({
                 </h1>
               </div>
 
-              {/* Phải: chồng ảnh */}
               <div className="relative z-[45]">
                 <PlaceHeroStack images={heroImages} />
               </div>
@@ -232,12 +226,9 @@ export default async function ActivityPublicPage({
               )}
             </div>
 
-            {/* Sidebar */}
             <aside className="space-y-6 lg:sticky lg:top-28 lg:self-start">
-              {/* Thông tin nhanh — Giá + đặt chỗ → thông tin → liên hệ */}
               {(hasPrice || hasBooking || hasInfo || hasLinks) && (
                 <div className="rounded-2xl border border-border/60 bg-card p-5">
-                  {/* 1. Giá vé + nút đặt chỗ (nhóm hành động, không divider giữa) */}
                   {(hasPrice || hasBooking) && (
                     <div>
                       {hasPrice && (
@@ -295,7 +286,6 @@ export default async function ActivityPublicPage({
                     </div>
                   )}
 
-                  {/* 2. Thông tin (thời lượng / mùa / đơn vị) */}
                   {hasInfo && (
                     <dl
                       className={cn(
@@ -321,7 +311,6 @@ export default async function ActivityPublicPage({
                     </dl>
                   )}
 
-                  {/* 3. Liên hệ (điện thoại / website) */}
                   {hasLinks && (
                     <div
                       className={cn(
@@ -362,12 +351,8 @@ export default async function ActivityPublicPage({
                 </div>
               )}
 
-              {/* Chi phí khác tại chỗ — khoản trả thẳng cho người cung
-                  cấp (thuê áo phao, gửi đồ, xe ôm chặng cuối…), tách khỏi
-                  giá tham gia vì giá đó còn in ra chip hero + thẻ. */}
               <ExtraFeesCard fees={extraFees} context="activity" />
 
-              {/* Diễn ra ở đâu */}
               {activity.spotLinks.length > 0 && (
                 <div className="rounded-2xl border border-border/60 bg-card p-5">
                   <h2 className="flex items-center gap-2 text-sm font-semibold">

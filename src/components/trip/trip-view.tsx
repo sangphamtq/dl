@@ -24,10 +24,6 @@ import {
   Warning,
 } from "@/components/trip/trip-rail";
 
-// Khung nhìn CHỈ ĐỌC của một lịch trình — dùng cho cả hai đích:
-//   · /lich-trinh/s/[shareId]  — bản chia sẻ của người dùng
-//   · /lich-trinh/[slug]       — lịch trình mẫu do biên tập soạn
-// Khác trang soạn ở chỗ không có thao tác nào ngoài "Dùng lịch trình này".
 export function TripView({
   trip,
   days,
@@ -43,7 +39,6 @@ export function TripView({
     coverImage: string | null;
   };
   days: DayView[];
-  /** Mục chưa xếp ngày — với lịch trình mẫu đây là "gợi ý thêm nếu còn thời gian". */
   backlog: ResolvedItem[];
 }) {
   const router = useRouter();
@@ -74,10 +69,6 @@ export function TripView({
   return (
     <TripShell
       header={
-        // Trang công khai ⇒ ẢNH LÀM CHỦ, nguyên tắc số một của dự án. Bản trước
-        // là một dải gradient xanh nhạt với chữ đen — thứ dán vào trang quản trị
-        // nào cũng vừa — trong khi lịch trình này đã có sẵn ảnh bìa và một cái
-        // tên xứng đáng được đặt to.
         <header className="relative isolate overflow-hidden">
           {trip.coverImage ? (
             <>
@@ -114,8 +105,6 @@ export function TripView({
                 </p>
               )}
 
-              {/* Dải dữ kiện ngăn bằng vạch DỌC mảnh — cùng khuôn với dải số
-                  liệu ở hero điểm đến, không phải mấy viên badge xếp ngang. */}
               <div className="mt-6 flex flex-wrap items-center gap-y-3 text-white [text-shadow:0_0_12px_rgba(0,0,0,0.55)]">
                 <Fact icon={CalendarDays} value={`${days.length} ngày`} first />
                 <Fact value={`${totalItems} điểm dừng`} />
@@ -159,7 +148,6 @@ export function TripView({
             <p className="text-xs leading-relaxed text-muted-foreground">
               Nhân bản lịch trình thì bạn nhận luôn.
             </p>
-            {/* Danh sách ngăn bằng hairline, không phải một chồng thẻ có bóng. */}
             <ul className="mt-3 divide-y divide-border/60">
               {backlog.map((item) => (
                 <li key={item.id} className="py-3 first:pt-0">
@@ -205,7 +193,6 @@ export function TripView({
                 key={day.id}
                 id={`day-${day.id}`}
                 onMouseDown={() => setActiveDayId(day.id)}
-                // Ngày ngăn nhau bằng KHOẢNG TRỐNG + hairline, không phải thẻ.
                 className="scroll-mt-28 border-t border-border/60 pt-9 first:border-t-0 first:pt-0 lg:scroll-mt-24"
               >
                 <DayHeading
@@ -269,7 +256,6 @@ export function TripView({
   );
 }
 
-/** Một dữ kiện trong dải hero — ngăn nhau bằng vạch dọc mảnh. */
 function Fact({
   icon: Icon,
   value,

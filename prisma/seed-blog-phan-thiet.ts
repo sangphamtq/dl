@@ -2,8 +2,6 @@ import "dotenv/config";
 import { prisma } from "@/lib/prisma";
 import { PublishStatus } from "@/generated/prisma/enums";
 
-// Seed MỘT bài blog dài về Phan Thiết, nhiều heading H2/H3 để thấy mục lục (TOC).
-// Chạy SAU seed:phan-thiet (để gắn PostRef). Dùng: pnpm seed:blog-phan-thiet
 const now = new Date();
 const img = (seed: string, w = 1200, h = 630) =>
   `https://picsum.photos/seed/${seed}/${w}/${h}`;
@@ -93,7 +91,6 @@ async function main() {
     return;
   }
 
-  // PostRef tới dữ liệu Phan Thiết nếu đã seed (không bắt buộc).
   const [phanThiet, eateries] = await Promise.all([
     prisma.place.findUnique({ where: { slug: "phan-thiet" }, select: { id: true } }),
     prisma.eatery.findMany({
@@ -135,7 +132,6 @@ async function main() {
     },
   });
 
-  // Ảnh bìa + vài ảnh gallery.
   await prisma.image.deleteMany({ where: { postId: row.id } });
   await prisma.image.createMany({
     data: [

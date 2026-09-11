@@ -3,16 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { DayView, ItemView, ResolvedItem } from "@/lib/trip";
 
-// Trạng thái kéo–thả của trang soạn, tách khỏi phần dựng giao diện.
-//
-// Bài toán là "sortable nhiều vùng chứa": danh sách chưa xếp + mỗi ngày là một vùng, kéo
-// được cả TRONG một vùng lẫn GIỮA các vùng. Vì vậy state không giữ nguyên các
-// object mục mà giữ **danh sách id theo từng vùng** — đổi chỗ chỉ là hoán vị id.
-//
-// Vì sao cần bản sao cục bộ thay vì đọc thẳng props: mọi thao tác đều là server
-// action rồi revalidate, tức là props chỉ đổi sau một vòng mạng. Không giữ bản
-// cục bộ thì mục vừa thả sẽ nhảy về chỗ cũ rồi mới nhảy tới chỗ mới.
-
 export const BACKLOG = "backlog";
 
 export const dayKey = (dayId: string) => `day:${dayId}`;
@@ -20,7 +10,6 @@ export const dayIdOf = (key: string) => (key.startsWith("day:") ? key.slice(4) :
 
 export type Board = Record<string, string[]>;
 
-/** Giờ chưa tính được (mục vừa kéo từ danh sách chưa xếp sang) — RailItem hiện "···". */
 const NO_TIME = -1;
 
 function toItemView(x: ItemView | ResolvedItem): ItemView {
@@ -42,21 +31,15 @@ function buildBoard(days: DayView[], backlog: ResolvedItem[]): Board {
   return board;
 }
 
-/** Dời một id tới chỗ của `overId` (hoặc vào cuối một vùng rỗng). Hàm THUẦN.
- *  Export để kiểm được bằng script — phép tính chỉ số khi đổi vùng là chỗ dễ sai nhất. */
 export function applyMove(prev: Board, activeId: string, overId: string): Board {
   const from = Object.keys(prev).find((k) => prev[k].includes(activeId));
   const to = overId in prev ? overId : Object.keys(prev).find((k) => prev[k].includes(overId));
   if (!from || !to) return prev;
   if (from === to && activeId === overId) return prev;
 
-  // CÙNG một vùng: chỉ số đích phải tính trên danh sách GỐC, trước khi gỡ mục
-  // ra. Tính sau khi gỡ thì mọi lần kéo XUỐNG đều lệch một chỗ (kéo a xuống chỗ
-  // c ra [b,a,c] thay vì [b,c,a]) — vì gỡ a xong thì c đã tụt lên một bậc.
   if (from === to) {
     const list = [...prev[from]];
     const oldIndex = list.indexOf(activeId);
-    // Thả lên chính vùng chứa (khoảng trống dưới danh sách) → xuống cuối.
     const newIndex = overId in prev ? list.length - 1 : list.indexOf(overId);
     if (oldIndex < 0 || newIndex < 0) return prev;
     list.splice(oldIndex, 1);
@@ -90,8 +73,6 @@ export function useTripBoard(days: DayView[], backlog: ResolvedItem[]) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const dragging = useRef(false);
 
-  // Đồng bộ lại từ server SAU khi thả. Chỉ nhận khi không đang kéo và khi chữ
-  // ký thật sự khác — nếu không, mỗi lần cha render lại là bản cục bộ bị xoá.
   const fromProps = buildBoard(days, backlog);
   const propSig = signature(fromProps);
   const lastSig = useRef(propSig);
@@ -108,22 +89,15 @@ export function useTripBoard(days: DayView[], backlog: ResolvedItem[]) {
   for (const d of days) for (const i of d.items) byId.set(i.id, i);
   for (const i of backlog) byId.set(i.id, toItemView(i));
 
-  /** Vùng chứa đang giữ một id. */
   function containerOf(id: string): string | null {
-    if (id in board) return id; // thả vào vùng rỗng: id chính là vùng
+    if (id in board) return id;
     return Object.keys(board).find((k) => board[k].includes(id)) ?? null;
   }
 
-  /** Dời trong lúc kéo (đổi vùng) — chỉ cập nhật cục bộ, chưa gọi server. */
   function moveLocal(activeId: string, overId: string) {
     setBoard((prev) => applyMove(prev, activeId, overId));
   }
 
-  /**
-   * Chốt vị trí khi thả: tính bàn mới, đặt state, VÀ trả về vị trí cuối để gọi
-   * server. Phải tính đồng bộ ngay tại đây — đọc `board` ở lượt sau (kể cả qua
-   * queueMicrotask) sẽ ra bàn CŨ vì setState chưa kịp áp dụng.
-   */
   function commitMove(
     activeId: string,
     overId: string | null,
@@ -139,8 +113,6 @@ export function useTripBoard(days: DayView[], backlog: ResolvedItem[]) {
     };
   }
 
-  // Cờ đang-kéo bọc trong hàm chứ không trả ref ra ngoài: React Compiler cấm
-  // sửa thẳng giá trị do hook trả về.
   function beginDrag(id: string) {
     dragging.current = true;
     setActiveId(id);
@@ -159,7 +131,6 @@ export function useTripBoard(days: DayView[], backlog: ResolvedItem[]) {
     containerOf,
     moveLocal,
     commitMove,
-    /** Ép nhận lại trạng thái từ server (dùng khi thả thất bại). */
     resetFromProps: () => setBoard(buildBoard(days, backlog)),
   };
 }

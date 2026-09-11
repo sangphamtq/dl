@@ -2,8 +2,6 @@ import { NextRequest } from "next/server";
 import { auth } from "@/auth";
 import { getUnreadCount, getRecentNotifications } from "@/lib/notifications";
 
-// GET /api/notifications        → { unread, items }
-// GET /api/notifications?c=1     → { unread }   (poll nhẹ chỉ lấy số chưa đọc)
 export async function GET(req: NextRequest) {
   const session = await auth();
   const uid = session?.user?.id;

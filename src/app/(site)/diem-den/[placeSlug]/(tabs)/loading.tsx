@@ -1,15 +1,6 @@
 import { R_CARD, R_CTRL } from "@/lib/radius";
 import { cn } from "@/lib/utils";
 
-/* Màn chờ của VÙNG NỘI DUNG khi đổi tab.
-   Đặt được ở đây chính là phần thưởng của việc có layout chung: thanh ngữ cảnh
-   và thanh tab thuộc `(tabs)/layout.tsx` nên chúng ĐỨNG YÊN, Suspense chỉ bọc
-   phần dưới. Vì thế KHÔNG dùng `PageLoading` (nó `min-h-svh`, sẽ đội trang cao
-   vọt và đẩy thanh tab chạy lên chạy xuống mỗi lần bấm — đúng cảnh báo đã ghi
-   ở CLAUDE.md mục `loading.tsx`).
-
-   Dùng chung class `.page-loading`: hoãn 120ms mới hiện, nên tab nào trả về
-   nhanh hơn thế thì người dùng không thấy khung xám nào nhấp nháy cả. */
 export default function TabContentLoading() {
   return (
     <div

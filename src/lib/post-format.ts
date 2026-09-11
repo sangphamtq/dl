@@ -1,6 +1,3 @@
-// Tự nhận link trong các đoạn text (bỏ qua phần nằm trong thẻ HTML).
-// Nội dung bài đã được sanitize khi lưu nên ở đây chỉ thêm <a> cho URL trần.
-
 function linkify(text: string): string {
   return text.replace(/(https?:\/\/[^\s<]+)/g, (u) => {
     const m = u.match(/[.,!?;:)\]]+$/);

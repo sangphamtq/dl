@@ -68,8 +68,6 @@ export default async function PlaceCommunityPage({
     getTrips({ placeId: place.id }),
   ]);
 
-  // Số liệu điểm đến, tab, check-in, dải lân cận: đã lên `(tabs)/layout.tsx`.
-
   const totalAll = grouped.reduce((s, g) => s + g._count._all, 0);
   const countOf = (v: string) =>
     v === "all" ? totalAll : (grouped.find((g) => g.type === v)?._count._all ?? 0);
@@ -84,7 +82,6 @@ export default async function PlaceCommunityPage({
     return `${base}${qs ? `?${qs}` : ""}`;
   };
 
-  // Khung (thanh ngữ cảnh · thanh tab · dải lân cận) nằm ở `(tabs)/layout.tsx`.
   return (
     <>
       <RealtimeRefresher
@@ -99,8 +96,6 @@ export default async function PlaceCommunityPage({
             <h2 className="text-xl font-bold tracking-tight sm:text-2xl">
               Thảo luận về {place.name}
             </h2>
-            {/* Ngăn bằng khoảng trắng rộng, không phải dấu chấm giữa — quy
-                ước dải phân cách của dự án (xem skill `design`). */}
             <p className="mt-1 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-muted-foreground">
               <span>Hỏi đáp, chia sẻ kinh nghiệm và rủ nhau ghép đoàn</span>
               <span>
@@ -110,7 +105,6 @@ export default async function PlaceCommunityPage({
           </div>
 
           <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem] lg:gap-10">
-            {/* Cột feed */}
             <div className="min-w-0">
               <PostComposer
                 isAuthed={isAuthed}
@@ -118,7 +112,6 @@ export default async function PlaceCommunityPage({
                 fixedPlaceId={place.id}
               />
 
-              {/* Thanh công cụ: lọc theo loại + sắp xếp */}
               <div className="mt-6">
                 <CommunityFilter
                   current={type}
@@ -163,7 +156,6 @@ export default async function PlaceCommunityPage({
               )}
             </div>
 
-            {/* Sidebar */}
             <aside className="lg:sticky lg:top-32 lg:self-start">
               <CommunitySidebar
                 about={{

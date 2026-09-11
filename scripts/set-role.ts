@@ -2,9 +2,6 @@ import "dotenv/config";
 import { prisma } from "@/lib/prisma";
 import { UserRole } from "@/generated/prisma/enums";
 
-// Đặt role cho một user theo email.
-// Dùng: pnpm set-role <email> [user|editor|admin]   (mặc định admin)
-// Lưu ý: user phải ĐĂNG NHẬP ít nhất 1 lần để có bản ghi trong DB trước khi chạy.
 async function main() {
   const email = process.argv[2];
   const role = (process.argv[3] ?? "admin") as keyof typeof UserRole;

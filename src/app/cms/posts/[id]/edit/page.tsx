@@ -7,7 +7,6 @@ import { ListingImages } from "@/components/cms/listing-images";
 import { PostForm, type PostFormValues } from "../../post-form";
 import { getRefOptions } from "../../ref-options";
 
-// PostRef → "type:id" để nạp vào multi-select.
 function refToken(r: {
   placeId: string | null;
   activityId: string | null;

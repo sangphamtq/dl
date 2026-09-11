@@ -3,9 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { ThreadType, ContentReportReason } from "@/generated/prisma/enums";
 import { slugify } from "@/lib/slug";
 
-// Seed vài bài cộng đồng mẫu (kiểu Facebook, văn bản thường) + trả lời + báo cáo
-// để xem thử feed và màn kiểm duyệt CMS. Dùng: pnpm seed:community
-// Lưu ý: xóa sạch thread cũ trước khi seed (dữ liệu dev).
 async function main() {
   const users = await prisma.user.findMany({
     orderBy: { role: "desc" }, // ưu tiên admin/editor lên đầu
@@ -17,7 +14,6 @@ async function main() {
     console.error("Cần ít nhất 1 user để làm tác giả. Bỏ qua seed cộng đồng.");
     return;
   }
-  // Người báo cáo & người trả lời: dùng user khác nếu có, không thì chính author.
   const other = users[1]?.id ?? author.id;
   const third = users[2]?.id ?? other;
 
@@ -26,17 +22,14 @@ async function main() {
     select: { id: true },
   });
 
-  // Ngày khởi hành cho bài "tìm bạn": ~2 tuần tới.
   const depart = new Date();
   depart.setDate(depart.getDate() + 14);
 
-  // Dọn dữ liệu cũ (dev) rồi seed lại (cascade xóa reply/report/like/ảnh).
   await prisma.thread.deleteMany({});
 
   const mkSlug = (body: string) =>
     slugify(body).split("-").slice(0, 8).join("-").slice(0, 80) || "bai-viet";
 
-  // 1) Bài chia sẻ — có trả lời (một trả lời sẽ bị báo cáo).
   const share = await prisma.thread.create({
     data: {
       slug: mkSlug("chia se phan thiet do cat bay"),
@@ -63,7 +56,6 @@ async function main() {
   });
   const spamReply = share.replies.find((r) => r.content.includes("ZALO"));
 
-  // 2) Bài hỏi đáp.
   await prisma.thread.create({
     data: {
       slug: mkSlug("thang 7 phan thiet co mua khong"),
@@ -75,7 +67,6 @@ async function main() {
     },
   });
 
-  // 3) Bài tìm bạn đồng hành — có ngày khởi hành + số chỗ.
   await prisma.thread.create({
     data: {
       slug: mkSlug("ghep doan phan thiet cuoi thang"),
@@ -89,7 +80,6 @@ async function main() {
     },
   });
 
-  // 4) Bài thảo luận chung — sẽ bị báo cáo (spam/quảng cáo).
   const discussion = await prisma.thread.create({
     data: {
       slug: mkSlug("mua ve may bay gia re o dau"),
@@ -102,7 +92,6 @@ async function main() {
     select: { id: true },
   });
 
-  // Báo cáo mẫu: 1 bài (spam) + 1 trả lời (spam) → hiện ở /cms/community/reports.
   await prisma.contentReport.create({
     data: {
       reason: ContentReportReason.spam,

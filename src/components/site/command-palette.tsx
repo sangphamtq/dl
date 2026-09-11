@@ -25,18 +25,6 @@ import {
   type SearchGroup,
 } from "./search-action";
 
-/**
- * MỘT khuôn hàng cho MỌI loại kết quả: ảnh · tên · ngữ cảnh.
- *
- * Trước đây có hai khuôn — Place/Spot thì ảnh thumbnail, còn Lưu trú/Bài viết
- * chỉ được một icon xám. Sự phân hạng đó không đến từ dữ liệu: chẳng loại nào
- * có ảnh thật cả (kể cả "Phan Thiết"), chỉ là hai khuôn xử lý chỗ trống theo
- * hai cách. Nay `searchSite` cho mọi hit đi qua `coverUrl()` nên ảnh LUÔN có,
- * và một khuôn là đủ.
- *
- * KHÔNG còn nhãn loại ở mép phải: tiêu đề nhóm đã nói loại, và nhãn đó ăn mất
- * bề ngang của đúng thứ người ta đang đọc — cái tên.
- */
 function HitRow({ h, onSelect }: { h: SearchHit; onSelect: () => void }) {
   return (
     <CommandItem
@@ -57,8 +45,6 @@ function HitRow({ h, onSelect }: { h: SearchHit; onSelect: () => void }) {
           </span>
         )}
       </span>
-      {/* Mũi tên chỉ hiện ở hàng đang chọn — cùng cách thẻ lưu trú để lộ mũi tên
-          khi rê chuột, thay cho một cột nhãn chiếm chỗ vĩnh viễn. */}
       <ArrowUpRight
         className="ml-auto size-4 shrink-0 self-center text-muted-foreground opacity-0 group-data-[selected=true]:opacity-100"
         aria-hidden
@@ -67,11 +53,6 @@ function HitRow({ h, onSelect }: { h: SearchHit; onSelect: () => void }) {
   );
 }
 
-// Gợi ý điểm đến: ô ảnh vuông + tên.
-//
-// Ảnh TRÒN đã bỏ: cả hệ thẻ của site (điểm đến, địa điểm, bài viết) cắt ảnh
-// theo khung chữ nhật 3/2, còn hình tròn ở đây đọc ra là avatar người — sai
-// loại nội dung. Cùng lý do với việc bỏ pin tròn ở bản đồ toàn quốc.
 function SuggestionCard({
   h,
   onSelect,
@@ -85,7 +66,6 @@ function SuggestionCard({
       onSelect={onSelect}
       className="gap-3 rounded-[4px] px-2 py-1.5"
     >
-      {/* Ô VUÔNG 40px, đúng bằng dấu chân của ảnh tròn cũ. */}
       <span className="relative size-10 shrink-0 overflow-hidden bg-muted">
         <Image src={h.image} alt="" fill sizes="40px" className="object-cover" />
       </span>
@@ -97,20 +77,11 @@ function SuggestionCard({
 const MICRO = "text-[0.6rem] font-semibold uppercase tracking-[0.14em]";
 
 const COMMAND_CLASS = cn(
-  // Ô nhập: cao, rõ (sửa selector wrapper = data-slot, không phải cmdk-*).
   "[&_[data-slot=command-input-wrapper]]:h-16 [&_[data-slot=command-input-wrapper]]:gap-3 [&_[data-slot=command-input-wrapper]]:px-5",
   "[&_[data-slot=command-input-wrapper]_svg]:size-5 [&_[data-slot=command-input-wrapper]_svg]:opacity-60",
   "[&_[data-slot=command-input]]:text-base",
-  // Tiêu đề nhóm: đúng thang `MICRO` dùng chung với các trang danh sách, phân
-  // tầng bằng KHOẢNG TRẮNG chứ không phải gạch chân. Bản trước mỗi nhóm một nét
-  // ngang — hồi đó chỉ có hai nhóm nên còn chịu được; nay nhóm chia theo loại
-  // thật (tới năm nhóm) thì panel cao 480px kẻ tới năm vạch, đúng thứ đã gỡ ở
-  // `/lich-trinh`.
   "[&_[cmdk-group-heading]]:mb-1 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:pt-1 [&_[cmdk-group-heading]]:text-[0.6rem] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.14em] [&_[cmdk-group-heading]]:text-muted-foreground",
   "[&_[cmdk-group]]:px-2 [&_[cmdk-group]]:pb-3",
-  // Hàng đang chọn: nền MỰC nhạt, không phải nền xanh brand. Trên trang này
-  // xanh nghĩa là "bấm được"; cả một hàng tô xanh khi mới chỉ di chuột/phím là
-  // nói dối bảng từ vựng đó.
   "[&_[cmdk-item][data-selected=true]]:bg-muted [&_[cmdk-item][data-selected=true]]:text-foreground",
 );
 
@@ -124,20 +95,11 @@ export function CommandPalette({
   const router = useRouter();
   const [q, setQ] = useState("");
   const [results, setResults] = useState<SearchGroup[]>([]);
-  /**
-   * Từ khoá mà `results` đang mô tả — KHÔNG phải một cờ `loading`.
-   *
-   * Cờ loading chỉ bật bên trong callback của debounce, tức 150ms sau phím cuối.
-   * Trong khoảng đó `loading=false` và `results=[]`, nên điều kiện "rỗng" cũ ăn
-   * đúng vào lúc người ta còn đang gõ dở: câu "Không có kết quả cho …" nháy lên
-   * giữa chừng mỗi từ khoá. So khớp từ khoá thì không có khe hở nào.
-   */
   const [done, setDone] = useState("");
   const [suggestions, setSuggestions] = useState<SearchHit[]>([]);
   const reqId = useRef(0);
   const loadedSug = useRef(false);
 
-  // Nạp gợi ý (điểm đến nổi bật) lần đầu mở modal.
   useEffect(() => {
     if (!open || loadedSug.current) return;
     loadedSug.current = true;
@@ -146,8 +108,6 @@ export function CommandPalette({
       .catch(() => {});
   }, [open]);
 
-  // Debounce tìm kiếm server-side (searchSite đã lọc → tắt lọc của cmdk).
-  // Mọi setState nằm trong callback bất đồng bộ (không set đồng bộ trong effect).
   useEffect(() => {
     const term = q.trim();
     const id = ++reqId.current;
@@ -198,8 +158,6 @@ export function CommandPalette({
             value={q}
             onValueChange={setQ}
             placeholder="Tìm điểm đến, địa điểm, lưu trú, bài viết…"
-            // Gợi ý phím tắt chuyển từ nút ở header vào đây — nút header nhờ vậy
-            // gọn hẳn, còn người dùng vẫn học được phím mở nhanh khi đang dùng.
             trailing={
               <kbd className="pointer-events-none hidden shrink-0 items-center border border-border bg-muted/40 px-2 py-0.5 font-mono text-[0.65rem] text-muted-foreground sm:inline-flex">
                 ⌘K
@@ -272,7 +230,6 @@ export function CommandPalette({
             )}
           </CommandList>
 
-          {/* Thanh gợi ý phím */}
           <div className="flex items-center justify-between gap-3 border-t border-border bg-muted/30 px-4 py-2 text-[0.7rem] text-muted-foreground">
             <span className={cn(MICRO)}>halivivu</span>
             <span className="flex items-center gap-1.5">

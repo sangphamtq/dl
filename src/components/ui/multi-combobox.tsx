@@ -22,7 +22,6 @@ import {
 
 export type ComboboxOption = { value: string; label: string };
 
-// Combobox chọn NHIỀU mục (search không dấu). Hiển thị các lựa chọn dạng badge.
 export function MultiCombobox({
   options,
   values,

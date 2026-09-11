@@ -4,13 +4,12 @@ import { cn } from "@/lib/utils";
 import { THREAD_TYPES } from "@/lib/community";
 import { threadTypeIcon } from "./thread-type-badge";
 
-// Hàng lọc theo loại bài — dạng segmented: active tô đặc primary, còn lại ghost.
 export function CommunityFilter({
   current,
   counts,
   hrefFor,
 }: {
-  current: string; // "all" | type
+  current: string;
   counts: (value: string) => number;
   hrefFor: (value: string) => string;
 }) {

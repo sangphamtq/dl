@@ -78,7 +78,6 @@ export default async function EditSpotPage({
 
   if (!spot) notFound();
 
-  // Video TikTok: chỉ lưu videoId + caption; thumbnail lấy runtime qua oEmbed.
   const videoRows = await prisma.spotVideo.findMany({
     where: { spotId: id },
     orderBy: [{ order: "asc" }, { createdAt: "asc" }],

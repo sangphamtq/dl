@@ -16,16 +16,15 @@ import {
 
 const STAFF = ["admin", "editor"];
 
-// Một dòng giá vé ở form (giá nhập text); chuẩn hóa thành number ở normalize.
 export type TicketTierInput = { label: string; price: string; note: string };
 
 export type ActivityFormInput = {
   name: string;
   slug: string;
   description: string;
-  content: string; // HTML rich text (tùy chọn)
-  kind: string; // experience | common | spot
-  category: string; // "" = none
+  content: string;
+  kind: string;
+  category: string;
   placeId: string;
   durationText: string;
   seasonText: string;
@@ -86,7 +85,6 @@ async function normalize(
     .map((t) => t.trim())
     .filter(Boolean);
 
-  // Giá vé: bỏ dòng trống, validate giá; miễn phí thì không lưu tiers.
   const tiers: TicketTier[] = [];
   if (!input.ticketFree) {
     for (const t of input.ticketTiers) {
@@ -104,7 +102,6 @@ async function normalize(
     }
   }
 
-  // Chi phí tại chỗ — danh sách RIÊNG, xem lib/tickets.ts.
   const extra = normalizeExtraFees(input.extraFees);
   if ("error" in extra) return { error: extra.error };
 
@@ -163,7 +160,6 @@ export async function updateActivity(
   const res = await normalize(input, id);
   if ("error" in res) return { ok: false, error: res.error };
 
-  // Đồng bộ liên kết spot mà GIỮ nguyên nội dung riêng (blurb/ảnh) của link cũ.
   const existing = await prisma.spotActivity.findMany({
     where: { activityId: id },
     select: { spotId: true },

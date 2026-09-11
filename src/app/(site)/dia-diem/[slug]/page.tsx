@@ -127,8 +127,6 @@ export default async function SpotPublicPage({
         select: {
           slug: true,
           name: true,
-          // "Quanh đây" — các listing khác cùng điểm đến (lấy dư để sắp theo
-          // khoảng cách rồi cắt còn vài mục).
           spots: {
             where: { ...pub, slug: { not: slug } },
             orderBy: [{ isFeatured: "desc" }, { order: "asc" }, { name: "asc" }],
@@ -211,7 +209,6 @@ export default async function SpotPublicPage({
   const staff = await isStaffViewer();
   if (!spot || (spot.status !== "published" && !staff)) notFound();
 
-  // Check-in "đã đến" + Vivu-er đã đến + đánh giá (giống trang điểm đến).
   const session = await auth();
   const userId = session?.user?.id;
   const [checkInRow, visitors, reviewRows, myReviewRow] = await Promise.all([
@@ -266,7 +263,6 @@ export default async function SpotPublicPage({
 
   const spotPeers = await getListingPeers("spot", spot.placeId);
 
-  // Bài viết chi tiết: post (đã xuất bản) nổi bật/mới nhất gắn với địa điểm này.
   const introPost = await prisma.post.findFirst({
     where: { status: "published", refs: { some: { spotId: spot.id } } },
     orderBy: [{ isFeatured: "desc" }, { publishedAt: "desc" }],
@@ -277,7 +273,6 @@ export default async function SpotPublicPage({
     },
   });
 
-  // Ảnh cho stack hero (như trang chi tiết điểm đến).
   const heroImages: HeroImage[] = spot.images.map((i) => ({
     url: i.url,
     alt: i.alt,
@@ -290,8 +285,6 @@ export default async function SpotPublicPage({
   const tiers = parseTicketTiers(spot.ticketTiers);
   const extraFees = parseExtraFees(spot.extraFees);
 
-  // Fact nhanh hiển thị trên thanh nổi dưới hero (không gồm địa chỉ — để cạnh bản đồ).
-  // Giá ưu tiên vé thật (ticketFree/ticketTiers), fallback thang priceRange cũ.
   const quickFacts: SpotQuickFact[] = [
     {
       icon: Ticket,
@@ -306,16 +299,12 @@ export default async function SpotPublicPage({
   const hasMap = spot.lat != null && spot.lng != null;
   const categoryLabel = label(SPOT_CATEGORY_LABELS, spot.category);
 
-  // Địa chỉ hành chính đầy đủ (phường → quận → tỉnh) — phụ trợ cho `address`.
   const adminAddress = [spot.wardName, spot.provinceName]
     .filter(Boolean)
     .join(", ");
-  // Một điểm duy nhất cho CẢ iframe lẫn nút "Chỉ đường" để chúng luôn khớp:
-  // ưu tiên toạ độ trích thẳng từ mapUrl (điểm Google thật), rồi mới tới lat/lng.
   const mapPoint =
     (spot.mapUrl ? parseLatLng(spot.mapUrl) : null) ??
     (hasMap ? { lat: spot.lat!, lng: spot.lng! } : null);
-  // Nhúng Google Maps theo mapPoint (zoom lấy theo link mapUrl nếu có).
   const mapEmbedSrc = mapPoint
     ? googleEmbedSrc(
         mapPoint.lat,
@@ -324,8 +313,6 @@ export default async function SpotPublicPage({
       )
     : null;
 
-  // "Quanh đây": (1) lọc thô top 8 bằng chim bay, (2) gọi routing 1 lần lấy km
-  // đường đi cho mọi ứng viên, (3) sắp lại theo đường đi & cắt còn 6.
   const origin = { lat: spot.lat, lng: spot.lng };
   const preSpots = withDistance(spot.place.spots, origin, 8);
   const preEateries = withDistance(spot.place.eateries, origin, 8);
@@ -350,8 +337,6 @@ export default async function SpotPublicPage({
     nearbyEateries.length > 0 ||
     accommodations.length > 0;
 
-  // Mục cho thanh điều hướng dính (chỉ liệt kê mục có dữ liệu, theo đúng thứ tự
-  // trang). "Cộng đồng" là route link sang trang con — xem buildSpotNavItems.
   const navItems = buildSpotNavItems(spot.slug, spot.place.slug, {
     hasIntro: !!(spot.description || introPost),
     hasHighlights: spot.highlights.length > 0,
@@ -373,7 +358,6 @@ export default async function SpotPublicPage({
       />
 
       <main className="flex-1">
-        {/* Hero — dùng chung với các trang con (vd cộng đồng), như trang điểm đến */}
         <SpotHero
           id={spot.id}
           name={spot.name}
@@ -396,7 +380,6 @@ export default async function SpotPublicPage({
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16">
           <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_288px] lg:gap-12">
             <div className="min-w-0 space-y-14">
-              {/* Giới thiệu — mô tả ngắn + bài giới thiệu (như trang điểm đến) */}
               {(spot.description || introPost) && (
                 <section id="gioi-thieu" className="scroll-mt-32">
                   {spot.description && (
@@ -435,7 +418,6 @@ export default async function SpotPublicPage({
                 </section>
               )}
 
-              {/* Điểm nhấn — danh sách đánh số kiểu biên tập, ảnh lớn khi có */}
               {spot.highlights.length > 0 && (
                 <section id="diem-nhan" className="scroll-mt-32">
                   <h2 className="mb-6 text-xl font-bold tracking-tight sm:text-2xl">
@@ -470,7 +452,6 @@ export default async function SpotPublicPage({
                 </section>
               )}
 
-              {/* Làm gì ở đây — render nội dung RIÊNG theo spot (blurb/ảnh trên join) */}
               {spot.activityLinks.length > 0 && (
                 <section id="hoat-dong" className="scroll-mt-32">
                   <div className="mb-6 flex items-center gap-3">
@@ -496,7 +477,6 @@ export default async function SpotPublicPage({
                       ]
                         .filter(Boolean)
                         .join(" · ");
-                      // ưu tiên nội dung riêng cho spot (blurb/ảnh), fallback về activity
                       const body = link.blurb || a.description;
                       const img =
                         link.imageUrl || coverUrl(a.images, a.slug, 320, 240);
@@ -544,7 +524,6 @@ export default async function SpotPublicPage({
                 </section>
               )}
 
-              {/* Kinh nghiệm / mẹo */}
               {(spot.tips.length > 0 || spot.notice) && (
                 <section id="kinh-nghiem" className="scroll-mt-32">
                   <h2 className="mb-4 text-xl font-bold tracking-tight sm:text-2xl">
@@ -579,20 +558,17 @@ export default async function SpotPublicPage({
                 </section>
               )}
 
-              {/* Khi nào đẹp nhất */}
               {spot.bestTimeNote && (
                 <section id="khi-nao" className="scroll-mt-32">
                   <h2 className="mb-4 text-xl font-bold tracking-tight sm:text-2xl">
                     Khi nào đẹp nhất?
                   </h2>
-                  {/* bestTime (giá trị ngắn) đã hiện ở card sidebar — ở đây chỉ diễn giải */}
                   <p className="max-w-3xl whitespace-pre-line leading-relaxed text-foreground/85">
                     {spot.bestTimeNote}
                   </p>
                 </section>
               )}
 
-              {/* Cách đến */}
               {spot.gettingThere && (
                 <section id="cach-den" className="scroll-mt-32">
                   <h2 className="mb-4 text-xl font-bold tracking-tight sm:text-2xl">
@@ -607,9 +583,7 @@ export default async function SpotPublicPage({
 
             </div>
 
-            {/* Sidebar — card nổi, dính khi cuộn */}
             <aside className="space-y-6 lg:sticky lg:top-32 lg:self-start">
-              {/* Thông tin tham quan — giờ / thời điểm + cuống vé + liên hệ */}
               <VisitCardD
                 openingHours={spot.openingHours}
                 bestTime={spot.bestTime}
@@ -621,12 +595,8 @@ export default async function SpotPublicPage({
                 website={spot.website}
               />
 
-              {/* Chi phí khác tại chỗ — gửi xe, xe ôm bản địa, thuê phao…
-                  Card RIÊNG ngay dưới cuống vé: cùng chuyện tiền nên đứng
-                  cạnh nhau, nhưng không được lẫn vào giá vào cổng. */}
               <ExtraFeesCard fees={extraFees} />
 
-              {/* Vị trí — bản đồ dẫn dắt (Cộng đồng & Bản đồ nay ở thanh nav) */}
               {(mapEmbedSrc || spot.address || adminAddress) && (
                 <div className="overflow-hidden rounded-2xl border border-border/60 bg-card">
                   {mapEmbedSrc && (
@@ -674,7 +644,6 @@ export default async function SpotPublicPage({
             </aside>
           </div>
 
-          {/* Khám phá quanh đây (full-width) */}
           {hasNearby && (
             <div
               id="quanh-day"
@@ -761,7 +730,6 @@ export default async function SpotPublicPage({
           )}
         </div>
 
-        {/* Đánh giá của Vivu-er cho địa điểm này */}
         <div className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 sm:pb-20">
           <ReviewsSection
             target={{
@@ -791,7 +759,6 @@ export default async function SpotPublicPage({
   );
 }
 
-/* ── Tiêu đề section nội dung (eyebrow + tiêu đề đậm + link tùy chọn) ── */
 function SectionHead({
   eyebrow,
   title,
@@ -825,10 +792,6 @@ function SectionHead({
   );
 }
 
-/* ──────────────────────────────────────────────────────────────────
-   Card "Thông tin tham quan" — kiểu cuống vé (ticket stub): nửa trên là
-   giờ mở cửa / thời điểm đẹp, đường xé nét đứt, cuống dưới là vé + đặt chỗ.
-   ────────────────────────────────────────────────────────────────── */
 type VisitProps = {
   openingHours: string | null;
   bestTime: string | null;
@@ -840,7 +803,6 @@ type VisitProps = {
   website: string | null;
 };
 
-/* Hàng liên hệ (gọi / website) — dùng trong card thông tin tham quan */
 function ContactRows({
   phone,
   website,
@@ -971,7 +933,6 @@ function VisitCardD({
       </div>
       {hasStub && (
         <>
-          {/* đường xé vé */}
           <div className="relative h-4">
             <span
               aria-hidden

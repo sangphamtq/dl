@@ -5,15 +5,6 @@ import { cn } from "@/lib/utils";
 import { MICRO } from "@/components/trip/trip-rail";
 import type { DayView } from "@/lib/trip";
 
-// Dải chọn ngày. Bấm một mục = đổi ngày cho bản đồ VÀ cuộn tới ngày đó.
-//
-// Mục đang chọn đánh dấu bằng CHỮ CAM + GẠCH CHÂN, không phải viên nền — đây là
-// quyết định đã có sẵn của dự án, ghi trong place-tabs.tsx: "Đã thử và bỏ: viên
-// nền cho mục đang mở (thành mấy mảng màu xếp ngang, giống thanh bộ lọc của app
-// thương mại điện tử)". Bản trước của dải này chính là mấy viên nền đó.
-//
-// Gạch chân nằm ngay dưới chữ (mượn nav-group-menu), nên dải đọc ra là một hàng
-// nhãn có một điểm màu, chứ không phải một hàng nút.
 export function TripDayStrip({
   days,
   activeId,
@@ -49,8 +40,6 @@ export function TripDayStrip({
     >
       {days.map((day) => {
         const on = day.id === activeId;
-        // Chấm cảnh báo chỉ cho mức "high" (chưa mở cửa) — ở tầm nhìn tổng quan
-        // thì chỉ thứ làm hỏng kế hoạch mới đáng làm phiền.
         const alert =
           day.items.some((i) => i.warnings.some((w) => w.level === "high")) ||
           day.warnings.some((w) => w.level === "high");

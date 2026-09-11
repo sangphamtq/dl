@@ -3,9 +3,9 @@ import { prisma } from "@/lib/prisma";
 export type SearchItem = {
   name: string;
   slug: string;
-  context?: string; // dòng phụ: tỉnh cha / nơi chứa / trích đoạn
-  isProvince?: boolean; // Place là tỉnh (để hiện nhãn "Tỉnh/Thành phố")
-  image?: string; // ảnh bìa (dùng cho gợi ý)
+  context?: string;
+  isProvince?: boolean;
+  image?: string;
 };
 export type SearchGroup = { label: string; prefix: string; items: SearchItem[] };
 
@@ -24,7 +24,6 @@ const mapPlace = (r: PlaceRow): SearchItem => ({
   image: r.image ?? undefined,
 });
 
-// Place: kèm kind (tỉnh/điểm đến) + tên tỉnh cha + ảnh bìa.
 async function searchPlaces(like: string, limit: number): Promise<SearchItem[]> {
   const rows = await prisma.$queryRawUnsafe<PlaceRow[]>(
     `SELECT p.name, p.slug, p.kind::text AS kind, parent.name AS "parentName",
@@ -42,7 +41,6 @@ async function searchPlaces(like: string, limit: number): Promise<SearchItem[]> 
   return rows.map(mapPlace);
 }
 
-// Điểm đến nổi bật (chỉ destination, không lấy tỉnh) — gợi ý khi chưa gõ.
 export async function featuredDestinations(limit = 6): Promise<SearchItem[]> {
   const rows = await prisma.$queryRawUnsafe<PlaceRow[]>(
     `SELECT p.name, p.slug, p.kind::text AS kind, parent.name AS "parentName",
@@ -59,13 +57,12 @@ export async function featuredDestinations(limit = 6): Promise<SearchItem[]> {
   return rows.map(mapPlace);
 }
 
-// Listing (Activity/Spot/Accommodation): kèm nơi chứa (place) + tỉnh + ảnh bìa.
 async function searchListing(
   table: "Activity" | "Spot" | "Accommodation",
   like: string,
   limit: number,
 ): Promise<SearchItem[]> {
-  const fk = `${table[0].toLowerCase()}${table.slice(1)}Id`; // spotId, activityId…
+  const fk = `${table[0].toLowerCase()}${table.slice(1)}Id`;
   const rows = await prisma.$queryRawUnsafe<
     {
       name: string;
@@ -101,7 +98,6 @@ async function searchListing(
   }));
 }
 
-// Post: kèm trích đoạn làm dòng phụ.
 async function searchPosts(like: string, limit: number): Promise<SearchItem[]> {
   const rows = await prisma.$queryRawUnsafe<
     { name: string; slug: string; excerpt: string | null }[]
@@ -120,13 +116,11 @@ async function searchPosts(like: string, limit: number): Promise<SearchItem[]> {
   }));
 }
 
-// Tìm trên mọi loại; ưu tiên Điểm đến/Tỉnh & Địa điểm (nhiều slot, xếp đầu),
-// các loại khác ít hơn và xếp sau.
 export async function searchAll(q: string, limit = 20): Promise<SearchGroup[]> {
   const term = q.trim();
   if (!term) return [];
   const like = `%${term}%`;
-  const secondary = Math.max(3, Math.floor(limit / 2)); // loại phụ ít hơn
+  const secondary = Math.max(3, Math.floor(limit / 2));
   const [places, spots, activities, accommodations, posts] = await Promise.all([
     searchPlaces(like, limit),
     searchListing("Spot", like, limit),

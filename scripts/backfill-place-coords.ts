@@ -2,14 +2,6 @@ import "dotenv/config";
 import { prisma } from "@/lib/prisma";
 import { PLACE_COORDS } from "@/lib/place-coords";
 
-// Đổ toạ độ từ bảng tra tay lib/place-coords.ts vào Place.lat/lng (trường mới,
-// thêm cùng đợt làm Lịch trình — xem docs/lich-trinh.md §9.2).
-//
-// Nơi KHÔNG có trong bảng tra: suy TRỌNG TÂM các listing có toạ độ gắn trực tiếp
-// vào nơi đó — cùng cách mà lib/geo.ts đang chấm pin cho bản đồ toàn quốc.
-//
-// Chạy lại được nhiều lần (idempotent). Không ghi đè nơi đã có toạ độ.
-// Dùng: pnpm backfill:place-coords
 async function main() {
   const places = await prisma.place.findMany({
     select: { id: true, slug: true, name: true, lat: true, lng: true },

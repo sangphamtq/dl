@@ -5,7 +5,6 @@ import { authConfig } from "@/auth.config";
 // (Next.js 16 đổi quy ước "middleware" → "proxy".)
 const { auth } = NextAuth(authConfig);
 
-// Vai trò được vào CMS /admin: admin (toàn quyền) và editor (biên tập blog).
 const STAFF_ROLES = ["admin", "editor"];
 
 export default auth((req) => {
@@ -14,13 +13,11 @@ export default auth((req) => {
   const role = req.auth?.user?.role;
   const isStaff = STAFF_ROLES.includes(role ?? "");
 
-  // Trang /login: đã đăng nhập rồi thì về trang chủ; còn lại cho vào.
   if (pathname === "/login") {
     if (isLoggedIn) return Response.redirect(new URL("/", origin));
     return;
   }
 
-  // Khu CMS /cms: cần đăng nhập + là staff (admin/editor).
   if (pathname.startsWith("/cms")) {
     if (!isLoggedIn) {
       const loginUrl = new URL("/login", origin);
@@ -34,7 +31,5 @@ export default auth((req) => {
 });
 
 export const config = {
-  // CHỈ chạy ở route cần auth: khu CMS + trang đăng nhập. Mọi trang công khai bỏ
-  // qua middleware (edge bundle có Google+Facebook) → điều hướng & dev nhanh hơn.
   matcher: ["/cms/:path*", "/login"],
 };

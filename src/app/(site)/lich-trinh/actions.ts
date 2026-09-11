@@ -19,18 +19,11 @@ export type TripActionResult<T = undefined> =
   | ({ ok: true } & (T extends undefined ? object : { data: T }))
   | { ok: false; error: string; stale?: boolean };
 
-// Server actions của Lịch trình. Mọi mutation đều kiểm CHỦ SỞ HỮU — lịch trình
-// là dữ liệu cá nhân, không có khái niệm "ai cũng sửa được".
-// Thiết kế: docs/lich-trinh.md.
-
 const ACTIVE_TRIP_COOKIE = "halivivu_trip";
-const COOKIE_MAX_AGE = 60 * 60 * 24 * 180; // 180 ngày
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 180;
 
 const MAX_TITLE = 120;
 const MAX_NOTE = 500;
-// Ghi chú của cả chuyến dài hơn note của một mục: người ta dán vào đó cả một xác
-// nhận đặt phòng. Hằng RIÊNG, đừng nới MAX_NOTE — nó đang giữ cho note của mục
-// ngắn đúng một dòng rưỡi trên thẻ.
 const MAX_TRIP_NOTE = 2000;
 const MAX_DAYS = 30;
 
@@ -48,16 +41,6 @@ async function requireUserId(): Promise<string> {
   return id;
 }
 
-// ── Quyền ────────────────────────────────────────────────────────────────
-// HAI mức, cố ý tách bạch (docs/lich-trinh-cong-tac.md §4a):
-//   · editableTrip  — chủ chuyến HOẶC người được mời cùng sửa. Dùng cho mọi
-//                     thao tác lên NỘI DUNG (ngày, mục, ghi chú).
-//   · ownedTrip     — CHỈ chủ chuyến. Dùng cho: xoá chuyến, bật/tắt chia sẻ,
-//                     quản lý thành viên. Hạ mấy cái này xuống cho editor là
-//                     người được mời xoá được chuyến của người mời.
-
-// "Chuyến của tôi" = mình sở hữu HOẶC được mời cùng sửa. Dùng CHUNG cho mọi
-// truy vấn danh sách — sót một chỗ là thành viên không thấy chuyến được mời.
 function myTripsWhere(userId: string): Prisma.TripWhereInput {
   return {
     isTemplate: false,
@@ -65,7 +48,6 @@ function myTripsWhere(userId: string): Prisma.TripWhereInput {
   };
 }
 
-/** Chủ chuyến hoặc người được mời cùng sửa. */
 async function editableTrip(tripId: string, expectedVersion?: number) {
   const userId = await requireUserId();
   const trip = await prisma.trip.findUnique({
@@ -83,15 +65,12 @@ async function editableTrip(tripId: string, expectedVersion?: number) {
   if (trip.ownerId !== userId && trip.members.length === 0)
     throw new Error("Bạn không có quyền sửa lịch trình này.");
 
-  // Khoá lạc quan: client gửi số nó đang thấy. Lệch ⇒ có người vừa sửa, và mọi
-  // thao tác THEO VỊ TRÍ (kéo–thả) của client này đang tính trên bàn đã cũ.
   if (expectedVersion != null && expectedVersion !== trip.version)
     throw new StaleError();
 
   return { trip, userId };
 }
 
-/** CHỈ chủ chuyến. */
 async function ownedTrip(tripId: string) {
   const userId = await requireUserId();
   const trip = await prisma.trip.findUnique({
@@ -103,7 +82,6 @@ async function ownedTrip(tripId: string) {
   return { trip, userId };
 }
 
-/** Lệch phiên bản — client phải làm mới rồi thử lại, không phải lỗi của họ. */
 class StaleError extends Error {
   constructor() {
     super("Có người vừa sửa lịch trình này. Đã cập nhật lại.");
@@ -115,7 +93,6 @@ function fail(e: unknown): { ok: false; error: string; stale?: boolean } {
   return e instanceof StaleError ? { ok: false, error: msg, stale: true } : { ok: false, error: msg };
 }
 
-/** Tăng version — gọi trong MỌI mutation chạm nội dung chuyến. */
 function bump(tripId: string) {
   return prisma.trip.update({
     where: { id: tripId },
@@ -124,9 +101,6 @@ function bump(tripId: string) {
   });
 }
 
-// Cả bốn mục render sẵn trong MỘT trang (TripWorkspace) từ cả hai route, nên
-// mutation của mục nào cũng phải revalidate đủ bốn đường dẫn — người dùng có
-// thể đã deep-load bất kỳ mục nào rồi chuyển qua lại bằng pushState.
 function refreshTripPaths(tripId: string) {
   for (const seg of ["", "/ghi-chu", "/do-mang-theo", "/chi-phi"])
     revalidatePath(`/lich-trinh/cua-toi/${tripId}${seg}`);
@@ -141,15 +115,6 @@ function refresh(tripId: string, slug?: string | null) {
 function clip(s: string, max: number): string {
   return s.trim().slice(0, max);
 }
-
-// ── Chuyến ĐANG LÊN LỊCH TRÌNH (cookie) ─────────────────────────────────
-// Một người có thể có nhiều chuyến, nhưng tại một thời điểm chỉ đang lên lịch
-// cho MỘT chuyến. Đó là đích mặc định của nút "Thêm vào lịch trình" ở mọi trang
-// chi tiết — nhờ vậy bấm một cái là xong, không phải chọn chuyến mỗi lần
-// (docs/lich-trinh.md §4).
-//
-// Cố ý KHÔNG gọi là "chuyến đang mở": "Đang mở" trong sản phẩm này đã mang nghĩa
-// "quán còn mở cửa" (xem lib/opening-hours + màn hình Ẩm thực).
 
 export async function getPlanningTripId(): Promise<string | null> {
   const store = await cookies();
@@ -182,7 +147,6 @@ export async function markTripPlanning(tripId: string): Promise<ActionResult> {
   return { ok: true };
 }
 
-/** Chuyến đang lên lịch, hoặc chuyến sửa gần nhất, hoặc tạo mới. Luôn trả về một id. */
 async function resolveTargetTrip(userId: string): Promise<string> {
   const planningId = await getPlanningTripId();
   if (planningId) {
@@ -218,14 +182,11 @@ async function rememberPlanning(tripId: string) {
   });
 }
 
-// ── Chuyến ───────────────────────────────────────────────────────────────
-
 async function createTripRow(ownerId: string, title: string): Promise<string> {
   const trip = await prisma.trip.create({
     data: {
       ownerId,
       title,
-      // Chuyến mới luôn có sẵn Ngày 1 — trang trống hoàn toàn thì không biết bắt đầu từ đâu.
       days: { create: [{ index: 0 }] },
     },
     select: { id: true },
@@ -251,7 +212,7 @@ export async function updateTrip(
   patch: {
     title?: string;
     summary?: string | null;
-    startDate?: string | null; // "YYYY-MM-DD" | "" = xoá ngày
+    startDate?: string | null;
     partySize?: number | null;
   },
 ): Promise<ActionResult> {
@@ -305,8 +266,6 @@ export async function deleteTrip(tripId: string): Promise<ActionResult> {
   return { ok: true };
 }
 
-// ── Ngày ─────────────────────────────────────────────────────────────────
-
 export async function addDay(tripId: string): Promise<ActionResult> {
   try {
     await editableTrip(tripId);
@@ -338,7 +297,6 @@ export async function removeDay(dayId: string): Promise<ActionResult> {
     // Mục trong ngày bị xoá KHÔNG mất — về mục Chưa xếp ngày (dayId = null qua SetNull).
     await tx.tripItem.updateMany({ where: { dayId }, data: { dayId: null } });
     await tx.tripDay.delete({ where: { id: dayId } });
-    // Dồn lại index cho liền mạch.
     const rest = await tx.tripDay.findMany({
       where: { tripId: day.tripId },
       orderBy: { index: "asc" },
@@ -381,8 +339,6 @@ export async function updateDay(
   return { ok: true };
 }
 
-// ── Mục ──────────────────────────────────────────────────────────────────
-
 function targetData(target: ItemTarget): Record<string, unknown> {
   switch (target.kind) {
     case "spot": return { spotId: target.id };
@@ -393,10 +349,6 @@ function targetData(target: ItemTarget): Record<string, unknown> {
   }
 }
 
-/**
- * Thêm một mục vào danh sách chưa xếp ngày. `tripId` bỏ trống → dùng chuyến đang lên lịch (tạo mới nếu
- * chưa có chuyến nào) — nhờ vậy nút ở trang chi tiết chỉ cần một cú bấm.
- */
 export async function addItem(
   target: ItemTarget,
   tripId?: string,
@@ -404,9 +356,9 @@ export async function addItem(
   ActionResult<{
     tripId: string;
     tripTitle: string;
-    itemId: string | null; // null khi mục đã có sẵn trong chuyến
+    itemId: string | null;
     duplicate: boolean;
-    tripCount: number; // >1 thì UI mới mời "Đổi chuyến"
+    tripCount: number;
   }>
 > {
   let userId: string;
@@ -430,7 +382,6 @@ export async function addItem(
 
   const data = targetData(target);
 
-  // Đã có trong chuyến rồi thì báo, đừng tạo bản trùng.
   if (target.kind !== "custom") {
     const existing = await prisma.tripItem.findFirst({
       where: { tripId: targetTripId, ...data },
@@ -486,12 +437,6 @@ export async function addItem(
   };
 }
 
-/**
- * Chuyển một mục sang CHUYẾN khác (khác `moveItem` — cái đó đổi ngày trong cùng
- * chuyến). Dùng cho nút "Đổi chuyến" ngay sau khi thêm: bấm nhầm chuyến là
- * chuyện thường, mà bắt vào tận trình soạn để sửa thì quá phiền.
- * Chuyến đích cũng thành chuyến đang lên lịch — lần thêm sau đi thẳng vào đó.
- */
 export async function moveItemToTrip(
   itemId: string,
   tripId: string,
@@ -505,9 +450,8 @@ export async function moveItemToTrip(
 
   let title: string;
   try {
-    // Kiểm quyền trên CẢ HAI chuyến — mục rời khỏi chuyến này và rơi vào chuyến kia.
-    await editableTrip(item.tripId, expectedVersion); // chuyến nguồn
-    const { trip } = await editableTrip(tripId); // chuyến đích
+    await editableTrip(item.tripId, expectedVersion);
+    const { trip } = await editableTrip(tripId);
     title = (await prisma.trip.findUnique({ where: { id: trip.id }, select: { title: true } }))!.title;
   } catch (e) {
     return fail(e);
@@ -521,7 +465,6 @@ export async function moveItemToTrip(
 
   await prisma.tripItem.update({
     where: { id: itemId },
-    // Về danh sách chưa xếp ngày của chuyến đích — ngày của chuyến cũ không có ý nghĩa ở đây.
     data: { tripId, dayId: null, order: (last?.order ?? -1) + 1 },
   });
 
@@ -577,19 +520,6 @@ export async function updateItem(
   return { ok: true };
 }
 
-/**
- * Chuyển một mục sang ngày khác (hoặc về danh sách chưa xếp khi `dayId` = null) và đặt vào
- * vị trí `toIndex`. Đánh số lại cả hai bên để `order` luôn liền mạch 0..n-1.
- */
-/**
- * Đổi chỗ / chuyển ngày cho một mục.
- *
- * `expectedVersion` là phiên bản chuyến mà CLIENT đang thấy. Đây là một trong
- * hai thao tác THEO VỊ TRÍ (cùng `moveItemToTrip`) — "đặt ở chỉ số 2" chỉ có
- * nghĩa so với một bàn cụ thể, nên nếu người khác vừa sửa thì chỉ số đó trỏ vào
- * chỗ khác và thao tác âm thầm sai. Các action còn lại khoá theo id của thực thể
- * nên không cần: ghi đè một trường cụ thể thì "ai ghi sau thắng" là chấp nhận được.
- */
 export async function moveItem(
   itemId: string,
   dayId: string | null,
@@ -626,14 +556,6 @@ export async function moveItem(
     const at = Math.min(Math.max(0, Math.round(toIndex)), ids.length);
     ids.splice(at, 0, itemId);
 
-    // MỘT câu lệnh đánh số lại cả vùng, không phải một vòng lặp `update`.
-    // Bản trước chạy `tx.tripItem.update` cho TỪNG mục: một ngày 8 mục là 8
-    // lượt đi–về CSDL nối đuôi nhau bên trong transaction, cộng thêm chừng ấy
-    // nữa khi phải dồn lại ngày nguồn. Ở máy dev (Postgres localhost, ping
-    // 1ms) đó là ~24ms nên không ai để ý; trên CSDL đặt xa thì mỗi lượt là
-    // một vòng mạng, và cùng phép tính đó thành gần nửa giây.
-    // `dayId` set cho cả vùng cũng không sao: mọi mục trong danh sách này vốn
-    // đã thuộc đúng ngày đó, trừ mục vừa chuyển tới.
     await tx.$executeRaw`
       UPDATE "TripItem" AS t
       SET "order" = v.ord, "dayId" = ${dayId}::text
@@ -642,7 +564,6 @@ export async function moveItem(
       )}) AS v(id, ord)
       WHERE t.id = v.id`;
 
-    // Dồn lại danh sách nguồn nếu mục vừa rời khỏi đó.
     if (item.dayId !== dayId) {
       const source = await tx.tripItem.findMany({
         where: { tripId: item.tripId, dayId: item.dayId },
@@ -670,10 +591,6 @@ export async function moveItem(
   return { ok: true };
 }
 
-// ── Chia sẻ ──────────────────────────────────────────────────────────────
-
-// Chuỗi ngẫu nhiên khó đoán cho link chia sẻ (không dùng cuid để id nội bộ
-// không lộ ra ngoài, và để đổi link được khi cần thu hồi).
 function makeShareId(): string {
   const alphabet = "abcdefghijklmnopqrstuvwxyz0123456789";
   const bytes = crypto.getRandomValues(new Uint8Array(12));
@@ -713,8 +630,6 @@ export async function setSharing(
   return { ok: true, data: { shareId } };
 }
 
-// ── Nhân bản (dùng lịch trình mẫu / bản được chia sẻ) ─────────────────────
-
 export async function cloneTrip(
   sourceId: string,
 ): Promise<ActionResult<{ id: string }>> {
@@ -745,7 +660,6 @@ export async function cloneTrip(
   });
   if (!source) return { ok: false, error: "Không tìm thấy lịch trình." };
 
-  // Chỉ nhân bản được thứ mình được phép xem: mẫu đã xuất bản, bản chia sẻ, hoặc chuyến của chính mình.
   const readable =
     source.isTemplate ||
     source.visibility === "unlisted" ||
@@ -794,11 +708,6 @@ export async function cloneTrip(
         },
       });
     }
-    // Ghi chú thì CHÉP — khác `title`/`note` của ngày ở trên. Lý do bên đó là
-    // "chữ người dùng không thấy, không sửa, không xoá được"; ở đây ngược lại,
-    // mục Ghi chú cho họ đủ cả ba. Mẹo thực địa của một mẫu ("xe khách cuối tuần
-    // hết vé sớm") chính là thứ đáng mang theo. Tác giả để trống: người chép
-    // không viết ra nó, mà tác giả gốc thì không có mặt trong chuyến mới.
     for (const n of source.notes) {
       await tx.tripNote.create({
         data: { tripId: trip.id, body: n.body, isPinned: n.isPinned },
@@ -818,23 +727,10 @@ export async function cloneTrip(
   return { ok: true, data: { id: created } };
 }
 
-// ── Ghi chú của chuyến ───────────────────────────────────────────────────
-//
-// Ai trong chuyến cũng thêm/sửa/xoá được MỌI mẩu, kể cả của người khác. Đây là
-// tính nhất quán chứ không phải dễ dãi: thành viên ĐÃ xoá được điểm dừng của
-// người khác trong lịch trình, nên dựng riêng một luật chặt hơn cho ghi chú thì
-// hai mục cạnh nhau hành xử khác nhau mà không giải thích được. `TripMember`
-// chính là ranh giới tin cậy.
-//
-// KHÔNG `bump()` version: version chặn đụng độ THEO VỊ TRÍ khi kéo–thả, còn ghi
-// chú thì không có vị trí nào để đụng. Bump ở đây chỉ khiến mỗi lần gõ ghi chú
-// lại làm mới cả trang lịch trình.
-
 function refreshNotes(tripId: string) {
   refreshTripPaths(tripId);
 }
 
-/** Tìm mẩu ghi chú + kiểm quyền sửa chuyến chứa nó. */
 async function editableNote(noteId: string) {
   const note = await prisma.tripNote.findUnique({
     where: { id: noteId },
@@ -899,11 +795,6 @@ export async function setNotePinned(noteId: string, pinned: boolean): Promise<Ac
   }
 }
 
-// ── Đồ mang theo ─────────────────────────────────────────────────────────
-//
-// Cùng luật quyền với ghi chú: ai trong chuyến cũng thêm/sửa/gán/xoá được mọi
-// món. Không `bump()` version (không có thao tác theo vị trí nào ở đây).
-
 function refreshPacking(tripId: string) {
   refreshTripPaths(tripId);
 }
@@ -963,8 +854,6 @@ export async function updatePackItem(
       if (!name) return { ok: false, error: "Tên món đồ đang trống." };
       data.name = name;
     }
-    // Đổi sang `personal` thì bỏ luôn người nhận: đồ ai cũng phải mang thì
-    // không có chuyện "Minh mang hộ".
     if (patch.scope !== undefined) {
       data.scope = patch.scope;
       if (patch.scope === "personal") data.assigneeId = null;
@@ -972,8 +861,6 @@ export async function updatePackItem(
     if (patch.isReady !== undefined) data.isReady = patch.isReady;
     if (patch.isPacked !== undefined) data.isPacked = patch.isPacked;
     if (patch.assigneeId !== undefined) {
-      // Chỉ gán được cho người THỰC SỰ ở trong chuyến — nếu không thì một id bất
-      // kỳ gửi lên sẽ hiện thành "ai đó" không rõ danh tính trên danh sách.
       if (patch.assigneeId) {
         const t = await prisma.trip.findUnique({
           where: { id: item.tripId },
@@ -993,11 +880,6 @@ export async function updatePackItem(
   }
 }
 
-/**
- * Tick/bỏ tick món ĐỒ RIÊNG — trạng thái của CHÍNH NGƯỜI ĐANG ĐĂNG NHẬP, không
- * phải của cả nhóm. Bản ghi chỉ được tạo khi có người tick lần đầu (upsert), nên
- * chuyến 5 người × 30 món không sinh 150 dòng rỗng.
- */
 export async function setMyPackCheck(
   itemId: string,
   patch: { isReady?: boolean; isPacked?: boolean },
@@ -1035,18 +917,12 @@ export async function deletePackItem(itemId: string): Promise<ActionResult> {
   }
 }
 
-// ── Chi phí ──────────────────────────────────────────────────────────────
-//
-// Số tiền do NGƯỜI DÙNG GÕ, không bao giờ suy ra từ danh mục — xem chú thích ở
-// model `TripExpense` và docs/lich-trinh.md §9.3.
-
-const MAX_AMOUNT = 2_000_000_000; // 2 tỉ: đủ cho mọi chuyến, chặn số gõ nhầm
+const MAX_AMOUNT = 2_000_000_000;
 
 function refreshMoney(tripId: string) {
   refreshTripPaths(tripId);
 }
 
-/** Lọc danh sách id chỉ giữ người THỰC SỰ ở trong chuyến. */
 async function peopleInTrip(tripId: string, ids: string[]): Promise<string[]> {
   if (ids.length === 0) return [];
   const t = await prisma.trip.findUnique({
@@ -1092,12 +968,6 @@ export async function addExpense(
   }
 }
 
-/**
- * XOÁ MỀM — khoản chi chuyển vào mục "Đã xoá" kèm tên người xoá, khôi phục
- * được. Không có đường xoá thật nào từ giao diện: sổ tiền chung mà xoá được
- * lặng lẽ thì một người có thể rút hoá đơn khỏi sổ không ai biết. Xem comment
- * ở model `TripExpense`.
- */
 export async function deleteExpense(expenseId: string): Promise<ActionResult> {
   try {
     const ex = await prisma.tripExpense.findUnique({
@@ -1138,8 +1008,6 @@ export async function restoreExpense(expenseId: string): Promise<ActionResult> {
   }
 }
 
-// ── Danh sách chuyến (dùng cho popup "đổi chuyến") ───────────────────────
-
 export async function listMyTrips(): Promise<
   ActionResult<{ trips: { id: string; title: string; count: number }[] }>
 > {
@@ -1160,22 +1028,12 @@ export async function listMyTrips(): Promise<
   };
 }
 
-// ── Lên lịch trình cho một ĐIỂM ĐẾN ──────────────────────────────────────
-// Trang điểm đến KHÔNG có nút "Thêm vào lịch trình": một Place là nơi CHỨA các
-// điểm dừng, không phải một điểm dừng (xem docs/lich-trinh.md §6b). Thay vào đó
-// là "Lên lịch trình đi X" — vừa đúng ngữ nghĩa, vừa biến trang điểm đến thành
-// CỬA TRƯỚC của cả tính năng: nó đặt "chuyến đang lên lịch trình" TRƯỚC khi
-// người dùng đi gom, thay vì đoán SAU khi đã gom.
-
 export type PlanOptions = {
   placeName: string;
-  /** Chuyến đang có của tôi CÓ liên quan tới nơi này (để khỏi đẻ chuyến trùng). */
   trips: { id: string; title: string; count: number }[];
   templates: { id: string; slug: string | null; title: string; days: number }[];
 };
 
-// Nơi này + các điểm đến con: đứng ở trang tỉnh Bình Thuận mà đã có chuyến
-// Phan Thiết thì phải nhận ra, đừng mời tạo chuyến mới.
 async function placeScope(placeId: string) {
   const place = await prisma.place.findUnique({
     where: { id: placeId },
@@ -1201,9 +1059,6 @@ export async function getPlanOptions(placeId: string): Promise<ActionResult<Plan
     prisma.trip.findMany({
       where: {
         ...myTripsWhere(userId),
-        // "Chuyến về nơi này" suy từ NỘI DUNG chứ không chỉ từ Trip.placeId:
-        // chuyến vẫn là chuyến Phan Thiết chừng nào còn mục ở Phan Thiết, kể cả
-        // khi nó được tạo từ chỗ khác.
         OR: [
           { placeId: inScope },
           { items: { some: { spot: { placeId: inScope } } } },
@@ -1239,7 +1094,6 @@ export async function getPlanOptions(placeId: string): Promise<ActionResult<Plan
   };
 }
 
-/** Tạo chuyến trống cho một điểm đến và đặt làm chuyến đang lên lịch trình. */
 export async function startTripForPlace(
   placeId: string,
 ): Promise<ActionResult<{ id: string }>> {
@@ -1271,21 +1125,6 @@ export async function startTripForPlace(
   return { ok: true, data: { id: trip.id } };
 }
 
-/**
- * Tạo KHUNG chuyến từ một lộ trình đo trên bản đồ toàn quốc: mỗi nơi một ngày,
- * đúng thứ tự người dùng đã xếp.
- *
- * Vì sao là NGÀY chứ không phải mục: một `Place` là nơi CHỨA các điểm dừng, nên
- * `TripItem` cố tình không nhận `placeId` (xem chú thích ở model và
- * `docs/lich-trinh.md` §6b). Nhãn cấp ngày mới là chỗ đúng cho "ngày này ở đâu".
- * Hiện ghi bằng `TripDay.title`; khi nào cần liên kết thật (đếm mục theo nơi,
- * link ngược về điểm đến) thì nâng lên `TripDay.placeId` như §6b đã chốt — chỗ
- * phải sửa là đúng dòng `days: { create: … }` bên dưới.
- *
- * MỘT NGÀY MỘT NƠI là khung khởi đầu, không phải phán quyết: thêm/bớt ngày là
- * việc của trình soạn, và đoán hộ "Sa Pa 2 ngày, Hà Giang 3 ngày" thì sai nhiều
- * hơn đúng.
- */
 export async function startTripFromRoute(
   slugs: string[],
 ): Promise<ActionResult<{ id: string }>> {
@@ -1305,8 +1144,6 @@ export async function startTripFromRoute(
     where: { slug: { in: clean }, status: "published" },
     select: { id: true, slug: true, name: true },
   });
-  // Giữ ĐÚNG thứ tự đã xếp trên bản đồ — thứ tự chặng chính là nội dung của
-  // chuyến, mà `findMany` không hứa trả về theo thứ tự của mảng `in`.
   const bySlug = new Map(found.map((p) => [p.slug, p] as const));
   const ordered = clean
     .map((s) => bySlug.get(s))
@@ -1324,8 +1161,6 @@ export async function startTripFromRoute(
   const trip = await prisma.trip.create({
     data: {
       ownerId: userId,
-      // Nơi ĐẦU TIÊN của lộ trình — `Trip.placeId` chỉ là gợi ý & đường quay
-      // lại, không phải chân lý về phạm vi chuyến (docs §3 điểm 3b).
       placeId: ordered[0].id,
       title,
       days: {
@@ -1340,22 +1175,12 @@ export async function startTripFromRoute(
   return { ok: true, data: { id: trip.id } };
 }
 
-// ── Thành viên cùng sửa ──────────────────────────────────────────────────
-// Mời bằng EMAIL. Site chỉ đăng nhập bằng OAuth nên không gửi mail xác thực
-// riêng: nếu email đã có tài khoản thì thành thành viên ngay; chưa có thì giữ
-// lời mời ở `TripInvite`, và lần đầu người đó đăng nhập bằng đúng email này sẽ
-// tự được nhận vào (xem `claimTripInvites`, gọi ở sự kiện signIn trong auth.ts).
-//
-// CHỈ CHỦ CHUYẾN mới mời/gỡ được — người được mời mà mời tiếp thì chủ chuyến
-// mất kiểm soát danh sách của chính mình.
-
 export type TripMemberRow = {
   id: string;
   name: string | null;
   email: string | null;
   image: string | null;
   isOwner: boolean;
-  /** true = mới là lời mời, người này chưa có tài khoản. */
   pending: boolean;
 };
 
@@ -1433,7 +1258,6 @@ export async function inviteToTrip(
       create: { tripId, userId: user.id, addedById: userId },
       update: {},
     });
-    // Dọn lời mời treo nếu trước đó đã mời email này lúc họ chưa có tài khoản.
     await prisma.tripInvite.deleteMany({ where: { tripId, email } });
     // Báo cho người được mời. Site chỉ đăng nhập OAuth nên KHÔNG gửi được email
     // — chuông thông báo là kênh duy nhất họ biết mình vừa được mời.
@@ -1458,7 +1282,6 @@ export async function inviteToTrip(
   return { ok: true, data: { pending: true } };
 }
 
-/** Gỡ một thành viên, hoặc huỷ một lời mời còn treo. */
 export async function removeFromTrip(
   tripId: string,
   target: { kind: "member"; userId: string } | { kind: "invite"; inviteId: string },
@@ -1478,7 +1301,6 @@ export async function removeFromTrip(
   return { ok: true };
 }
 
-/** Tự rời khỏi một chuyến được mời (chủ chuyến thì không rời được chuyến mình). */
 export async function leaveTrip(tripId: string): Promise<ActionResult> {
   let userId: string;
   try {
@@ -1496,31 +1318,14 @@ export async function leaveTrip(tripId: string): Promise<ActionResult> {
   return { ok: true };
 }
 
-// ── TÚI LỊCH TRÌNH (dock nổi ở mọi trang) ────────────────────────────────
-// Nút "Thêm vào lịch trình" ở trang chi tiết bỏ mục vào một chuyến mà người
-// dùng KHÔNG nhìn thấy: bằng chứng duy nhất là cái toast 4 giây. `TripDock`
-// (components/trip/trip-dock.tsx) biến chuyến đang lên lịch thành một vật thể
-// thường trực — và `getTripBag` là dữ liệu của nó.
-//
-// Cố ý KHÁC `getTrip` ở lib/trip.ts: cái đó nạp cả cây (ngày → mục → 5 entity
-// đích + toạ độ + giờ mở cửa) để dựng dòng thời gian. Túi chỉ cần ẢNH + TÊN +
-// LOẠI của các mục CHƯA XẾP NGÀY, nên có select riêng gọn hơn hẳn — nó chạy
-// một lần trên MỌI trang công khai, không được phép nặng.
-//
-// ⚠️ TUYỆT ĐỐI KHÔNG ghi cookie trong hàm này. Nó được gọi thẳng từ
-// `(site)/layout.tsx` lúc render Server Component, mà `cookies().set` ở đó thì
-// Next ném lỗi. Vì vậy nó chỉ ĐỌC chuyến đang lên lịch, không "ghi nhớ" như
-// `resolveTargetTrip`.
-
 export type TripBagItem = {
-  id: string; // id của TripItem
+  id: string;
   name: string;
   typeLabel: string;
   image: string | null;
-  href: string | null; // null: quán ăn (chỉ có popup) & mục tự thêm
+  href: string | null;
 };
 
-/** Một ngày của chuyến, KÈM các mục trong nó. */
 export type TripBagDay = {
   id: string;
   index: number;
@@ -1531,14 +1336,8 @@ export type TripBagDay = {
 export type TripBag = {
   authed: boolean;
   trip: { id: string; title: string; version: number } | null;
-  /**
-   * CẢ lịch trình theo ngày, không chỉ danh sách ngày để chọn: ngăn kéo phải
-   * cho thấy chuyến đang thành hình ra sao, nếu không nó chỉ là một cái giỏ
-   * hàng và người dùng vẫn phải mở trình soạn mới biết mình đã xếp những gì.
-   */
   days: TripBagDay[];
   unscheduled: TripBagItem[];
-  /** Số mục ĐÃ xếp vào ngày — dòng tóm tắt ở chân ngăn kéo. */
   scheduledCount: number;
   tripCount: number;
 };
@@ -1565,9 +1364,6 @@ export async function getTripBag(): Promise<TripBag> {
   ]);
   if (tripCount === 0) return { ...EMPTY_BAG, authed: true };
 
-  // Cookie trỏ chuyến không còn quyền (bị gỡ khỏi chuyến, chuyến đã xoá) thì
-  // rơi về chuyến sửa gần nhất — giống `resolveTargetTrip`, chỉ khác là không
-  // ghi lại cookie và không đẻ chuyến mới.
   const trip =
     (cookieId
       ? await prisma.trip.findFirst({
@@ -1583,8 +1379,6 @@ export async function getTripBag(): Promise<TripBag> {
 
   if (!trip) return { ...EMPTY_BAG, authed: true, tripCount };
 
-  // Một truy vấn lấy MỌI mục rồi chia theo ngày ở JS — rẻ hơn nạp `items` lồng
-  // trong từng `days` (Prisma sẽ chạy một truy vấn cho mỗi quan hệ lồng).
   const byDay = new Map<string, TripBagItem[]>();
   const unscheduled: TripBagItem[] = [];
   for (const row of trip.items) {

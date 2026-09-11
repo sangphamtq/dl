@@ -1,6 +1,3 @@
-// Tách kinh độ/vĩ độ từ link hoặc chuỗi Google Maps. Trả null nếu không thấy.
-// Hỗ trợ các dạng: !3d<lat>!4d<lng> (ghim địa điểm), @<lat>,<lng> (tâm bản đồ),
-// ?q=/query=/ll=/center=/destination=<lat>,<lng>, và "lat,lng" thuần.
 export function parseLatLng(
   input: string,
 ): { lat: number; lng: number } | null {
@@ -29,20 +26,17 @@ export function parseLatLng(
   return null;
 }
 
-// Link rút gọn của Google (chia sẻ từ app) — không chứa toạ độ, phải giải ở server.
 export function isShortMapUrl(u: string): boolean {
   return /^https?:\/\/(?:maps\.app\.goo\.gl|goo\.gl\/maps|g\.co\/kgs)\//i.test(
     u.trim(),
   );
 }
 
-// Mức zoom trong link Google Maps (phần ",17z" sau @lat,lng). Null nếu không có.
 export function parseZoom(url: string): number | null {
   const m = url.match(/@-?\d+(?:\.\d+)?,-?\d+(?:\.\d+)?,(\d+(?:\.\d+)?)z/);
   return m ? Math.round(parseFloat(m[1])) : null;
 }
 
-// Src nhúng (iframe) Google Maps theo toạ độ — không cần API key (output=embed).
 export function googleEmbedSrc(lat: number, lng: number, zoom = 16): string {
   return `https://www.google.com/maps?q=${lat},${lng}&z=${zoom}&hl=vi&output=embed`;
 }

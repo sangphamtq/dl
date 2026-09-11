@@ -5,15 +5,9 @@ import {
   AccommodationCategory,
 } from "@/generated/prisma/enums";
 
-// Seed thêm vài homestay tại Phan Thiết, gắn vào điểm đến `phan-thiet` đã có.
-// Idempotent: upsert theo slug; ảnh tạo lại mỗi lần chạy.
-// Dùng: pnpm seed:homestay-phan-thiet
-// Lưu ý: cần chạy seed:phan-thiet trước (để có Place `phan-thiet`).
-
 const now = new Date();
 const PUB = { status: PublishStatus.published, publishedAt: now } as const;
 
-// Pool ảnh lưu trú (tái dùng từ seed-phan-thiet) — dựng gallery nhiều ảnh.
 const F = "https://y3m837otke.ufs.sh/f/";
 const STAY = {
   hills: F + "m9VMJOw4aGbVIMyiaWOJ3i9vQ1fIPbaTDodWErlMtRmUSn2j",

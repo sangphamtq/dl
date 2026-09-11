@@ -54,7 +54,6 @@ export default async function EditPlacePage({
 
   if (!place) notFound();
 
-  // Video TikTok + thumbnail (oEmbed, cache trong helper).
   const videoRows = await prisma.placeVideo.findMany({
     where: { placeId: id },
     orderBy: [{ order: "asc" }, { createdAt: "asc" }],
@@ -67,7 +66,6 @@ export default async function EditPlacePage({
     })),
   );
 
-  // Loại bỏ chính nó khỏi danh sách tỉnh cha (không tự làm cha mình).
   const parentOptions = provinces.filter((p) => p.id !== place.id);
 
   const initial: Partial<PlaceFormValues> = {
@@ -115,7 +113,6 @@ export default async function EditPlacePage({
         />
       </div>
 
-      {/* Ảnh — cùng bố cục section với form */}
       <div className="border-t">
         <FormSection
           title="Ảnh"
@@ -125,7 +122,6 @@ export default async function EditPlacePage({
         </FormSection>
       </div>
 
-      {/* Video TikTok */}
       <div className="border-t">
         <FormSection
           title="Video TikTok"

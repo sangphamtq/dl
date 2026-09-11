@@ -22,7 +22,6 @@ function revalidate(slug?: string | null) {
   if (slug) revalidatePath(`/sale/${slug}`);
 }
 
-// Duyệt hồ sơ CTV → công khai + huy hiệu. level: basic|standard|high (theo SOP).
 export async function approveSale(
   id: string,
   opts?: { level?: string; note?: string; reVerifyMonths?: number },
@@ -62,7 +61,6 @@ export async function approveSale(
   return { ok: true };
 }
 
-// Từ chối hồ sơ (kèm lý do hiển thị cho chính chủ).
 export async function rejectSale(
   id: string,
   reason: string,
@@ -97,7 +95,6 @@ export async function rejectSale(
   return { ok: true };
 }
 
-// Gỡ huy hiệu (khi có vấn đề) — đưa về chờ duyệt lại, badge biến mất ngay.
 export async function revokeSale(id: string): Promise<ActionResult> {
   try {
     await requireStaff();

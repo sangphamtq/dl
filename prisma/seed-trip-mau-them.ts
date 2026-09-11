@@ -1,13 +1,3 @@
-// Thêm 3 LỊCH TRÌNH MẪU đơn giản để thử bố cục trang /lich-trinh.
-// Chạy: pnpm seed:trip-mau-them   (idempotent — xoá bản cũ theo slug rồi tạo lại)
-//
-// Độ dài cố tình khác nhau (1 / 2 / 3 ngày) để nhìn được thẻ ngắn và thẻ dài
-// cạnh nhau trong cùng một lưới.
-//
-// ⚠️ Mẫu CHỈ được trỏ vào listing CÓ THẬT: trang /lich-trinh lọc
-// `days: { some: { items: { some: {} } } }`, nên mẫu mà mọi ngày đều rỗng sẽ
-// không bao giờ hiện (đúng thứ đang xảy ra với mẫu `ha-long-kham-pha` — Hạ Long
-// chưa có listing nào). Hiện chỉ Phan Thiết và Tà Xùa đủ nội dung.
 import "dotenv/config";
 import { prisma } from "@/lib/prisma";
 
@@ -96,9 +86,6 @@ const TEMPLATES: Template[] = [
   },
 ];
 
-/** Tra id theo slug. Dùng `switch` chứ không gom bốn model vào một map: mỗi
- *  model là một kiểu Prisma riêng, gom lại thì phải ép kiểu và mất luôn phần
- *  kiểm kiểu vốn là lý do dùng Prisma. */
 async function findId(kind: Kind, slug: string): Promise<string | null> {
   const sel = { where: { slug }, select: { id: true } } as const;
   switch (kind) {

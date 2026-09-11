@@ -7,8 +7,6 @@ import { PROVINCE_NAME_BY_SLUG } from "@/lib/provinces";
 import { VN_MAP_PATHS } from "./vietnam-map-paths";
 import { VN_ISLANDS, VN_MAP_VIEWBOX_WIDE } from "./vietnam-islands";
 
-// Bản đồ Việt Nam — tối giản: đất một tông xám ấm, tỉnh đã đến tô cam, cả khối
-// có bóng đổ mềm để tạo chiều sâu. Hover hiện tên tỉnh, nhãn bám trên vùng tỉnh.
 export function VietnamMap({
   visited,
   accent,
@@ -16,7 +14,6 @@ export function VietnamMap({
   onToggle,
 }: {
   visited: Set<string>;
-  /** Màu tô tỉnh đã đến — người dùng tự chọn, lưu ở `User.mapCardOptions`. */
   accent: string;
   className?: string;
   onToggle?: (slug: string) => void;
@@ -74,10 +71,6 @@ export function VietnamMap({
                 onMouseEnter={(e) => enter(slug, e)}
                 onMouseLeave={clear}
                 onClick={onToggle ? () => onToggle(slug) : undefined}
-                // Màu tô của tỉnh ĐÃ ĐẾN là một hex tuỳ người dùng nên phải
-                // đi qua `style`, không qua class. Kéo theo: trạng thái rê
-                // chuột đổi bằng ĐỘ MỜ chứ không bằng một class màu thứ hai —
-                // `hover:fill-*` không biết gì về hex đó.
                 style={isVisited ? { fill: accent } : undefined}
                 className={cn(
                   "stroke-background duration-200 [stroke-width:0.7]",
@@ -87,15 +80,6 @@ export function VietnamMap({
                     : "fill-stone-200 transition-colors hover:fill-stone-300 dark:fill-stone-700/70 dark:hover:fill-stone-600",
                 )}
               >
-                {/* MỘT chuỗi duy nhất, ghép sẵn trong JS — KHÔNG để hai biểu
-                    thức con cạnh nhau trong `<title>`. Bản trước làm vậy và nó
-                    là nguồn của một lỗi hydration im lặng trên cả trang: hai
-                    child liền nhau thì React SSR phải chèn dấu ngăn giữa chúng,
-                    mà `<title>` của SVG không giữ được dấu ngăn đó, nên cây
-                    client không khớp cây server và React dựng lại toàn bộ nhánh
-                    (hiện thành "1 Issue" trong overlay dev). Nhánh
-                    `isVisited ? … : ""` còn góp thêm: chuỗi rỗng không sinh ra
-                    node nào ở server nhưng client vẫn chờ một node. */}
                 <title>{`${PROVINCE_NAME_BY_SLUG[slug] ?? slug}${isVisited ? " — đã đến" : ""}`}</title>
               </path>
             );
@@ -104,10 +88,6 @@ export function VietnamMap({
       </svg>
 
       {hover && pos && (
-        // Nhãn rê chuột: viên VUÔNG nền MỰC ĐẶC. Bản trước là
-        // `rounded-full` + `bg-card/95` + viền + bóng + `backdrop-blur` — vừa
-        // lạc bộ bo góc, vừa khai độ nổi ba lần cho một mẩu chữ 12px, mà nền
-        // mờ thì đọc lem nhem đúng lúc nó nằm trên vùng cam của tỉnh đã đến.
         <div
           className={cn(
             R_BADGE,

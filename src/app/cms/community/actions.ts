@@ -22,7 +22,6 @@ async function requireStaff(): Promise<{ id: string }> {
   return { id: session.user.id };
 }
 
-// Làm mới các trang công khai liên quan tới một chủ đề.
 async function revalidateThreadPublic(placeSlug: string | null | undefined) {
   revalidatePath("/cong-dong");
   revalidatePath("/cms/community");
@@ -47,7 +46,6 @@ async function loadThread(id: string) {
   });
 }
 
-// Ghim / bỏ ghim.
 export async function setThreadPinned(
   id: string,
   pinned: boolean,
@@ -64,7 +62,6 @@ export async function setThreadPinned(
   return { ok: true };
 }
 
-// Khóa / mở khóa trả lời. Báo tác giả khi khóa.
 export async function setThreadLocked(
   id: string,
   locked: boolean,
@@ -90,7 +87,6 @@ export async function setThreadLocked(
   return { ok: true };
 }
 
-// Ẩn / hiện chủ đề. Báo tác giả khi ẩn. Đồng thời đóng các báo cáo pending của bài.
 export async function setThreadHidden(
   id: string,
   hidden: boolean,
@@ -121,7 +117,6 @@ export async function setThreadHidden(
   return { ok: true };
 }
 
-// Xóa hẳn chủ đề (cascade: reply, like, ảnh, báo cáo).
 export async function deleteThreadCms(id: string): Promise<ActionResult> {
   try {
     await requireStaff();
@@ -134,8 +129,6 @@ export async function deleteThreadCms(id: string): Promise<ActionResult> {
   await revalidateThreadPublic(t.place?.slug);
   return { ok: true };
 }
-
-// ── Báo cáo nội dung ────────────────────────────────────────────────────────
 
 async function loadReport(id: string) {
   return prisma.contentReport.findUnique({
@@ -162,7 +155,6 @@ async function loadReport(id: string) {
   });
 }
 
-// Bỏ qua một báo cáo (không vi phạm).
 export async function dismissReport(id: string): Promise<ActionResult> {
   let staff;
   try {
@@ -178,7 +170,6 @@ export async function dismissReport(id: string): Promise<ActionResult> {
   return { ok: true };
 }
 
-// Xử lý báo cáo bài → ẩn bài (dùng lại setThreadHidden để notify + đóng báo cáo).
 export async function hideThreadFromReport(id: string): Promise<ActionResult> {
   try {
     await requireStaff();
@@ -190,7 +181,6 @@ export async function hideThreadFromReport(id: string): Promise<ActionResult> {
   return setThreadHidden(r.threadId, true);
 }
 
-// Xử lý báo cáo → xóa hẳn bài (cascade xóa luôn báo cáo).
 export async function deleteThreadFromReport(
   id: string,
 ): Promise<ActionResult> {
@@ -204,7 +194,6 @@ export async function deleteThreadFromReport(
   return deleteThreadCms(r.threadId);
 }
 
-// Xử lý báo cáo trả lời → xóa trả lời (cascade xóa báo cáo). Báo tác giả.
 export async function deleteReplyFromReport(
   id: string,
 ): Promise<ActionResult> {

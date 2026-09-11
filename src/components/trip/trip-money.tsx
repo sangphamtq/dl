@@ -14,18 +14,6 @@ import { balances, ceilTo, settlements } from "@/lib/trip-money";
 import { addExpense, deleteExpense, restoreExpense } from "@/app/(site)/lich-trinh/actions";
 import type { TripExpenseRow, TripPerson } from "@/lib/trip";
 
-// Mục "Chi phí". Thiết kế & lý do: docs/lich-trinh-cong-cu-nhom.md §13.
-//
-// Đây là SỔ CHIA TIỀN, không phải bảng dự trù ngân sách. Việc thật của nhóm bạn
-// không phải "chuyến này dự kiến hết bao nhiêu" (chẳng ai lập ngân sách cho 3
-// ngày) mà là "**ai ứng bao nhiêu, cuối chuyến ai trả ai**" — thứ mà bình
-// thường phải lục lại tin nhắn để cộng.
-//
-// ⚠️ Số tiền LUÔN do người dùng gõ. Không bao giờ suy ra từ `Eatery`,
-// `Accommodation`… — xem docs/lich-trinh.md §9.3.
-//
-// Chuyến ĐI MỘT MÌNH tự thoái hoá thành một sổ chi tiêu: không hỏi ai trả, không
-// hỏi chia cho ai, không có khối "ai trả ai". Cùng một màn hình, ít câu hỏi hơn.
 export function TripMoney({
   tripId,
   expenses,
@@ -182,10 +170,6 @@ export function TripMoney({
   );
 }
 
-// Sổ tiền chung mà xoá được LẶNG LẼ thì một người có thể rút hoá đơn khỏi sổ
-// không ai biết. Nên xoá ở đây là xoá mềm, và mục này là phần công khai của nó:
-// ai xoá cái gì lúc nào đều đọc được, và khôi phục lại được một chạm. Gấp lại
-// mặc định — nó là sổ đối chiếu, không phải nội dung chính.
 function DeletedLog({
   removed,
   pending,
@@ -223,7 +207,6 @@ function DeletedLog({
                 <p className="truncate text-sm text-muted-foreground line-through decoration-muted-foreground/50">
                   {e.title}
                 </p>
-                {/* AI XOÁ là thông tin chính của mục này — không phải chú thích. */}
                 <p suppressHydrationWarning className="mt-0.5 text-xs text-muted-foreground">
                   <strong className="font-medium text-foreground/70">
                     {e.deletedBy?.name ?? "Ai đó đã rời chuyến"}
@@ -263,12 +246,7 @@ function Face({ person, size }: { person: TripPerson | TripExpenseRow["paidBy"];
   );
 }
 
-// Ô tiền tính bằng NGHÌN ĐỒNG — gõ "350" là 350.000đ. Ba số 0 cuối cùng không
-// mang thông tin (không ai chi lẻ dưới nghìn) mà gõ thì dễ thừa thiếu một con
-// số 0; đuôi ".000đ" in chết ngay trong khung nhập nên đơn vị không thể hiểu
-// nhầm. Bỏ luôn kiểu hậu tố "350k"/"2tr" của bản trước — đơn vị đã cố định thì
-// bộ đoán hậu tố chỉ còn là chỗ để hiểu sai.
-const DENOMS = [1, 2, 5, 10, 20, 50, 100, 200, 500]; // nghìn — đủ bộ mệnh giá tiền VN
+const DENOMS = [1, 2, 5, 10, 20, 50, 100, 200, 500];
 
 function ExpenseForm({
   tripId,
@@ -286,7 +264,7 @@ function ExpenseForm({
   run: (fn: () => Promise<{ ok: boolean; error?: string }>) => void;
 }) {
   const [title, setTitle] = useState("");
-  const [raw, setRaw] = useState(""); // số NGHÌN, chuỗi để giữ nguyên cái người dùng gõ
+  const [raw, setRaw] = useState("");
   const [paidById, setPaidById] = useState(viewerId);
   const [shareIds, setShareIds] = useState<string[]>(people.map((p) => p.id));
 
@@ -295,8 +273,6 @@ function ExpenseForm({
   const amount = nghin === null || Number.isNaN(nghin) ? null : nghin * 1_000;
   const canSubmit = title.trim().length > 0 && amount !== null && amount > 0 && shareIds.length > 0;
 
-  // Chip mệnh giá CỘNG DỒN: 370k = bấm 200 + 100 + 50 + 20, nhanh hơn gõ khi
-  // đang cầm điện thoại. Chip cộng vào số đang có (kể cả số vừa gõ tay).
   function bump(denom: number) {
     const cur = nghin === null || Number.isNaN(nghin) ? 0 : nghin;
     setRaw(String(cur + denom));
@@ -320,8 +296,6 @@ function ExpenseForm({
           aria-label="Tên khoản chi"
           className="h-10 min-w-[12rem] flex-1 rounded-xl"
         />
-        {/* Khung tiền tự dựng: input trần + đuôi ".000đ" chết — nhìn là biết
-            đang gõ theo nghìn, không cần đọc chú thích. */}
         <label className="flex h-10 w-36 items-center rounded-xl border border-input bg-transparent pl-3 pr-2 shadow-xs transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50">
           <input
             value={raw}
@@ -363,7 +337,6 @@ function ExpenseForm({
             <X className="size-3.5" aria-hidden />
           </button>
         )}
-        {/* HIỆN LẠI số đã hiểu — chip cộng dồn vài lần thì phải thấy ngay tổng. */}
         <span className="ml-auto min-h-4 text-xs tabular-nums text-muted-foreground">
           {raw.trim() === "" ? "" : amount === null ? (
             <span className="text-destructive">Không đọc được số tiền</span>
@@ -461,9 +434,6 @@ function SharePicker({
       </PopoverTrigger>
       <PopoverContent align="start" className="w-56 p-1.5">
         <p className="px-2 pb-1.5 pt-1 text-xs text-muted-foreground">Chia đều cho ai?</p>
-        {/* Hai đáp án chiếm gần hết trường hợp thật: cả nhóm ăn chung, hoặc mình
-            mua đồ cho riêng mình. Đặt thành nút một-phát rồi ĐÓNG luôn popover —
-            tick từng người chỉ dành cho ca lẻ "bữa này thiếu một đứa". */}
         <div className="flex gap-1.5 px-1 pb-2">
           <QuickPick
             label="Cả nhóm"
@@ -488,8 +458,6 @@ function SharePicker({
             <button
               key={p.id}
               type="button"
-              // Không cho bỏ hết: một khoản chia cho 0 người là vô nghĩa, và
-              // server cũng từ chối — chặn ngay ở đây thì khỏi phải báo lỗi.
               onClick={() =>
                 onChange(on ? (value.length > 1 ? value.filter((id) => id !== p.id) : value) : [...value, p.id])
               }

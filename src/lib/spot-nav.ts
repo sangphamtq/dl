@@ -1,21 +1,15 @@
 import type { SectionItem } from "@/components/site/spot-section-nav";
 
-// Cờ nội dung quyết định mục nào xuất hiện trên thanh nav của trang địa điểm.
 export type SpotNavFlags = {
   hasIntro: boolean;
   hasHighlights: boolean;
   hasActivities: boolean;
-  hasExperience: boolean; // tips hoặc notice
+  hasExperience: boolean;
   hasBestTime: boolean;
   hasGettingThere: boolean;
   hasNearby: boolean;
 };
 
-// Xây mục nav cho trang địa điểm — DÙNG CHUNG giữa trang chi tiết và trang con.
-// Mục nội dung (bên trái): trên trang chi tiết là anchor cuộn trong trang (id);
-// trên trang con (community=true) là link về "/dia-diem/[slug]#id".
-// Nhóm bên phải (có icon, giống điểm đến): "Cộng đồng" → trang cộng đồng riêng;
-// "Bản đồ" → trang "Di chuyển" của điểm đến cha.
 export function buildSpotNavItems(
   slug: string,
   placeSlug: string,
@@ -35,15 +29,6 @@ export function buildSpotNavItems(
     flags.hasGettingThere && anchor("cach-den", "Cách đến"),
     flags.hasNearby && anchor("quanh-day", "Quanh đây"),
     anchor("danh-gia", "Đánh giá"),
-    // Nhóm bên phải (có icon):
-    // Cộng đồng TẠM ẨN (route `/dia-diem/[slug]/cong-dong` vẫn còn, vẫn vào
-    // được bằng URL). Bật lại thì bỏ comment khối dưới.
-    // {
-    //   id: "cong-dong",
-    //   label: "Cộng đồng",
-    //   href: `${base}/cong-dong`,
-    //   icon: "community",
-    // },
     {
       id: "ban-do",
       label: "Bản đồ",

@@ -1,22 +1,18 @@
 import posthog from "posthog-js";
 
-// PostHog chỉ bật khi có key (env NEXT_PUBLIC_POSTHOG_KEY). Không có key →
-// mọi hàm dưới đây no-op, app chạy bình thường (analytics là tùy chọn).
 export const POSTHOG_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY;
 export const POSTHOG_HOST =
   process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://us.i.posthog.com";
 const POSTHOG_ENABLED = !!POSTHOG_KEY;
 
 export type EntityViewMeta = {
-  entityType: string; // 'place' | 'activity' | 'spot' | 'eatery' | 'accommodation'…
+  entityType: string;
   entityId: string;
   name?: string;
-  placeId?: string; // Place chứa listing (để nhóm traffic theo điểm đến)
-  provinceName?: string | null; // để lọc traffic theo tỉnh
+  placeId?: string;
+  provinceName?: string | null;
 };
 
-// Bắn sự kiện "xem nội dung" kèm thuộc tính thực thể → PostHog lọc/nhóm được
-// traffic theo loại, theo điểm đến, theo tỉnh (bổ sung cho $pageview theo path).
 export function captureEntityView(meta: EntityViewMeta): void {
   if (!POSTHOG_ENABLED) return;
   try {

@@ -27,7 +27,7 @@ export type TransportFormInput = {
   currency: string;
   operatorName: string;
   bookingUrl: string;
-  status: string; // draft | published
+  status: string;
   order: string;
 };
 
@@ -91,7 +91,6 @@ async function normalize(
       direction,
       mode: input.mode as TransportMode,
       placeId: input.placeId,
-      // fromName chỉ dùng cho getTo
       fromName:
         direction === TransportDirection.getTo
           ? input.fromName.trim() || null
@@ -129,7 +128,6 @@ export async function updateTransport(
   const res = await normalize(input);
   if ("error" in res) return { ok: false, error: res.error };
 
-  // Giữ publishedAt cũ nếu đang published (đừng đổi mốc khi chỉ sửa).
   const existing = await prisma.transport.findUnique({
     where: { id },
     select: { publishedAt: true },

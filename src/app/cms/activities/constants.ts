@@ -1,4 +1,3 @@
-// Nhãn hiển thị cho enum của Activity.
 export const ACTIVITY_CATEGORIES: { value: string; label: string }[] = [
   { value: "adventure", label: "Mạo hiểm" },
   { value: "nature", label: "Thiên nhiên" },

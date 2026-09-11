@@ -3,10 +3,10 @@
 import { parseLatLng, isShortMapUrl } from "@/lib/map-url";
 
 export type RouteResult = {
-  coords: [number, number][]; // [lat, lng] dọc tuyến đường
-  distance: number; // tổng mét
-  duration: number; // tổng giây
-  legs: { distance: number; duration: number }[]; // từng chặng giữa 2 điểm liên tiếp
+  coords: [number, number][];
+  distance: number;
+  duration: number;
+  legs: { distance: number; duration: number }[];
 };
 
 type LatLng = { lat: number; lng: number };
@@ -45,8 +45,6 @@ export async function getRoute(waypoints: LatLng[]): Promise<RouteResult | null>
   }
 }
 
-// Khoảng cách/thời gian đường bộ TỪ một điểm gốc tới nhiều điểm (OSRM table).
-// Trả mảng cùng thứ tự targets; phần tử null nếu không tính được.
 export async function getDistances(
   origin: LatLng,
   targets: LatLng[],
@@ -74,8 +72,6 @@ export async function getDistances(
   }
 }
 
-// Giải link Google Maps rút gọn (maps.app.goo.gl…) ở server: theo redirect tới URL
-// đầy đủ rồi tách toạ độ. Chỉ nhận domain rút gọn của Google (tránh SSRF).
 export async function resolveMapLink(
   url: string,
 ): Promise<{ lat: number; lng: number } | null> {

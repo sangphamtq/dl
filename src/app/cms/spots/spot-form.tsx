@@ -92,7 +92,6 @@ export function SpotForm({
     mode === "edit" && Boolean(initial?.slug),
   );
 
-  // Xã/phường của tỉnh đang chọn (nạp qua cache client → server action).
   const [wards, setWards] = useState<Ward[]>([]);
   const [wardsLoading, setWardsLoading] = useState(false);
 
@@ -169,7 +168,6 @@ export function SpotForm({
     }));
   }
 
-  // Nạp xã/phường mỗi khi provinceCode đổi (gồm cả lần đầu khi sửa).
   useEffect(() => {
     const c = Number(values.provinceCode);
     if (!values.provinceCode || !Number.isFinite(c)) return;
@@ -242,7 +240,6 @@ export function SpotForm({
       )}
 
       <div className="divide-y">
-        {/* Phân loại & nơi chứa */}
         <FormSection
           title="Phân loại"
           description="Loại địa hình và nơi (tỉnh/điểm đến) chứa địa điểm này."
@@ -278,7 +275,6 @@ export function SpotForm({
           </div>
         </FormSection>
 
-        {/* Vị trí */}
         <FormSection
           title="Vị trí"
           description="Đơn vị hành chính, địa chỉ, toạ độ và link bản đồ. Tùy chọn."
@@ -368,7 +364,6 @@ export function SpotForm({
           </div>
         </FormSection>
 
-        {/* Thông tin cơ bản */}
         <FormSection
           title="Thông tin cơ bản"
           description="Tên, đường dẫn và mô tả địa điểm."
@@ -428,7 +423,6 @@ export function SpotForm({
           </div>
         </FormSection>
 
-        {/* Điểm nhấn — tiêu đề + mô tả rich text, sắp theo thứ tự */}
         <FormSection
           title="Điểm nhấn"
           description="Những điều đặc biệt của địa điểm — mỗi mục có tiêu đề và mô tả ngắn."
@@ -474,7 +468,6 @@ export function SpotForm({
           </Button>
         </FormSection>
 
-        {/* Khi nào đẹp · Mẹo · Cách đến */}
         <FormSection
           title="Thời điểm, mẹo & cách đến"
           description="Khi nào đẹp nhất, kinh nghiệm thực tế và hướng dẫn đường đi cho địa điểm này."
@@ -520,7 +513,6 @@ export function SpotForm({
           </div>
         </FormSection>
 
-        {/* Nội dung hoạt động theo địa điểm (mục "Làm gì ở đây") */}
         <FormSection
           title="Làm gì ở đây"
           description="Nội dung RIÊNG của từng hoạt động tại địa điểm này. Liên kết hoạt động được quản ở phần Hoạt động."
@@ -568,7 +560,6 @@ export function SpotForm({
           )}
         </FormSection>
 
-        {/* Vé vào cửa */}
         <FormSection
           title="Vé vào cửa"
           description="Miễn phí, hoặc liệt kê giá theo từng loại vé."
@@ -671,7 +662,6 @@ export function SpotForm({
           />
         </FormSection>
 
-        {/* Thông tin thực địa */}
         <FormSection
           title="Thông tin thực địa"
           description="Giờ mở cửa, thời điểm đẹp, liên hệ và lưu ý. Tùy chọn."
@@ -735,7 +725,6 @@ export function SpotForm({
           </div>
         </FormSection>
 
-        {/* Thẻ */}
         <FormSection
           title="Thẻ"
           description="Nhãn tự do để lọc & gợi ý."

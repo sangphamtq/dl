@@ -2,8 +2,6 @@
 
 import { useEffect } from "react";
 
-// Bắt lỗi phát sinh ở chính root layout (hiếm). Phải tự bọc <html>/<body> vì
-// nó thay thế toàn bộ cây layout gốc.
 export default function GlobalError({
   error,
   reset,

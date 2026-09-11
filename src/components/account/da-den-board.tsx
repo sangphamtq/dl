@@ -15,7 +15,6 @@ import {
 import type { MapCardOptions } from "@/lib/map-card";
 import { toggleCheckIn } from "@/app/(site)/diem-den/check-in-actions";
 
-// Checklist nhóm theo miền; mỗi miền tỉnh sắp theo bảng chữ cái tiếng Việt.
 const REGION_GROUPS = REGIONS.map((r) => ({
   label: r.label,
   provinces: [...r.slugs]
@@ -25,30 +24,6 @@ const REGION_GROUPS = REGIONS.map((r) => ({
 
 const MICRO = "text-[0.6rem] font-semibold uppercase tracking-[0.14em]";
 
-/* ──────────────────────────────────────────────────────────────────
-   Trang "Nơi đã đến": bản đồ + checklist tỉnh, chung một state nên bấm ở đâu
-   cũng cập nhật cả hai.
-
-   Bản trước đóng cả hai vào MỘT khung `rounded-3xl border bg-card/50 shadow-lg
-   backdrop-blur`, với một thẻ tiến độ bo tròn nổi đè lên góc bản đồ. Bốn thứ
-   phải sửa, và cả bốn đều là luật chung của dự án chứ không phải khẩu vị:
-
-     · **bo góc lạc hệ** — `rounded-3xl` (24px) / `2xl` (16px) / `full` trên một
-       site chạy bộ 6 · 4 · 3px;
-     · **hai độ nổi cùng lúc** trên một khối (viền + bóng + nền mờ), trong khi
-       quy ước là một khối khai độ nổi ĐÚNG MỘT lần;
-     · **khung bọc không mang thông tin** — nó chỉ vẽ lại một hình chữ nhật
-       quanh hai thứ vốn đã tự đứng được (tấm bản đồ và một danh sách có tiêu đề
-       miền làm neo). Bỏ khung thì bản đồ sáng hẳn lên trên nền trang;
-     · **thẻ tiến độ trôi trên bản đồ** — bản đồ Việt Nam rất hẹp và dọc nên nó
-       không thực sự đè lên gì, chỉ lửng lơ giữa một vùng trống. Con số tiến độ
-       là chuyện của CẢ TRANG, nên nó lên đầu trang.
-
-   Vòng tròn phần trăm cũng đổi thành **một vạch ngang**: vạch nói cùng lượng
-   thông tin trong một hình đã có sẵn trong hệ (chữ nhật, bo `R_BADGE`), và
-   quan trọng hơn — **ảnh chia sẻ mà trang này xuất ra đã dùng đúng một vạch
-   ngang** (`buildShareCard`). Nay trang và ảnh khớp nhau.
-   ────────────────────────────────────────────────────────────────── */
 export function DaDenBoard({
   initialVisited,
   initialOptions,
@@ -56,17 +31,13 @@ export function DaDenBoard({
   slugToId,
 }: {
   initialVisited: string[];
-  /** Tuỳ chỉnh đã lưu của CHÍNH người này (`User.mapCardOptions`). */
   initialOptions: MapCardOptions;
-  /** Tên trên tài khoản — điền sẵn vào ảnh, và là chỗ "Đặt lại" quay về. */
   accountName: string;
   slugToId: Record<string, string>;
 }) {
   const [visited, setVisited] = useState<Set<string>>(
     () => new Set(initialVisited),
   );
-  // Giữ bản sao ở client để trang đổi màu NGAY khi lưu, không chờ vòng
-  // `revalidatePath` của server action.
   const [opts, setOpts] = useState<MapCardOptions>(initialOptions);
   const accent = opts.accent;
   const [, startTransition] = useTransition();
@@ -91,7 +62,7 @@ export function DaDenBoard({
       return;
     }
     const was = visited.has(slug);
-    setMark(slug, !was); // optimistic
+    setMark(slug, !was);
     startTransition(async () => {
       const res = await toggleCheckIn({ kind: "place", id });
       if (!res.ok) {
@@ -107,18 +78,9 @@ export function DaDenBoard({
 
   return (
     <>
-      {/* ── Dải trạng thái của cả trang ────────────────────────────────
-          Con số lớn đứng trước, hai dữ kiện phụ đi sau bằng đúng khuôn
-          "glyph + số đậm  khoảng trắng rộng" của mọi mục trên site — không dấu
-          chấm giữa. */}
       <div className="mt-6 flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
         <div>
           <p className="flex items-baseline gap-2">
-            {/* Con số để màu CHỮ CHÍNH, không nhuộm theo màu nhấn: `accent` là
-                một hex người dùng tự chọn nên không ai bảo đảm nó đọc được trên
-                nền trang (cam mặc định `#e3852f` đã chỉ đạt ~2,5:1). Luật của
-                trang này: **màu nhấn chỉ tô MẢNG (bản đồ, vạch tiến độ, ô đánh
-                dấu), không bao giờ tô CHỮ.** */}
             <span className="font-[family-name:var(--font-display)] text-5xl font-bold tabular-nums leading-none tracking-tight text-foreground sm:text-6xl">
               {total}
             </span>
@@ -139,11 +101,6 @@ export function DaDenBoard({
           </div>
         </div>
 
-        {/* HAI nút, hai việc khác hẳn nhau về tần suất: chỉnh là việc làm MỘT
-            LẦN (và nay lưu vĩnh viễn), xuất ảnh là việc làm LẠI mỗi lần đi thêm
-            một tỉnh. Bản trước gộp thành một nút "Tuỳ chỉnh & tải ảnh" nên muốn
-            tấm ảnh mới vẫn phải mở bảng điều khiển, đi qua sáu ô nhập rồi mới
-            tới nút tải. */}
         <div className="flex flex-wrap items-center gap-2">
           <MapCustomizeButton
             visited={[...visited]}
@@ -160,9 +117,6 @@ export function DaDenBoard({
         </div>
       </div>
 
-      {/* Vạch tiến độ — VUÔNG (bo `R_BADGE`), tràn hết bề ngang nội dung: nó là
-          thanh trạng thái của cả trang chứ không phải một huy hiệu của riêng
-          tấm bản đồ. */}
       <div
         className={cn(R_BADGE, "mt-5 h-2 w-full overflow-hidden bg-muted")}
         role="progressbar"
@@ -184,13 +138,6 @@ export function DaDenBoard({
         Bấm vào tỉnh trên bản đồ hoặc trong danh sách để đánh dấu đã đến.
       </p>
 
-      {/* ── Bản đồ + checklist, KHÔNG khung bọc ────────────────────────
-          Checklist để ĐÚNG HAI cột (bản trước là 3 từ `sm`). Hai lý do, cùng
-          một phép đo: ở 3 cột cả danh sách chỉ cao ~370px trong khi tấm bản đồ
-          bên trái cao ~600px, nên nửa dưới cột phải là một mảng trắng to bằng
-          một phần ba khối — thứ dễ thấy nhất trên bản cũ. Hai cột kéo danh sách
-          lên ~620px, vừa khớp bản đồ, và mỗi ô rộng gấp rưỡi nên tên dài
-          ("Quảng Ninh", "Thừa Thiên Huế") thôi phải bó sát mép. */}
       <div className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:gap-14">
         <div className="lg:sticky lg:top-24 lg:self-start">
           <VietnamMap
@@ -251,9 +198,6 @@ export function DaDenBoard({
   );
 }
 
-/* Một dòng tỉnh. Ô đánh dấu VUÔNG `R_BADGE` — cùng hình với ô "Chỉ đánh giá có
-   viết" ở mục Đánh giá; ô tròn là hình của RADIO (chọn một trong nhiều), trong
-   khi đây là 34 công tắc độc lập. */
 function ProvinceRow({
   name,
   on,
@@ -276,10 +220,6 @@ function ProvinceRow({
       )}
     >
       <span
-        // Ô đã đánh dấu tô bằng màu nhấn của người dùng → qua `style`. Dấu tick
-        // để TRẮNG: nền ô là một hex bất kỳ nên không suy ra được màu chữ tương
-        // phản, mà trắng trên sáu màu gợi ý lẫn phần lớn màu tự chọn đều đọc
-        // được (người chọn màu nhấn hầu như luôn chọn màu đậm).
         style={on ? { backgroundColor: accent, borderColor: accent } : undefined}
         className={cn(
           R_BADGE,

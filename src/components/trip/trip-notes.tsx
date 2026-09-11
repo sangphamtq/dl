@@ -12,27 +12,6 @@ import { MICRO } from "@/components/trip/trip-rail";
 import { addNote, deleteNote, setNotePinned, updateNote } from "@/app/(site)/lich-trinh/actions";
 import type { TripNoteRow } from "@/lib/trip";
 
-// Mục "Ghi chú" của một chuyến. Phân tích: docs/lich-trinh-cong-cu-nhom.md §11.
-//
-// Ngôn ngữ thị giác bám `docs/lich-trinh.md` §6a — bản đầu của trang này phạm
-// đúng bốn lỗi đã ghi ở đó:
-//
-//   1. Chuỗi "·" ngăn meta (`Sang · 5 phút trước · đã sửa`). Người dùng đã bác
-//      cách ngăn này ở mục lịch trình. Sửa: KHÔNG dấu ngăn nào — tên đứng trái,
-//      giờ đứng phải, khác nhau bằng khoảng cách và sắc độ. Và "đã sửa" gộp vào
-//      chính con số: "đã sửa 5 phút trước" là MỘT dữ kiện thay vì hai.
-//   2. Thân ghi chú để `text-sm` xám như mọi meta khác — trong khi nó là thứ
-//      DUY NHẤT người ta mở trang này để đọc. Sửa: thân là cột sống typographic
-//      (`text-base`, leading thoáng, màu foreground), meta co lại.
-//   3. Ô soạn luôn mở: trang mở ra là một cái form rỗng chứ không phải nội dung.
-//      Sửa: lúc nghỉ nó là MỘT DÒNG, chạm mới bung ra.
-//   4. Trạng thái rỗng kiểu hộp viền đứt + icon tròn canh giữa — khuôn mẫu dán
-//      vào sản phẩm nào cũng vừa. Sửa: canh trái, không hộp, và nói thẳng ba thứ
-//      cụ thể nên ghi (vấn đề thật của người mới mở là "ghi cái gì vào đây").
-//
-// Ghim tách thành NHÓM RIÊNG có nhãn micro, thay cho một icon nhỏ lẫn trong meta:
-// nhóm nói rõ vì sao mấy mẩu này nằm trên, icon thì bắt người ta tự đoán.
-
 const MAX = 2000;
 
 // Link bấm được — dựng bằng JSX chứ KHÔNG `dangerouslySetInnerHTML`, nên chữ
@@ -45,7 +24,6 @@ function linkify(text: string): ReactNode[] {
   for (const m of text.matchAll(URL_RE)) {
     const at = m.index ?? 0;
     let url = m[0];
-    // Dấu câu cuối câu không thuộc về link: "xem ở https://a.vn/x." → bỏ dấu chấm.
     const trail = url.match(/[.,;:!?)\]]+$/)?.[0] ?? "";
     if (trail) url = url.slice(0, -trail.length);
     out.push(text.slice(last, at));
@@ -97,8 +75,6 @@ export function TripNotes({ tripId, notes }: { tripId: string; notes: TripNoteRo
         />
       ) : (
         <>
-          {/* Thân ghi chú là nhân vật chính của trang — đọc như một đoạn văn,
-              không như một ô dữ liệu. */}
           <p className="whitespace-pre-wrap break-words text-base leading-[1.7]">
             {linkify(n.body)}
           </p>
@@ -114,17 +90,12 @@ export function TripNotes({ tripId, notes }: { tripId: string; notes: TripNoteRo
             <span className="min-w-0 truncate font-medium text-foreground/70">
               {n.author?.name ?? "Đã rời chuyến"}
             </span>
-            {/* Giờ tương đối tính từ "bây giờ" nên server và client có thể ra hai
-                chuỗi khác nhau ngay tại ranh giới phút — vô hại, chặn cảnh báo
-                hydrate thay vì dựng thêm state. */}
             <span suppressHydrationWarning className="shrink-0 text-muted-foreground">
               {n.updatedAt.getTime() - n.createdAt.getTime() > 1000
                 ? `đã sửa ${timeAgo(n.updatedAt)}`
                 : timeAgo(n.createdAt)}
             </span>
 
-            {/* Hiện khi rê chuột / focus bàn phím; máy cảm ứng không có hover nên
-                luôn hiện — cùng cách nút kéo của mục lịch trình. */}
             <span className="ml-auto flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover/note:opacity-100 [@media(pointer:coarse)]:opacity-100">
               <IconBtn
                 label={n.isPinned ? "Bỏ ghim" : "Ghim lên đầu"}
@@ -152,13 +123,7 @@ export function TripNotes({ tripId, notes }: { tripId: string; notes: TripNoteRo
   );
 
   return (
-    // Cột đọc CANH GIỮA vùng nội dung: mục này không có bản đồ như mục Lịch
-    // trình, nên một cột hẹp dán sát sidebar sẽ để lại một mảng trống lớn bên
-    // phải — nhìn như bố cục chưa làm xong chứ không phải một chủ ý.
     <div className="mx-auto max-w-[44rem]">
-      {/* Danh tính của mục đã nằm ở sidebar và ở nút mục trên thanh tiêu đề —
-          in lại thành tiêu đề lớn là cùng một dữ kiện ở ba nơi (§6a). Nhưng cấu
-          trúc heading thì vẫn phải có cho trình đọc màn hình. */}
       <h1 className="sr-only">Ghi chú của chuyến</h1>
 
       <Composer tripId={tripId} pending={pending} run={run} />
@@ -166,8 +131,6 @@ export function TripNotes({ tripId, notes }: { tripId: string; notes: TripNoteRo
       {notes.length === 0 ? (
         <div className="mt-10">
           <p className="text-base font-medium">Chưa có ghi chú nào</p>
-          {/* Vấn đề thật của người mới mở mục này không phải "trang trống" mà là
-              "ghi cái gì vào đây". Nên nói thẳng ba thứ cụ thể. */}
           <p className="mt-1.5 text-sm text-muted-foreground">Chỗ này hợp để ghi:</p>
           <ul className="mt-2 space-y-1.5 text-sm leading-relaxed text-muted-foreground">
             {[
@@ -186,8 +149,6 @@ export function TripNotes({ tripId, notes }: { tripId: string; notes: TripNoteRo
         <div className="mt-9">
           {pinned.length > 0 && (
             <section>
-              {/* Nhãn nhóm nói rõ vì sao mấy mẩu này nằm trên. Chỉ hiện khi thật
-                  sự có hai nhóm — một nhãn cho một danh sách duy nhất là chữ thừa. */}
               {rest.length > 0 && (
                 <h2 className={cn(MICRO, "flex items-center gap-1.5 pb-4 text-warm")}>
                   <Pin className="size-3.5" aria-hidden />
@@ -212,9 +173,6 @@ export function TripNotes({ tripId, notes }: { tripId: string; notes: TripNoteRo
   );
 }
 
-// Ô soạn: lúc nghỉ là MỘT DÒNG. Mở mục ra mà thấy ngay một khung nhập rỗng cao
-// 9rem thì trang bắt đầu bằng công việc giấy tờ, trong khi thứ người ta tới để
-// làm (phần lớn lượt) là ĐỌC lại cái mình đã ghi.
 function Composer({
   tripId,
   pending,
@@ -248,8 +206,6 @@ function Composer({
   );
 }
 
-// Một khuôn form cho CẢ soạn mới lẫn sửa — hai chỗ này làm cùng một việc, để
-// hai khuôn thì chỉ vài lần sửa là chúng lệch nhau.
 function NoteForm({
   initial,
   pending,
@@ -281,8 +237,6 @@ function NoteForm({
         autoFocus
         placeholder="Mã đặt phòng, số chủ nhà, dặn dò cả nhóm…"
         aria-label="Nội dung ghi chú"
-        // Ctrl/⌘+Enter để gửi — bàn phím vật lý thì đây là phản xạ sẵn có, và
-        // Enter trần phải để dành cho xuống dòng (ghi chú vốn nhiều dòng).
         onKeyDown={(e) => {
           if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && dirty) onSubmit(body);
           if (e.key === "Escape") onCancel();
@@ -290,8 +244,6 @@ function NoteForm({
         className="resize-y rounded-xl text-base leading-[1.7]"
       />
       <div className="mt-2.5 flex items-center gap-3">
-        {/* Đếm chữ chỉ hiện khi ĐÃ GẦN trần — hiện suốt thì nó thành con số nhấp
-            nháy dưới mọi ô nhập, nhắc một giới hạn không ai sắp chạm. */}
         <span className="text-xs tabular-nums text-muted-foreground">
           {value.length > MAX - 200 ? `${value.length}/${MAX}` : ""}
         </span>

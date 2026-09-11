@@ -34,15 +34,10 @@ export type SpotHeroProps = {
   checkIn: { checked: boolean; isAuthed: boolean };
   visitors: { total: number; people: CheckInPerson[] };
   reviewSummary: { total: number; stars: number };
-  // Link tới phần đánh giá: "#danh-gia" khi ở trang chi tiết (cuộn), hoặc
-  // "/dia-diem/[slug]#danh-gia" khi ở trang con (điều hướng về).
   reviewsHref: string;
-  // Nơi quay lại sau khi check-in.
   checkInRedirect: string;
 };
 
-// Hero dùng chung cho trang chi tiết địa điểm và các trang con (vd cộng đồng),
-// để giữ nhất quán như trang điểm đến. Server component (không hook).
 export function SpotHero({
   id,
   name,
@@ -63,9 +58,7 @@ export function SpotHero({
     <HeroFrame images={heroImages.map((i) => i.url)}>
       <div className="mx-auto max-w-7xl px-4 pb-10 pt-6 sm:px-6 sm:pb-6 sm:pt-5">
         <div className="grid items-center gap-10 lg:grid-cols-[1fr_1.4fr] lg:gap-12">
-          {/* Trái: chữ */}
           <div>
-            {/* Quay lại + đánh dấu đã đến */}
             <div className="mb-5 flex items-center justify-between gap-3">
               <Link
                 href={`/diem-den/${place.slug}/dia-diem`}
@@ -121,7 +114,6 @@ export function SpotHero({
                 {tagline}
               </p>
             )}
-            {/* Fact nhanh */}
             {quickFacts.length > 0 && (
               <dl className="mt-6 flex flex-wrap gap-x-7 gap-y-4 text-sm">
                 {quickFacts.map((f) => (
@@ -146,9 +138,6 @@ export function SpotHero({
               </dl>
             )}
 
-            {/* Vivu-er đã đến + tổng quan đánh giá — giữ MỘT HÀNG xuống tới màn
-                320px bằng cách bỏ chữ chứ không bỏ số, giống hàng số liệu ở
-                hero điểm đến (xem `dense` trong CheckInFaces). */}
             {(visitors.total > 0 || reviewSummary.total > 0) && (
               <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-3 text-sm sm:gap-x-7">
                 {visitors.total > 0 && (
@@ -184,7 +173,6 @@ export function SpotHero({
             )}
           </div>
 
-          {/* Phải: chồng ảnh */}
           <div className="relative z-[45]">
             <PlaceHeroStack images={heroImages} />
             {videos.length > 0 && (

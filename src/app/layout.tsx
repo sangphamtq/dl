@@ -9,9 +9,6 @@ import { PwaRegister } from "@/components/site/pwa-register";
 import { InstallPrompt } from "@/components/site/install-prompt";
 import "./globals.css";
 
-// ─── FONT ────────────────────────────────────────────────────────────────────
-
-// Chữ thân, mặc định toàn site.
 const cabin = Cabin({
   variable: "--font-sans",
   subsets: ["latin", "vietnamese"],
@@ -39,21 +36,12 @@ export const viewport: Viewport = {
 export async function generateMetadata(): Promise<Metadata> {
   const s = await getSettings();
   return {
-    // Tiêu đề tab là NHÃN, không phải câu: cắt dấu chấm cuối của `tagline`
-    // (trường đó còn dùng ở chỗ khác, nơi dấu chấm đúng, nên cắt tại đây chứ
-    // không sửa dữ liệu). Ngăn cách bằng — chứ không phải "·": trong <title>
-    // không có khoảng trắng rộng để ngăn như trên trang, còn "·" thì cả dự án
-    // đã bỏ. Từng trang CHỈ ghi tên của mình, `template` lo phần tên site —
-    // đừng gắn thêm "Halivivu" vào title của page (24 trang từng làm vậy và ra
-    // "Điểm đến · Halivivu · Halivivu").
     title: {
       default: `${s.siteName} — ${s.tagline.replace(/\.\s*$/, "")}`,
       template: `%s — ${s.siteName}`,
     },
     description: s.description,
     applicationName: s.siteName,
-    // <link rel="manifest"> do app/manifest.ts tự sinh; khối này là phần iOS
-    // không đọc manifest: tên trên màn hình chính, icon, kiểu thanh trạng thái.
     appleWebApp: {
       capable: true,
       title: s.siteName,

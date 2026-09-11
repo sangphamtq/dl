@@ -26,8 +26,6 @@ function pagePath(kind: "place" | "spot", slug: string) {
   return kind === "place" ? `/diem-den/${slug}` : `/dia-diem/${slug}`;
 }
 
-// Kiểm tra target hợp lệ để đánh giá + trả slug (revalidate). place: phải là điểm
-// đến lớn; spot: chỉ cần tồn tại.
 async function resolveTarget(
   target: CheckTarget,
 ): Promise<{ ok: true; slug: string } | { ok: false; error: string }> {
@@ -48,8 +46,6 @@ async function resolveTarget(
   return { ok: true, slug: spot.slug };
 }
 
-// Đảm bảo có check-in cho target (đánh giá = xác nhận "đã đến"). Place: propagate
-// tỉnh cha (auto) như togglePlaceCheckIn.
 async function ensureCheckIn(userId: string, target: CheckTarget) {
   if (target.kind === "spot") {
     await prisma.checkIn.upsert({
@@ -79,7 +75,6 @@ async function ensureCheckIn(userId: string, target: CheckTarget) {
   });
 }
 
-// Gửi (tạo hoặc cập nhật) đánh giá cho điểm đến HOẶC địa điểm.
 export async function submitReview(
   input: ReviewInput,
 ): Promise<ActionResult<{ id: string }>> {
@@ -96,7 +91,6 @@ export async function submitReview(
   const resolved = await resolveTarget(input.target);
   if (!resolved.ok) return resolved;
 
-  // Gửi đánh giá = xác nhận "đã đến" → tự tạo check-in nếu chưa có.
   await ensureCheckIn(userId, input.target);
 
   const data = {
@@ -128,7 +122,6 @@ export async function submitReview(
   return { ok: true, data: { id: saved.id } };
 }
 
-// Xoá đánh giá của chính mình cho một target.
 export async function deleteReview(
   target: CheckTarget,
 ): Promise<ActionResult> {

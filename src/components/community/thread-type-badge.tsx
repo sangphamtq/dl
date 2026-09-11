@@ -11,7 +11,6 @@ import { THREAD_TYPE_LABELS } from "@/lib/community";
 
 export type ThreadTypeMeta = {
   Icon: LucideIcon;
-  /** màu icon nhấn theo intent — pill vẫn trung tính để không cầu vồng */
   accent: string;
 };
 
@@ -29,7 +28,6 @@ const threadTypeMeta = (type: string): ThreadTypeMeta =>
 export const threadTypeIcon = (type: string): LucideIcon =>
   threadTypeMeta(type).Icon;
 
-// Nhãn loại bài — pill trung tính, icon mang màu intent (kín đáo).
 export function ThreadTypeBadge({
   type,
   className,

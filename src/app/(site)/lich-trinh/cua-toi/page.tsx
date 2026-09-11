@@ -9,7 +9,6 @@ import { getPlanningTripId } from "../actions";
 import { NewTripButton, TripCardMenu } from "@/components/trip/trip-list-actions";
 import { cn } from "@/lib/utils";
 
-// Nhãn nhỏ in hoa — CÙNG hằng với `destination-filter.tsx`.
 const MICRO = "text-[0.6rem] font-semibold uppercase tracking-[0.14em]";
 
 const coverSel = {
@@ -21,7 +20,6 @@ const stopSel = { select: { name: true, slug: true, images: coverSel } } as cons
 
 export const metadata = {
   title: "Lịch trình của tôi",
-  // Dữ liệu cá nhân — noindex. `/lich-trinh` (danh sách mẫu) mới là trang có index.
   robots: { index: false, follow: false },
   description:
     "Gom điểm muốn đến, xếp theo ngày và xem ngay giờ ước tính — biết trước quán nào chưa mở lúc bạn tới.",
@@ -29,26 +27,6 @@ export const metadata = {
 
 type Stop = { name: string; photo: string };
 
-/**
- * Danh sách chuyến của người dùng. Bắt đăng nhập (docs/lich-trinh.md §2) —
- * trang này toàn dữ liệu cá nhân, nên nó nằm dưới `/lich-trinh/cua-toi` chứ
- * không phải ngay `/lich-trinh`: cả nhánh riêng tư gom vào MỘT tiền tố thì
- * `sw.js` chặn cache bằng đúng một dòng, và `/lich-trinh` được tự do làm trang
- * công khai có index (docs/lich-trinh.md §4).
- *
- * ẢNH LÀ ẢNH CỦA CÁC ĐIỂM DỪNG TRONG CHUYẾN, KHÔNG PHẢI MỘT ẢNH BÌA.
- * Bản đầu dựng thẻ 4/3 với ảnh bìa mượn của điểm dừng ĐẦU TIÊN, và nó hỏng hai
- * đường: chuyến vừa tạo chưa có điểm dừng nào nên ô xám là trạng thái MẶC ĐỊNH
- * (4/6 ô trên dữ liệu thật), còn chuyến có ảnh thì lại trùng đúng tấm mà mẫu
- * cùng tên bên dưới đang dùng. Bản sau bỏ hẳn ảnh — sạch, nhưng một site lấy
- * ảnh làm chủ mà trang này toàn chữ thì lạc quẻ.
- *
- * Nay mỗi hàng bày một MẢNG 2–3 ảnh của chính các điểm dừng trong chuyến đó:
- * luôn có (mọi ảnh đi qua `coverUrl()`, đúng cách cả site vẫn làm), khác nhau
- * giữa hai chuyến, và tự nó nói "chuyến này gồm những nơi này". Chuyến chưa có
- * điểm dừng thì ô ảnh thành TẤM SỐ NGÀY — một khối chữ có chủ ý, không phải một
- * ô xám hỏng.
- */
 export default async function LichTrinhPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login?callbackUrl=/lich-trinh/cua-toi");
@@ -56,7 +34,6 @@ export default async function LichTrinhPage() {
 
   const [trips, templates, planningId] = await Promise.all([
     prisma.trip.findMany({
-      // Chuyến mình sở hữu HOẶC được mời cùng sửa.
       where: {
         isTemplate: false,
         OR: [{ ownerId: userId }, { members: { some: { userId } } }],
@@ -70,9 +47,7 @@ export default async function LichTrinhPage() {
         ownerId: true,
         owner: { select: { name: true } },
         _count: { select: { items: true, days: true } },
-        // Nơi bấm "Lên lịch trình đi X" — ảnh dự phòng cho chuyến chưa có mục nào.
         place: { select: { name: true, slug: true, images: coverSel } },
-        // Ba điểm dừng đầu, theo đúng thứ tự đi: ngày trước, rồi vị trí trong ngày.
         items: {
           take: 3,
           orderBy: [{ day: { index: "asc" } }, { order: "asc" }],
@@ -103,10 +78,6 @@ export default async function LichTrinhPage() {
   ]);
 
   return (
-    // Nền TRẮNG, không hoạ tiết. Bản trước có dải chuyển sắc xanh da trời cộng
-    // ba vòng tròn đồng tâm ở góc phải — hai thứ trang trí thuần tuý, mà bộ vật
-    // liệu biên tập (`/diem-den`, `/dia-diem`, `/blog`…) không dùng nền màu lẫn
-    // hoạ tiết: phân tầng ở đó do chữ và khoảng trắng lo.
     <div className="flex flex-1 flex-col">
       <main className="flex-1">
         <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
@@ -124,11 +95,6 @@ export default async function LichTrinhPage() {
             <NewTripButton />
           </div>
 
-          {/* ── Chuyến của tôi ─────────────────────────────────────────────
-              `-mx-4` ở <ul> + `px-4` ở từng hàng: dải nền và vạch của hàng ĐANG
-              LÊN LỊCH TRÌNH tràn ra ngoài lề, còn chữ vẫn thẳng cột với tiêu đề
-              trang. Để hàng `px-0` thì trên mobile ô ảnh dán sát mép và CHE MẤT
-              vạch xanh — thứ duy nhất nhìn một cái là thấy. */}
           {trips.length > 0 ? (
             <ul className="-mx-4 mt-9 border-y border-border">
               {trips.map((trip) => {
@@ -138,16 +104,10 @@ export default async function LichTrinhPage() {
                   const t = it.spot ?? it.eatery ?? it.activity ?? it.accommodation;
                   if (t)
                     return [{ name: t.name, photo: coverUrl(t.images, t.slug, 480, 360) }];
-                  // Mục TỰ NHẬP (chuyến bay, nhà người quen…) không có ảnh —
-                  // vẫn tính là một điểm dừng, chỉ không góp mặt vào mảng ảnh.
                   return it.customTitle
                     ? [{ name: it.customTitle, photo: "" }]
                     : [];
                 });
-                // Chuyến chưa có điểm dừng nào vẫn còn một chỗ dựa: ĐIỂM ĐẾN mà
-                // nó được tạo cho ("Lên lịch trình đi Phan Thiết"). Đó là bối
-                // cảnh của chính chuyến, khác hẳn kiểu bản đầu lấy ảnh một điểm
-                // dừng ra đứng thay cho cả chuyến.
                 const photos = stops.map((s) => s.photo).filter(Boolean);
                 if (photos.length === 0 && trip.place)
                   photos.push(
@@ -159,10 +119,6 @@ export default async function LichTrinhPage() {
                     key={trip.id}
                     className={cn(
                       "relative border-b border-border last:border-b-0",
-                      // Chuyến ĐANG lên lịch trình: nền phớt + vạch mực bên trái.
-                      // Vẽ vạch bằng `shadow` inset chứ không `border-l` — border
-                      // thật đẩy cả hàng dịch 2px so với các hàng còn lại (cùng
-                      // cách đã dùng ở bảng bên của `/ban-do`).
                       isPlanning &&
                         "bg-primary/5 shadow-[inset_2px_0_0_var(--primary)]",
                     )}
@@ -196,11 +152,6 @@ export default async function LichTrinhPage() {
                           </Link>
                         </h2>
 
-                        {/* Tên các điểm dừng, ngăn nhau bằng KHOẢNG TRẮNG RỘNG
-                            (không dấu chấm giữa — quy ước chung). Dải mờ ở mép
-                            phải phải đi kèm `flex-1`: để khối co theo nội dung
-                            thì dải mờ bám mép CHỮ và ăn vào tên cuối ngay cả khi
-                            hàng còn thừa nửa bề ngang. */}
                         <p className="mt-1.5 flex min-w-0 flex-1 gap-x-4 overflow-hidden whitespace-nowrap text-sm text-muted-foreground [mask-image:linear-gradient(to_right,#000_calc(100%-1.5rem),transparent)]">
                           {stops.length > 0 ? (
                             stops.map((s) => <span key={s.name}>{s.name}</span>)
@@ -230,9 +181,6 @@ export default async function LichTrinhPage() {
                               })}
                             </span>
                           )}
-                          {/* Danh sách sắp theo lần sửa gần nhất, nên phải NÓI
-                              ra — bản trước sắp theo `updatedAt` mà không hiện
-                              nó, thành ra thứ tự trông như ngẫu nhiên. */}
                           <span>Sửa {timeAgo(trip.updatedAt)}</span>
                         </p>
                       </div>
@@ -266,11 +214,6 @@ export default async function LichTrinhPage() {
             </div>
           )}
 
-          {/* ── Lịch trình mẫu ─────────────────────────────────────────────
-              Hàng GỌN có ảnh vuông nhỏ: đủ hình để không lạc khỏi bộ vật liệu
-              của site, nhưng nhỏ hơn hẳn mảng ảnh ở trên nên không tranh chỗ với
-              chuyến của chính người dùng — đây là lối đi tiếp sang `/lich-trinh`,
-              không phải nội dung của trang này. */}
           {templates.length > 0 && (
             <section className="mt-14">
               <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-b border-border pb-3">
@@ -334,19 +277,6 @@ export default async function LichTrinhPage() {
   );
 }
 
-/**
- * Mảng ảnh các điểm dừng của một chuyến.
- *
- * Bố cục ĐỔI THEO SỐ ẢNH để không bao giờ có ô trống: 3 ảnh thì một ảnh lớn
- * cộng hai ảnh nhỏ xếp chồng, 2 ảnh thì chia đôi, 1 ảnh thì tràn cả khối.
- *
- * Bố cục 1+2 dùng ở MỌI KHỔ. Đã thử ba cột bằng nhau cho mobile: ở 390px mỗi ô
- * còn 130px ngang trên 244px cao, tức mọi ảnh phong cảnh đều bị cắt thành một
- * dải dọc hẹp — nhìn ra ảnh hỏng chứ không ra bộ ba ảnh.
- *
- * Khe giữa các ảnh là 1px MÀU NỀN TRANG, không phải đường kẻ: nó tách hai tấm
- * ảnh chứ không vẽ lưới lên một hình chữ nhật.
- */
 function Tile({ src, className }: { src: string; className?: string }) {
   return (
     <span className={cn("relative overflow-hidden bg-muted", className)}>
@@ -365,13 +295,8 @@ function StopMosaic({ photos, days }: { photos: string[]; days: number }) {
   const box =
     "relative aspect-[16/10] overflow-hidden bg-muted sm:aspect-auto sm:h-full sm:min-h-[8.5rem]";
 
-  // Chưa có điểm dừng ⇒ chưa có ảnh nào để bày. Tấm SỐ NGÀY thay vào chỗ đó —
-  // vẫn là một khối có nội dung, không phải ô ảnh hỏng.
   if (photos.length === 0) {
     return (
-      // Thấp hơn ô ảnh trên mobile: một mảng be cao bằng tấm ảnh 16/10 thì
-      // chiếm gần một màn hình chỉ để nói "chưa có gì". Từ `sm` nó nằm cạnh cột
-      // chữ nên vẫn cao bằng hàng.
       <div className={cn(box, "aspect-[5/2] grid place-items-center bg-muted")}>
         <span className="text-center">
           <span className="block font-[family-name:var(--font-display)] text-3xl leading-none">

@@ -3,7 +3,6 @@ import { ComingSoon } from "@/components/site/coming-soon";
 
 export const metadata = { title: "Tour & trải nghiệm" };
 
-// Placeholder — tour, vé & hoạt động trải nghiệm đang phát triển.
 export default function TraiNghiemPage() {
   return (
     <div className="flex flex-1 flex-col">

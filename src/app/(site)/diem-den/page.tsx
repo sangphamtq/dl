@@ -10,18 +10,6 @@ import Image from "next/image";
 import { Curtain, Rise } from "@/components/site/reveal";
 import { REGION_LABELS, regionOf } from "@/lib/regions";
 
-// ISR: HTML của trang được dựng một lần rồi phục vụ từ cache; hết hạn thì Next
-// dựng lại Ở NỀN (người truy cập lúc đó vẫn nhận bản cũ ngay, không ai phải
-// chờ). Trang chạy 4 truy vấn mà nội dung chỉ đổi khi biên tập sửa, nên chạy
-// lại chúng cho từng lượt xem là công vô ích.
-//
-// MỘT NGÀY, không phải vài phút. Con số này KHÔNG phải "bao lâu thì nội dung
-// mới hiện" — mọi đường sửa nội dung đi qua CMS đều tự xoá cache ngay lập tức:
-// `revalidatePublic()` ở `cms/places/actions.ts` và `revalidateListingPages()`
-// ở bốn module listing. Nó chỉ là lưới an toàn cho những thay đổi KHÔNG đi qua
-// CMS — chạy seed, sửa thẳng trong Prisma Studio, đổi dữ liệu bằng script. Với
-// việc đó thì một ngày là đủ, mà đặt 5 phút thì mỗi ngày trang phải dựng lại
-// gần 300 lần chẳng vì lý do gì.
 export const revalidate = 86400;
 
 export const metadata = {
@@ -80,10 +68,6 @@ export default async function DiemDenPage() {
         },
       },
     }),
-    // Phần nặng của một tỉnh — ảnh bìa, tagline, tên các nơi bên trong — chỉ
-    // cần cho tỉnh LÊN DẢI THẺ, mà số đó thường là 0–3 trong tổng 34. Gộp chung
-    // vào truy vấn trên là kéo về 34 ảnh bìa và 68 lượt join lấy tên chỉ để
-    // vứt đi gần hết.
     prisma.place.findMany({
       where: { kind: "province", treatAsDestination: true, ...pub },
       select: {

@@ -1,7 +1,5 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
-// Fallback Suspense dùng chung cho mọi trang con /cms/* khi điều hướng.
-// Bố cục khớp khung chung: tiêu đề + mô tả + hàng card + danh sách.
 export default function CmsLoading() {
   return (
     <div className="p-6 sm:p-8">

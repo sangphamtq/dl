@@ -65,7 +65,6 @@ function CommandInput({
   trailing,
   ...props
 }: React.ComponentProps<typeof CommandPrimitive.Input> & {
-  /** Nội dung phụ nằm cuối hàng input (vd gợi ý phím tắt). */
   trailing?: React.ReactNode
 }) {
   return (

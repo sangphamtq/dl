@@ -1,7 +1,5 @@
 import sanitizeHtml from "sanitize-html";
 
-// Làm sạch HTML rich-text (từ Jodit) trước khi lưu — chống XSS, giữ định dạng
-// cần thiết (căn lề/kích thước ảnh qua inline style).
 export function cleanHtml(dirty: string): string {
   if (!dirty) return "";
   return sanitizeHtml(dirty, {

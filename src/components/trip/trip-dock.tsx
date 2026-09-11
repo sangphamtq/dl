@@ -71,33 +71,6 @@ import {
   type TripBagItem,
 } from "@/app/(site)/lich-trinh/actions";
 
-// NÚT "LỊCH TRÌNH" — viên tròn nổi ở mọi trang công khai + ngăn kéo soạn nhanh.
-//
-// Vấn đề nó giải: nút "Thêm vào lịch trình" bỏ mục vào một chuyến mà người dùng
-// KHÔNG nhìn thấy. Bằng chứng duy nhất là cái toast 4 giây; qua trang sau thì
-// không đâu trên site nói bạn đang lên lịch cho chuyến nào và đã gom được gì.
-// Ngăn kéo này biến trạng thái vô hình đó thành một vật thể thường trực.
-//
-// Vì sao NÚT NỔI chứ không phải một mục trong header/thanh tab: nó phải theo
-// kịp lúc người ta đang LƯỚT danh sách (Ẩm thực, Lưu trú) — đúng khoảnh khắc
-// gom — chứ không phải một nơi để ghé thăm. Header thì mobile đã bỏ, còn thanh
-// tab dưới chỉ còn đúng một chỗ trống.
-//
-// Kéo–thả trong ngăn kéo dùng CHUNG `applyMove`/`BACKLOG`/`dayKey` với trình
-// soạn (`trip-dnd.ts`) — phép tính chỉ số khi đổi vùng là chỗ dễ sai nhất và đã
-// có `pnpm check:trip-dnd` canh, viết lại một bản thứ hai là tự chuốc lỗi.
-
-// Khu vực riêng tư / trang tự chứa. `/lich-trinh/cua-toi` nằm đây vì trong
-// trình soạn thì cả trang ĐÃ là cái túi — một nút nổi mở lại chính nó là thừa.
-// Chỉ chặn NHÁNH riêng tư: `/lich-trinh` (danh sách mẫu) là trang công khai, ở
-// đó nút vẫn có ích — khách xem mẫu rồi mở túi của mình ra so.
-// Giữ đồng bộ với `HIDDEN_ON` của bottom-nav & install-prompt.
-//
-// `/ban-do` nằm trong danh sách vì hai lý do, không phải một: (1) chế độ "Đo
-// chuyến" của bản đồ đã là một cửa tạo lịch trình ngay trên màn hình đó — hai
-// lối vào cạnh nhau thì người dùng phải chọn giữa hai thứ na ná; (2) nút nổi
-// neo ở giữa cạnh phải, mà dưới `lg` panel chiếm hết bề ngang nên nó đè đúng
-// lên cụm nút ▲▼✕ của từng chặng.
 const HIDDEN_ON = [
   "/lich-trinh/cua-toi",
   "/ban-do",
@@ -107,9 +80,6 @@ const HIDDEN_ON = [
   "/offline",
 ];
 
-// Số ngày là thứ ĐỊNH VỊ, tên tự đặt chỉ là phụ đề. Bản đầu lấy `title` thay
-// cho cả nhãn, nên một ngày đặt tên "Ngày ra đảo" là mất luôn dấu hiệu nó là
-// ngày thứ mấy — trong khi cả lịch trình chạy theo số ngày.
 function dayNo(d: { index: number }): string {
   return `Ngày ${d.index + 1}`;
 }
@@ -119,15 +89,6 @@ function dayLabel(d: { index: number; title: string | null }): string {
   return t ? `${dayNo(d)} · ${t}` : dayNo(d);
 }
 
-/**
- * Bàn kéo–thả của ngăn kéo: danh sách **id theo từng vùng** (túi + mỗi ngày),
- * giống hệt `useTripBoard` của trình soạn nhưng ăn `TripBag` (dữ liệu nhẹ) thay
- * vì `DayView`/`ResolvedItem` (dữ liệu đầy đủ có giờ, cảnh báo, toạ độ).
- *
- * Vì sao phải có bản CỤC BỘ thay vì render thẳng từ `bag`: mọi thao tác đều là
- * server action rồi nạp lại, tức `bag` chỉ đổi sau một vòng mạng. Không có bản
- * cục bộ thì mục vừa thả nhảy về chỗ cũ rồi mới nhảy tới chỗ mới.
- */
 function boardOf(bag: TripBag): Board {
   const b: Board = { [BACKLOG]: bag.unscheduled.map((i) => i.id) };
   for (const d of bag.days) b[dayKey(d.id)] = d.items.map((i) => i.id);
@@ -149,26 +110,16 @@ export function TripDock({ initial }: { initial: TripBag }) {
   const [loginOpen, setLoginOpen] = useState(false);
   const [pending, start] = useTransition();
   const [trips, setTrips] = useState<{ id: string; title: string; count: number }[] | null>(null);
-  // Số mục lần trước — để cái túi NẢY LÊN đúng lúc một mục vừa rơi vào.
   const prevCount = useRef(initial.unscheduled.length);
   const fabRef = useRef<HTMLButtonElement>(null);
   const [bump, setBump] = useState(false);
 
   const hidden = HIDDEN_ON.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
-  // ── Bàn kéo–thả ────────────────────────────────────────────────────────
   const [board, setBoard] = useState<Board>(() => boardOf(initial));
   const [syncedSig, setSyncedSig] = useState(() => boardSig(boardOf(initial)));
   const [activeId, setActiveId] = useState<string | null>(null);
 
-  // Nhận lại trạng thái từ server bằng cách chỉnh state NGAY TRONG RENDER (mẫu
-  // "adjusting state when props change" của React), không phải trong effect:
-  // effect gọi setState là một vòng render thừa và eslint chặn đúng chỗ đó.
-  // Chỉ nhận khi KHÔNG đang kéo — nếu không, mỗi lần cha render lại là bản cục
-  // bộ đang kéo dở bị xoá.
-  // `syncedSig` giữ chữ ký của BẢN SERVER đã tiếp nhận gần nhất — KHÔNG phải
-  // chữ ký của bàn cục bộ. Lưu nhầm cái sau thì ngay sau khi thả, bản server
-  // (còn cũ, vì action chưa xong) sẽ khác nó và ghi đè lại → mục nhảy về chỗ cũ.
   const serverSig = boardSig(boardOf(bag));
   if (activeId === null && serverSig !== syncedSig) {
     setSyncedSig(serverSig);
@@ -180,16 +131,13 @@ export function TripDock({ initial }: { initial: TripBag }) {
   for (const d of bag.days) for (const i of d.items) byId.set(i.id, i);
 
   const sensors = useSensors(
-    // Chuột: rê 6px mới tính là kéo, nếu không mọi cú bấm vào tay cầm bị nuốt.
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    // Cảm ứng: giữ 220ms — dưới ngưỡng đó vẫn là vuốt để CUỘN danh sách. Cùng
-    // con số với trình soạn (§6c).
     useSensor(TouchSensor, { activationConstraint: { delay: 220, tolerance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
   function containerOf(b: Board, id: string): string | null {
-    if (id in b) return id; // thả vào vùng rỗng: id chính là vùng
+    if (id in b) return id;
     return Object.keys(b).find((k) => b[k].includes(id)) ?? null;
   }
 
@@ -199,11 +147,10 @@ export function TripDock({ initial }: { initial: TripBag }) {
       setBag(fresh);
       return fresh;
     } catch {
-      return null; // mất mạng: giữ nguyên bản đang có, đừng xoá trắng lịch trình
+      return null;
     }
   }, []);
 
-  // Nút "Thêm vào lịch trình" ở bất kỳ đâu vừa chạy xong → nạp lại túi.
   useEffect(() => onTripBagChanged(() => void refresh()), [refresh]);
 
   useEffect(() => {
@@ -247,8 +194,6 @@ export function TripDock({ initial }: { initial: TripBag }) {
     start(async () => {
       const res = await run();
       if (!res.ok) {
-        // `stale` = ai đó (hoặc chính mình ở tab trình soạn) vừa sửa chuyến.
-        // Không phải lỗi của người bấm — nạp lại rồi mời làm lại.
         toast.error(res.stale ? "Lịch trình vừa thay đổi, thử lại nhé." : res.error);
         syncBoard(await refresh());
         return;
@@ -258,7 +203,6 @@ export function TripDock({ initial }: { initial: TripBag }) {
     });
   }
 
-  /** Nhận bàn từ một bản `bag` CỤ THỂ (bản vừa tải), khỏi đọc state cũ trong closure. */
   function syncBoard(fresh: TripBag | null) {
     if (!fresh) return;
     const b = boardOf(fresh);
@@ -294,7 +238,6 @@ export function TripDock({ initial }: { initial: TripBag }) {
     });
   }
 
-  // ── Kéo–thả: đổi vùng lúc rê, chốt vị trí lúc thả ─────────────────────
   function onDragStart(e: DragStartEvent) {
     setActiveId(String(e.active.id));
   }
@@ -304,8 +247,6 @@ export function TripDock({ initial }: { initial: TripBag }) {
     const a = String(e.active.id);
     const from = containerOf(board, a);
     const to = containerOf(board, String(e.over.id));
-    // Chỉ dời khi ĐỔI vùng; đổi chỗ trong cùng vùng để dành lúc thả, làm ở đây
-    // thì danh sách rung liên tục theo con trỏ.
     if (from && to && from !== to) setBoard((prev) => applyMove(prev, a, String(e.over!.id)));
   }
 
@@ -314,12 +255,8 @@ export function TripDock({ initial }: { initial: TripBag }) {
     setActiveId(null);
     if (!e.over || !bag.trip) return;
 
-    // Phải tính ĐỒNG BỘ ngay tại đây: đọc `board` ở lượt sau sẽ ra bàn CŨ vì
-    // setState chưa kịp áp dụng.
     const next = applyMove(board, id, String(e.over.id));
     setBoard(next);
-    // Đánh dấu bản server HIỆN TẠI là "đã xử lý" để render kế tiếp không kéo bàn
-    // về bản cũ trong lúc chờ action chạy xong.
     setSyncedSig(serverSig);
 
     const container = Object.keys(next).find((k) => next[k].includes(id));
@@ -331,8 +268,6 @@ export function TripDock({ initial }: { initial: TripBag }) {
     start(async () => {
       const res = await moveItem(id, dayId, index, bag.trip!.version);
       if (!res.ok) {
-        // `stale` = có người vừa sửa chuyến. Không phải lỗi của người kéo — báo
-        // nhẹ rồi nạp lại bản đúng, đừng để họ kẹt với bàn đã lệch.
         toast(res.stale ? "Lịch trình vừa thay đổi, thử lại nhé." : res.error);
         syncBoard(await refresh());
         return;
@@ -359,15 +294,6 @@ export function TripDock({ initial }: { initial: TripBag }) {
 
   return (
     <>
-      {/* Nút giữ ở mức TỐI THIỂU: một viên tròn 44px, đúng ngưỡng chạm thoải mái
-          và không hơn. Bản trước là viên chữ "Lịch trình" — dễ hiểu hơn thật,
-          nhưng một vật thể nổi trên MỌI trang thì mỗi pixel nó chiếm là một
-          pixel vĩnh viễn lấy của nội dung, mà nội dung mới là thứ người ta tới
-          để xem. Nghĩa của nút do `aria-label` + `title` gánh.
-
-          Đặt ở GIỮA cạnh phải, không phải góc đáy–phải: dải đáy đã đông
-          (`BottomNav` · `PeerBar` · `BackToTop` · lời mời cài app) nên đặt vào
-          đó là phải bắt cả bốn thứ kia tránh đường. */}
       <button
         ref={fabRef}
         type="button"
@@ -387,15 +313,8 @@ export function TripDock({ initial }: { initial: TripBag }) {
         )}
       </button>
 
-      {/* DndContext bọc từ NGOÀI `<Drawer>`, và `DragOverlay` cũng nằm ngoài
-          `DrawerContent`: vaul đặt `transform` lên panel, mà `position: fixed`
-          bên trong một phần tử có `transform` thì lấy chính phần tử đó làm gốc
-          toạ độ — bản sao đi theo con trỏ sẽ trôi lệch hẳn khỏi con trỏ.
-
-          `id` CỐ ĐỊNH, bắt buộc: dnd-kit sinh `aria-describedby="DndDescribedBy-N"`
-          bằng một bộ đếm ở mức module; để nó tự đếm thì server và client ra số
-          khác nhau ⇒ React báo lệch hydrate (đúng cái bẫy đã ghi trong
-          trip-editor). */}
+      {/* `id` CỐ ĐỊNH: dnd-kit tự sinh id tăng dần cho `aria-describedby`, số
+          trên server và trên client lệch nhau → hydration mismatch. */}
       <DndContext
         id="trip-dock-dnd"
         sensors={sensors}
@@ -411,15 +330,9 @@ export function TripDock({ initial }: { initial: TripBag }) {
       <Drawer open={open} onOpenChange={show} direction={side}>
         <DrawerContent className="lg:max-w-md lg:rounded-l-3xl">
           <div className="flex min-h-0 flex-1 flex-col">
-            {/* ── Đầu: đang lên lịch cho chuyến NÀO ─────────────────────── */}
             <div className="flex items-start justify-between gap-3 px-4 pb-3 pt-3 lg:pt-5">
-              {/* `flex-1`, không chỉ `min-w-0`: thiếu nó thì cột co theo chữ
-                  "Túi lịch trình" và tên chuyến bị cắt từ giữa dù còn thừa chỗ. */}
               <div className="min-w-0 flex-1">
                 <DrawerTitle className="text-base">Lịch trình</DrawerTitle>
-                {/* Radix cảnh báo nếu DialogContent (vaul dựng trên đó) không có
-                    mô tả. Khi đã có chuyến, chỗ của dòng mô tả bị bộ chọn chuyến
-                    chiếm — nên mô tả vẫn còn, chỉ dành riêng cho trình đọc. */}
                 {hasTrip ? (
                   <>
                     <DrawerDescription className="sr-only">
@@ -488,7 +401,6 @@ export function TripDock({ initial }: { initial: TripBag }) {
               )}
             </div>
 
-            {/* ── Thân ──────────────────────────────────────────────────── */}
             <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-2">
               {!bag.authed ? (
                 <Empty
@@ -536,15 +448,7 @@ export function TripDock({ initial }: { initial: TripBag }) {
                   }
                 />
               ) : (
-                // `data-vaul-no-drag`: không có nó thì trên điện thoại, kéo một
-                // mục xuống dưới sẽ kéo luôn cả ngăn kéo đóng lại — vaul hiểu cú
-                // vuốt dọc là "đóng bảng".
                 <div className="pb-1" data-vaul-no-drag>
-                  {/* Túi trước, ngày sau: mục chưa xếp là thứ ĐANG CHỜ mình làm
-                      gì đó, còn các ngày là thứ đã yên vị. */}
-                  {/* Khối này render KỂ CẢ khi rỗng: nó là đích thả để kéo một
-                      mục ra khỏi ngày. Ẩn đi thì thao tác đó chỉ còn làm được
-                      qua menu. */}
                   <section>
                     <GroupHeading label="Chưa xếp ngày" count={backlogIds.length} highlight />
                     <SortableContext items={backlogIds} strategy={verticalListSortingStrategy}>
@@ -573,8 +477,6 @@ export function TripDock({ initial }: { initial: TripBag }) {
                     </SortableContext>
                   </section>
 
-                  {/* CẢ lịch trình, không chỉ cái túi: mở ngăn kéo là thấy chuyến
-                      đang thành hình ra sao, khỏi phải vào trình soạn mới biết. */}
                   {bag.days.map((d) => {
                     const ids = board[dayKey(d.id)] ?? [];
                     return (
@@ -621,7 +523,6 @@ export function TripDock({ initial }: { initial: TripBag }) {
               )}
             </div>
 
-            {/* ── Chân: đường sang trình soạn ───────────────────────────── */}
             {hasTrip && (
               <div className="border-t border-border/60 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
                 <Button asChild className="w-full" onClick={() => setOpen(false)}>
@@ -640,8 +541,6 @@ export function TripDock({ initial }: { initial: TripBag }) {
         </DrawerContent>
       </Drawer>
 
-      {/* Bản sao đi theo con trỏ. Không có nó thì hàng gốc mờ đi tại chỗ cũ mà
-          chẳng có gì trong tay, và người kéo mất dấu thứ mình đang cầm. */}
       <DragOverlay dropAnimation={null} className="z-[60]">
         {activeItem ? (
           <div className="flex max-w-[15rem] items-center gap-3 rounded-xl border border-border/60 bg-background/95 px-3 py-2 shadow-xl backdrop-blur">
@@ -674,7 +573,6 @@ export function TripDock({ initial }: { initial: TripBag }) {
   );
 }
 
-/** Vùng thả của một nhóm đang rỗng — cũng là chỗ nói cho biết là kéo được. */
 function DropZone({ id, label }: { id: string; label: string }) {
   const { setNodeRef, isOver } = useDroppable({ id });
   return (
@@ -692,7 +590,6 @@ function DropZone({ id, label }: { id: string; label: string }) {
   );
 }
 
-/** Nhãn ngăn nhóm. Dính lại khi cuộn để luôn biết đang đọc ngày nào. */
 function GroupHeading({
   label,
   count,
@@ -712,11 +609,6 @@ function GroupHeading({
   );
 }
 
-/**
- * Một mục trong ngăn kéo. Ở CẤP MODULE chứ không định nghĩa bên trong `TripDock`:
- * component khai trong thân render là một kiểu MỚI sau mỗi lần render, nên React
- * unmount rồi mount lại cả hàng — menu chọn ngày vừa mở sẽ đóng ngay lập tức.
- */
 function ItemRow({
   item,
   currentDayId,
@@ -728,11 +620,9 @@ function ItemRow({
   onNavigate,
 }: {
   item: TripBagItem;
-  /** null = đang nằm trong túi (chưa xếp ngày). */
   currentDayId: string | null;
   days: TripBagDay[];
   pending: boolean;
-  /** `at` = vị trí chèn; `label` chỉ để hiện trong toast. */
   onMove: (dayId: string | null, at: number, label: string) => void;
   onAddDay: () => void;
   onRemove: () => void;
@@ -749,14 +639,9 @@ function ItemRow({
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={cn(
         "flex touch-manipulation items-center gap-1.5 py-2.5",
-        // Hàng gốc mờ đi trong lúc kéo — bản đi theo con trỏ là `DragOverlay`.
         isDragging && "opacity-40",
       )}
     >
-      {/* Tay cầm NHÌN THẤY ĐƯỢC, không phải "cả hàng kéo được": kéo cả hàng thì
-          trên cảm ứng mọi cú vuốt để cuộn đều có thể thành cú kéo, còn trên máy
-          tính thì nuốt luôn thao tác bôi đen chữ. Cùng kết luận đã ghi ở §6c cho
-          trình soạn. Đây cũng là tay cầm cho BÀN PHÍM (space → mũi tên → space). */}
       <button
         type="button"
         {...attributes}
@@ -794,16 +679,8 @@ function ItemRow({
         <span className="block text-xs text-muted-foreground">{item.typeLabel}</span>
       </span>
 
-      {/* Đổi ngày ngay tại đây: đi tới trình soạn chỉ để chuyển một mục sang
-          Ngày 2 là quãng đường quá dài cho một thao tác. Thứ tự TRONG ngày thì
-          vẫn sửa ở trình soạn — nơi có dòng thời gian và cảnh báo giờ mở cửa. */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          {/* Hai hình dạng, vì hai việc khác nhau:
-              · trong TÚI — việc đang chờ là XẾP, nên là nút chữ mời gọi;
-              · trong MỘT NGÀY — mọi thứ đã yên vị, và hàng nào cũng nhắc lại
-                "Ngày 1" ngay dưới cái tiêu đề đã ghi "NGÀY 1" thì chỉ là chữ
-                thừa. Thu về một nút "…" gom cả chuyển ngày lẫn bỏ mục. */}
           {current ? (
             <button
               type="button"

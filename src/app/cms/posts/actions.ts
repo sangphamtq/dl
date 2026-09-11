@@ -18,9 +18,9 @@ export type PostFormInput = {
   slug: string;
   excerpt: string;
   content: string;
-  category: string; // "" = none
+  category: string;
   tags: string;
-  refs: string[]; // "type:id" — liên kết tới Place/Listing (PostRef)
+  refs: string[];
 };
 
 // type token → cột FK trên PostRef (exclusive arc; KHÔNG gồm transport).
@@ -33,7 +33,6 @@ const REF_FK: Record<string, string> = {
   accommodation: "accommodationId",
 };
 
-// "type:id"[] → data tạo PostRef (giữ thứ tự chọn).
 function refCreateData(
   refs: string[],
 ): Prisma.PostRefUncheckedCreateWithoutPostInput[] {
@@ -56,7 +55,6 @@ async function requireStaff(): Promise<{ id: string; role: string }> {
   return { id: session.user.id, role };
 }
 
-// Editor chỉ được sửa/xóa bài của chính mình; admin sửa tất cả.
 async function canEdit(
   postId: string,
   staff: { id: string; role: string },
@@ -145,7 +143,6 @@ export async function deletePost(id: string): Promise<ActionResult> {
   if (!(await canEdit(id, staff)))
     return { ok: false, error: "Bạn chỉ xóa được bài của chính mình." };
 
-  // Dọn ảnh trên UploadThing: ảnh gallery (Image.postId) + ảnh inline trong content.
   const post = await prisma.post.findUnique({
     where: { id },
     select: { content: true, images: { select: { url: true } } },

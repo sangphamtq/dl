@@ -46,7 +46,6 @@ export default async function AnalyticsPage({
           </p>
         </div>
 
-        {/* Chọn khoảng thời gian */}
         <div className="inline-flex rounded-lg border p-0.5">
           {PERIODS.map((p) => (
             <Link
@@ -65,7 +64,6 @@ export default async function AnalyticsPage({
         </div>
       </div>
 
-      {/* KPI */}
       <div className="mt-6 grid grid-cols-3 gap-4">
         {kpis.map(({ label, value, icon: Icon }) => (
           <Card key={label}>
@@ -84,7 +82,6 @@ export default async function AnalyticsPage({
         ))}
       </div>
 
-      {/* Biểu đồ theo ngày */}
       <Card className="mt-4">
         <CardHeader>
           <CardTitle className="text-base">Lượt xem theo ngày</CardTitle>
@@ -100,7 +97,6 @@ export default async function AnalyticsPage({
         </CardContent>
       </Card>
 
-      {/* Top điểm đến & listing */}
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <TopList title="Top điểm đến" items={topPlaces} showType={false} />
         <TopList title="Top listing" items={topListings} showType />
@@ -147,7 +143,6 @@ function TopList({
                         </Badge>
                       )}
                     </div>
-                    {/* thanh tỉ lệ */}
                     <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted">
                       <div
                         className="h-full rounded-full bg-primary"

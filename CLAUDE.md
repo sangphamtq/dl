@@ -1227,6 +1227,18 @@ components.json                  # cấu hình shadcn (style, alias, base color)
   viewport 320 — layout vẫn render rộng và ta tưởng nó vỡ/không vỡ một cách sai lệch. Cách
   đúng: viết một file HTML tạm nhúng `<iframe src="http://localhost:3000/…" width="320">` rồi
   chụp file đó; iframe cho viewport CSS đúng bằng bề rộng đặt ra.
+- **Comment trong mã nguồn: chỉ giữ thứ NGĂN MỘT LỖI.** Toàn dự án đã được quét một lượt
+  (xoá ~7.200 dòng comment, còn ~400). Luật từ nay:
+  · **GIỮ** — directive (`eslint-disable`, `@ts-expect-error`); bất biến và bẫy mà đọc code
+    không thấy được ("ảnh `menu` không bao giờ `isCover`", "`id` của `DndContext` phải cố
+    định kẻo lệch hydration", "keyframes phải được một class tham chiếu, không thì Lightning
+    CSS loại khi build"); lý do một dòng code trông vô lý lại phải viết như vậy. Ngắn — một
+    đến ba dòng.
+  · **XOÁ** — kể lại code đang làm gì; sơ đồ ASCII bố cục; lịch sử "đã thử và bỏ"; lý lẽ
+    thiết kế dài.
+  · **Lý lẽ thiết kế sống ở `CLAUDE.md` và `docs/`, không nằm trong file code.** Đó là chỗ
+    đọc được toàn cảnh; nhét vào file thì mỗi component một mảnh và không ai ráp lại được.
+    Muốn ghi một quyết định → thêm vào tài liệu, đừng thêm vào comment.
 - Trước khi báo "đã xong", chạy `pnpm exec tsc --noEmit` và `pnpm lint` để chắc không lỗi.
 
 ## Màn chờ chuyển trang (`loading.tsx`)

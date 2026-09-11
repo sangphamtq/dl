@@ -7,8 +7,6 @@ import { HOME_PROVINCE_COOKIE } from "@/lib/home-province";
 
 const ONE_YEAR = 60 * 60 * 24 * 365;
 
-// Lưu tỉnh khách chọn (null = bỏ chọn). Ghi cookie cho mọi khách; nếu đã đăng
-// nhập thì đồng bộ vào User.homeProvince để giữ qua nhiều thiết bị.
 export async function setHomeProvince(name: string | null): Promise<void> {
   const value = name?.trim() || null;
   const store = await cookies();

@@ -59,7 +59,6 @@ export function TrustChecker({ isAuthed }: { isAuthed: boolean }) {
 
   return (
     <div className="space-y-6">
-      {/* Ô tra cứu */}
       <div className="rounded-2xl border border-border/60 bg-card p-4 shadow-xl shadow-black/10 sm:p-5">
         <div className="flex flex-col gap-3 sm:flex-row">
           <div className="relative flex-1">
@@ -97,7 +96,6 @@ export function TrustChecker({ isAuthed }: { isAuthed: boolean }) {
         )}
       </div>
 
-      {/* Kết quả */}
       {result && (
         <ResultCard
           result={result}
@@ -106,7 +104,6 @@ export function TrustChecker({ isAuthed }: { isAuthed: boolean }) {
         />
       )}
 
-      {/* Lối vào báo cáo trực tiếp — không cần tra trước */}
       {!reportOpen && (
         <p className="text-center text-sm text-muted-foreground">
           Phát hiện một số/trang lừa đảo?{" "}
@@ -128,7 +125,6 @@ export function TrustChecker({ isAuthed }: { isAuthed: boolean }) {
         </p>
       )}
 
-      {/* Form báo cáo (độc lập — có thể mở mà chưa tra) */}
       {reportOpen && (
         <ReportForm
           isAuthed={isAuthed}
@@ -365,7 +361,6 @@ function ReportForm({
         />
       </div>
 
-      {/* Bằng chứng */}
       <div className="space-y-2">
         <Label>
           Ảnh bằng chứng <span className="text-destructive">*</span>

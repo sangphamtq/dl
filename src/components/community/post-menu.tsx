@@ -12,7 +12,6 @@ import {
 import { deleteThread } from "@/app/(site)/cong-dong/actions";
 import { ReportDialog } from "./report-button";
 
-// Nút ••• ở góc bài — gộp Báo cáo (người khác) + Xóa (chính chủ/staff).
 export function PostMenu({
   threadId,
   canReport,
@@ -22,7 +21,7 @@ export function PostMenu({
   threadId: string;
   canReport: boolean;
   canDelete: boolean;
-  redirectTo?: string; // sau khi xóa: điều hướng tới đây (vd trang permalink)
+  redirectTo?: string;
 }) {
   const router = useRouter();
   const [reportOpen, setReportOpen] = useState(false);

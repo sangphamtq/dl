@@ -24,7 +24,6 @@ async function revalidateFor(id: string) {
   if (r?.place?.slug) revalidatePath(`/diem-den/${r.place.slug}`);
 }
 
-// Ẩn / hiện một review (ẩn thì không hiện công khai & không tính vào tổng hợp).
 export async function setReviewHidden(
   id: string,
   hidden: boolean,
@@ -39,14 +38,13 @@ export async function setReviewHidden(
   return { ok: true };
 }
 
-// Xoá hẳn review.
 export async function deleteReviewCms(id: string): Promise<ActionResult> {
   try {
     await requireStaff();
   } catch {
     return { ok: false, error: "Không có quyền." };
   }
-  await revalidateFor(id); // lấy slug trước khi xoá
+  await revalidateFor(id);
   await prisma.review.delete({ where: { id } });
   return { ok: true };
 }

@@ -26,11 +26,6 @@ export default async function SearchPage({
             Tìm kiếm
           </h1>
 
-          {/* Cùng VẬT LIỆU với mọi ô nhập khác của site: viền mảnh + nền
-              trong suốt + bo `R_CTRL`, focus thì viền về màu mực. Bản trước là
-              `rounded-xl` (12px) nền `bg-muted/50` viền trong suốt và vòng focus
-              XANH — ba thứ đều chỉ có ở đây, khiến ô tìm kiếm chính của site
-              đọc ra như đến từ một bộ giao diện khác. */}
           <form action="/tim-kiem" className="group relative mt-5">
             <Search
               className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-foreground"

@@ -39,27 +39,12 @@ export type AccommodationDetailData = {
   images: { id: string; url: string; alt: string | null; isCover: boolean }[];
 };
 
-// Zalo có thể là SĐT hoặc link — chuẩn hoá thành URL chat zalo.me.
 function zaloHref(v: string): string {
   if (/^https?:\/\//i.test(v)) return v;
   const digits = v.replace(/[^\d]/g, "");
   return digits ? `https://zalo.me/${digits}` : v;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Chi tiết Nơi lưu trú trong POPUP (trước là ngăn trượt bên phải) — cùng khuôn
-// với popup Quán ăn để hai tab anh em nói cùng một ngôn ngữ: từ `lg` là hai
-// cột, trái là ảnh chiếm trọn cột (carousel embla + dải ảnh nhỏ), phải là phần
-// đọc cuộn riêng + thanh hành động ghim đáy; dưới `sm` popup dán đáy màn hình.
-//
-// Khác Quán ăn ở CHỖ NÀO ĐỨNG ĐẦU: quán ăn hỏi "còn mở không, đường tới đâu";
-// chỗ ở hỏi **"tin được không, liên hệ ai, cọc thế nào"**. Nên thứ tự cột phải
-// là: trạng thái xác minh → cảnh báo → chính sách cọc → mô tả, và nút chính ở
-// thanh đáy là **nhắn Zalo** (kênh chốt phòng chính ở VN) chứ không phải chỉ đường.
-//
-// Cũng đã bỏ các màu cứng của bản cũ (`emerald-600`, `amber-500`): theme đã có
-// `primary` xanh lá và `warm` cam, dùng token thì dark mode mới đúng.
-// ═══════════════════════════════════════════════════════════════════════════
 export function AccommodationDetail({
   data,
 }: {
@@ -103,7 +88,6 @@ export function AccommodationDetail({
 
   return (
     <div className="flex max-h-[inherit] flex-col lg:grid lg:h-[min(88vh,44rem)] lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
-      {/* ── Nửa hình ảnh ── */}
       <div className="relative shrink-0 overflow-hidden bg-muted max-lg:aspect-[4/3] lg:h-full">
         <Carousel
           setApi={setApi}
@@ -131,8 +115,6 @@ export function AccommodationDetail({
           aria-hidden
         />
 
-        {/* Huy hiệu xác minh nằm TRÊN ẢNH: đây là thứ đầu tiên cần biết về một
-            chỗ ở, không phải một dòng chữ đâu đó giữa cột chữ. */}
         <span
           className={cn(
             R_BADGE,
@@ -158,8 +140,6 @@ export function AccommodationDetail({
               {shot + 1}/{gallery.length}
             </span>
             <div className="pointer-events-none absolute inset-x-0 bottom-0 p-4">
-              {/* `-m-1 p-1`: chừa chỗ cho vòng ring của ảnh đang chọn, nếu không
-                  `overflow-x-auto` cắt cụt viền phía trên. */}
               <div className="pointer-events-auto -m-1 flex gap-2 overflow-x-auto p-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {gallery.map((im, i) => (
                   <button
@@ -191,7 +171,6 @@ export function AccommodationDetail({
         )}
       </div>
 
-      {/* ── Cột nội dung ── */}
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-6 sm:px-7">
           <p className="text-sm font-semibold text-primary">{category}</p>
@@ -202,9 +181,6 @@ export function AccommodationDetail({
             Thông tin chi tiết nơi lưu trú {data.name}
           </DialogDescription>
 
-          {/* ── Khối NIỀM TIN: xác minh + cọc + cảnh báo, gom một chỗ ngay dưới
-                 tên. Với một chỗ ở thì đây mới là thứ quyết định, không phải mô
-                 tả phòng. ── */}
           <div className="mt-4 space-y-2.5">
             <div
               className={cn(
@@ -331,8 +307,6 @@ export function AccommodationDetail({
             />
           </div>
 
-          {/* Đường sang trang chi tiết — ĐÍCH CHIA SẺ (chủ nhà dán link vào
-              group FB). Popup chỉ là bản xem nhanh nên lối này phải rõ ràng. */}
           <Link
             href={`/luu-tru/${data.slug}`}
             className={cn(R_CARD, "mt-6 flex items-center justify-between gap-3 border border-border/60 p-4 text-sm transition-colors hover:border-border hover:bg-muted/40")}
@@ -347,10 +321,6 @@ export function AccommodationDetail({
           </Link>
         </div>
 
-        {/* ── Thanh liên hệ ghim đáy ──
-               Zalo là nút CHÍNH: ở Việt Nam đó là kênh chốt phòng, và cả mục
-               này tồn tại để dẫn khách tới đúng kênh chính chủ. Các kênh còn
-               lại thu thành nút tròn để thanh luôn một hàng. */}
         {(data.zalo ||
           data.phone ||
           data.facebookUrl ||
@@ -411,7 +381,6 @@ export function AccommodationDetail({
   );
 }
 
-// Một dòng thông tin: icon · nhãn nhỏ · giá trị.
 function Row({
   glyph,
   label: name,
@@ -456,7 +425,6 @@ function IconAction({
   );
 }
 
-// Mũi tên chuyển ảnh đè lên ảnh (nút mặc định của `ui/carousel` neo ngoài khung).
 function ArrowBtn({
   side,
   onClick,
@@ -470,7 +438,6 @@ function ArrowBtn({
       onClick={onClick}
       aria-label={side === "left" ? "Ảnh trước" : "Ảnh tiếp theo"}
       className={cn(
-        // Ẩn dưới `sm`: ở đó vuốt là thao tác tự nhiên, mũi tên chỉ che ảnh.
         R_CTRL,
         "absolute top-1/2 hidden size-9 -translate-y-1/2 place-items-center bg-background/85 text-foreground shadow-sm backdrop-blur transition-colors hover:bg-background sm:grid",
         side === "left" ? "left-3" : "right-3",

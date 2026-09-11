@@ -5,7 +5,6 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import type { ActionResult } from "@/app/(site)/blog/actions";
 
-// Đích check-in: điểm đến (place) hoặc địa điểm (spot).
 export type CheckTarget = { kind: "place" | "spot"; id: string };
 
 async function requireUserId(): Promise<string> {
@@ -15,7 +14,6 @@ async function requireUserId(): Promise<string> {
   return id;
 }
 
-// Đánh dấu / bỏ đánh dấu "đã đến" một điểm đến HOẶC địa điểm.
 export async function toggleCheckIn(
   target: CheckTarget,
 ): Promise<ActionResult<{ checked: boolean }>> {
@@ -31,7 +29,6 @@ export async function toggleCheckIn(
     : togglePlaceCheckIn(userId, target.id);
 }
 
-// Spot: đơn giản, không propagate (khác Place).
 async function toggleSpotCheckIn(
   userId: string,
   spotId: string,
@@ -60,10 +57,6 @@ async function toggleSpotCheckIn(
   return { ok: true, data: { checked } };
 }
 
-// Place: có propagate tỉnh cha (xem CLAUDE.md "Place" + schema CheckIn):
-// - Check-in điểm đến con ⇒ tự tạo CheckIn tỉnh cha (auto=true) nếu chưa có.
-// - Bỏ check-in con ⇒ chỉ gỡ tỉnh cha khi tỉnh đó là auto VÀ không còn con nào.
-// - Tỉnh đánh dấu trực tiếp (auto=false) luôn giữ; bỏ tỉnh có con đã đến ⇒ hạ về auto.
 async function togglePlaceCheckIn(
   userId: string,
   placeId: string,

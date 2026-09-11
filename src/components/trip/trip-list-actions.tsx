@@ -27,7 +27,6 @@ import {
   setPlanningTrip,
 } from "@/app/(site)/lich-trinh/actions";
 
-// Nút "Tạo lịch trình" — CTA cam duy nhất của trang danh sách.
 export function NewTripButton() {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -45,8 +44,6 @@ export function NewTripButton() {
         })
       }
       disabled={pending}
-      // Mép vuông + nhãn nhỏ in hoa, cùng vật liệu nút của bộ biên tập. Giữ
-      // nền CAM: đây vẫn là hành động chính duy nhất của trang.
       className="h-11 rounded-[4px] bg-warm px-5 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-warm-foreground hover:bg-warm/90"
     >
       {pending ? (
@@ -59,8 +56,6 @@ export function NewTripButton() {
   );
 }
 
-// Menu "..." của một chuyến. Dù đặt ở đâu cũng cần z-index vượt lớp phủ link
-// `after:inset-0` của tiêu đề — nếu không, bấm vào menu sẽ mở luôn chuyến.
 export function TripCardMenu({
   tripId,
   title,
@@ -69,10 +64,7 @@ export function TripCardMenu({
 }: {
   tripId: string;
   title: string;
-  /** Chuyến đang lên lịch trình — đích mặc định của nút Thêm vào lịch trình. */
   isPlanning: boolean;
-  /** Lớp cho nút mở menu. Mặc định là bản NỔI TRÊN ẢNH; danh sách dạng hàng
-   *  truyền lớp riêng để nút nằm thẳng hàng trong hàng, không phải neo tuyệt đối. */
   className?: string;
 }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -85,8 +77,6 @@ export function TripCardMenu({
           <button
             type="button"
             aria-label={`Tuỳ chọn cho ${title}`}
-            // Nút chỉ-ICON nên giữ hình tròn — cùng ranh giới đã dùng ở trang
-            // điểm đến: nút có chữ thì vuông, nút chỉ icon thì tròn.
             className={cn(
               "z-10 grid size-8 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
               className ??

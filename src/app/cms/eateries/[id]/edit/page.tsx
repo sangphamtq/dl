@@ -52,7 +52,6 @@ export default async function EditEateryPage({
       orderBy: [{ isCover: "desc" }, { order: "asc" }],
       select: { id: true, url: true, alt: true, isCover: true },
     }),
-    // Ảnh tấm thực đơn — nhóm riêng, không lẫn vào ảnh trưng bày.
     prisma.image.findMany({
       where: { eateryId: id, kind: "menu" },
       orderBy: { order: "asc" },

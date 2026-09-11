@@ -6,7 +6,6 @@ import { rateLimit, ipKey } from "@/lib/rate-limit";
 const STAFF = ["admin", "editor"];
 const utapi = new UTApi();
 
-// Nhận ảnh chèn trong trình soạn thảo (Tiptap) → tải lên UploadThing → trả URL.
 export async function POST(req: NextRequest) {
   if (!rateLimit(ipKey(req, "upload"), 30))
     return Response.json({ error: "Quá nhiều yêu cầu." }, { status: 429 });

@@ -9,23 +9,16 @@ type ListingCardProps = {
   slug: string;
   images: { url: string; isCover: boolean }[];
   subtitle?: string | null;
-  // Nhóm có nhãn (vd "Điểm nhấn", "Làm gì") — mỗi nhóm một dòng "Nhãn: a · b · c". Ưu tiên hơn subtitle.
   sections?: { label: string; items: string[] }[];
   tag?: string | null;
   meta?: string[];
   price?: string | null;
-  // Tỉ lệ khung ảnh (class Tailwind) — mặc định 4:3. Vd 3-up dùng "aspect-[3/2]".
   aspectClass?: string;
-  // featured = card lớn, chữ phủ lên ảnh (dùng làm điểm nhấn đầu mục).
   featured?: boolean;
-  // framed = cả card trong khung viền bo góc, chữ có padding bên trong.
   framed?: boolean;
   className?: string;
 };
 
-// Card listing dùng chung cho trang Place. Hai biến thể cùng họ thị giác:
-// - thường: ảnh 4:3 trên cùng + chữ bên dưới.
-// - featured: ảnh lớn 16:9, gradient + chữ phủ lên — tạo nhịp, tránh đều đều.
 export function ListingCard({
   href,
   name,

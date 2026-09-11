@@ -11,9 +11,6 @@ import { Button } from "@/components/ui/button";
 import { GoogleIcon, FacebookIcon } from "@/components/site/provider-icons";
 import { signInGoogle, signInFacebook } from "@/app/login/auth-actions";
 
-// Login drawer (auth-gate) — mở tại chỗ khi người dùng ẩn danh thực hiện hành
-// động cần đăng nhập (vd đánh dấu "đã đến"). Controlled qua open/onOpenChange.
-// redirectTo: quay lại đúng trang hiện tại sau khi đăng nhập.
 export function LoginDrawer({
   open,
   onOpenChange,

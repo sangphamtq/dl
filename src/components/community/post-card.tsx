@@ -65,7 +65,7 @@ export function PostCard({
   showPlace?: boolean;
   defaultOpen?: boolean;
   repliesPreloaded?: boolean;
-  deleteRedirectTo?: string; // điều hướng sau khi xóa (trang permalink)
+  deleteRedirectTo?: string;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const [liked, setLiked] = useState(post.likedByMe);
@@ -121,7 +121,6 @@ export function PostCard({
 
   return (
     <article className="overflow-hidden rounded-2xl border border-border/60 bg-card p-4 shadow-sm shadow-black/[0.02] transition-shadow hover:shadow-lg hover:shadow-black/5 sm:p-5">
-      {/* Header */}
       <div className="flex items-start gap-3">
         <span
           aria-hidden
@@ -203,7 +202,6 @@ export function PostCard({
         </div>
       </div>
 
-      {/* Chuyến ghép đoàn — dải nổi cho bài "tìm bạn đồng hành" */}
       {trip && (
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-xl bg-primary/5 px-3.5 py-2.5 text-sm ring-1 ring-inset ring-primary/15">
           <span className="inline-flex items-center gap-1.5 font-medium text-primary">
@@ -224,7 +222,6 @@ export function PostCard({
         </div>
       )}
 
-      {/* Nội dung */}
       {post.body && (
         <div
           className="mt-2.5 whitespace-pre-wrap break-words text-[0.95rem] leading-relaxed text-foreground/90 [&_a]:text-primary [&_a]:underline [&_b]:font-semibold [&_em]:italic [&_i]:italic [&_strong]:font-semibold"
@@ -232,15 +229,12 @@ export function PostCard({
         />
       )}
 
-      {/* Ảnh — tràn viền card kiểu Facebook */}
       {post.images.length > 0 && (
         <div className="-mx-4 mt-3 sm:-mx-5">
           <PhotoGrid images={post.images} bleed />
         </div>
       )}
 
-      {/* Thanh tương tác — tràn sát mép trái/phải/đáy; hover phủ tới đáy card.
-          Khi mở bình luận thì không tràn đáy để chừa chỗ cho phần trả lời. */}
       <div
         className={cn(
           "mt-2 flex items-center",
@@ -280,7 +274,6 @@ export function PostCard({
         />
       </div>
 
-      {/* Bình luận */}
       {open && (
         <div className="mt-3 border-t border-border/50 pt-3">
           <ReplySection
@@ -300,12 +293,10 @@ export function PostCard({
   );
 }
 
-// Middot ngăn cách meta.
 function Dot() {
   return <span aria-hidden>·</span>;
 }
 
-// Nút tương tác: icon + số (hoặc nhãn khi chưa có), hover nền xám.
 function CountButton({
   icon: Icon,
   value,

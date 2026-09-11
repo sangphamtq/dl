@@ -5,20 +5,6 @@ import {
   AccommodationCategory,
 } from "@/generated/prisma/enums";
 
-// Seed vài homestay tại Tà Xùa, gắn vào điểm đến `ta-xua` đã có.
-// Idempotent: upsert theo slug. Dùng: pnpm seed:homestay-ta-xua
-// Lưu ý: cần chạy `pnpm seed:ta-xua` trước (để có Place `ta-xua`).
-//
-// ─── CHỦ Ý KHÔNG BỊA `phone` / `zalo` / `facebookUrl` ────────────────────────
-// Lưu trú là DANH BẠ ĐÃ XÁC MINH CHÍNH CHỦ (xem CLAUDE.md), lõi giá trị là kênh
-// liên hệ đúng người. Seed ra một dãy số bịa = tiếp tay đúng cái mà sản phẩm
-// muốn chống, tệ hơn nữa là số bịa có thể trùng số của một người thật.
-// ⇒ Tất cả để `isVerified: false` + `notice` nói rõ đang chờ xác minh; biên tập
-// điền kênh liên hệ trong CMS sau khi gọi kiểm chứng rồi bật huy hiệu.
-//
-// Toạ độ là VỊ TRÍ TƯƠNG ĐỐI quanh trục đường chính qua xã, đủ để bản đồ không
-// vỡ — cần chỉnh lại khi khảo sát thực địa.
-
 const now = new Date();
 const PUB = { status: PublishStatus.published, publishedAt: now } as const;
 
@@ -72,7 +58,6 @@ type HomestaySeed = {
   isFeatured?: boolean;
 };
 
-// Cảnh báo dùng chung: chưa xác minh chính chủ → nói thẳng thay vì im lặng.
 const UNVERIFIED =
   "Chưa xác minh chính chủ. Kênh liên hệ đang được kiểm chứng — tuyệt đối không chuyển cọc cho bất kỳ số/tài khoản nào tự nhận là chủ nhà khi trang này chưa hiện huy hiệu xác minh.";
 

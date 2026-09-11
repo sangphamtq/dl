@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/prisma";
 
-// Place để chọn "nơi chứa" quán, kèm vị trí hành chính để tự điền cho quán.
 export type Option = {
   id: string;
   label: string;

@@ -75,7 +75,6 @@ export default async function PlacesPage({
         </Link>
       </div>
 
-      {/* Bộ lọc */}
       <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-2">
           {KIND_FILTERS.map((f) => (
@@ -109,7 +108,6 @@ export default async function PlacesPage({
           ))}
         </div>
 
-        {/* Tìm kiếm (GET form) */}
         <form className="relative" action="/cms/places">
           {kind !== "all" && <input type="hidden" name="kind" value={kind} />}
           {status !== "all" && (
@@ -128,7 +126,6 @@ export default async function PlacesPage({
         </form>
       </div>
 
-      {/* Danh sách — Suspense theo bộ lọc để hiện skeleton mỗi lần lọc/tìm */}
       <Suspense
         key={`${kind}|${status}|${q}|${page}`}
         fallback={<PlacesListSkeleton />}
@@ -178,7 +175,6 @@ async function PlacesList({ filters }: { filters: Filters }) {
       },
     }),
     prisma.place.count({ where }),
-    // Số tỉnh trong toàn bộ kết quả (chỉ dùng khi không lọc theo loại).
     kind === "all"
       ? prisma.place.count({ where: { ...where, kind: "province" } })
       : Promise.resolve(0),
@@ -225,7 +221,6 @@ async function PlacesList({ filters }: { filters: Filters }) {
               key={p.id}
               className="flex flex-col gap-3 px-4 py-3.5 md:flex-row md:items-center md:gap-4"
             >
-              {/* Tên + slug + cha */}
               <div className="flex min-w-0 flex-1 items-start gap-3">
                 <div
                   className={cn(
@@ -267,7 +262,6 @@ async function PlacesList({ filters }: { filters: Filters }) {
                 </div>
               </div>
 
-              {/* Meta */}
               <div className="flex items-center justify-between gap-4 pl-11 md:pl-0">
                 <div className="md:w-24">
                   <Badge variant={isProvince ? "secondary" : "outline"}>

@@ -46,7 +46,6 @@ export default async function CommunityPage({
   const isStaff = role === "admin" || role === "editor";
   const rt = ablyEnabled();
 
-  // "Gần bạn": lọc bài ở các điểm đến thuộc tỉnh nhà (chỉ khi đã chọn tỉnh).
   const homeProvince = await getHomeProvince(currentUserId ?? undefined);
   const near = sp.near === "1" && !!homeProvince;
 
@@ -121,7 +120,6 @@ export default async function CommunityPage({
 
         <div className="mx-auto grid max-w-6xl gap-8 px-4 pb-8 pt-5 sm:px-6 sm:pb-10 lg:grid-cols-[minmax(0,1fr)_18rem] lg:gap-10">
           <div className="min-w-0">
-          {/* Soạn bài */}
           <PostComposer
             isAuthed={isAuthed}
             currentUserName={session?.user?.name ?? null}
@@ -129,7 +127,6 @@ export default async function CommunityPage({
             canPostSale={canPostSale}
           />
 
-          {/* Thanh công cụ: lọc theo loại + (gần bạn) + sắp xếp */}
           <div className="mt-6">
             <CommunityFilter
               current={type}
@@ -160,7 +157,6 @@ export default async function CommunityPage({
             </div>
           </div>
 
-          {/* Feed */}
           {posts.length > 0 ? (
             <div className="mt-5 space-y-4">
               {posts.map((p) => (
@@ -195,7 +191,6 @@ export default async function CommunityPage({
           />
           </div>
 
-          {/* Sidebar */}
           <aside className="lg:sticky lg:top-24 lg:self-start">
             <CommunitySidebar
               trips={trips}

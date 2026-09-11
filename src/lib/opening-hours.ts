@@ -1,20 +1,10 @@
-// Đọc chuỗi `openingHours` tự do của biên tập thành giờ máy hiểu được, để trang
-// trả lời được câu hỏi thật sự của người đang đói: "giờ này còn mở không?".
-//
-// Định dạng biên tập đang dùng (và các biến thể chấp nhận được):
-//   "6:00 – 12:00"                một ca
-//   "5:30 – 10:00, 15:00 – 19:00" nhiều ca, ngăn bằng dấu phẩy
-//   "18:00 - 02:00"               qua nửa đêm (giờ kết < giờ mở)
-// Dấu nối nhận cả `-` `–` `—` `~` và chữ "đến". Không đọc được thì trả null —
-// KHÔNG đoán bừa: thà không hiện huy hiệu còn hơn hiện sai giờ đóng cửa.
-
-export type Interval = { start: number; end: number }; // phút từ 00:00; end có thể > 1440 khi qua nửa đêm
+export type Interval = { start: number; end: number };
 
 export type OpeningStatus =
-  | { kind: "open"; closesAt: number } // đang mở
-  | { kind: "closingSoon"; closesAt: number } // đang mở, còn ≤ 60 phút
-  | { kind: "opensLater"; opensAt: number } // hôm nay còn mở lại
-  | { kind: "closed" }; // hết giờ hôm nay
+  | { kind: "open"; closesAt: number }
+  | { kind: "closingSoon"; closesAt: number }
+  | { kind: "opensLater"; opensAt: number }
+  | { kind: "closed" };
 
 const SEPARATOR = /\s*(?:–|—|-|~|đến)\s*/;
 
@@ -37,7 +27,6 @@ export function parseOpeningHours(text: string | null): Interval[] | null {
     const start = toMinutes(seg[0]);
     const end = toMinutes(seg[1]);
     if (start == null || end == null) continue;
-    // Kết thúc sớm hơn (hoặc bằng) lúc mở ⇒ ca kéo sang hôm sau.
     out.push({ start, end: end <= start ? end + 1440 : end });
   }
   return out.length > 0 ? out : null;
@@ -48,8 +37,6 @@ export function formatMinutes(m: number): string {
   return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`;
 }
 
-// Phút hiện tại theo GIỜ VIỆT NAM, không theo đồng hồ máy: người đang ngồi ở
-// múi giờ khác lên kế hoạch vẫn cần biết quán ở Phan Thiết mở hay đóng.
 export function vietnamMinutesNow(at: Date = new Date()): number {
   const parts = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Asia/Ho_Chi_Minh",
@@ -62,7 +49,7 @@ export function vietnamMinutesNow(at: Date = new Date()): number {
   return (h % 24) * 60 + m;
 }
 
-const CLOSING_SOON = 60; // phút
+const CLOSING_SOON = 60;
 
 export function openingStatus(
   intervals: Interval[] | null,
@@ -70,8 +57,6 @@ export function openingStatus(
 ): OpeningStatus | null {
   if (!intervals || intervals.length === 0) return null;
 
-  // `now + 1440` bắt trường hợp ca đêm hôm trước còn kéo sang sáng nay
-  // (vd 18:00 – 02:00 và bây giờ là 1:00).
   for (const it of intervals) {
     for (const t of [now, now + 1440]) {
       if (t >= it.start && t < it.end) {
@@ -90,8 +75,6 @@ export function openingStatus(
   return next != null ? { kind: "opensLater", opensAt: next } : { kind: "closed" };
 }
 
-// Khung giờ chung của cả danh sách ("mở từ 5:30 đến 23:30") — một dữ kiện thật
-// về nhịp ăn uống của nơi đó, thay cho đoạn văn giới thiệu phải viết tay.
 export function hoursSpan(
   texts: (string | null)[],
 ): { earliest: number; latest: number } | null {

@@ -22,24 +22,18 @@ const devLogin =
                 ? creds.email.trim().toLowerCase()
                 : "";
             if (!email) return null;
-            // Trả về user (kèm role) → callback jwt nhét id/role vào token.
             return (await prisma.user.findUnique({ where: { email } })) ?? null;
           },
         }),
       ]
     : [];
 
-// Cấu hình đầy đủ (Node): adapter Prisma persist User/Account.
-// Dùng JWT session để tương thích với edge middleware (proxy.ts).
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
   providers: [...authConfig.providers, ...devLogin],
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
   events: {
-    // Nhận các lời mời cùng sửa lịch trình đang treo cho email này. Đặt ở đây
-    // (Node, có Prisma) chứ không ở auth.config.ts — file đó phải edge-safe cho
-    // proxy.ts. Hàm tự nuốt lỗi nên không bao giờ chặn đăng nhập.
     async signIn({ user }) {
       if (user.id) await claimTripInvites(user.id, user.email);
     },

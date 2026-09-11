@@ -10,10 +10,7 @@ const f = createUploadthing();
 
 const STAFF = ["admin", "editor"];
 
-// File router cho ảnh. Mỗi endpoint kiểm quyền (staff) ở middleware, rồi tạo
-// bản ghi Image gắn đúng owner trong onUploadComplete (chạy server-side).
 export const ourFileRouter = {
-  // Ảnh gắn vào một Place (tỉnh / điểm đến).
   placeImage: f({ image: { maxFileSize: "8MB", maxFileCount: 12 } })
     .input(z.object({ placeId: z.string().min(1) }))
     .middleware(async ({ input }) => {
@@ -31,7 +28,6 @@ export const ourFileRouter = {
       return { placeId: input.placeId };
     })
     .onUploadComplete(async ({ metadata, file }) => {
-      // Xếp ảnh mới xuống cuối gallery; ảnh đầu tiên của Place tự thành ảnh bìa.
       const [agg, count] = await Promise.all([
         prisma.image.aggregate({
           where: { placeId: metadata.placeId },
@@ -53,7 +49,6 @@ export const ourFileRouter = {
       return { placeId: metadata.placeId };
     }),
 
-  // Ảnh gắn vào bất kỳ Listing nào (theo ownerType + ownerId) — dùng chung.
   listingImage: f({ image: { maxFileSize: "8MB", maxFileCount: 12 } })
     .input(
       z.object({
@@ -69,7 +64,6 @@ export const ourFileRouter = {
           "trip",
         ]),
         ownerId: z.string().min(1),
-        // Ảnh trưng bày hay ảnh tấm thực đơn (hiện chỉ Quán ăn dùng "menu").
         kind: z.enum(["gallery", "menu"]).default("gallery"),
       }),
     )
@@ -79,7 +73,6 @@ export const ourFileRouter = {
       if (!role || !STAFF.includes(role))
         throw new UploadThingError("Không có quyền tải ảnh.");
 
-      // Kiểm tra owner tồn tại (model trùng tên ownerType).
       const model = prisma[input.ownerType] as {
         findUnique: (a: unknown) => Promise<{ id: string } | null>;
       };
@@ -97,8 +90,6 @@ export const ourFileRouter = {
     })
     .onUploadComplete(async ({ metadata, file }) => {
       const fk = OWNER_FK[metadata.ownerType];
-      // Thứ tự và "ảnh đầu tiên" tính TRONG TỪNG NHÓM: tải ảnh thực đơn lên
-      // trước không được biến nó thành ảnh bìa của quán.
       const where = { [fk]: metadata.ownerId, kind: metadata.kind };
       const [agg, count] = await Promise.all([
         prisma.image.aggregate({ where, _max: { order: true } }),

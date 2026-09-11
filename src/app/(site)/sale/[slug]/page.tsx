@@ -18,7 +18,6 @@ import { saleServiceLabel, SALE_LEVEL_LABELS } from "@/lib/sale";
 import { StayShare } from "@/components/site/stay-share";
 import { notFoundMetadata } from "@/lib/metadata";
 
-// Zalo có thể là SĐT hoặc link — chuẩn hoá thành URL chat zalo.me.
 function zaloHref(v: string): string {
   if (/^https?:\/\//i.test(v)) return v;
   const digits = v.replace(/[^\d]/g, "");
@@ -138,7 +137,6 @@ export default async function SaleProfilePage({
           </p>
         )}
 
-        {/* ─── Hero hồ sơ ─────────────────────────────────── */}
         <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-center">
           <div className="relative shrink-0 self-start sm:self-auto">
             <div className="relative size-24 overflow-hidden rounded-3xl bg-muted">
@@ -203,9 +201,7 @@ export default async function SaleProfilePage({
           )}
         </div>
 
-        {/* ─── 2 cột: nội dung | liên hệ ──────────────────── */}
         <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_20rem]">
-          {/* Sidebar liên hệ (mobile hiện trước) */}
           <aside className="space-y-4 lg:order-2 lg:sticky lg:top-20 lg:self-start">
             <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm shadow-black/5">
               <h2 className="font-bold tracking-tight">Liên hệ trực tiếp</h2>
@@ -243,7 +239,6 @@ export default async function SaleProfilePage({
               )}
             </div>
 
-            {/* Cảnh báo an toàn */}
             <div className="rounded-2xl border border-warm/30 bg-warm/5 p-4">
               <p className="flex items-center gap-2 text-sm font-semibold text-warm">
                 <ShieldAlert className="size-4 shrink-0" aria-hidden />
@@ -255,7 +250,6 @@ export default async function SaleProfilePage({
             </div>
           </aside>
 
-          {/* Nội dung chính */}
           <div className="min-w-0 space-y-10 lg:order-1">
             {p.bio && (
               <section>

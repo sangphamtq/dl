@@ -21,14 +21,11 @@ import type { ReplyNode } from "@/components/community/reply-section";
 const STAFF = ["admin", "editor"];
 const MAX_REPLY = 5000;
 
-// ── Chống spam: giới hạn tần suất theo user (staff được bỏ qua) ──────────────
-// Query-based, không cần bảng riêng: đếm theo createdAt.
-const THREAD_COOLDOWN_MS = 20_000; // tối thiểu giữa 2 bài
+const THREAD_COOLDOWN_MS = 20_000;
 const THREAD_PER_HOUR = 8;
-const REPLY_COOLDOWN_MS = 5_000; // tối thiểu giữa 2 trả lời
+const REPLY_COOLDOWN_MS = 5_000;
 const REPLY_PER_HOUR = 40;
 
-// Trả về thông báo lỗi nếu vượt giới hạn, ngược lại null.
 async function rateLimit(
   kind: "thread" | "reply",
   userId: string,
@@ -76,7 +73,6 @@ async function requireUser(): Promise<{ id: string; role: string }> {
   return { id, role: session.user.role ?? "user" };
 }
 
-// Tạo slug duy nhất từ một đoạn text (nối hậu tố nếu trùng / trùng tiền tố dành riêng).
 async function uniqueThreadSlug(text: string): Promise<string> {
   const base = slugify(text).split("-").slice(0, 10).join("-").slice(0, 80) || "bai-viet";
   let slug = base;
@@ -94,15 +90,14 @@ async function uniqueThreadSlug(text: string): Promise<string> {
 const MAX_BODY = 8000;
 const MAX_IMAGES = 6;
 
-// Tạo bài đăng mới (kiểu Facebook: không cần tiêu đề, văn bản + ảnh).
 export async function createThread(input: {
   body: string;
   type: string;
   placeId?: string | null;
   spotId?: string | null;
   imageUrls?: string[];
-  departDate?: string | null; // chỉ type=trip (ISO date, vd "2026-08-15")
-  slots?: number | null; // chỉ type=trip
+  departDate?: string | null;
+  slots?: number | null;
 }): Promise<ActionResult<{ slug: string }>> {
   let user;
   try {
@@ -129,7 +124,6 @@ export async function createThread(input: {
     ? input.type
     : "discussion";
 
-  // "sale" là loại đặc quyền: chỉ CTV có hồ sơ ĐÃ DUYỆT mới đăng được.
   if (type === "sale") {
     const sale = await prisma.saleProfile.findUnique({
       where: { userId: user.id },
@@ -142,7 +136,6 @@ export async function createThread(input: {
       };
   }
 
-  // Điểm đến (tùy chọn) — chỉ gắn nếu tồn tại; lấy slug để phát realtime feed.
   let placeId: string | null = null;
   let placeSlug: string | null = null;
   if (input.placeId) {
@@ -154,7 +147,6 @@ export async function createThread(input: {
     placeSlug = place?.slug ?? null;
   }
 
-  // Địa điểm nhỏ (tùy chọn) — song song với điểm đến; slug để phát realtime feed.
   let spotId: string | null = null;
   let spotSlug: string | null = null;
   if (input.spotId) {
@@ -169,7 +161,6 @@ export async function createThread(input: {
   const slugText = body.replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ");
   const slug = await uniqueThreadSlug(slugText || "bai-viet");
 
-  // Trip: ngày khởi hành (không nhận ngày quá khứ) + số chỗ. Bỏ qua nếu type khác.
   let departDate: Date | null = null;
   let slots: number | null = null;
   if (type === "trip") {
@@ -183,7 +174,6 @@ export async function createThread(input: {
     }
   }
 
-  // Chống trùng (double-submit): bỏ qua nếu vừa đăng bài y hệt trong 10s.
   const dupThread = await prisma.thread.findFirst({
     where: {
       authorId: user.id,
@@ -224,7 +214,6 @@ export async function createThread(input: {
   return { ok: true, data: { slug } };
 }
 
-// Xóa chủ đề — tác giả hoặc staff.
 export async function deleteThread(
   threadId: string,
 ): Promise<ActionResult> {
@@ -261,7 +250,6 @@ export async function deleteThread(
   return { ok: true };
 }
 
-// Thêm trả lời (hoặc trả lời lồng 1 cấp).
 export async function addReply(input: {
   threadId: string;
   threadSlug: string;
@@ -295,7 +283,6 @@ export async function addReply(input: {
   if (!thread) return { ok: false, error: "Không tìm thấy chủ đề." };
   if (thread.isLocked) return { ok: false, error: "Chủ đề đã bị khóa." };
 
-  // Reply lồng tối đa 1 cấp — reply-của-reply quy về gốc.
   let parentId: string | null = null;
   let parentAuthorId: string | null = null;
   if (input.parentId) {
@@ -309,8 +296,6 @@ export async function addReply(input: {
     parentAuthorId = parent.authorId;
   }
 
-  // Chống trùng (double-submit): nếu vừa gửi y hệt trong 10s thì bỏ qua, coi như
-  // đã ghi nhận — tránh tạo 2 bình luận giống nhau.
   const dup = await prisma.threadReply.findFirst({
     where: {
       threadId: input.threadId,
@@ -330,7 +315,6 @@ export async function addReply(input: {
     data: { threadId: input.threadId, authorId: user.id, content, parentId },
   });
 
-  // Cập nhật đếm + thời điểm hoạt động.
   const replyCount = await prisma.threadReply.count({
     where: { threadId: input.threadId },
   });
@@ -339,7 +323,6 @@ export async function addReply(input: {
     data: { replyCount, lastActivityAt: new Date() },
   });
 
-  // Thông báo: trả lời bình luận → tác giả bình luận; còn lại → tác giả bài.
   const url = `/cong-dong/${input.threadSlug}`;
   const recipients = new Map<string, "thread_comment" | "thread_reply">();
   recipients.set(thread.authorId, "thread_comment");
@@ -366,7 +349,6 @@ export async function addReply(input: {
   return { ok: true };
 }
 
-// Xóa trả lời — tác giả hoặc staff.
 export async function deleteReply(
   replyId: string,
   threadSlug: string,
@@ -400,7 +382,6 @@ export async function deleteReply(
   return { ok: true };
 }
 
-// Thích/bỏ thích chủ đề.
 export async function toggleThreadLike(
   threadId: string,
   threadSlug: string,
@@ -435,7 +416,6 @@ export async function toggleThreadLike(
   return { ok: true, data: { liked: !existing, count } };
 }
 
-// Thích/bỏ thích trả lời.
 export async function toggleReplyLike(
   replyId: string,
   threadSlug: string,
@@ -470,7 +450,6 @@ export async function toggleReplyLike(
   return { ok: true, data: { liked: !existing, count } };
 }
 
-// Lazy-load cây trả lời của một chủ đề (feed không tải sẵn để nhẹ payload).
 export async function fetchReplies(threadId: string): Promise<ReplyNode[]> {
   const session = await auth();
   return getReplyTree(threadId, session?.user?.id ?? null);
@@ -485,8 +464,6 @@ const REPORT_REASONS = new Set<string>([
   "other",
 ]);
 
-// Báo cáo một bài (threadId) HOẶC một trả lời (replyId) vi phạm. Mỗi người báo
-// cáo một đích tối đa 1 lần (unique) — báo lại coi như đã ghi nhận.
 export async function reportContent(input: {
   threadId?: string | null;
   replyId?: string | null;
@@ -510,7 +487,6 @@ export async function reportContent(input: {
   if (input.reason === "other" && !note)
     return { ok: false, error: "Vui lòng mô tả lý do khi chọn \"Khác\"." };
 
-  // Đích tồn tại? (đồng thời lấy tác giả để chặn tự báo cáo mình)
   const authorId = isThread
     ? (await prisma.thread.findUnique({
         where: { id: input.threadId! },
@@ -535,7 +511,6 @@ export async function reportContent(input: {
       },
     });
   } catch {
-    // Trùng unique = đã báo cáo trước đó → coi như thành công (idempotent).
     return { ok: true };
   }
   return { ok: true };

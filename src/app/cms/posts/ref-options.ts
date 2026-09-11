@@ -2,8 +2,6 @@ import { prisma } from "@/lib/prisma";
 
 export type RefOption = { value: string; label: string };
 
-// Gộp các đối tượng có thể gắn vào bài viết (PostRef) thành một danh sách
-// "type:id" → nhãn có tiền tố loại, cho multi-select tìm kiếm.
 export async function getRefOptions(): Promise<RefOption[]> {
   const [places, activities, spots, accommodations] = await Promise.all([
     prisma.place.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),

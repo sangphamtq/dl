@@ -21,17 +21,10 @@ import { R_CTRL } from "@/lib/radius";
 
 export type LatLng = { lat: number; lng: number };
 
-/**
- * Chỗ bản đồ phải đưa mắt người xem tới. Do PANEL quyết định (nó biết người
- * dùng vừa làm gì), bản đồ chỉ thi hành — nên chỉ có MỘT effect canh khung, và
- * bản đồ không bao giờ tự nhảy khi người dùng đang kéo xem.
- * `token` tăng mỗi lần cần canh lại; cùng token = không đụng vào khung nhìn.
- */
 export type MapFocus =
   | { kind: "points"; points: LatLng[]; token: number }
   | { kind: "country"; token: number };
 
-// Khung Việt Nam (đất liền) để mở bản đồ khớp màn hình.
 const VN_BOUNDS = L.latLngBounds([8.4, 102.1], [23.5, 109.8]);
 const FIT_OPTS: L.FitBoundsOptions = { padding: [16, 16] };
 function fitVietnam(map: L.Map) {
@@ -44,17 +37,8 @@ function esc(s: string): string {
   );
 }
 
-// ─── Pin điểm đến (ảnh) ──────────────────────────────────────
 const iconCache = new Map<string, L.DivIcon>();
-/**
- * Trạng thái (đang là mốc / ngoài ngưỡng) NƯỚNG THẲNG vào icon, không gắn class
- * vào DOM sau khi dựng: markercluster tự tạo lại phần tử marker mỗi lần gom/tách
- * cụm (tức mỗi lần đổi zoom), nên class gắn sau sẽ biến mất mà không effect nào
- * chạy lại. Dựng lại 22 marker rẻ hơn nhiều so với việc đi rình vòng đời của nó.
- */
 function placeIcon(p: MapPlacePoint, dim: boolean, active: boolean): L.DivIcon {
-  // Nơi chưa có ảnh bìa vẫn lấy ẢNH (cùng hàm `coverUrl` và CÙNG kích thước với
-  // hàng trong panel) → pin và hàng của một điểm đến là một tấm ảnh giống hệt.
   const url = p.coverUrl ?? coverUrl([], p.slug, 240, 160);
   const cls = cn(
     "dl-place-pin",
@@ -67,7 +51,6 @@ function placeIcon(p: MapPlacePoint, dim: boolean, active: boolean): L.DivIcon {
   const icon = L.divIcon({
     html: `<div class="${cls}"><img src="${esc(url)}" alt="" loading="lazy"/></div>`,
     className: "dl-marker",
-    // Khớp .dl-place-pin trong globals.css (52×36 + viền 2px).
     iconSize: [56, 40],
     iconAnchor: [28, 20],
     popupAnchor: [0, -22],
@@ -76,8 +59,6 @@ function placeIcon(p: MapPlacePoint, dim: boolean, active: boolean): L.DivIcon {
   return icon;
 }
 
-// Pin ĐÁNH SỐ cho chặng của lộ trình đang đo — cùng `.dl-trip-pin` với bản đồ
-// lịch trình (`trip-map-inner.tsx`), vì nói đúng một chuyện: thứ tự đi.
 const numberCache = new Map<number, L.DivIcon>();
 function numberIcon(n: number): L.DivIcon {
   const cached = numberCache.get(n);
@@ -93,11 +74,6 @@ function numberIcon(n: number): L.DivIcon {
   return icon;
 }
 
-// Popup điểm đến = THẺ Ở TRANG DANH SÁCH thu nhỏ: ảnh làm chủ, lớp phủ tối,
-// tên đặt trên ảnh, hàng dữ kiện ngăn bằng gạch mảnh. Chữ nghĩa nằm trong
-// globals.css (`.dl-pop*`) chứ không viết bằng class Tailwind trong chuỗi —
-// popup dựng bằng innerHTML, để lớp quét class của Tailwind phải đi tìm chúng
-// trong một template string là tự chuốc lấy rủi ro mất style.
 function placePopupHtml(p: MapPlacePoint): string {
   const url = p.coverUrl ?? coverUrl([], p.slug, 480, 320);
   const featured = p.isFeatured ? `<span class="dl-pop-badge">Nổi bật</span>` : "";
@@ -137,7 +113,6 @@ const meIcon = L.divIcon({
   iconAnchor: [9, 9],
 });
 
-// ─── Lớp điểm đến: cluster + pin đánh số cho chặng ───────────
 function DestinationCluster({
   points,
   active,
@@ -146,9 +121,7 @@ function DestinationCluster({
   onSelect,
 }: {
   points: MapPlacePoint[];
-  /** Nơi đang làm MỐC (chế độ Quanh đây) — pin sáng lên. */
   active: string | null;
-  /** slug → số thứ tự chặng (1-based). Rỗng khi không đo chuyến. */
   stopOrder: Record<string, number>;
   dimmed: Set<string>;
   onSelect: (slug: string) => void;
@@ -166,9 +139,6 @@ function DestinationCluster({
           iconSize: [42, 34],
         }),
     });
-    // Chặng của lộ trình nằm NGOÀI cluster. Gom cụm chúng thì đúng thứ người
-    // dùng vừa chọn lại là thứ biến mất sau một bong bóng "2" — trong khi thứ
-    // tự nó là nội dung của chế độ này.
     const stopLayer = L.layerGroup();
     for (const p of points) {
       const n = stopOrder[p.slug];
@@ -191,7 +161,6 @@ function DestinationCluster({
   return null;
 }
 
-// ─── Canh khung nhìn theo yêu cầu của panel ──────────────────
 function FocusView({ focus }: { focus: MapFocus }) {
   const map = useMap();
   const last = useRef<number>(-1);
@@ -346,7 +315,6 @@ export default function VietnamMapInner({
   points: MapPlacePoint[];
   active: string | null;
   stopOrder: Record<string, number>;
-  /** Nơi nằm ngoài ngưỡng giờ lái — pin mờ đi, không biến mất. */
   dimmed: Set<string>;
   route: [number, number][] | null;
   focus: MapFocus;
@@ -356,8 +324,6 @@ export default function VietnamMapInner({
 }) {
   const dark = useIsDark();
   const [basemap, setBasemap] = useState<"streets" | "satellite">("streets");
-  // Plugin markercluster cần global L → set rồi nạp động (tránh lỗi "L is not
-  // defined" do Leaflet ESM không tự gán window.L).
   const [clusterReady, setClusterReady] = useState(false);
   useEffect(() => {
     (window as unknown as { L: typeof L }).L = L;

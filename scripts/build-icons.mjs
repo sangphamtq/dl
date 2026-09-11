@@ -1,21 +1,12 @@
-// Sinh 2 thứ từ bộ icon Iconify (hiện tại: Material Symbols, rounded/filled):
-//   1. src/lib/icon-subset.json   — dữ liệu SVG offline cho <Ic icon="..."/>
-//   2. src/components/icons.tsx    — bộ component icon dự án (tên theo quy ước cũ)
-// Chạy lại khi thêm/bớt icon:  node scripts/build-icons.mjs
-//
-// Đổi bộ icon = đổi PKG + STYLE + (nếu cần) các tên trong DICT cho khớp bộ mới.
-// NAMES = tên component icon dùng trong repo (theo quy ước lucide cũ để khỏi phải
-// sửa JSX); DICT = ánh xạ tên khác biệt; EXTRAS = icon chỉ dùng qua <Ic>.
 import fs from "node:fs";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
 const PKG = "@iconify-json/material-symbols/icons.json";
-const STYLE = "-outline-rounded"; // Material: -outline-rounded = viền, bo tròn
+const STYLE = "-outline-rounded";
 const c = require(PKG);
 const has = (n) => !!(c.icons[n] || c.aliases?.[n]);
 
-// Giải alias (bộ icon có thể trỏ tên này → icon gốc khác).
 function resolve(name, depth = 0) {
   if (depth > 5) return null;
   if (c.icons[name]) return c.icons[name];
@@ -27,7 +18,6 @@ function resolve(name, depth = 0) {
   return null;
 }
 
-// Mọi icon lucide đang dùng trong repo (PascalCase). Cập nhật khi import icon mới.
 const LUCIDE =
   "AlertCircle AlignCenter Backpack ClipboardList NotebookPen AlignLeft AlignRight ArrowDownWideNarrow ArrowLeft ArrowRight ArrowUp ArrowUpRight BadgeCheck BedDouble Bell Bike Bold BookOpen Building2 Bus CalendarClock CalendarDays Camera Car CarTaxiFront Check CheckCheck CheckCircle2 CheckIcon ChefHat ChevronDown ChevronDownIcon ChevronLeft ChevronLeftIcon ChevronRight ChevronRightIcon ChevronUp ChevronUpIcon ChevronsUpDown CircleCheck CircleIcon Clock Cloud Coffee Compass ConciergeBell Construction Crosshair Database DatabaseZap Download ExternalLink Eye EyeOff FileText Flag Footprints Frown Globe GripVertical Heading2 Heading3 Heart HelpCircle Home Image ImageIcon ImageOff ImagePlus Info Italic KeyRound Landmark Layers LayoutDashboard LayoutGrid Lightbulb Link2 List ListOrdered Loader2 Lock LockOpen LogOut Mail Map MapPin MapPinCheck MapPinCheckInside MapPinPlus MapPinned Maximize Meh Menu MessageCircle MessageSquare MessageSquareText MessagesSquare MoreHorizontal MoreHorizontalIcon Mountain Navigation Newspaper PanelLeftIcon Pause PenLine Pencil Phone Pin PinOff Plane PlaneLanding Play Plus Quote Redo2 RefreshCw Reply RotateCcw RotateCw Route Search SearchIcon Send Settings Share2 Shield ShieldAlert ShieldCheck ShieldQuestion ShieldX Ship Sliders Smile Sparkles Star Store Strikethrough Sunrise Tag ThumbsUp Ticket TrainFront Trash2 TriangleAlert Underline Undo2 UploadCloud User UserPlus Users Utensils UtensilsCrossed Wallet WifiOff X XCircle XIcon".split(
     " ",
@@ -103,25 +93,14 @@ const DICT = {
   "x-circle": "cancel",
 };
 
-// Icon chỉ dùng qua <Ic> (không phải tên lucide) — key ngữ nghĩa → tên Material.
 const EXTRAS = {
   backpack: "backpack",
   calendar: "calendar-month",
-  // Xe máy — KHÁC `bike` (Material "pedal-bike" = xe đạp).
-  // PWA: hướng dẫn "Thêm vào màn hình chính" (iOS Safari dùng nút Chia sẻ).
   "ios-share": "ios-share",
 };
 
-// Bản ĐẶC (filled) của vài icon. Các key này KHÔNG đi qua STYLE (đó mới là điểm
-// khác): lấy thẳng bản `-rounded` filled của Material.
-//
-// ĐANG RỖNG: thanh tab dưới trước đây dùng chỗ này cho cặp viền/đặc, nay đã có
-// bộ icon vẽ riêng ở `src/components/site/tab-icons.tsx` (Material quá dày, đặt
-// cạnh nhau ở cỡ tab bar thì lệch hẳn so với app iOS). Cần bản đặc cho chỗ khác
-// thì thêm vào đây rồi chạy `node scripts/build-icons.mjs`.
 const FILLED = {};
 
-// key (dùng trong <Ic icon="key"/>) → tên Material đầy đủ (kèm STYLE)
 const pairs = [];
 for (const L of LUCIDE) pairs.push([kebab(L), DICT[kebab(L)] ?? kebab(L)]);
 for (const [k, base] of Object.entries(EXTRAS)) pairs.push([k, base]);
@@ -130,8 +109,6 @@ const icons = {};
 const missing = [];
 for (const [key, base] of pairs) {
   if (icons[key]) continue;
-  // ưu tiên đúng STYLE; nếu icon không có bản outline riêng (vd search) → lùi
-  // về filled CÙNG shape; cuối cùng mới về bản mặc định.
   const cand = [
     `${base}${STYLE}`,
     `${base}${STYLE.replace("-outline", "")}`,
@@ -147,7 +124,6 @@ for (const [key, base] of pairs) {
   else missing.push(`${key} (${base}${STYLE})`);
 }
 
-// Bản đặc: bỏ qua STYLE, ưu tiên `-rounded` (filled, cùng bo tròn với bộ viền).
 for (const [key, base] of Object.entries(FILLED)) {
   const cand = [`${base}-rounded`, base].find(has);
   const d = cand && resolve(cand);
@@ -165,7 +141,6 @@ fs.writeFileSync(
   JSON.stringify({ prefix: "material-symbols", icons, width: c.width ?? 24, height: c.height ?? 24 }),
 );
 
-// ── Bộ component icon (thay chỗ import icon trước đây) ─────────────────────────────────────────────────────────
 const exports = LUCIDE.map(
   (name) => `export const ${name} = make(${JSON.stringify(kebab(name))});`,
 ).join("\n");

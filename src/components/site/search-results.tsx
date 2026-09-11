@@ -86,7 +86,6 @@ export function SearchResults({
         quả cho “{q}”
       </p>
 
-      {/* Tab lọc theo loại */}
       <div className="mt-4 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {tabs.map((t) => (
           <button
@@ -114,7 +113,6 @@ export function SearchResults({
         ))}
       </div>
 
-      {/* Danh sách kết quả */}
       <ul className="mt-4 space-y-1">
         {shown.map((r) => (
           <li key={r.href}>

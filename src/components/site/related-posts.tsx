@@ -7,8 +7,6 @@ import { POST_CATEGORY_LABELS } from "@/lib/listing-labels";
 import { PostStats } from "@/components/blog/post-stats";
 import { SectionHeading } from "@/components/site/section-heading";
 
-// Đặc sản/Quán ăn không có trang chi tiết riêng (hiển thị drawer) nên không
-// render "Bài viết liên quan". Lưu trú CÓ trang chi tiết (/luu-tru/[slug]) → giữ.
 const FK = {
   place: "placeId",
   activity: "activityId",
@@ -36,24 +34,6 @@ const dateFmt = new Intl.DateTimeFormat("vi-VN", {
   year: "numeric",
 });
 
-// "Bài viết liên quan": các Post (đã xuất bản) có PostRef trỏ tới đối tượng này.
-// Tự ẩn nếu không có bài.
-//
-// ẢNH TRÊN — CHỮ DƯỚI, KHÔNG khung thẻ: chỉ ảnh bo góc rồi chữ trần trên nền
-// trang. Chữ nằm ngoài ảnh nên đọc chắc chắn, không phụ thuộc bức bìa sáng hay
-// tối như bản chữ-đè-lên-ảnh.
-//
-// Tiết kiệm chỗ bằng CÁCH BÀY chứ không bằng cắt nội dung:
-//  - mobile: dải cuộn ngang có snap, thấy ~1,7 thẻ mỗi lúc → cả mục cao đúng
-//    MỘT thẻ (~250px) thay vì ba thẻ chồng lên nhau (~750px);
-//  - từ lg: bỏ cuộn, thành lưới 3 cột.
-//
-// Chữ chỉ giữ thứ quyết định việc bấm: nhãn phân loại · tiêu đề 2 dòng · ngày
-// và tương tác.
-//
-// Tiêu đề mục dùng `SectionHeading` như mọi mục khác, và container `max-w-7xl`
-// cho khớp mọi trang gọi nó — cả bốn trang (điểm đến, địa điểm, hoạt động, lưu
-// trú) đều dựng nội dung ở `max-w-7xl`.
 export async function RelatedPosts({
   type,
   id,
@@ -61,7 +41,6 @@ export async function RelatedPosts({
 }: {
   type: RefType;
   id: string;
-  /** Dùng giọng tiêu đề serif của trang điểm đến (xem `SectionHeading`). */
   serif?: boolean;
 }) {
   const where = {
@@ -92,13 +71,6 @@ export async function RelatedPosts({
   if (posts.length === 0) return null;
 
   return (
-    // Tự dựng container: component này còn được gọi trực tiếp ở ba trang chi
-    // tiết (địa điểm, hoạt động, lưu trú) mà không có dải nào bọc ngoài.
-    //
-    // Đệm TRÊN là bắt buộc, không ăn nhờ đệm dưới của khối trước: ở trang Place
-    // khối trước là một dải có NỀN, nên đệm của nó là 80px màu nhạt — nền dừng
-    // ngay sát chữ "Cẩm nang", đọc ra như nền đè lên tiêu đề. Có đệm riêng thì
-    // giữa hai mục là 80px nhạt + 80px trắng, đúng nhịp như mọi cặp dải khác.
     <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20">
       <SectionHeading
         serif={serif}
@@ -108,10 +80,6 @@ export async function RelatedPosts({
         unit="bài"
       />
 
-      {/* `-mx-4 px-4` (và `sm:` tương ứng): dải cuộn chạm tới mép màn hình nhưng
-          thẻ đầu vẫn thẳng hàng với tiêu đề mục. Từ lg bỏ cuộn, thành lưới.
-          `py-1.5`: `overflow-x-auto` cắt cả chiều DỌC, thiếu đệm này thì lúc rê
-          thẻ nhấc lên và bóng của nó bị xén ngang. */}
       <ul className="-mx-4 mt-6 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 py-1.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:-mx-6 sm:px-6 lg:mx-0 lg:grid lg:grid-cols-3 lg:gap-5 lg:overflow-visible lg:px-0 [&::-webkit-scrollbar]:hidden">
         {posts.map((p) => (
           <Card key={p.slug} p={p} />
@@ -121,22 +89,10 @@ export async function RelatedPosts({
   );
 }
 
-// KHÔNG có khung thẻ: chỉ ảnh bo góc + chữ trần trên nền trang. Bỏ viền/nền/
-// bóng đi thì bức ảnh là vật thể duy nhất, mắt đi thẳng vào nó; thêm một khung
-// nữa quanh ảnh vốn đã bo góc chỉ tạo hai đường bo lồng nhau.
-//
-// Nhãn phân loại KHÔNG nằm trên ảnh (bố cục trần thì viên kính trên ảnh là thứ
-// duy nhất còn "đặc", nhìn lạc lõng) và cũng KHÔNG làm eyebrow trên tiêu đề —
-// nó là dữ kiện ngang hàng ngày đăng, nên xuống hàng meta ở đáy thẻ.
 function Card({ p }: { p: Post }) {
   const cat = p.category ? POST_CATEGORY_LABELS[p.category] : null;
   return (
     <li className="w-52 shrink-0 snap-start sm:w-60 lg:w-auto">
-      {/* Hiệu ứng rê: cả thẻ NHẤC LÊN 4px và ảnh đổ bóng mềm, thay cho kiểu
-          phóng ảnh. Phóng ảnh thì phải cắt bớt bức bìa đúng lúc người ta đang
-          nhìn nó — với site du lịch, bức ảnh là nội dung chứ không phải nền để
-          nghịch. Nhấc lên giữ nguyên ảnh, chỉ nói "cái này bấm được".
-          Chạm (không có hover) thì lún xuống bằng `active:scale`. */}
       <Link
         href={`/blog/${p.slug}`}
         className="group flex h-full flex-col transition-transform duration-300 ease-out hover:-translate-y-1 active:scale-[0.99] motion-reduce:transition-none motion-reduce:hover:translate-y-0"
@@ -159,20 +115,6 @@ function Card({ p }: { p: Post }) {
           {p.title}
         </span>
 
-        {/* KHÔNG có mũi tên ở dòng này. Cả thẻ đã là một link, nên mũi tên
-            không nói thêm được gì; nó lại nằm lẻ ở mút phải cùng hàng với ngày
-            tháng nên đọc ra như thuộc về ngày tháng. Mũi tên chỉ đáng có khi
-            phân biệt MỘT hành động giữa nhiều hành động, hoặc báo rời khỏi site
-            — cả hai đều không phải trường hợp này. Tín hiệu bấm được đã nằm ở
-            tiêu đề đổi màu + ảnh phóng nhẹ khi rê.
-            `mt-auto` đẩy dòng meta xuống đáy → ba thẻ cạnh nhau có ngày tháng
-            thẳng hàng dù tiêu đề một dòng hay hai dòng. */}
-        {/* Hàng meta ở đáy: loại bài (chip) → ngày → lượt thích/bình luận.
-            Chip mượn đúng khuôn "loại bài" của bảng tin Cộng đồng — cùng một
-            thứ thì cùng một hình. Nó cũng tự tách khỏi phần chữ trần bên cạnh
-            nên KHÔNG cần dấu ngăn giữa chip và ngày.
-            `mt-auto` đẩy hàng này xuống đáy → ba thẻ cạnh nhau có ngày tháng
-            thẳng hàng dù tiêu đề một dòng hay hai dòng. */}
         <span className="mt-auto flex flex-wrap items-center gap-x-2.5 gap-y-1.5 pt-2.5 text-xs text-muted-foreground">
           {cat && (
             <span className="rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary">

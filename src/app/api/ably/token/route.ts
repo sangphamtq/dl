@@ -2,9 +2,6 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { getAblyRest } from "@/lib/ably";
 
-// Cấp token cho browser đăng ký realtime — chỉ cho phép SUBSCRIBE. Kênh feed
-// công khai cho mọi người; kênh thông báo riêng user:<id> chỉ cấp cho đúng user
-// đó (gắn clientId) để không nghe được thông báo người khác.
 export async function GET() {
   const client = getAblyRest();
   if (!client)

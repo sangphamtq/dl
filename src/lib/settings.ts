@@ -13,11 +13,9 @@ export type SiteSettings = {
   facebookUrl: string | null;
   instagramUrl: string | null;
   youtubeUrl: string | null;
-  /** Kiểu hero áp dụng cho MỌI trang điểm đến. */
   heroLayout: HeroLayout;
 };
 
-// Giá trị mặc định khi chưa lưu cấu hình.
 const DEFAULTS: SiteSettings = {
   siteName: "Halivivu",
   tagline: "Hỗ trợ thông tin du lịch Việt Nam.",
@@ -30,11 +28,7 @@ const DEFAULTS: SiteSettings = {
   heroLayout: "center",
 };
 
-// Đọc cấu hình site (gộp với mặc định). Dùng ở layout, header, footer, metadata.
-// Bọc `cache()` của React: một request render có thể gọi 3–4 lần (metadata, header,
-// footer, trang) nhưng chỉ đi tới DB đúng một lần.
 export const getSettings = cache(async function getSettings(): Promise<SiteSettings> {
-  // DB chưa kết nối → dùng mặc định để root layout/header/footer không văng lỗi.
   const row = await safeQuery(
     () => prisma.siteSetting.findUnique({ where: { id: SETTINGS_ID } }),
     null,

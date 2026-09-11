@@ -31,14 +31,6 @@ export default async function PlaceMapPage({
   const points = await getPlaceGeoPoints(place.id);
 
   return (
-    // CHIỀU CAO PHẢI XÁC ĐỊNH, không được để `flex-1` tự lo.
-    // Header nay nằm NGOÀI trang (ở layout `(site)`) nên `h-[100dvh]` cũ sẽ đẩy
-    // tổng chiều cao vượt khung nhìn — nhưng thay bằng `flex-1` thì hỏng nặng
-    // hơn: chuỗi cha chỉ có `min-h-full` trên <body>, tức KHÔNG có chiều cao xác
-    // định, nên `flex-1` co về 0, Leaflet khởi tạo trên khung 0×0 và `fitBounds`
-    // trả về `LatLng(NaN, NaN)` → cả trang văng sang màn hình lỗi.
-    // Trừ thẳng chiều cao header: dưới lg header `hidden` nên không chiếm chỗ,
-    // từ lg mới phải trừ 4rem (h-16 — xem header-chrome.tsx).
     <div className="flex h-dvh flex-col lg:h-[calc(100dvh-4rem)]">
       <main className="min-h-0 flex-1">
         {points.length > 0 ? (

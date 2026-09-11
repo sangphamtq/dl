@@ -27,7 +27,6 @@ const dateFmt = new Intl.DateTimeFormat("vi-VN", {
   year: "numeric",
 });
 
-// Ước lượng thời gian đọc (~200 từ/phút) từ HTML thân bài.
 function readingMinutes(html: string): number {
   const words = html
     .replace(/<[^>]+>/g, " ")
@@ -52,7 +51,6 @@ export async function generateMetadata({
   return { title: p.title, description: p.excerpt ?? undefined };
 }
 
-// PostRef → { label, name, href } trỏ tới trang công khai.
 function resolveRef(r: {
   place: { slug: string; name: string } | null;
   activity: { slug: string; name: string } | null;
@@ -132,7 +130,6 @@ export default async function BlogPostPage({
     },
   } as const;
 
-  // Bài liên quan + dữ liệu tim/bình luận.
   const [related, likeCount, myLike, comments, commentTotal] = await Promise.all([
     prisma.post.findMany({
       where: {
@@ -179,9 +176,7 @@ export default async function BlogPostPage({
 
       <main className="flex-1">
         <div className="mx-auto flex max-w-[81.25rem] flex-col items-start gap-10 px-4 py-8 sm:px-6 sm:py-10 lg:flex-row lg:justify-between lg:gap-16 lg:px-8 lg:py-12">
-          {/* Cột trái: bài viết */}
           <article className="w-full min-w-0 lg:w-[52.25rem]">
-            {/* Breadcrumb */}
             <nav className="flex flex-wrap items-center text-[0.75rem] font-medium uppercase tracking-[0.04em] text-[#2e2e2e]/60 dark:text-white/50">
               <Link href="/" className="transition-colors hover:text-[#348320]">
                 Trang chủ
@@ -194,12 +189,10 @@ export default async function BlogPostPage({
               <span className="truncate text-[#348320]">{post.title}</span>
             </nav>
 
-            {/* Tiêu đề */}
             <h1 className="mt-5 text-[1.75rem] font-bold leading-snug text-[#1f2226] sm:text-[2rem] dark:text-white">
               {post.title}
             </h1>
 
-            {/* Meta (mobile — sidebar ẩn ở màn nhỏ) */}
             <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-3 lg:hidden">
               <span className="inline-flex items-center gap-1.5 text-sm text-[#2e2e2e]/60 dark:text-white/50">
                 <CalendarDays className="size-4" aria-hidden />
@@ -211,14 +204,12 @@ export default async function BlogPostPage({
               </span>
             </div>
 
-            {/* Sapo */}
             {post.excerpt && (
               <p className="mt-6 text-base leading-[1.6] text-[#1f2226] dark:text-white/85">
                 {post.excerpt}
               </p>
             )}
 
-            {/* Ảnh bìa (ảnh mở đầu inline) */}
             {cover && (
               <figure className="mt-4">
                 <div className="relative aspect-[16/9] overflow-hidden rounded-lg bg-[#e5e7de]">
@@ -239,14 +230,12 @@ export default async function BlogPostPage({
               </figure>
             )}
 
-            {/* Mục lục — inline trên mobile */}
             {toc.length >= 2 && (
               <div className="mt-2 lg:hidden">
                 <ArticleTocBox items={toc} />
               </div>
             )}
 
-            {/* Nội dung bài viết */}
             <div
               className={cn(
                 proseClass,
@@ -263,7 +252,6 @@ export default async function BlogPostPage({
               dangerouslySetInnerHTML={{ __html: contentHtml }}
             />
 
-            {/* Tim bài viết */}
             <div className="mt-8">
               <LikeButton
                 postId={post.id}
@@ -274,7 +262,6 @@ export default async function BlogPostPage({
               />
             </div>
 
-            {/* Đề cập trong bài (PostRef) */}
             {refs.length > 0 && (
               <section className="mt-12 border-t border-[#e8e6e1] pt-6 dark:border-white/10">
                 <h2 className="text-[0.75rem] font-semibold uppercase tracking-[0.1em] text-[#2e2e2e]/50 dark:text-white/50">
@@ -304,7 +291,6 @@ export default async function BlogPostPage({
               </section>
             )}
 
-            {/* Thảo luận */}
             <CommentSection
               postId={post.id}
               postSlug={slug}
@@ -317,10 +303,8 @@ export default async function BlogPostPage({
             />
           </article>
 
-          {/* Cột phải: sidebar */}
           <aside className="hidden lg:block lg:w-[25rem] lg:shrink-0">
             <div className="sticky top-6">
-              {/* Ngày + mục lục */}
               <div className="rounded-2xl bg-white p-5 dark:bg-white/5">
                 <p className="px-2 inline-flex items-center gap-1.5 text-[0.875rem] text-[#2e2e2e]/60 dark:text-white/50">
                   <CalendarDays className="size-4" aria-hidden />
@@ -330,7 +314,6 @@ export default async function BlogPostPage({
                 {toc.length >= 2 && <ArticleTocBox items={toc} />}
               </div>
 
-              {/* Nội dung liên quan */}
               {related.length > 0 && (
                 <div className="mt-16">
                   <h2 className="mb-5 text-[1.25rem] font-bold text-[#2e2e2e] dark:text-white">
@@ -380,7 +363,6 @@ export default async function BlogPostPage({
           </aside>
         </div>
 
-        {/* Có thể bạn cũng thích */}
         {related.length > 3 && (
           <div className="mx-auto mt-8 max-w-[81.25rem] px-4 pb-16 sm:px-6 lg:px-8 lg:pb-24">
             <div className="mb-10 flex items-center justify-between gap-4">

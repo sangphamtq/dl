@@ -15,7 +15,6 @@ export default async function LoginPage({
   const { callbackUrl } = await searchParams;
   const redirectTo = callbackUrl || "/";
 
-  // Chỉ ở dev: gợi ý các tài khoản CTV đã seed để đăng nhập nhanh 1 chạm.
   const devUsers = IS_DEV
     ? await prisma.user.findMany({
         where: { saleProfile: { isNot: null } },
@@ -26,7 +25,6 @@ export default async function LoginPage({
 
   return (
     <main className="grid flex-1 lg:grid-cols-2">
-      {/* Image panel — ảnh làm chủ */}
       <div className="relative hidden lg:block">
         <Image
           src="https://picsum.photos/seed/vietnam-travel-login/1400/1800"
@@ -60,7 +58,6 @@ export default async function LoginPage({
         </div>
       </div>
 
-      {/* Form panel */}
       <div className="flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-sm space-y-8">
           <div className="space-y-2">

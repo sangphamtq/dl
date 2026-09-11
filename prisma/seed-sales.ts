@@ -7,10 +7,6 @@ import {
 } from "@/generated/prisma/enums";
 import { normalizeValue, type TrustChannel } from "@/lib/trust";
 
-// Seed dữ liệu mẫu cho CTV (SaleProfile) + báo cáo lừa đảo (ScamReport).
-// Idempotent: upsert user theo email, SaleProfile theo userId; xoá & tạo lại
-// các ScamReport demo theo valueNorm. Dùng: pnpm seed:sales
-
 const AVATAR = (s: string) => `https://picsum.photos/seed/${s}/200/200`;
 const EVIDENCE = (s: string) => `https://picsum.photos/seed/${s}/600/400`;
 
@@ -119,7 +115,6 @@ const SCAMS: ScamSeed[] = [
 async function main() {
   const now = new Date();
 
-  // Bản đồ slug → id của các place dùng làm khu vực.
   const areaSlugs = [...new Set(SALES.flatMap((s) => s.areaSlugs))];
   const places = await prisma.place.findMany({
     where: { slug: { in: areaSlugs } },
@@ -162,7 +157,6 @@ async function main() {
     });
   }
 
-  // ScamReport demo: xoá theo valueNorm rồi tạo lại (idempotent).
   for (const sc of SCAMS) {
     const valueNorm = normalizeValue(sc.channel as TrustChannel, sc.valueRaw);
     await prisma.scamReport.deleteMany({

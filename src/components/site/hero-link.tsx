@@ -2,19 +2,6 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { R_CTRL } from "@/lib/radius";
 
-/**
- * Nút kính trên ẢNH hero — vật liệu dùng chung của các trang mở bằng một tấm
- * ảnh tràn viền: `/diem-den`, `/dia-diem`, `/lich-trinh`.
- *
- * Trước đây mỗi trang giữ một bản chép y hệt (`BrowseLink` ở trang này,
- * `HeroLink` ở trang kia — giống nhau từng ký tự, chỉ khác cái tên). Tách ra vì
- * đây là VẬT LIỆU chứ không phải chi tiết riêng của một trang: đổi độ mờ hay độ
- * dày viền thì phải đổi ở cả ba nơi cùng lúc, mà ba bản chép thì chắc chắn có
- * ngày lệch nhau.
- *
- * Chữ in hoa giãn rộng + nền chuyển sắc rất nhạt + viền trong 1px: nút phải đọc
- * được trên ảnh SÁNG lẫn ảnh TỐI, nên không dùng nền đặc mà dùng bóng chữ.
- */
 export function HeroLink({
   href,
   label,

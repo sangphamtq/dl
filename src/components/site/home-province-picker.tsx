@@ -21,14 +21,12 @@ import {
 import { setHomeProvince } from "./home-province-actions";
 
 type Props = {
-  provinces: string[]; // tên tỉnh/thành
+  provinces: string[];
   value: string | null;
-  full?: boolean; // true = nút full-width (trong sheet mobile); false = pill header
-  onSelected?: () => void; // vd đóng sheet sau khi chọn
+  full?: boolean;
+  onSelected?: () => void;
 };
 
-// Ô chọn "tỉnh của bạn" trên header — Popover + Command tìm kiếm không dấu.
-// Cập nhật lạc quan (state cục bộ) rồi lưu qua server action + router.refresh().
 export function HomeProvincePicker({
   provinces,
   value,
@@ -59,9 +57,9 @@ export function HomeProvincePicker({
           className={cn(
             "group inline-flex h-9 items-center text-sm transition-colors",
             full
-              ? // Sheet mobile: hàng full-width kiểu ô nhập
+              ?
                 "w-full gap-2 rounded-md border border-border/60 bg-muted/40 px-3 text-foreground hover:bg-muted"
-              : // Header: nút tròn khi hẹp; hộp nền như ô tìm kiếm khi ≥ xl
+              :
                 "relative w-9 justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground xl:w-auto xl:justify-start xl:gap-2 xl:rounded-md xl:border xl:border-transparent xl:bg-muted/60 xl:px-2.5 xl:hover:bg-muted xl:hover:text-foreground",
             pending && "opacity-70",
           )}
@@ -70,7 +68,6 @@ export function HomeProvincePicker({
             className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground"
             aria-hidden
           />
-          {/* Chấm báo "đã chọn" khi nút thu gọn thành icon (lg → xl) */}
           {selected && !full && (
             <span
               aria-hidden

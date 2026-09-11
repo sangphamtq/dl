@@ -21,7 +21,6 @@ export async function getPlaceOptions(): Promise<Option[]> {
   }));
 }
 
-// Quán ăn để liên kết M:N (kèm nơi để phân biệt).
 export async function getEateryOptions(): Promise<Option[]> {
   const eateries = await prisma.eatery.findMany({
     orderBy: { name: "asc" },

@@ -10,14 +10,13 @@ function snippet(s: string | undefined, n = 120): string | null {
 }
 
 type NotifArgs = {
-  userId: string; // người nhận
-  actorId: string; // người gây ra
+  userId: string;
+  actorId: string;
   type: NotificationType;
   url: string;
   excerpt?: string;
 };
 
-// Tạo thông báo (không tự báo cho chính mình; không chặn luồng chính nếu lỗi).
 export async function notify(args: NotifArgs): Promise<void> {
   if (!args.userId || args.userId === args.actorId) return;
   try {
@@ -36,8 +35,6 @@ export async function notify(args: NotifArgs): Promise<void> {
   }
 }
 
-// Thông báo "thích" — giữ tối đa 1 bản ghi cho mỗi (người nhận, người thích,
-// loại, đích) để khỏi spam khi bật/tắt tim.
 export async function notifyLike(args: NotifArgs): Promise<void> {
   if (!args.userId || args.userId === args.actorId) return;
   try {
@@ -59,7 +56,6 @@ export async function notifyLike(args: NotifArgs): Promise<void> {
   }
 }
 
-// Bỏ thông báo "thích" khi người dùng bỏ tim.
 export async function removeLikeNotif(args: {
   userId: string;
   actorId: string;

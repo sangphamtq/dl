@@ -1,5 +1,3 @@
-// Hằng số & nhãn cho diễn đàn cộng đồng (/cong-dong).
-
 export const THREAD_TYPES = [
   { value: "share", label: "Chia sẻ", desc: "Trải nghiệm sau chuyến đi" },
   { value: "question", label: "Hỏi đáp", desc: "Hỏi trước khi đi" },

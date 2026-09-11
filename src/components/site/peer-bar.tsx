@@ -10,8 +10,6 @@ import type { PeerItem } from "@/lib/peers";
 
 export type PeerGroup = { label?: string; items: PeerItem[] };
 
-// Nội dung chính rộng tối đa 1280px (max-w-7xl). Rail trái rộng ~13rem → cần
-// mỗi bên trống ≳ 232px mới đủ chỗ không đè nội dung; thiếu thì dùng dock dưới.
 const CONTENT_MAX = 1280;
 const RAIL_MIN_GUTTER = 188;
 
@@ -41,9 +39,6 @@ function getMode(): "rail" | "dock" {
     : "dock";
 }
 
-// Thanh chuyển nhanh giữa các mục ngang cấp.
-// - Gutter đủ rộng: panel DỌC nép trái, trong khoảng trống (không đè nội dung).
-// - Hẹp: dock NGANG dưới đáy. Nút ẩn/mở ở góc.
 export function PeerBar({
   groups,
   currentSlug,
@@ -73,7 +68,6 @@ export function PeerBar({
   const total = groups.reduce((n, g) => n + g.items.length, 0);
   if (total <= 1) return null;
 
-  // ── Đã ẩn → nút mở lại ở góc ─────────────────────────────────────
   if (hidden) {
     return (
       <button
@@ -88,7 +82,6 @@ export function PeerBar({
     );
   }
 
-  // ── Gutter đủ: panel dọc nép trái ────────────────────────────────
   if (mode === "rail") {
     return (
       <div className="fixed left-3 top-36 z-40 flex max-h-[calc(100vh-10rem)] w-40 flex-col overflow-hidden rounded-xl border border-border/60 bg-background/80 shadow-lg shadow-black/5 ring-1 ring-black/[0.02] backdrop-blur-xl">
@@ -147,7 +140,6 @@ export function PeerBar({
     );
   }
 
-  // ── Hẹp: dock ngang dưới đáy ─────────────────────────────────────
   return (
     <>
       <div aria-hidden className="h-20" />

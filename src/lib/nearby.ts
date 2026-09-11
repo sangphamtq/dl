@@ -1,10 +1,5 @@
 import { coordKey, type LatLng, type Ride } from "@/lib/routing";
 
-// Đo & xếp hạng "mục lân cận" dùng chung cho các trang chi tiết (địa điểm, lưu
-// trú…). Chim bay (haversine) để lọc thô + fallback; khoảng cách lái xe thật
-// (ORS, đã cache 30 ngày theo toạ độ — xem lib/routing) để xếp hạng & hiển thị.
-
-// Khoảng cách chim bay (km) giữa 2 toạ độ — haversine.
 export function distanceKm(
   aLat: number,
   aLng: number,
@@ -22,15 +17,12 @@ export function distanceKm(
   return 2 * R * Math.asin(Math.sqrt(s));
 }
 
-// "800 m" / "1,2 km" / "12 km".
 function fmtKm(km: number): string {
   if (km < 1) return `${Math.round(km * 1000)} m`;
   if (km < 10) return `${km.toFixed(1).replace(".", ",")} km`;
   return `${Math.round(km)} km`;
 }
 
-// Gắn khoảng cách (km, null nếu thiếu toạ độ) tới item, sắp gần→xa khi có toạ độ
-// (mục thiếu toạ độ dồn cuối), rồi cắt còn `take`. Dùng để lọc thô ứng viên.
 export function withDistance<T extends { lat: number | null; lng: number | null }>(
   items: T[],
   origin: { lat: number | null; lng: number | null },
@@ -58,18 +50,14 @@ export function withDistance<T extends { lat: number | null; lng: number | null 
     .map((x) => x.it);
 }
 
-// Mục lân cận sau khi gắn khoảng cách lái xe (drivingKm) + chim bay (distanceKm).
 export type Nearby<T> = T & {
-  distanceKm: number | null; // chim bay (fallback)
-  drivingKm: number | null; // đường đi thật (ORS)
+  distanceKm: number | null;
+  drivingKm: number | null;
   drivingMin: number | null;
 };
 
-// Bán kính tối đa cho mục "gần đây" — xa hơn thì đừng gọi là gần (km đường đi).
 const NEARBY_MAX_KM = 15;
 
-// Gắn km đường đi từ drivingMap, bỏ mục xa quá NEARBY_MAX_KM, sắp gần→xa (ưu tiên
-// đường đi, fallback chim bay), rồi cắt còn `take`. Mục thiếu toạ độ giữ, dồn cuối.
 export function rankNearby<
   T extends { lat: number | null; lng: number | null; distanceKm: number | null },
 >(items: T[], driving: Record<string, Ride>, take: number): Nearby<T>[] {
@@ -94,8 +82,6 @@ export function rankNearby<
     .slice(0, take);
 }
 
-// Nhãn hiển thị: ưu tiên đường đi ("cách 2,3 km · 6 phút"), thiếu thì chim bay
-// ("cách ~1,2 km").
 export function rideLabel(n: {
   drivingKm: number | null;
   drivingMin: number | null;
@@ -111,7 +97,6 @@ export function rideLabel(n: {
   return null;
 }
 
-// Toạ độ duy nhất (có lat/lng) để gọi routing 1 lần.
 export function uniqueCoords(
   items: { lat: number | null; lng: number | null }[],
 ): LatLng[] {

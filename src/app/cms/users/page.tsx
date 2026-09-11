@@ -49,7 +49,6 @@ export default async function UsersPage() {
         Tài khoản đăng nhập & phân quyền truy cập hệ thống.
       </p>
 
-      {/* Thống kê nhanh */}
       <div className="mt-6 grid grid-cols-3 gap-4">
         {stats.map(({ label, value, icon: Icon }) => (
           <Card key={label} className="p-4">
@@ -72,9 +71,7 @@ export default async function UsersPage() {
         </p>
       )}
 
-      {/* Danh sách người dùng */}
       <div className="mt-6 overflow-hidden rounded-xl border">
-        {/* Header bảng (chỉ desktop) */}
         <div className="hidden items-center gap-4 border-b bg-muted/40 px-4 py-2.5 text-xs font-medium text-muted-foreground md:flex">
           <span className="flex-1">Tài khoản</span>
           <span className="w-20 text-center">Bài viết</span>
@@ -92,7 +89,6 @@ export default async function UsersPage() {
                 key={u.id}
                 className="flex flex-col gap-3 px-4 py-3.5 md:flex-row md:items-center md:gap-4"
               >
-                {/* Tài khoản */}
                 <div className="flex min-w-0 flex-1 items-center gap-3">
                   <Avatar className="size-9 shrink-0 rounded-lg">
                     {u.image && (
@@ -119,7 +115,6 @@ export default async function UsersPage() {
                   </div>
                 </div>
 
-                {/* Meta + vai trò: hàng ngang gọn trên mobile, cột cố định trên desktop */}
                 <div className="flex items-center justify-between gap-4 pl-12 md:pl-0">
                   <span className="text-sm text-muted-foreground md:w-20 md:text-center">
                     <span className="md:hidden">Bài viết: </span>

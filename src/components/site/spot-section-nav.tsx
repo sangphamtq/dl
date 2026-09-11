@@ -2,8 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-// Cùng bộ icon SVG tự vẽ với thanh tab của trang điểm đến (`PlaceTabs`) —
-// hai thanh này là anh em, mục "Bản đồ" ở hai nơi phải là MỘT hình.
 import { NavIcon } from "@/components/site/nav-icons";
 import { cn } from "@/lib/utils";
 
@@ -17,11 +15,6 @@ export type SectionItem = {
   icon?: "map" | "community";
 };
 
-// Thanh điều hướng mục dính cho trang địa điểm — nhảy nhanh tới từng mục khi
-// bài giới thiệu dài, kèm scroll-spy làm nổi mục đang xem. Style bám sát
-// PlaceTabs (trang điểm đến): mục thường gạch chân, nhóm Cộng đồng/Bản đồ tách
-// riêng bên phải (có icon). currentId: khi ở trang con (vd cộng đồng), ép mục
-// đó active và tắt scroll-spy.
 export function SpotSectionNav({
   items,
   currentId,
@@ -33,13 +26,10 @@ export function SpotSectionNav({
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const [stuck, setStuck] = useState(false);
 
-  // Mục thường (bên trái) vs mục nút icon (bên phải).
   const navItems = items.filter((it) => !it.icon);
   const communityItem = items.find((it) => it.icon === "community");
   const mapItem = items.find((it) => it.icon === "map");
 
-  // Scroll-spy: mục nào ở ~1/3 trên màn hình thì active. Tắt khi ở trang con
-  // (currentId set) vì các anchor không nằm trên trang này.
   useEffect(() => {
     if (currentId) return;
     const els = navItems
@@ -61,12 +51,6 @@ export function SpotSectionNav({
     return () => obs.disconnect();
   }, [navItems, currentId]);
 
-  // Sentinel ngay trên thanh: khi nó vượt lên trên mốc dính → thanh đang ghim
-  // → thêm bóng mềm.
-  //
-  // Mốc dính KHÁC NHAU theo khổ màn: từ lg thanh ghim dưới header (64px), còn ở
-  // mobile không có header nên nó ghim thẳng vào mép trên (0). Dùng nhầm một
-  // con số là bóng bật/tắt lệch đúng 64px so với lúc thanh thật sự dính.
   useEffect(() => {
     const el = sentinelRef.current;
     if (!el) return;
@@ -116,7 +100,6 @@ export function SpotSectionNav({
           <nav className="flex min-w-0 items-center gap-1 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {navItems.map((it) => {
               const isActive = active === it.id;
-              // Mục điều hướng sang trang khác → Link thật (không cuộn).
               if (it.href) {
                 return (
                   <Link
@@ -129,7 +112,6 @@ export function SpotSectionNav({
                   </Link>
                 );
               }
-              // Mục cuộn trong trang (anchor).
               return (
                 <a
                   key={it.id}
@@ -144,7 +126,6 @@ export function SpotSectionNav({
             })}
           </nav>
 
-          {/* Nhóm bên phải: Cộng đồng + Bản đồ (có icon), giống điểm đến */}
           {(communityItem || mapItem) && (
             <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
               {communityItem && (

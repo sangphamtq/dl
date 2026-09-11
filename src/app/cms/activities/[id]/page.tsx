@@ -106,7 +106,6 @@ export default async function ActivityDetailPage({
 
   return (
     <div className="p-6 sm:p-8">
-      {/* Breadcrumb + tiêu đề + hành động */}
       <Link
         href="/cms/activities"
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
@@ -167,10 +166,8 @@ export default async function ActivityDetailPage({
         </div>
       </div>
 
-      {/* Bố cục 2 cột: nội dung + sidebar meta */}
       <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="space-y-8 lg:col-span-2">
-          {/* Ảnh */}
           <section>
             {cover ? (
               <div className="flex max-w-2xl gap-3">
@@ -217,7 +214,6 @@ export default async function ActivityDetailPage({
             )}
           </section>
 
-          {/* Mô tả */}
           <section>
             <h2 className="text-lg font-semibold tracking-tight">Mô tả</h2>
             {activity.description ? (
@@ -231,7 +227,6 @@ export default async function ActivityDetailPage({
             )}
           </section>
 
-          {/* Diễn ra ở đâu (Spot liên kết) */}
           <section>
             <h2 className="text-lg font-semibold tracking-tight">
               Diễn ra ở đâu ({activity.spotLinks.length})
@@ -288,7 +283,6 @@ export default async function ActivityDetailPage({
           </section>
         </div>
 
-        {/* Sidebar meta */}
         <aside className="space-y-4">
           <ActivityAdminControls
             id={activity.id}

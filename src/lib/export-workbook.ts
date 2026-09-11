@@ -1,9 +1,6 @@
 import ExcelJS from "exceljs";
 import { prisma } from "@/lib/prisma";
 
-// Dựng workbook Excel (nhiều sheet) từ toàn bộ Điểm đến (Place) + các Listing.
-// Dùng chung cho CLI (scripts/export-excel.ts) và route CMS (/api/cms/export).
-
 const KIND_VI: Record<string, string> = { province: "Tỉnh/Thành", destination: "Điểm đến" };
 const STATUS_VI: Record<string, string> = { draft: "Nháp", published: "Xuất bản" };
 const DIRECTION_VI: Record<string, string> = { getTo: "Đến nơi", getAround: "Tại chỗ" };
@@ -49,7 +46,6 @@ export async function buildExportWorkbook(): Promise<{
   const wb = new ExcelJS.Workbook();
   wb.creator = "Halivivu";
 
-  // ---- Điểm đến (Place) ----
   const places = await prisma.place.findMany({
     orderBy: [{ kind: "asc" }, { name: "asc" }],
     include: { parent: { select: { name: true } }, _count: { select: { images: true } } },
@@ -78,7 +74,6 @@ export async function buildExportWorkbook(): Promise<{
     ]),
   );
 
-  // ---- Hoạt động (Activity) ----
   const activities = await prisma.activity.findMany({
     orderBy: { name: "asc" },
     include: { place: { select: { name: true } }, _count: { select: { spotLinks: true, images: true } } },
@@ -94,7 +89,6 @@ export async function buildExportWorkbook(): Promise<{
     ]),
   );
 
-  // ---- Địa điểm (Spot) ----
   const spots = await prisma.spot.findMany({
     orderBy: { name: "asc" },
     include: { place: { select: { name: true } }, _count: { select: { activityLinks: true, images: true } } },
@@ -110,7 +104,6 @@ export async function buildExportWorkbook(): Promise<{
     ]),
   );
 
-  // ---- Quán ăn (Eatery) ----
   const eateries = await prisma.eatery.findMany({
     orderBy: { name: "asc" },
     include: { place: { select: { name: true } }, _count: { select: { images: true } } },
@@ -126,7 +119,6 @@ export async function buildExportWorkbook(): Promise<{
     ]),
   );
 
-  // ---- Lưu trú (Accommodation) ----
   const accommodations = await prisma.accommodation.findMany({
     orderBy: { name: "asc" },
     include: { place: { select: { name: true } }, _count: { select: { images: true } } },
@@ -142,7 +134,6 @@ export async function buildExportWorkbook(): Promise<{
     ]),
   );
 
-  // ---- Di chuyển (Transport) ----
   const transports = await prisma.transport.findMany({ orderBy: { name: "asc" } });
   addSheet(
     wb,
@@ -170,7 +161,6 @@ export async function buildExportWorkbook(): Promise<{
   return { workbook: wb, counts };
 }
 
-// Tên file có timestamp: du-lieu-YYYYMMDD-HHmm.xlsx
 export function exportFileName(now: Date = new Date()): string {
   const p = (n: number) => String(n).padStart(2, "0");
   const stamp =

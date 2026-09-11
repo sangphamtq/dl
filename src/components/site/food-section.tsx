@@ -38,31 +38,6 @@ export type FoodExperience = {
   images: { url: string; isCover: boolean }[];
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
-// MÀN HÌNH ẨM THỰC — MỘT danh sách quán, một bộ điều khiển.
-//
-// Câu hỏi thật của người mở tab này, theo đúng thứ tự hay gặp:
-//   ❶ "giờ này còn chỗ nào mở?"  ❷ "bữa nào?"  ❸ "kiểu gì / có chỗ ngồi ngắm
-//   cảnh không?".  Bố cục bám đúng ba câu đó.
-//
-// ❶ được trả lời bằng `openingHours` — thứ vốn nằm im trong drawer. Dữ liệu
-//    biên tập đang ở dạng đọc được ("16:00 – 23:00", "5:30 – 10:00, 15:00 –
-//    19:00"), nên mỗi thẻ mang một huy hiệu trạng thái tính theo GIỜ VIỆT NAM,
-//    kèm một chip lọc "Đang mở". Đây là thông tin đắt nhất của cả trang: 20h
-//    thì hơn nửa danh sách đã đóng cửa, mà bản cũ không hé lộ điều đó ở đâu cả.
-//
-// KHÔNG còn chia hai khối "Ăn ở đâu" / "Quán nước & cà phê" theo `venueKind`.
-// Trục đó không sạch trong dữ liệu thật: "Hải sản Bờ Kè 24" và "Ốc nướng Bờ Kè"
-// là `eat` nhưng có `viewType = sea` — quán view đúng nghĩa mà bị nhốt ngoài
-// mục quán view; ngược lại "Chè Thái" là `drink` nhưng không có view nên mọi
-// chip hướng nhìn đều loại nó ra. Quán `both` thì đếm hai lần (13 + 4 = 17 cho
-// 15 quán). Việc "đến để ăn hay để ngồi" đã được trục BỮA diễn đạt chính xác
-// hơn (`cafe` là một bữa), còn cảnh đẹp thành MỘT BỘ LỌC ("Có view") + huy hiệu
-// trên thẻ — nên quán ăn sát biển cuối cùng cũng được khoe view của nó.
-//
-// Cũng đã bỏ thanh nhảy dính 3 chip + scroll-spy: một danh sách thì không có gì
-// để nhảy giữa, và 15 mục không đáng ba tầng điều khiển.
-// ═══════════════════════════════════════════════════════════════════════════
 export function FoodSection({
   placeName,
   eateries,
@@ -80,16 +55,11 @@ export function FoodSection({
   const [cat, setCat] = useState("all");
   const [viewOnly, setViewOnly] = useState(false);
   const [openOnly, setOpenOnly] = useState(false);
-  // Mở quán nào, và mở thẳng vào tab nào (rê chuột xem thực đơn rồi bấm thì
-  // vào luôn tab Thực đơn).
   const [selected, setSelected] = useState<{
     slug: string;
     tab: "anh" | "menu";
   } | null>(null);
 
-  // Đồng hồ chỉ chạy Ở CLIENT: server không biết "bây giờ" của người xem, mà
-  // trang lại được cache. Render lần đầu không có huy hiệu, hydrate xong mới
-  // hiện — huy hiệu nằm đè trên ảnh nên không đẩy bố cục.
   const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
     const tick = () => setNow(vietnamMinutesNow());
@@ -98,7 +68,6 @@ export function FoodSection({
     return () => clearInterval(id);
   }, []);
 
-  // Giờ mở cửa đọc sẵn một lần cho cả danh sách.
   const hours = useMemo(
     () => new Map(eateries.map((e) => [e.slug, parseOpeningHours(e.openingHours)])),
     [eateries],
@@ -106,15 +75,11 @@ export function FoodSection({
   const statusOf = (slug: string): OpeningStatus | null =>
     now == null ? null : openingStatus(hours.get(slug) ?? null, now);
 
-  // ── Trục lọc: chỉ hiện giá trị THẬT SỰ có trong dữ liệu ──
   const mealOptions = useMemo(() => {
     const present = new Set(eateries.flatMap((e) => e.meals));
     return Object.keys(MEAL_LABELS).filter((m) => present.has(m));
   }, [eateries]);
 
-  // Bỏ chip kiểu nào trùng tên với một chip bữa (`cafe` → "Cà phê" ở cả hai
-  // bảng nhãn): hai viên chữ giống hệt nhau trên cùng màn hình thì người dùng
-  // không thể biết chúng khác gì.
   const catOptions = useMemo(() => {
     const shownMeals = new Set(mealOptions.map((m) => label(MEAL_LABELS, m)));
     const present = new Set(eateries.map((e) => e.category).filter(Boolean));
@@ -135,10 +100,6 @@ export function FoodSection({
     }).length;
   }, [eateries, hours, now]);
 
-  // Khung giờ chung — dữ kiện thật thay cho đoạn văn giới thiệu viết tay.
-  // Thành phần theo KIỂU MÓN + số quán có lưu ý — hai thứ chỉ thấy được khi
-  // nhìn cả danh sách. Đếm trên TOÀN BỘ quán, không theo bộ lọc: đây là câu mô
-  // tả cả tab, còn con số theo bộ lọc thì dòng kết quả bên dưới đã lo.
   const composition = useMemo(
     () =>
       compositionLine(
@@ -179,7 +140,6 @@ export function FoodSection({
     setOpenOnly(false);
   };
 
-  // Bữa đang lọc lưu vào URL (?meal=) để giữ khi chia sẻ / quay lại.
   function chooseMeal(m: string) {
     setMeal(m);
     const params = new URLSearchParams(searchParams.toString());
@@ -194,8 +154,6 @@ export function FoodSection({
     [eateries],
   );
 
-  // Deep-link từ trang khác (vd card "Quán ăn gần đây" ở /dia-diem):
-  // #eatery-<slug> → mở đúng drawer khi vào trang.
   useEffect(() => {
     const m = window.location.hash.match(/^#eatery-(.+)$/);
     if (!m) return;
@@ -203,17 +161,12 @@ export function FoodSection({
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (bySlug.has(slug)) setSelected({ slug, tab: "anh" });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // chỉ đọc hash lúc mount
+  }, []);
 
   const active = selected ? bySlug.get(selected.slug) : undefined;
 
   return (
     <div>
-      {/* ── Mở đầu: tên + dữ kiện tính từ chính dữ liệu.
-             BỎ nhãn nhỏ "Ẩm thực": thanh tab ngay trên đã có mục đó đang sáng.
-             Mục đầu của dải đổi từ "n quán" sang THÀNH PHẦN — con số đó đã nằm
-             ở dòng kết quả ngay dưới bộ lọc (và còn đúng theo bộ lọc, trong khi
-             con số ở đây thì không). ── */}
       <header>
         <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
           Ăn uống ở {placeName}
@@ -256,11 +209,7 @@ export function FoodSection({
         </div>
       </header>
 
-      {/* ── Thanh lọc dính. Ghim ngay dưới PlaceTabs (cao 3rem; từ lg còn cộng
-             header 4rem) — bản cũ để `top-28` ở mọi khổ nên trên điện thoại nó
-             lửng lơ cách thanh tab 4rem, hở một dải nội dung chạy phía sau. ── */}
       <div className="sticky top-12 z-30 -mx-4 mt-8 border-b border-border/60 bg-background/90 px-4 backdrop-blur-lg sm:-mx-6 sm:px-6 lg:top-28">
-        {/* Hàng chính: trạng thái mở cửa + bữa */}
         <div className="hide-scrollbar flex items-center gap-2 overflow-x-auto py-3">
           <FilterChip
             active={openOnly}
@@ -282,7 +231,6 @@ export function FoodSection({
           ))}
         </div>
 
-        {/* Hàng phụ: kiểu món + có view */}
         {(catOptions.length > 0 || withView > 0) && (
           <div className="hide-scrollbar flex items-center gap-1.5 overflow-x-auto pb-3">
             {catOptions.length > 0 && (
@@ -325,7 +273,6 @@ export function FoodSection({
         )}
       </div>
 
-      {/* ── Dòng kết quả ── */}
       <p className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
         <span>
           <b className="font-semibold tabular-nums text-foreground">
@@ -373,8 +320,6 @@ export function FoodSection({
         </div>
       )}
 
-      {/* ── Trải nghiệm ẩm thực: tour / lớp học — đích khác (trang chi tiết
-             hoạt động), nên tách khối riêng ở cuối. ── */}
       {experiences.length > 0 && (
         <section className="mt-16 border-t border-border/60 pt-10">
           <div className="flex items-center gap-3">
@@ -401,16 +346,11 @@ export function FoodSection({
         </section>
       )}
 
-      {/* Popup chi tiết. Dưới `sm` dán đáy màn hình và trượt lên (một tay cầm
-          máy vẫn với tới được); từ `sm` là popup giữa màn, rộng để chứa bố cục
-          hai cột ảnh | nội dung. */}
       <Dialog open={selected !== null} onOpenChange={(o) => !o && setSelected(null)}>
         <DialogContent
           showCloseButton={false}
           className={cn(
             "w-full max-w-none gap-0 overflow-hidden border-0 p-0 shadow-2xl",
-            // Bo góc theo bộ chung của trang (`R_CARD` 6px) thay cho 24px:
-            // popup là một KHỐI BAO, cùng hạng với thẻ quán ngay sau lưng nó.
             "top-auto bottom-0 left-0 max-h-[92dvh] translate-x-0 translate-y-0 rounded-t-[6px]",
             "data-[state=open]:slide-in-from-bottom-6 data-[state=closed]:slide-out-to-bottom-6",
             "sm:bottom-auto sm:top-1/2 sm:left-1/2 sm:max-h-[88vh] sm:-translate-x-1/2 sm:-translate-y-1/2",
@@ -425,8 +365,6 @@ export function FoodSection({
                 status={statusOf(active.slug)}
                 initialTab={selected?.tab}
               />
-              {/* Nút đóng tự dựng: nút mặc định là chữ X trần, đặt trên ảnh sẽ
-                  chìm — cái này có nền mờ nên đọc được trên mọi tấm ảnh. */}
               <DialogClose
                 className={cn(R_CTRL, "absolute right-3 top-3 z-10 grid size-9 place-items-center bg-background/85 text-foreground shadow-sm backdrop-blur transition-colors hover:bg-background")}
                 aria-label="Đóng"
@@ -459,19 +397,6 @@ function Stat({
   );
 }
 
-// ── Thẻ quán: MỘT ngôn ngữ cho mọi quán (ăn, uống, hay cả hai) ──
-// Ảnh 4/3 làm chủ; huy hiệu trạng thái ở góc trái, hướng nhìn ở góc phải —
-// hai thứ quyết định "ghé hay bỏ qua" nằm ngay trên ảnh, không phải đọc mới thấy.
-//
-// Quán có ảnh thực đơn: rê chuột vào thì ảnh bìa mờ đi và TẤM THỰC ĐƠN hiện ra.
-// Ba điều kèm theo, thiếu cái nào là hỏng:
-//  · Huy hiệu "Thực đơn" luôn hiện (không chỉ khi hover) — điện thoại không có
-//    hover, mà đó mới là phần lớn khách. Rê chuột chỉ là phần thưởng thêm.
-//  · Đổi ảnh bằng CSS thuần (`group-hover`), không state React → không có
-//    chuyện nháy khi chuột lướt ngang qua lưới.
-//  · Bấm trong lúc đang xem thực đơn thì popup mở thẳng tab Thực đơn. Rê chuột
-//    ra menu rồi bấm lại thấy ảnh quán thì hoá ra lừa. Trạng thái hover giữ
-//    trong `useRef` — chỉ đọc lúc bấm, nên không gây render lại.
 function EateryCard({
   eatery: e,
   status,
@@ -512,15 +437,10 @@ function EateryCard({
           sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
           className={cn(
             "object-cover transition-transform duration-300 group-hover:scale-[1.03]",
-            // Quán đã đóng cửa lùi lại một bước — vẫn xem được, nhưng mắt
-            // không bị nó tranh chỗ với những nơi đang mở.
             dimmed && "saturate-[0.7]",
           )}
         />
 
-        {/* Tấm thực đơn hiện đè lên khi rê chuột / focus bàn phím. Nền tối +
-            `contain` giống hệt tab Thực đơn trong popup — cùng một vật, cùng
-            một cách trình bày. */}
         {menuShot && (
           <span
             className="absolute inset-0 bg-foreground/90 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
@@ -536,11 +456,6 @@ function EateryCard({
           </span>
         )}
 
-        {/* Huy hiệu LOẠI MÓN ở góc trái — cùng chỗ, cùng khuôn với thẻ Địa
-            điểm và Trải nghiệm. Trước đây chỗ này là huy hiệu trạng thái mở
-            cửa, còn loại món nằm dưới ảnh dạng chữ; đổi vì hai lý do: ba tab
-            danh sách phải đọc ra cùng một họ, và trạng thái mở cửa vốn là một
-            DÒNG TIN có giờ đi kèm chứ không phải một cái nhãn. */}
         {category && (
           <span
             className={cn(
@@ -592,9 +507,6 @@ function EateryCard({
         </p>
       )}
 
-      {/* Các dòng "đổi quyết định". Dòng TRẠNG THÁI đứng đầu vì nó là tin sống
-          — và nó cõng luôn giờ mở cửa, thứ trước đây phải nằm riêng ở kicker
-          ngăn bằng dấu chấm giữa (trái quy ước dải phân cách). */}
       <div className="mt-3 space-y-1.5">
         {(status || e.openingHours) && (
           <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
@@ -623,11 +535,6 @@ function EateryCard({
   );
 }
 
-// Huy hiệu trạng thái — dùng đúng token có sẵn: primary (xanh) = đang mở,
-// warm (cam) = sắp đóng, xám = đang đóng. Không thêm màu mới cho một trạng thái.
-/* Trạng thái mở cửa dạng DÒNG TIN (chấm màu + chữ), thay cho huy hiệu góc ảnh.
-   Cùng bảng màu với dòng trạng thái ở popup — `statusView()` là một nguồn duy
-   nhất cho cả hai chỗ. */
 function StatusLine({ status }: { status: OpeningStatus }) {
   const s = statusView(status);
   return (
@@ -663,8 +570,6 @@ function statusView(status: OpeningStatus) {
   return map[status.kind];
 }
 
-// Thẻ trải nghiệm — cùng khuôn thẻ quán để trang giữ một nhịp, chỉ khác ở nhãn
-// góc ảnh và dòng đáy dẫn sang trang chi tiết.
 function ExperienceCard({ exp }: { exp: FoodExperience }) {
   return (
     <Link

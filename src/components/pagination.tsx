@@ -10,7 +10,6 @@ import {
   PaginationLink,
 } from "@/components/ui/pagination";
 
-// Danh sách trang rút gọn: 1 … p-1 p p+1 … N
 function pageItems(page: number, total: number): (number | "ellipsis")[] {
   const set = new Set<number>([1, total, page - 1, page, page + 1]);
   const pages = [...set]
@@ -26,7 +25,6 @@ function pageItems(page: number, total: number): (number | "ellipsis")[] {
   return out;
 }
 
-// Phân trang dùng component shadcn; điều hướng SPA qua next/link.
 export function Pagination({
   page,
   totalPages,

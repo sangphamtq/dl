@@ -3,7 +3,6 @@ import { ComingSoon } from "@/components/site/coming-soon";
 
 export const metadata = { title: "Lưu trú" };
 
-// Placeholder — danh bạ lưu trú toàn quốc đang phát triển.
 export default function LuuTruPage() {
   return (
     <div className="flex flex-1 flex-col">

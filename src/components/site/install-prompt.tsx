@@ -8,17 +8,14 @@ import { Ic } from "@/components/icon";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-// Sự kiện chỉ Chromium mới có → TS chưa khai báo sẵn.
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 };
 
 const SNOOZE_KEY = "halivivu:install-dismissed";
-const SNOOZE_MS = 30 * 24 * 60 * 60 * 1000; // tắt đi thì 30 ngày sau mới hỏi lại
-const DELAY_MS = 8000; // để khách xem nội dung trước, đừng chào mời ngay giây đầu
-
-// Khu vực nội bộ/giao dịch — không quảng cáo cài app ở đây.
+const SNOOZE_MS = 30 * 24 * 60 * 60 * 1000;
+const DELAY_MS = 8000;
 const HIDDEN_ON = ["/cms", "/sale", "/login", "/offline"];
 
 const snoozed = () => {
@@ -32,32 +29,22 @@ const snoozed = () => {
 
 const isStandalone = () =>
   window.matchMedia("(display-mode: standalone)").matches ||
-  // Safari iOS dùng cờ riêng, không theo chuẩn display-mode.
   (navigator as Navigator & { standalone?: boolean }).standalone === true;
 
 const isIos = () =>
   /iphone|ipad|ipod/i.test(navigator.userAgent) ||
-  // iPadOS ≥ 13 khai user agent giống macOS, phân biệt bằng cảm ứng.
   (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
-/**
- * Mời cài app vào màn hình chính.
- *
- * - Chromium (Android/desktop): bắt `beforeinstallprompt`, tự mở hộp thoại cài của
- *   trình duyệt khi bấm "Cài đặt".
- * - iOS: Safari không có sự kiện đó, nên chỉ hướng dẫn Chia sẻ → Thêm vào MH chính.
- */
 export function InstallPrompt({ siteName }: { siteName: string }) {
   const pathname = usePathname();
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
-  // false = chưa tới lúc mời. Sau DELAY_MS thì chốt luôn kiểu hướng dẫn cần dùng.
   const [ready, setReady] = useState<false | "native" | "ios">(false);
 
   useEffect(() => {
     if (isStandalone() || snoozed()) return;
 
     const onPrompt = (e: Event) => {
-      e.preventDefault(); // giữ lại để tự chọn thời điểm mời
+      e.preventDefault();
       setDeferred(e as BeforeInstallPromptEvent);
     };
     const onInstalled = () => {
@@ -71,7 +58,6 @@ export function InstallPrompt({ siteName }: { siteName: string }) {
     window.addEventListener("beforeinstallprompt", onPrompt);
     window.addEventListener("appinstalled", onInstalled);
 
-    // Để khách xem nội dung một lúc rồi mới mời — không chặn ngay giây đầu.
     const t = setTimeout(() => setReady(isIos() ? "ios" : "native"), DELAY_MS);
     return () => {
       clearTimeout(t);
@@ -99,8 +85,6 @@ export function InstallPrompt({ siteName }: { siteName: string }) {
   };
 
   const hidden = HIDDEN_ON.some((p) => pathname.startsWith(p));
-  // Không có `deferred` mà cũng không phải iOS ⇒ trình duyệt không cài được
-  // (hoặc đã cài rồi) → im lặng.
   if (hidden || !ready || (!deferred && ready !== "ios")) return null;
 
   return (

@@ -11,13 +11,9 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 
-// Icon trần: nền tròn CHỈ hiện khi hover — tiện ích phụ, không đeo vỏ glass cố định,
-// nhường phân cấp cho hành động chính (đánh dấu). Đồng bộ ngôn ngữ editorial của hero.
 const SHARE_ICON =
   "inline-flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
 
-// Nút chia sẻ: sao chép liên kết + gửi qua Messenger.
-// iconOnly: nút tròn chỉ có icon (dùng cạnh một hành động chính có nhãn).
 export function ShareButton({
   title,
   className,
@@ -44,7 +40,6 @@ export function ShareButton({
 
   function shareMessenger() {
     const link = encodeURIComponent(url());
-    // Send Dialog (web) cần Facebook App ID; thiếu thì dùng deep link app Messenger.
     const appId = process.env.NEXT_PUBLIC_FB_APP_ID;
     const href = appId
       ? `https://www.facebook.com/dialog/send?app_id=${appId}&link=${link}&redirect_uri=${link}`
@@ -86,7 +81,6 @@ export function ShareButton({
   );
 }
 
-// Logo Messenger nội tuyến (lucide không có icon thương hiệu).
 function MessengerIcon() {
   return (
     <svg viewBox="0 0 24 24" className="size-4" fill="currentColor" aria-hidden>

@@ -12,8 +12,6 @@ import {
 } from "@/components/ui/select";
 import type { PlaceFilterOption } from "./place-filter";
 
-// Dropdown lọc danh sách Listing theo tỉnh / điểm đến lớn. Điều hướng bằng query
-// param `place`, giữ nguyên các filter khác đang có trên URL.
 export function PlaceFilterSelect({
   options,
   value,
@@ -32,7 +30,7 @@ export function PlaceFilterSelect({
     const params = new URLSearchParams(searchParams.toString());
     if (v && v !== "all") params.set("place", v);
     else params.delete("place");
-    params.delete("page"); // đổi nơi → về trang 1
+    params.delete("page");
     const qs = params.toString();
     router.push(`${pathname}${qs ? `?${qs}` : ""}`);
   }

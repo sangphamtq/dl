@@ -11,8 +11,6 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 
-// Cặp màu categorical đã validate (xanh + cam — an toàn cho mù màu, CVD ΔE>80).
-// Light/dark là bước riêng (không đảo tự động), đều nằm trong lightness band.
 const chartConfig = {
   place: { label: "Điểm đến", theme: { light: "#0f88bf", dark: "#1e93c4" } },
   listing: { label: "Listing", theme: { light: "#d97a1f", dark: "#c2701e" } },
@@ -47,7 +45,6 @@ export function TrafficChart({ data }: { data: DailyPoint[] }) {
           }
         />
         <ChartLegend content={<ChartLegendContent />} />
-        {/* listing dưới, place trên; bo góc đầu cột trên cùng */}
         <Bar dataKey="listing" stackId="v" fill="var(--color-listing)" />
         <Bar
           dataKey="place"

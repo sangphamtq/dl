@@ -80,7 +80,6 @@ export default async function SaleDirectoryPage({
   return (
     <div className="flex flex-1 flex-col">
       <main className="flex-1">
-        {/* ─── Header ──────────────────────────────────────── */}
         <section className="border-b border-border/60 bg-gradient-to-b from-accent/40 to-background">
           <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
             <p className="flex items-center gap-2 text-sm font-semibold text-primary">
@@ -122,7 +121,6 @@ export default async function SaleDirectoryPage({
         </section>
 
         <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
-          {/* ─── Bộ lọc ────────────────────────────────────── */}
           <div className="space-y-4">
             <FilterRow label="Dịch vụ">
               <FilterChip
@@ -159,7 +157,6 @@ export default async function SaleDirectoryPage({
             )}
           </div>
 
-          {/* ─── Danh sách ─────────────────────────────────── */}
           {profiles.length === 0 ? (
             <div className="mt-10 rounded-2xl border border-dashed border-border/70 px-6 py-16 text-center">
               <BadgeCheck
@@ -191,8 +188,6 @@ export default async function SaleDirectoryPage({
     </div>
   );
 }
-
-/* ─── Sub-components ──────────────────────────────────────── */
 
 function FilterRow({
   label,
@@ -264,7 +259,6 @@ function ProfileCard({ p }: { p: ProfileData }) {
       href={`/sale/${p.slug}`}
       className="group flex gap-4 rounded-2xl border border-border/60 bg-card p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg hover:shadow-black/5 sm:gap-5 sm:p-5"
     >
-      {/* Avatar vuông bo góc */}
       <div className="relative size-16 shrink-0 self-start overflow-hidden rounded-2xl bg-muted sm:size-[4.75rem]">
         {avatar ? (
           <Image
@@ -281,7 +275,6 @@ function ProfileCard({ p }: { p: ProfileData }) {
         )}
       </div>
 
-      {/* Nội dung */}
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">

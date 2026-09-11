@@ -1,7 +1,5 @@
 import { prisma } from "@/lib/prisma";
 
-// Các loại thực thể đếm lượt xem. 'place' dùng viewCount all-time; các listing
-// dùng popularity như counter all-time (giữ nguyên hành vi sort hiện tại).
 const VIEW_ENTITIES = [
   "place",
   "activity",
@@ -15,7 +13,6 @@ export function isViewEntity(v: unknown): v is ViewEntity {
   return typeof v === "string" && (VIEW_ENTITIES as readonly string[]).includes(v);
 }
 
-// Mốc "hôm nay" theo UTC (00:00) — khớp cột @db.Date của ViewStat.
 function todayUTC(): Date {
   const now = new Date();
   return new Date(
@@ -23,15 +20,12 @@ function todayUTC(): Date {
   );
 }
 
-// Lùi `days` ngày so với hôm nay (UTC). days=7 → 7 ngày trước.
 function daysAgoUTC(days: number): Date {
   const d = todayUTC();
   d.setUTCDate(d.getUTCDate() - days);
   return d;
 }
 
-// Ghi 1 lượt xem cho một thực thể bất kỳ (place hoặc listing):
-// cộng dồn vào ViewStat của ngày hôm nay + tăng counter all-time tương ứng.
 export async function recordView(
   entityType: ViewEntity,
   entityId: string,
@@ -53,7 +47,6 @@ export async function recordView(
       }),
     );
   } else {
-    // Listing: giữ popularity làm counter all-time (đang dùng để sort).
     const model = prisma[entityType] as unknown as {
       update: (args: unknown) => Promise<unknown>;
     };
@@ -68,13 +61,10 @@ export async function recordView(
   await prisma.$transaction(ops as never);
 }
 
-// ── Thống kê tổng hợp cho dashboard traffic (CMS) ───────────────────────────
-
 function ymdUTC(d: Date): string {
-  return d.toISOString().slice(0, 10); // YYYY-MM-DD (theo UTC, khớp @db.Date)
+  return d.toISOString().slice(0, 10);
 }
 
-// CMS route + nhãn hiển thị theo loại thực thể.
 const ENTITY_META: Record<ViewEntity, { label: string; cmsBase: string }> = {
   place: { label: "Điểm đến", cmsBase: "/cms/places" },
   activity: { label: "Hoạt động", cmsBase: "/cms/activities" },
@@ -84,14 +74,12 @@ const ENTITY_META: Record<ViewEntity, { label: string; cmsBase: string }> = {
 };
 
 export type DailyPoint = {
-  date: string; // YYYY-MM-DD
+  date: string;
   place: number;
   listing: number;
   total: number;
 };
 
-// Chuỗi lượt xem theo ngày (điền đủ mọi ngày, kể cả ngày 0 view), tách
-// place vs listing để vẽ cột chồng.
 export async function getDailySeries(days: number): Promise<DailyPoint[]> {
   const rows = await prisma.viewStat.groupBy({
     by: ["date", "entityType"],
@@ -141,11 +129,10 @@ export type TopEntity = {
   entityId: string;
   count: number;
   name: string;
-  label: string; // nhãn loại
-  href: string; // link tới trang chi tiết CMS
+  label: string;
+  href: string;
 };
 
-// Lấy tên hiển thị của các thực thể (theo từng loại, gộp truy vấn).
 async function resolveNames(
   items: { entityType: string; entityId: string }[],
 ): Promise<Map<string, string>> {
@@ -155,7 +142,7 @@ async function resolveNames(
     arr.push(it.entityId);
     byType.set(it.entityType, arr);
   }
-  const out = new Map<string, string>(); // `${type}:${id}` -> name
+  const out = new Map<string, string>();
   await Promise.all(
     [...byType.entries()].map(async ([type, ids]) => {
       const model = prisma[type as ViewEntity] as unknown as {
@@ -171,8 +158,6 @@ async function resolveNames(
   return out;
 }
 
-// Top thực thể theo lượt xem trong N ngày. entityType='place' cho điểm đến;
-// 'listing' cho mọi loại listing; hoặc một loại cụ thể.
 export async function getTopEntities(
   days: number,
   scope: "place" | "listing",

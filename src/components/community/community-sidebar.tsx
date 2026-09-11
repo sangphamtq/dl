@@ -33,8 +33,6 @@ const RULES = [
   { Icon: ShieldCheck, text: "Không spam hay quảng cáo trá hình." },
 ];
 
-// Sidebar cộng đồng: (tùy chọn) thẻ giới thiệu điểm đến + "đang tìm bạn đồng
-// hành" + nội quy ngắn + liên kết.
 export function CommunitySidebar({
   about,
   trips,
@@ -46,7 +44,6 @@ export function CommunitySidebar({
 }) {
   return (
     <div className="flex flex-col gap-5">
-      {/* Giới thiệu cộng đồng điểm đến (ảnh làm chủ) */}
       {about && (
         <div className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm shadow-black/[0.03]">
           <div className="relative aspect-[16/9]">
@@ -71,7 +68,6 @@ export function CommunitySidebar({
         </div>
       )}
 
-      {/* Đang tìm bạn đồng hành */}
       {trips.length > 0 && (
         <div className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm shadow-black/[0.03]">
           <h2 className="flex items-center gap-2 text-sm font-semibold tracking-tight">
@@ -116,7 +112,6 @@ export function CommunitySidebar({
         </div>
       )}
 
-      {/* Nội quy ngắn */}
       <div className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm shadow-black/[0.03]">
         <h2 className="flex items-center gap-2 text-sm font-semibold tracking-tight">
           <Heart className="size-4 text-warm" aria-hidden />
@@ -132,7 +127,6 @@ export function CommunitySidebar({
         </ul>
       </div>
 
-      {/* Liên kết */}
       <Link
         href={bottomLink.href}
         className="group flex items-center justify-between gap-2 rounded-2xl border border-border/60 bg-card px-4 py-3 text-sm font-medium shadow-sm shadow-black/[0.03] transition-colors hover:border-primary/40 hover:text-primary"

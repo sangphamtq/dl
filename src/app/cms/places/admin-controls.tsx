@@ -12,8 +12,6 @@ import {
   updateOrder,
 } from "./actions";
 
-// Điều khiển nhanh AdminFields ở trang chi tiết (không đụng nội dung):
-// trạng thái xuất bản · nổi bật · thứ tự. Mỗi thay đổi lưu ngay.
 export function PlaceAdminControls({
   id,
   status,
@@ -67,7 +65,6 @@ export function PlaceAdminControls({
       </div>
 
       <div className="mt-4 space-y-4">
-        {/* Xuất bản */}
         <div className="flex items-center justify-between gap-3">
           <div>
             <Label htmlFor="adm-status" className="cursor-pointer text-sm">
@@ -85,7 +82,6 @@ export function PlaceAdminControls({
           />
         </div>
 
-        {/* Nổi bật */}
         <div className="flex items-center justify-between gap-3">
           <div>
             <Label htmlFor="adm-featured" className="cursor-pointer text-sm">
@@ -103,9 +99,6 @@ export function PlaceAdminControls({
           />
         </div>
 
-        {/* Tự nó là điểm đến — CHỈ hiện với tỉnh. Với một điểm đến thì câu
-            hỏi này vô nghĩa, mà một công tắc luôn tắt và không bao giờ dùng tới
-            chỉ làm người biên tập phải đọc thêm một dòng. */}
         {kind === "province" && (
           <div className="flex items-center justify-between gap-3">
             <div>
@@ -127,7 +120,6 @@ export function PlaceAdminControls({
           </div>
         )}
 
-        {/* Thứ tự */}
         <div className="flex items-center justify-between gap-3">
           <div>
             <Label htmlFor="adm-order" className="cursor-pointer text-sm">

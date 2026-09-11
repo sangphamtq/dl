@@ -14,7 +14,6 @@ export const metadata = {
     "Halivivu là trang tra cứu du lịch Việt Nam: ăn gì, chơi gì, ở đâu, đi lại thế nào cho từng nơi — cộng danh bạ chỗ ở đã xác minh chính chủ.",
 };
 
-// Nhãn nhỏ in hoa — CÙNG hằng với `destination-filter.tsx`.
 const MICRO = "text-[0.6rem] font-semibold uppercase tracking-[0.14em]";
 
 const pub = { status: "published" as const };
@@ -25,9 +24,6 @@ const cover = {
   select: { url: true, isCover: true },
 } as const;
 
-// Năm mục của một trang điểm đến — đúng năm thứ đang thật sự có trong sản phẩm
-// (xem CLAUDE.md), không phải "tính năng" viết cho đẹp. Mô tả nói bằng thứ
-// người đọc kiểm chứng được ngay khi bấm vào một điểm đến.
 const PARTS: { label: string; desc: string }[] = [
   {
     label: "Địa điểm",
@@ -51,14 +47,6 @@ const PARTS: { label: string; desc: string }[] = [
   },
 ];
 
-// Số ô ảnh hiện theo khổ màn: 3 → 5 → 6. Sáu ô trên màn 390px thì mỗi ô rộng
-// ~55px, thành sáu con tem.
-// Viết thành ba nhánh RỜI NHAU thay vì chồng `i>=3 && "hidden sm:block"` với
-// `i>=5 && "sm:hidden lg:block"`: cách chồng đó đẩy cả `sm:block` lẫn `sm:hidden`
-// lên cùng một phần tử, và thứ tự thắng thua giữa hai utility cùng thuộc tính
-// là do vị trí trong CSS sinh ra quyết định, không phải thứ tự viết trong class.
-// Class viết NGUYÊN CHUỖI, không ghép `sm:${box}`: Tailwind quét mã nguồn theo
-// văn bản, tên class dựng lúc chạy thì nó không thấy để sinh CSS.
 function stripShow(i: number, box: "block" | "inline"): string {
   if (i < 3) return "";
   if (i < 5) return box === "block" ? "hidden sm:block" : "hidden sm:inline";
@@ -90,18 +78,12 @@ export default async function GioiThieuPage() {
       where: { ...pub, kind: "destination" },
       select: { parentId: true },
     }),
-    // Sáu ảnh cho dải mở đầu. Lấy các điểm đến nổi bật nhất — dải này nói
-    // "những nơi đang có trong này", nên nó phải là ảnh THẬT của chính dữ liệu,
-    // không phải ảnh kho.
     prisma.place.findMany({
       where: { ...pub, kind: "destination" },
       orderBy: [{ isFeatured: "desc" }, { popularity: "desc" }, { name: "asc" }],
       take: 6,
       select: { slug: true, name: true, images: cover },
     }),
-    // Vài chỗ ở đã xác minh, để chọn ra MỘT cái làm ví dụ sống cho mục "Chỗ ở".
-    // Nói suông "chúng tôi xác minh chính chủ" thì ai cũng nói được; chỉ thẳng
-    // vào một thẻ thật rồi bấm sang được trang của nó thì khác.
     prisma.accommodation.findMany({
       where: { ...pub, isVerified: true },
       orderBy: [{ isFeatured: "desc" }, { order: "asc" }, { name: "asc" }],
@@ -121,16 +103,9 @@ export default async function GioiThieuPage() {
     prisma.post.count({ where: pub }),
   ]);
 
-  // Số tỉnh THẬT SỰ có điểm đến. Không dùng tổng số tỉnh đã xuất bản (34):
-  // phần lớn trong đó chưa có nội dung nào, đếm cả vào là hứa nhiều hơn thứ
-  // đang có — chính lỗi mà bản trước của trang này mắc phải.
   const provinceCount = new Set(destParents.map((d) => d.parentId)).size;
   const hasContact = Boolean(settings.contactEmail || settings.facebookUrl);
 
-  // Ví dụ phải KHỚP với điều đoạn văn ngay cạnh nó đang nói. Đoạn đó bảo
-  // "khách sạn lớn thì Booking đã lo, khoảng trống nằm ở homestay nhỏ" — mà
-  // `findFirst` trả về resort 5 sao thì cả khối tự mâu thuẫn với chính mình.
-  // Ưu tiên loại hình nhỏ, hết mới rơi về chỗ đầu danh sách.
   const SMALL_FIRST = ["homestay", "guesthouse", "hostel", "villa"];
   const sampleStay =
     SMALL_FIRST.map((k) =>
@@ -141,13 +116,6 @@ export default async function GioiThieuPage() {
     <div className="flex flex-1 flex-col">
 
       <main className="flex-1">
-        {/* ── MỞ ĐẦU ────────────────────────────────────────────────────────
-            Một câu hỏi thật, rồi câu trả lời. KHÔNG hero căn giữa với nhãn
-            eyebrow + hai nút CTA: bản cũ mở bằng "Cả chuyến đi Việt Nam, gọn
-            trong một nơi" — một khẩu hiệu đúng với mọi trang du lịch từng tồn
-            tại, nên chẳng nói gì về trang này.
-            Bốn câu hỏi trong tiêu đề là bốn câu mà cả sản phẩm được dựng quanh
-            (xem CLAUDE.md), nên nó vừa là khẩu hiệu vừa là mô tả kỹ thuật. */}
         <section className="bg-gradient-to-b from-accent via-accent/40 to-background">
           <div className="mx-auto max-w-7xl px-4 pb-16 pt-14 sm:px-6 sm:pb-20 sm:pt-20">
             {/* Serif nhưng KHÔNG in hoa. Tiêu đề ở `/diem-den` là một tên
@@ -181,14 +149,6 @@ export default async function GioiThieuPage() {
               </p>
             </div>
 
-            {/* DẢI ẢNH — ảnh THẬT của chính những điểm đến đang có, không phải
-                ảnh minh hoạ mua ngoài. Đặt ngay dưới câu vừa đếm số: đọc "31
-                điểm đến" rồi thấy luôn sáu nơi trong số đó, con số thôi hết là
-                một con số.
-                Ảnh KHÔNG phải link — cả trang này chỉ có đúng một lối đi tiếp
-                (nút ở cuối) và một lối phụ ("Xem thử một điểm đến"), thêm sáu
-                đích nữa là loãng. Bù lại có dòng ghi tên bên dưới, đúng lối chú
-                thích ảnh — cùng quy ước với dải ảnh ở trang Điểm đến. */}
             {strip.length >= 3 && (
               <div className="mt-12 sm:mt-14">
                 <div className="flex h-36 gap-2 sm:h-52 sm:gap-3">
@@ -214,11 +174,6 @@ export default async function GioiThieuPage() {
                     </div>
                   ))}
                 </div>
-                {/* Chú thích phải ẨN THEO ĐÚNG những ô đang bị ẩn. Ghép thẳng
-                    `strip.map(...).join(" · ")` thì ở màn 390px chỉ thấy ba
-                    tấm mà dưới lại đề tên sáu nơi — một dòng chú thích sai. Dấu
-                    `·` nằm TRONG span của tên phía sau nó nên ẩn tên là ẩn luôn
-                    dấu ngăn, không để lại dấu chấm mồ côi. */}
                 <p className={cn(MICRO, "mt-3 text-muted-foreground")}>
                   Ảnh:{" "}
                   {strip.map((d, i) => (
@@ -233,16 +188,6 @@ export default async function GioiThieuPage() {
           </div>
         </section>
 
-        {/* ── MỘT TRANG ĐIỂM ĐẾN CÓ GÌ ──────────────────────────────────────
-            Bản cũ là 6 thẻ bo góc, mỗi thẻ một icon trong ô vuông `bg-primary/10`
-            — khuôn "feature grid" mà mọi trang landing đều dùng, và đọc xong
-            vẫn không biết bấm vào một điểm đến thì thấy gì.
-            Ở đây là đúng NĂM mục thật của một trang điểm đến, đánh số, không
-            icon, không thẻ. Tiêu đề đứng cột trái và dính lại khi cuộn (từ lg)
-            nên mắt luôn biết đang đọc phần nào. */}
-        {/* HÀNG NGANG 5 Ô, không phải danh sách dọc cạnh tiêu đề.
-            Năm mục này CHÍNH LÀ năm tab của một trang điểm đến, nên bày chúng
-            thành một hàng thì hình của khối nói luôn điều mà chữ đang nói. */}
         <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24">
           <span aria-hidden className="mb-5 block h-[3px] w-10 bg-warm" />
           <h2 className="text-balance font-[family-name:var(--font-display)] text-[clamp(1.375rem,2.8vw,2rem)] font-normal uppercase leading-[1.2] tracking-[0.1em] sm:tracking-[0.14em]">
@@ -252,11 +197,6 @@ export default async function GioiThieuPage() {
           <ol className="mt-10 grid gap-x-7 gap-y-9 sm:grid-cols-2 lg:grid-cols-5">
             {PARTS.map((p, i) => (
               <li key={p.label}>
-                {/* Chữ số LỚN màu cam, không phải nhãn li ti: cả trang vốn
-                    chỉ có xám + hai dải xanh, mà luật màu của dự án là xanh cho
-                    tầng nơi chốn, CAM cho tầng nội dung — năm mục này chính là
-                    tầng nội dung. `warm-ink` chứ không `warm`: chữ trên nền
-                    sáng phải dùng bản ink (≈4.9:1 thay vì ~2:1). */}
                 <span
                   aria-hidden
                   className="block font-[family-name:var(--font-display)] text-[2rem] font-semibold leading-none tabular-nums text-warm-ink"
@@ -293,9 +233,6 @@ export default async function GioiThieuPage() {
             không phải một ô trong lưới sáu thẻ như bản cũ. Nội dung lấy đúng
             định vị đã chốt trong CLAUDE.md — kể cả chỗ nói rõ mình KHÔNG làm gì,
             vì đó mới là thứ khiến lời hứa còn lại đáng tin. */}
-        {/* `bg-accent` ĐẦY, không phải `/40`: `--accent` vốn đã là #ecf7ea — xanh
-            gần trắng — nên lấy 40% của nó thì dải này gần như biến mất, khối
-            khác biệt lớn nhất của dự án lại là khối nhạt nhất trang. */}
         <section className="bg-accent">
           <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24">
             <div className="grid gap-10 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16">
@@ -313,13 +250,6 @@ export default async function GioiThieuPage() {
                   Chỗ ở là phần chúng tôi làm khác
                 </h2>
 
-                {/* VÍ DỤ SỐNG, lấy thẳng từ dữ liệu. "Chúng tôi xác minh chính
-                    chủ" là câu ai cũng viết được; một cái thẻ thật, có ảnh thật,
-                    bấm sang được trang thật thì không giả được.
-                    Đây là chỗ DUY NHẤT trên trang có thẻ — và nó cố ý dùng đúng
-                    khuôn thẻ của mục Lưu trú (ảnh 4/3 lồng trong thẻ, huy hiệu
-                    trên ảnh, nhãn loại hình màu cam) để người đọc gặp lại đúng
-                    hình dạng đó khi bấm vào mục thật. */}
                 {sampleStay && (
                   <figure className="mt-8 max-w-sm">
                     <Link
@@ -334,9 +264,6 @@ export default async function GioiThieuPage() {
                           sizes="(min-width: 1024px) 24rem, 100vw"
                           className="object-cover"
                         />
-                        {/* Huy hiệu TRẮNG vuông, chữ mực — đúng khuôn huy hiệu
-                            "Nổi bật" của thẻ điểm đến, thay cho viên kính tối
-                            bo tròn. */}
                         <span
                           className={cn(
                             MICRO,
@@ -399,10 +326,6 @@ export default async function GioiThieuPage() {
         </section>
 
         {/* ── KHÔNG LÀM ─────────────────────────────────────────────────── */}
-        {/* Lưới 2 cột GỌN, không phải cột chữ dài cạnh tiêu đề: đây là phần
-            ngắn nhất trang (một ranh giới phạm vi), nên nó cũng phải chiếm ít
-            chỗ nhất — và hình của nó khác hẳn hàng 5 ô ở trên lẫn khối có ảnh
-            ở giữa. */}
         <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24">
           <span aria-hidden className="mb-5 block h-[3px] w-10 bg-warm" />
           <h2 className="text-balance font-[family-name:var(--font-display)] text-[clamp(1.375rem,2.8vw,2rem)] font-normal uppercase leading-[1.2] tracking-[0.1em] sm:tracking-[0.14em]">
@@ -411,8 +334,6 @@ export default async function GioiThieuPage() {
           <ul className="mt-8 grid gap-x-12 gap-y-5 sm:grid-cols-2">
             {NOT_DOING.map((t) => (
               <li key={t} className="flex gap-4">
-                {/* Một gạch ngang thay cho icon dấu ✕: đây là ranh giới phạm vi,
-                    không phải lỗi hay điều cấm. */}
                 <span
                   aria-hidden
                   className="mt-3.5 h-px w-5 shrink-0 bg-warm"
@@ -423,11 +344,6 @@ export default async function GioiThieuPage() {
           </ul>
         </section>
 
-        {/* Cẩm nang là phần phụ nên nó là một DÒNG thêm vào, không phải một
-            section ngang hàng — không tiêu đề, không nền riêng.
-            Bắt đầu từ MÉP TRÁI container như mọi khối khác. Bản trước thụt vào
-            cột phải của lưới hai cột để thẳng hàng với các section thời đó; nay
-            các khối kia đã bỏ lưới ấy nên thụt vào là lệch một mình. */}
         {posts > 0 && (
           <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 sm:pb-24">
             <div>
@@ -446,11 +362,6 @@ export default async function GioiThieuPage() {
           </section>
         )}
 
-        {/* ── LIÊN HỆ + LỐI RA ──────────────────────────────────────────────
-            Bản cũ kết bằng một panel xanh lá bo góc lớn, có hai vòng tròn trang
-            trí và hai nút — trong đó một nút dẫn tới mục Cộng đồng hiện đang
-            tạm ẩn khỏi mọi lối vào khác. Đóng lại bằng con linh vật của chính
-            dự án và đúng một lối đi tiếp thì thật hơn nhiều. */}
         <section className="border-t border-border/60">
           <div className="mx-auto flex max-w-7xl flex-col gap-10 px-4 py-16 sm:px-6 sm:py-20 lg:flex-row lg:items-end lg:justify-between">
             <div>
@@ -461,11 +372,6 @@ export default async function GioiThieuPage() {
                 height={72}
                 className="h-14 w-auto"
               />
-              {/* Lời mời báo sai sót CHỈ hiện khi thật sự có kênh nhận. Nếu
-                  chưa cấu hình email/Facebook trong CMS mà vẫn viết "nhắn cho
-                  chúng tôi một câu" thì đó là một lời hứa dẫn vào ngõ cụt —
-                  đúng loại chữ mà cả trang này đang cố tránh. Không có kênh nào
-                  thì đóng lại bằng một câu tự nó đứng được. */}
               <h2 className="mt-5 max-w-md text-balance font-[family-name:var(--font-display)] text-[clamp(1.25rem,2.6vw,1.875rem)] font-normal uppercase leading-[1.2] tracking-[0.1em] sm:tracking-[0.14em]">
                 {hasContact
                   ? "Thấy chỗ nào sai, thiếu, hoặc đã đóng cửa?"
@@ -501,7 +407,6 @@ export default async function GioiThieuPage() {
               )}
             </div>
 
-            {/* MỘT lối đi tiếp, và nó dẫn tới đúng thứ cả trang vừa nói về. */}
             <Link
               href="/diem-den"
               className={cn(
@@ -524,10 +429,6 @@ export default async function GioiThieuPage() {
   );
 }
 
-/* ─── Sub-components ──────────────────────────────────────── */
-
-// Con số trong câu văn: đậm hơn một bậc và về màu chữ chính — đủ để mắt bắt
-// được mà vẫn nằm trong dòng, thay cho dải "số liệu" bốn cột có vạch ngăn.
 function Num({ children }: { children: React.ReactNode }) {
   return (
     <strong className="font-semibold tabular-nums text-foreground">

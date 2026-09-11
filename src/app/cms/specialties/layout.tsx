@@ -3,15 +3,6 @@ import { TriangleAlert } from "@/components/icons";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-// TẠM TẮT mục Đặc sản trong CMS.
-//
-// Phần món ăn đã gỡ khỏi mọi trang công khai, nên để biên tập tiếp tục soạn
-// `Specialty` là mời người ta làm việc không ai nhìn thấy. Tắt ở LAYOUT nên
-// chặn luôn cả /new, /[id] và /[id]/edit bằng một chỗ duy nhất — layout không
-// render {children} thì page bên dưới không hề chạy, không truy vấn gì.
-//
-// BẬT LẠI: đổi cờ dưới đây thành `false` và trả mục "Đặc sản" vào
-// `src/components/cms/sidebar.tsx`. Dữ liệu trong DB còn nguyên, không mất gì.
 const DISABLED = true;
 
 export default function SpecialtiesLayout({

@@ -1,7 +1,5 @@
 import type { NextRequest } from "next/server";
 
-// Rate-limit đơn giản (in-memory, fixed window). Đủ chặn lạm dụng cơ bản.
-// Lưu ý: chỉ trong 1 instance — khi chạy nhiều instance, giới hạn là per-instance.
 const buckets = new Map<string, { count: number; reset: number }>();
 
 export function rateLimit(key: string, limit = 60, windowMs = 60_000): boolean {
@@ -32,7 +30,6 @@ const BOT_UA =
 
 export function isBotRequest(req: NextRequest): boolean {
   const ua = req.headers.get("user-agent") ?? "";
-  // UA rỗng gần như luôn là script/bot → loại.
   if (!ua) return true;
   return BOT_UA.test(ua);
 }

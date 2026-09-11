@@ -17,7 +17,6 @@ export const MEALS: { value: string; label: string }[] = [
   { value: "snack", label: "Ăn vặt" },
 ];
 
-// Đến để ăn hay để ngồi — quyết định quán nằm ở section nào ngoài trang công khai.
 export const VENUE_KINDS: { value: string; label: string; hint: string }[] = [
   { value: "eat", label: "Quán ăn", hint: "Đến để ăn — vào mục “Ăn ở đâu”." },
   {

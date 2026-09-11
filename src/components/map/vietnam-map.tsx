@@ -38,18 +38,9 @@ const VietnamMapInner = dynamic(
   },
 );
 
-// Nhãn nhỏ in hoa — CÙNG một hằng với trang danh sách điểm đến
-// (`destination-filter.tsx`). Hai trang nói về cùng một tập nội dung nên phải
-// dùng chung một thang chữ, đừng chế biến thể riêng cho bản đồ.
 const MICRO = "text-[0.6rem] font-semibold uppercase tracking-[0.14em]";
 
-// Ngưỡng lọc là GIỜ LÁI, không phải bán kính km. Bản đầu dùng km + vòng tròn
-// trên bản đồ, và nó NÓI DỐI ngay trên dữ liệu thật: lọc "200 km" (đường chim
-// bay, đúng bằng vòng tròn vẽ ra) nhưng hàng lại ghi "376 km · 4 giờ 31" vì
-// đường núi. Người ta cũng không nghĩ bằng bán kính — họ nghĩ "lái 3 tiếng thì
-// tới đâu". Bỏ luôn vòng tròn: một vòng tròn đều không tả được vùng-đi-được.
 const HOURS = [2, 4, 6] as const;
-/** Trần chặng — OSRM nhận nhiều hơn, nhưng một chuyến 12 nơi thì không ai đi. */
 const MAX_STOPS = 12;
 
 function shortRegion(label: string): string {
@@ -98,7 +89,6 @@ export function VietnamMap({
     [points],
   );
 
-  // Link chia sẻ mang theo cả chế độ: có lộ trình thì mở thẳng chế độ Đo chuyến.
   const [mode, setMode] = useState<Mode>(
     initialStops && initialStops.length ? "route" : "nearby",
   );
@@ -113,8 +103,6 @@ export function VietnamMap({
   const [stops, setStops] = useState<string[]>(
     () => (initialStops ?? []).filter((s) => points.some((p) => p.slug === s)),
   );
-  // Khung nhìn chỉ đổi khi token tăng — tức khi NGƯỜI DÙNG vừa làm gì đó, không
-  // phải mỗi lần state bất kỳ đổi. Nhờ vậy bản đồ không giật khỏi chỗ đang xem.
   const [focusToken, setFocusToken] = useState(0);
   const refocus = () => setFocusToken((t) => t + 1);
 
@@ -131,8 +119,6 @@ export function VietnamMap({
   const [saving, startSaving] = useTransition();
 
   const originPoint = originSlug ? (bySlug.get(originSlug) ?? null) : null;
-  // useMemo vì `origin` là dep của effect đo đường: dựng lại một object mới mỗi
-  // lần render thì effect chạy lại mỗi lần render.
   const origin: (LatLng & { label: string; slug?: string }) | null = useMemo(
     () =>
       fromMe && userLoc
@@ -161,9 +147,6 @@ export function VietnamMap({
     return o;
   }, [stops]);
 
-  // ── Giờ xe từ mốc tới mọi nơi ────────────────────────────────
-  // MỘT lần cho mỗi mốc, không phải mỗi lần đổi bán kính: OSRM table trả cả
-  // bảng trong một lượt, còn bán kính chỉ là phép lọc trên số đã có.
   const driveReq = useRef<string | null>(null);
   useEffect(() => {
     if (mode !== "nearby" || !origin || !originKey) return;
@@ -182,10 +165,6 @@ export function VietnamMap({
     });
   }, [mode, origin, originKey, points]);
 
-  // ── Tuyến của lộ trình đang đo ───────────────────────────────
-  // Ref chặn-trùng chứ không phải `setState` dọn dẹp trong thân effect: một là
-  // để khỏi render lồng, hai là vì OSRM có thể HỎNG — nếu lấy "routeInfo còn
-  // null" làm điều kiện chạy thì mỗi lần hỏng sẽ gọi lại vô hạn.
   const routeKey = stops.join(">");
   const routeReq = useRef<string | null>(null);
   useEffect(() => {
@@ -208,14 +187,11 @@ export function VietnamMap({
     });
   }, [mode, routeKey, stopPoints]);
 
-  // Chỉ dùng kết quả nào KHỚP lộ trình hiện tại — bỏ một chặng là số cũ hết
-  // đúng ngay lập tức, không đợi lượt đo mới về.
   const activeRoute =
     routeInfo && routeInfo.key === routeKey && stopPoints.length >= 2
       ? routeInfo
       : null;
 
-  // ── URL chia sẻ được (không tải lại trang) ───────────────────
   useEffect(() => {
     const params = new URLSearchParams();
     if (mode === "route") {
@@ -245,7 +221,6 @@ export function VietnamMap({
       .filter((r) => {
         if (!hasDrive || !maxHours) return true;
         const d = driveOf(r.p.slug);
-        // Không tính được giờ cho nơi này → để ngoài ngưỡng, đừng đoán.
         return d ? d.min <= maxHours * 60 : false;
       });
     return list.sort((a, b) => {
@@ -259,9 +234,6 @@ export function VietnamMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [points, origin, maxHours, drive, originKey, hasDrive]);
 
-  // Nơi nằm NGOÀI ngưỡng giờ lái: pin mờ đi thay vì biến mất. Giữ chúng trên
-  // bản đồ mới thấy được "xa tới đâu" — mà đó là một nửa câu trả lời; xoá đi thì
-  // bản đồ nói dối rằng phía bên kia không có gì.
   const dimmed = useMemo(() => {
     if (mode !== "nearby" || !origin || !maxHours || !hasDrive)
       return new Set<string>();
@@ -279,8 +251,6 @@ export function VietnamMap({
         ? { kind: "points", points: stopPoints, token: focusToken }
         : { kind: "country", token: focusToken };
     }
-    // Khung nhìn ôm ĐÚNG những nơi đang có trong danh sách + mốc — thay cho
-    // vòng tròn đã bỏ, đây mới là hình dạng thật của "trong tầm lái".
     if (origin)
       return {
         kind: "points",
@@ -329,8 +299,6 @@ export function VietnamMap({
     startSaving(async () => {
       const res = await startTripFromRoute(stops);
       if (!res.ok) {
-        // Lộ trình đã đo xong mà bị chặn vì chưa đăng nhập thì đừng bỏ người
-        // dùng lại đó — URL đang mang sẵn `?lo=…` nên quay về là còn nguyên.
         toast.error(res.error, {
           action: {
             label: "Đăng nhập",
@@ -486,8 +454,6 @@ export function VietnamMap({
         </div>
       </aside>
 
-      {/* Bản đồ — isolate: nhốt z-index cao của Leaflet trong 1 stacking context
-          riêng, để không đè lên header (tooltip/search/dropdown ở z-50). */}
       <div className="relative isolate order-1 h-[46vh] shrink-0 lg:order-2 lg:h-full lg:flex-1">
         <VietnamMapInner
           points={points}
@@ -505,7 +471,6 @@ export function VietnamMap({
   );
 }
 
-// ─── Thanh của chế độ "Quanh đây" ──────────────────────────────
 function NearbyBar({
   origin,
   maxHours,
@@ -590,7 +555,6 @@ function NearbyBar({
   );
 }
 
-// ─── Thanh của chế độ "Đo chuyến" ──────────────────────────────
 function RouteBar({
   stops,
   info,
@@ -657,9 +621,6 @@ function RouteBar({
               </span>
             </div>
 
-            {/* Chặng nằm GIỮA hai nơi nên phải hiện giữa hai dòng, không phải
-                thành một cột số bên phải — cột số thì không nói được nó thuộc
-                khoảng nào. */}
             {info && i < stops.length - 1 && info.legs[i] && (
               <p
                 className={cn(
@@ -733,10 +694,6 @@ function IconBtn({
   );
 }
 
-// Một hàng = MỘT điểm đến. Hai đích tách bằng vị trí: thân hàng làm việc của
-// chế độ đang bật (đặt mốc / thêm chặng), ô mũi tên bên phải mới rời trang sang
-// /diem-den/[slug]. Hai phần tử ANH EM trong một <li> — không lồng <a> trong
-// <button>.
 function PlaceRow({
   p,
   mode,
@@ -759,8 +716,6 @@ function PlaceRow({
     <li
       className={cn(
         "relative flex items-stretch border-b border-border/50 transition-colors",
-        // Vạch chọn vẽ bằng inset-shadow chứ không phải border-l: border thật
-        // sẽ đẩy cả hàng dịch sang 2px mỗi lần đổi lựa chọn.
         marked
           ? "bg-muted/60 shadow-[inset_2px_0_0_var(--foreground)]"
           : "hover:bg-muted/40",
@@ -806,9 +761,6 @@ function PlaceRow({
                 : (p.provinceName ?? shortRegion(p.region))}
           </span>
 
-          {/* Con số ĐO ĐƯỢC là lý do trang này tồn tại, nên nó đứng ở dòng riêng
-              chứ không lẫn vào dòng tỉnh. Giờ lái là con số quyết định; đường
-              chim bay chỉ là thứ hiện ngay trong lúc chờ OSRM. */}
           {(drive || air !== null) && !isOrigin && (
             <span className={cn(MICRO, "mt-1.5 inline-block border-t border-border pt-1")}>
               {drive ? (

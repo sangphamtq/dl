@@ -13,14 +13,10 @@ const PER_PAGE = 60;
 
 type SearchParams = { type?: string; page?: string };
 
-// Loại chủ sở hữu (exclusive arc trên Image). fk = tên cột khóa ngoại.
 const OWNER_TYPES = [
   { key: "place", label: "Địa điểm", fk: "placeId" },
   { key: "activity", label: "Hoạt động", fk: "activityId" },
   { key: "spot", label: "Địa điểm nhỏ", fk: "spotId" },
-  // Đặc sản đang tắt → không hiện thành chip lọc (`hidden`), NHƯNG vẫn phải ở
-  // trong danh sách: `ALL_FK` dùng nó để nhận diện ảnh "đã gắn chủ". Bỏ hẳn thì
-  // 16 ảnh của đặc sản rơi vào nhóm "Chưa gắn" — sai, và dễ bị xoá nhầm.
   { key: "specialty", label: "Đặc sản", fk: "specialtyId", hidden: true },
   { key: "eatery", label: "Quán ăn", fk: "eateryId" },
   { key: "accommodation", label: "Lưu trú", fk: "accommodationId" },
@@ -62,7 +58,6 @@ export default async function MediaPage({
         Thư viện ảnh toàn hệ thống, gom theo nơi gắn.
       </p>
 
-      {/* Bộ lọc */}
       <div className="mt-6 flex flex-wrap items-center gap-2">
         {filters.map((f) => (
           <Link
@@ -178,7 +173,6 @@ type ImageWithOwners = {
   post: { title: string } | null;
 };
 
-// Xác định chủ sở hữu của ảnh (exclusive arc — đúng 1 quan hệ được set).
 function ownerOf(img: ImageWithOwners): MediaItem["owner"] {
   if (img.place)
     return {

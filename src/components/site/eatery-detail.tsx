@@ -50,26 +50,9 @@ export type EateryDetailData = {
   wardName: string | null;
   provinceName: string | null;
   images: { id: string; url: string; alt: string | null; isCover: boolean }[];
-  // Ảnh chụp tấm thực đơn / bảng giá. Rỗng ở phần lớn quán — tab Thực đơn chỉ
-  // hiện khi có ảnh, không bao giờ mời vào một tab trống.
   menuImages: { id: string; url: string; alt: string | null }[];
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Chi tiết Quán ăn trong POPUP (trước là ngăn trượt bên phải).
-//
-// Popup rộng nên bố cục là HAI CỘT từ `lg`: trái là một tấm ảnh CHIẾM TRỌN cột
-// (dải ảnh nhỏ nổi ở đáy để đổi ảnh), phải là phần đọc và cuộn riêng. Ngăn
-// trượt cũ rộng ~28rem nên ảnh phải nằm trong một dải cuộn ngang tí hon và mọi
-// thứ xếp thành một cột dài — với một trang lấy ảnh làm chủ thì đó là phần
-// thiệt thòi nhất.
-//
-// Dưới `lg` popup dán đáy màn hình, ảnh 4/3 lên đầu, nội dung cuộn bên dưới —
-// đúng thói quen cầm điện thoại một tay.
-//
-// Thanh hành động GHIM ở đáy cột phải: mở popup xong, việc kế tiếp luôn là
-// "đường tới đó thế nào" — không nên bắt cuộn hết mô tả mới thấy nút.
-// ═══════════════════════════════════════════════════════════════════════════
 export function EateryDetail({
   data,
   status,
@@ -77,23 +60,14 @@ export function EateryDetail({
 }: {
   data: EateryDetailData;
   status?: OpeningStatus | null;
-  // Mở thẳng vào tab nào — thẻ ngoài lưới truyền "menu" khi người dùng bấm
-  // đúng lúc đang rê chuột xem thực đơn.
   initialTab?: "anh" | "menu";
 }) {
   const [mapOpen, setMapOpen] = useState(false);
   const [shot, setShot] = useState(0);
-  // Không đọc qua biến `menu` bên dưới: nó khai báo sau, dùng ở đây là chạm
-  // vùng chết của `const`. Và chốt về "anh" khi quán không có ảnh thực đơn —
-  // deep-link cũ hay dữ liệu lệch không được đẩy vào một tab rỗng.
   const [tab, setTab] = useState<"anh" | "menu">(
     data.menuImages.length > 0 ? initialTab : "anh",
   );
-  // Ảnh menu đang phóng to (null = không mở). Chụp bảng giá thì chữ rất nhỏ,
-  // xem ở cỡ thumbnail là vô dụng — bắt buộc phải phóng được.
   const [zoom, setZoom] = useState<number | null>(null);
-  // Carousel ảnh chính (embla, qua component `ui/carousel` của dự án) — vuốt
-  // được trên điện thoại, còn dải ảnh nhỏ chỉ là bộ điều khiển đồng bộ với nó.
   const [api, setApi] = useState<CarouselApi>();
   const menu = data.menuImages;
 
@@ -108,19 +82,14 @@ export function EateryDetail({
             isCover: true,
           },
         ];
-  // Hai tab dùng CHUNG một carousel, chỉ khác danh sách slide và cách vừa khung.
   const isMenu = tab === "menu";
   const slides = isMenu ? menu : gallery;
   const many = slides.length > 1;
-  // Đổi tab thì về ảnh đầu — `key={tab}` khiến embla khởi tạo lại, `shot` cũ
-  // của tab kia sẽ trỏ ra ngoài danh sách mới.
   const changeTab = (t: "anh" | "menu") => {
     setTab(t);
     setShot(0);
   };
 
-  // Carousel → dải ảnh nhỏ. Không gọi thẳng lúc gắn: `startIndex` đã đặt đúng
-  // slide nên `shot` vốn đã khớp; gọi thêm chỉ tạo một lần render thừa.
   useEffect(() => {
     if (!api) return;
     const onSelect = () => setShot(api.selectedScrollSnap());
@@ -138,8 +107,6 @@ export function EateryDetail({
   const viewLabel = label(VIEW_TYPE_LABELS, data.viewType);
   const area = data.wardName ?? "";
 
-  // Địa chỉ đầy đủ: chi tiết → xã/phường → tỉnh, bỏ phần đã lặp (address seed
-  // thường chứa sẵn tên phường/thành phố).
   const fullAddress =
     [data.address, data.wardName, data.provinceName]
       .filter((p): p is string => Boolean(p))
@@ -157,31 +124,16 @@ export function EateryDetail({
 
   const sv = status ? statusView(status) : null;
 
-  // Địa chỉ trong bảng chỉ lấy phần ĐƯỜNG/mốc — phường & thành phố đã nằm ngay
-  // dưới tên quán, in lại lần nữa là đọc hai lần cùng một chỗ.
   const street = data.address?.trim() || fullAddress;
 
-  // Từ `lg` khoá chiều cao cả popup: ảnh mới phủ kín được cột trái. Để cao tự
-  // do thì hàng lưới lấy chiều cao của cột chữ, ảnh hụt lại và hở một mảng
-  // trắng dưới đáy.
   return (
     <div className="flex max-h-[inherit] flex-col lg:grid lg:h-[min(88vh,44rem)] lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
-      {/* ── Nửa hình ảnh: Ảnh quán ↔ Thực đơn ──
-             Thực đơn cũng là ảnh nên nó thuộc về nửa này. Nhét vào cột chữ thì
-             ảnh menu bé bằng nửa và đẩy nút "Chỉ đường" ra xa. */}
       <div
         className={cn(
           "relative shrink-0 overflow-hidden max-lg:aspect-[4/3] lg:h-full",
-          // Nền tối cho tab Thực đơn: tấm menu thường là giấy sáng, nền tối làm
-          // nó nổi lên như một tài liệu đặt trên bàn, không lẫn vào khung popup.
           isMenu ? "bg-foreground/90" : "bg-muted",
         )}
       >
-        {/* MỘT carousel cho CẢ HAI tab. Ảnh quán và ảnh thực đơn đều là ảnh,
-            nên chúng dùng chung bộ điều khiển (vuốt · mũi tên · đếm · dải ảnh
-            nhỏ) — người dùng học một lần. Chỉ khác cách vừa khung:
-            `cover` cho ảnh quán, `contain` cho tấm menu (cắt là mất giá).
-            `key={tab}` để embla khởi tạo lại đúng danh sách slide. */}
         <Carousel
           key={tab}
           setApi={setApi}
@@ -198,15 +150,9 @@ export function EateryDetail({
                     aria-label={`Phóng to thực đơn ${i + 1}`}
                     className={cn(
                       "group absolute inset-0 flex w-full items-center justify-center p-4 sm:p-6",
-                      // Chừa đúng chiều cao overlay đáy để tấm menu không bị
-                      // thẻ chuyển / dải ảnh nhỏ đè lên: 16 + 52 (thẻ) +
-                      // 10 (gap) + 56 (thumb) + 16 = 150px; không có dải ảnh
-                      // thì 16 + 52 + 16 = 84px.
                       many ? "pb-[9.5rem]" : "pb-[5.5rem]",
                     )}
                   >
-                    {/* Ảnh thực đơn giữ NGUYÊN tỉ lệ gốc: dọc hay ngang đều
-                        không bị cắt, và luôn to hết mức khung cho phép. */}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={im.url}
@@ -214,9 +160,6 @@ export function EateryDetail({
                       draggable={false}
                       className={cn(R_CARD, "max-h-full max-w-full select-none object-contain shadow-2xl transition-transform duration-200 group-hover:scale-[1.01]")}
                     />
-                    {/* Gợi ý đặt GÓC TRÊN TRÁI — ở tab Thực đơn chỗ đó trống
-                        (không có huy hiệu trạng thái/hướng nhìn). Để ở đáy thì
-                        trên điện thoại nó đụng ngay cụm tab. */}
                     <span className={cn(R_BADGE, "pointer-events-none absolute left-4 top-4 inline-flex items-center gap-1.5 bg-background/90 px-2.5 py-1 text-xs font-semibold shadow-sm backdrop-blur")}>
                       <Glyph name="expand" className="size-3.5" />
                       Bấm để phóng to
@@ -237,8 +180,6 @@ export function EateryDetail({
           </CarouselContent>
         </Carousel>
 
-        {/* Scrim chỉ ở hai đầu: giữ ảnh sáng, nhưng huy hiệu và dải ảnh nhỏ vẫn
-            đọc được. Tab Thực đơn đã có nền tối nên không cần. */}
         {!isMenu && (
           <div
             className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-black/55"
@@ -258,8 +199,6 @@ export function EateryDetail({
           </div>
         )}
 
-        {/* Mũi tên đặt ĐÈ LÊN ảnh: nút mặc định của `ui/carousel` neo ở ngoài
-            khung (-left-12) nên trong popup nó rơi ra ngoài mép. */}
         {many && (
           <>
             <ArrowBtn side="left" onClick={() => api?.scrollPrev()} />
@@ -267,10 +206,6 @@ export function EateryDetail({
           </>
         )}
 
-        {/* Chip trạng thái: ĐANG XEM BỘ NÀO + vị trí trong bộ đó. Gộp hai con
-            số từng nằm hai nơi (số trên nhãn tab và bộ đếm carousel) về một
-            chỗ. Ở tab Thực đơn thì chip luôn hiện dù chỉ có một ảnh — không có
-            nó thì mất hẳn dấu hiệu "bạn đang xem thực đơn". */}
         {(isMenu || many) && (
           <span className={cn(R_BADGE, "absolute right-4 top-4 inline-flex items-center gap-1.5 bg-background/85 px-2.5 py-1 text-xs font-semibold shadow-sm backdrop-blur")}>
             {isMenu && (
@@ -287,9 +222,6 @@ export function EateryDetail({
           </span>
         )}
 
-        {/* Overlay đáy XẾP CHỒNG: cụm tab một dòng, dải ảnh nhỏ một dòng riêng
-            chiếm HẾT bề ngang. Trước đây hai khối chia nhau một hàng ngang nên
-            dải ảnh bị bóp lại và ảnh cuối bị cắt cụt. */}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col gap-2.5 p-4">
           {menu.length > 0 && (
             <div className="flex">
@@ -304,9 +236,6 @@ export function EateryDetail({
           )}
 
           {many && (
-            // `-m-1 p-1`: chừa chỗ cho vòng `ring` của ảnh đang chọn. Không có
-            // nó thì `overflow-x-auto` cắt cụt viền phía trên, mà vị trí khối
-            // vẫn y nguyên nhờ margin âm bù lại.
             <div className="pointer-events-auto -m-1 flex gap-2 overflow-x-auto p-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {slides.map((im, i) => (
                 <button
@@ -338,7 +267,6 @@ export function EateryDetail({
         </div>
       </div>
 
-      {/* ── Nội dung: cuộn riêng ở cột phải ── */}
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-6 sm:px-7">
           {data.category && (
@@ -346,9 +274,6 @@ export function EateryDetail({
               {label(EATERY_CATEGORY_LABELS, data.category)}
             </p>
           )}
-          {/* Font display như tên trên thẻ ngoài lưới — popup và thẻ là hai
-              lần nhìn thấy CÙNG một quán, đổi kiểu chữ giữa hai lần là bắt mắt
-              phải nhận diện lại. */}
           <DialogTitle className="mt-1 font-[family-name:var(--font-display)] text-2xl font-semibold leading-tight tracking-tight text-balance sm:text-3xl">
             {data.name}
           </DialogTitle>
@@ -374,10 +299,6 @@ export function EateryDetail({
             />
           </div>
 
-          {/* ── TIN THỰC ĐỊA: thứ quyết định "đi hay không", đặt NGAY dưới tên ──
-                 Bản cũ chôn giờ mở cửa xuống hàng đầu của một bảng ở tận đáy
-                 cột, sau cả đoạn mô tả — trong khi cả màn hình Ẩm thực được
-                 dựng quanh đúng câu hỏi "giờ này còn mở không". */}
           {(data.openingHours || sv || data.bestTime) && (
             <div className={cn(R_CARD, "mt-4 space-y-2 bg-muted/50 p-4")}>
               {sv && (
@@ -433,9 +354,6 @@ export function EateryDetail({
             </p>
           )}
 
-          {/* Dẫn sang tab Thực đơn: nút chuyển nằm ở nửa ảnh nên người đang đọc
-              cột này dễ không để ý là quán có ảnh thực đơn. Đang ở tab đó rồi
-              thì ẩn — không mời đi tới nơi mình đang đứng. */}
           {menu.length > 0 && !isMenu && (
             <button
               type="button"
@@ -470,8 +388,6 @@ export function EateryDetail({
             <dl className="mt-6 divide-y divide-border/60 border-y border-border/60">
               {street && (
                 <Row glyph="pin" label="Địa chỉ">
-                  {/* `block`: để inline thì nút bản đồ dính liền vào cuối địa
-                      chỉ, không có lấy một khoảng trắng ngăn cách. */}
                   <span className="block leading-snug">{street}</span>
                   {hasMap && (
                     <button
@@ -546,8 +462,6 @@ export function EateryDetail({
           )}
         </div>
 
-        {/* ── Hành động, ghim đáy. Chỉ đường là nút CHÍNH: đây là trang thông
-               tin, không phải nơi đặt bàn — việc kế tiếp gần như luôn là tới đó. ── */}
         {(directions || data.phone || data.bookingUrl || data.website) && (
           <div className="flex shrink-0 flex-wrap items-center gap-2 border-t border-border/60 bg-background/95 px-5 py-4 backdrop-blur sm:px-7">
             {directions && (
@@ -581,9 +495,6 @@ export function EateryDetail({
         )}
       </div>
 
-      {/* Xem phóng to ảnh thực đơn. Dùng Dialog LỒNG chứ không phải một lớp phủ
-          tự chế: Radix xếp lớp, nên Esc đóng đúng lớp trên cùng (ảnh) rồi mới
-          tới popup quán — lớp phủ tự chế sẽ đóng tuột cả hai. */}
       <MenuZoom
         images={menu}
         name={data.name}
@@ -595,8 +506,6 @@ export function EateryDetail({
   );
 }
 
-// Lớp xem ảnh thực đơn phóng to: nền tối, ảnh `object-contain` nguyên khổ,
-// chuyển trang bằng nút hoặc phím ← →.
 function MenuZoom({
   images,
   name,
@@ -702,8 +611,6 @@ function ZoomNav({
   );
 }
 
-// Mũi tên chuyển ảnh, đặt đè lên ảnh (khác nút mặc định của `ui/carousel` vốn
-// neo ra ngoài khung). Cùng vật liệu với các huy hiệu trên ảnh cho đồng bộ.
 function ArrowBtn({
   side,
   onClick,
@@ -718,8 +625,6 @@ function ArrowBtn({
       onClick={onClick}
       aria-label={side === "left" ? "Ảnh trước" : "Ảnh tiếp theo"}
       className={cn(
-        // Ẩn dưới `sm`: ở đó vuốt là thao tác tự nhiên (embla đã bật `watchDrag`)
-        // và dải ảnh nhỏ ngay bên dưới — mũi tên chỉ tổ che mất ảnh.
         R_CTRL,
         "absolute top-1/2 hidden size-9 -translate-y-1/2 place-items-center bg-background/85 text-foreground shadow-sm backdrop-blur transition-colors hover:bg-background sm:grid",
         side === "left" ? "left-3" : "right-3",
@@ -730,14 +635,6 @@ function ArrowBtn({
   );
 }
 
-// Chuyển giữa hai bộ ảnh (ảnh quán ↔ thực đơn).
-//
-// MỘT nút chỉ ra NƠI SẼ TỚI, không phải hai nút đánh dấu nơi đang đứng — trạng
-// thái hiện tại đã do chip góc trên phải nói. Bản cũ là segmented hai nút, sai
-// ẩn dụ (segmented là để lọc/sắp xếp CÙNG một tập, đây là hai tập khác hẳn) và
-// mời gọi bằng một chữ, trong khi thứ đằng sau nó là ẢNH.
-//
-// Ảnh xem trước chính là mồi: thấy tấm menu rồi mới có lý do bấm.
 function MediaSwitch({
   preview,
   label,
@@ -777,7 +674,6 @@ function MediaSwitch({
   );
 }
 
-// Một dòng thông tin: icon · nhãn nhỏ · giá trị.
 function Row({
   glyph,
   label: name,
@@ -801,8 +697,6 @@ function Row({
   );
 }
 
-// Nút phụ chỉ-icon: giữ thanh hành động một hàng để nút Chỉ đường không bị đẩy
-// xuống, kể cả khi quán có đủ cả điện thoại lẫn website.
 function IconAction({
   href,
   glyph,
@@ -827,10 +721,6 @@ function IconAction({
   );
 }
 
-// Huy hiệu trạng thái mở cửa — cùng quy ước màu với thẻ ngoài lưới.
-// Diễn giải trạng thái mở cửa — dùng chung cho huy hiệu trên ảnh và dòng trạng
-// thái ở cột phải. `label` là từ ngắn cho huy hiệu, `detail` là vế thêm giờ cụ
-// thể cho chỗ có đủ bề ngang.
 function statusView(s: OpeningStatus): {
   label: string;
   detail: string | null;
@@ -871,8 +761,6 @@ function statusView(s: OpeningStatus): {
 
 function StatusPill({ status }: { status: OpeningStatus }) {
   const s = statusView(status);
-  // Huy hiệu trên ảnh chật chỗ: chỉ kèm giờ khi giờ đó là tin gấp (sắp đóng /
-  // mở lại lúc mấy giờ), còn "Đang mở" thì không cần nhắc giờ đóng.
   const withDetail = status.kind === "closingSoon" || status.kind === "opensLater";
   return (
     <span

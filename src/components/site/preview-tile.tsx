@@ -3,29 +3,6 @@ import { Glyph, type GlyphName } from "@/components/site/glyphs";
 import { R_BADGE, R_CARD } from "@/lib/radius";
 import { cn } from "@/lib/utils";
 
-/* ──────────────────────────────────────────────────────────────────
-   Vật liệu dùng chung của TAB TỔNG QUAN.
-
-   Tab tổng quan là bản XEM TRƯỚC của năm tab con, nên nó phải nói đúng thứ
-   tiếng của chúng. Năm tab đó đã chốt một bộ vật liệu:
-
-     · thẻ KHÔNG khung — ảnh bo `R_CARD` là toàn bộ hình khối, chữ nằm trần
-       trên nền trang bên dưới (chỉ thứ BẤM ĐƯỢC mới có viền, mà cả thẻ đã là
-       một link nên viền chỉ vẽ lại đúng mép ảnh);
-     · huy hiệu LOẠI màu trắng ở góc trên–trái ảnh, huy hiệu GIÁ nền mực ở góc
-       trên–phải — trái là "đây là thứ gì", phải là "mất bao nhiêu";
-     · tên bằng font display, gạch chân khi rê chuột;
-     · dòng dữ kiện có glyph, màu mang nghĩa: **xanh = đi lúc nào cho đúng**
-       (giờ vàng / mùa), **cam = cảnh báo**, xám = phần còn lại.
-
-   Trước đợt này bốn mục xem trước mỗi mục tự dựng thẻ một kiểu: Ăn uống và Lưu
-   trú bọc khung `border bg-card p-2`, Trải nghiệm dùng một dòng chữ cam thay
-   huy hiệu, còn Địa điểm là cả một carousel tự đổi 7 giây. Gom vật liệu về một
-   file để lần sau đổi thì cả trang đổi theo — đúng bài học đã trả giá ở chỗ
-   khác trong dự án (hai bản hero chép ra hai file rồi trôi mỗi bản một kiểu).
-   ────────────────────────────────────────────────────────────────── */
-
-/** Khung ảnh của một thẻ xem trước. `children` là chỗ đặt huy hiệu. */
 export function TilePhoto({
   src,
   alt = "",
@@ -58,12 +35,6 @@ export function TilePhoto({
   );
 }
 
-/* Ba tông huy hiệu, mỗi tông một việc — đừng đẻ thêm tông thứ tư mà không có
-   việc mới:
-     · `cat`  — LOẠI của mục (chữ hoa giãn ký tự, rất nhỏ): nhãn để nhận diện;
-     · `mark` — một dữ kiện ĐÁNG KHOE ngay trên ảnh (đã xác minh, nhìn ra biển):
-       chữ thường, có glyph, vì nó để ĐỌC chứ không để nhận diện;
-     · `dark` — tiền. Nền mực để nó không lẫn với hai cái trắng kia. */
 export function PhotoBadge({
   side = "left",
   tone = "cat",
@@ -95,7 +66,6 @@ export function PhotoBadge({
   );
 }
 
-/** Tên mục. `lead` dành cho thẻ lớn duy nhất của một mục. */
 export function TileName({
   size = "tile",
   className,
@@ -122,8 +92,6 @@ export function TileName({
   );
 }
 
-/* Một dòng dữ kiện dưới tên. Màu MANG NGHĨA và giống hệt năm tab con:
-   `time` xanh = đi lúc nào cho đúng · `warn` cam = cảnh báo · `mute` = còn lại. */
 export function FactLine({
   glyph,
   tone = "mute",
@@ -154,9 +122,6 @@ export function FactLine({
   );
 }
 
-/* Dải dữ kiện mở đầu một mục — glyph + CON SỐ ĐẬM, ngăn nhau bằng khoảng trắng
-   rộng chứ không bằng dấu chấm giữa (quy ước `design`). Cùng khuôn với dải mở
-   đầu của năm tab con, nên mục xem trước và tab đầy đủ đọc ra một giọng. */
 export function StatRow({ children }: { children: React.ReactNode }) {
   return (
     <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
@@ -183,7 +148,6 @@ export function Stat({
   );
 }
 
-/** Con số trong một `Stat` — đậm, `tabular-nums`, màu chữ chính. */
 export function N({ children }: { children: React.ReactNode }) {
   return (
     <b className="font-semibold tabular-nums text-foreground">{children}</b>

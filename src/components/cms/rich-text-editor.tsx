@@ -39,7 +39,6 @@ import { proseClass } from "@/lib/prose";
 
 type GalleryImage = { src: string; alt: string };
 
-// Tải nhiều ảnh lên UploadThing (qua /api/editor-upload), trả về [{src,alt}].
 async function uploadFiles(files: File[]): Promise<GalleryImage[]> {
   const out: GalleryImage[] = [];
   for (const file of files) {
@@ -68,7 +67,6 @@ function TBtn({
   return (
     <button
       type="button"
-      // Giữ vùng chọn trong editor khi bấm nút toolbar.
       onMouseDown={(e) => e.preventDefault()}
       onClick={onClick}
       disabled={disabled}
@@ -88,8 +86,6 @@ function Sep() {
   return <span className="mx-0.5 h-5 w-px shrink-0 bg-border/60" aria-hidden />;
 }
 
-/* ── Thư viện ảnh: 1..N ảnh rộng bằng nhau trên một hàng (tự xuống hàng) ──
-   Lưu danh sách ảnh trong 1 attribute; thêm/bớt/đổi thứ tự bằng nút. */
 function GalleryView({
   node,
   updateAttributes,
@@ -217,8 +213,6 @@ function GalleryView({
   );
 }
 
-// Node thư viện: atom (không con), chứa danh sách ảnh trong attribute.
-// parseHTML nhận cả div[data-gallery] MỚI, div[data-image-group] CŨ, và <img> lẻ.
 const Gallery = Node.create({
   name: "gallery",
   group: "block",
@@ -311,7 +305,6 @@ export function RichTextEditor({
     onUpdate: ({ editor }) => onChangeRef.current(editor.getHTML()),
   });
 
-  // Đồng bộ khi value đổi từ ngoài (vd nạp dữ liệu) mà không đang gõ.
   useEffect(() => {
     if (!editor) return;
     if (value !== editor.getHTML() && !editor.isFocused) {
@@ -344,7 +337,6 @@ export function RichTextEditor({
     );
   }
 
-  // Chèn thư viện ảnh (1..N ảnh) tại con trỏ.
   const insertGallery = async (files: File[]) => {
     if (files.length === 0) return;
     setUploading(true);

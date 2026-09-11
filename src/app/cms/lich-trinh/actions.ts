@@ -5,10 +5,6 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { slugify, RESERVED_TRIP_SLUGS } from "@/lib/slug";
 
-// CMS — lịch trình MẪU (Trip.isTemplate = true). Nội dung từng ngày vẫn soạn ở
-// trình soạn công khai /lich-trinh/[id] (mẫu do chính editor sở hữu nên vào
-// được); ở đây chỉ quản lý phần "xuất bản": slug, tóm tắt, nơi gắn, trạng thái.
-
 const STAFF = ["admin", "editor"];
 
 export type ActionResult<T = undefined> =
@@ -68,8 +64,6 @@ export async function updateTemplate(
 
   const slug = slugify(input.slug.trim() || title);
   if (!slug) return { ok: false, error: "Slug không hợp lệ." };
-  // Mẫu nằm ở `/lich-trinh/[slug]`, cùng tầng với `cua-toi` và `s` — trùng thì
-  // trang mẫu vĩnh viễn không mở được.
   if (RESERVED_TRIP_SLUGS.has(slug))
     return { ok: false, error: `"${slug}" là từ khoá dành riêng, chọn slug khác.` };
 
@@ -98,7 +92,6 @@ export async function updateTemplate(
       summary: input.summary.trim() || null,
       placeId: input.placeId || null,
       status,
-      // Giữ mốc xuất bản đầu tiên; chỉ đặt khi lần đầu chuyển sang published.
       publishedAt:
         status === "published" ? (current.publishedAt ?? new Date()) : null,
       isFeatured: input.isFeatured,

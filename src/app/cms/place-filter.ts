@@ -1,7 +1,5 @@
 import { prisma } from "@/lib/prisma";
 
-// Bộ lọc theo Place (tỉnh / điểm đến lớn) dùng chung cho mọi trang danh sách Listing.
-
 export type PlaceFilterOption = {
   id: string;
   name: string;
@@ -27,11 +25,6 @@ export async function getPlaceFilterOptions(): Promise<PlaceFilterOption[]> {
   }));
 }
 
-// Trả về mảng placeId để lọc Listing theo nơi đã chọn.
-// - "all"/rỗng/không tồn tại → null (không lọc).
-// - tỉnh → gồm chính tỉnh + mọi điểm đến con (listing có thể gắn trực tiếp ở tỉnh
-//   hoặc ở điểm đến thuộc tỉnh).
-// - điểm đến → đúng một placeId.
 export async function resolvePlaceIds(
   place: string | undefined,
 ): Promise<string[] | null> {

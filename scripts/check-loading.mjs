@@ -1,18 +1,3 @@
-// Kiểm MÀN CHỜ có thật sự hiện khi chuyển trang hay không.
-// Chạy: pnpm check:loading   (cần `pnpm dev` đang chạy ở cổng 3000)
-//
-// Vì sao đáng có bộ kiểm riêng: `loading.tsx` đặt SAI TẦNG thì không có gì báo
-// lỗi — typecheck sạch, lint sạch, build sạch, trang vẫn chạy, chỉ là màn chờ
-// im lặng. Đã xảy ra một lần: boundary nằm ở `(site)/loading.tsx`, mà `(site)`
-// là route group nên không tạo segment URL — nó không chạy cho route lồng dưới.
-//
-// Cách kiểm: Chrome headless qua CDP, bóp mạng xuống 3G, BẤM THẬT một link rồi
-// hỏi DOM liên tục xem `.page-loading` có xuất hiện không.
-//
-// ⚠️ Đã thử và bỏ hai cách đo "thông minh" hơn, đừng quay lại: MutationObserver
-// ghi vào `sessionStorage`, và `Page.addScriptToEvaluateOnNewDocument`. Cả hai
-// cho ÂM TÍNH GIẢ — link nào gây điều hướng cứng thì context JS bị thay và bộ
-// theo dõi chết theo. Hỏi thẳng DOM thì thô nhưng không nói dối.
 import { spawn } from "node:child_process";
 
 const PORT = 9222;
@@ -21,16 +6,11 @@ const CHROME =
   process.env.CHROME ??
   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 
-// [từ trang, bộ chọn link để bấm]
 const CASES = [
   ["/diem-den", 'a[href^="/diem-den/"]'],
   ["/dia-diem", 'a[href^="/dia-diem/"]'],
   ["/blog", 'a[href^="/blog/"]'],
   ["/lich-trinh", 'a[href^="/lich-trinh/"]'],
-  // Đổi tab trong trang điểm đến: thanh ngữ cảnh + thanh tab thuộc
-  // `(tabs)/layout.tsx` nên đứng yên, chỉ vùng nội dung vào Suspense của
-  // `(tabs)/loading.tsx`. Case này canh đúng chuyện đó — mất màn chờ ở đây
-  // nghĩa là layout chung đã bị phá.
   [
     "/diem-den/phan-thiet/dia-diem",
     'a[href="/diem-den/phan-thiet/am-thuc"]',
@@ -92,7 +72,6 @@ const evaluate = async (expression) =>
 await send("Page.enable");
 await send("Runtime.enable");
 await send("Network.enable");
-// Slow 3G: ~400 kbps, RTT 400ms — đủ chậm để vượt ngưỡng hoãn 120ms của màn chờ.
 await send("Network.emulateNetworkConditions", {
   offline: false,
   latency: 400,
@@ -110,7 +89,7 @@ for (const [from, selector] of CASES) {
     if (await evaluate(`document.readyState === "complete"`)) break;
     await sleep(500);
   }
-  await sleep(2000); // chờ hydrate: bấm sớm quá thì thành điều hướng cứng
+  await sleep(2000);
 
   const href = await evaluate(`
     (() => {

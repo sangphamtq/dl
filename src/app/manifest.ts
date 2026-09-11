@@ -2,9 +2,6 @@ import type { MetadataRoute } from "next";
 import { getSettings } from "@/lib/settings";
 import { BACKGROUND_COLOR, THEME_COLOR } from "@/lib/pwa";
 
-// Web App Manifest (Next tự phục vụ tại /manifest.webmanifest và tự chèn
-// <link rel="manifest"> vào <head>). Tên/mô tả lấy từ cấu hình site trong CMS
-// nên cache lại 1 giờ thay vì query DB mỗi lần trình duyệt hỏi.
 export const revalidate = 3600;
 
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
@@ -37,8 +34,6 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
         type: "image/png",
         purpose: "any",
       },
-      // Bản maskable: mascot nằm gọn trong vòng an toàn 80% để launcher Android
-      // cắt theo hình gì (tròn/squircle) cũng không xén mất.
       {
         src: "/icons/icon-maskable-192.png",
         sizes: "192x192",

@@ -19,7 +19,6 @@ export default async function CmsLayout({
   const session = await auth();
   const user = session?.user;
 
-  // Phòng vệ tầng server (proxy đã chặn ở edge — đây là lớp 2).
   if (!user?.role || !STAFF.includes(user.role)) redirect("/");
 
   return (

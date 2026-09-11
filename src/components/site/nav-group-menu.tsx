@@ -79,18 +79,13 @@ export function NavGroupMenu({
         />
       </Link>
 
-      {/* pt-2 = "cầu" hover liền mạch giữa nhãn và panel */}
       <div
         className={cn(
-          // [text-shadow:none]: thanh header có text-shadow để chữ nổi trên
-          // kính, nhưng panel đổ xuống có nền đặc riêng — thừa hưởng bóng vào
-          // là chữ bị nhoè.
           "absolute left-0 top-full z-50 pt-2 transition-opacity duration-100 [text-shadow:none]",
           open ? "opacity-100" : "pointer-events-none opacity-0",
         )}
       >
         {columns ? (
-          // Mega-menu: mỗi cột là một thẻ danh mục
           <div className="flex gap-1 rounded-2xl border border-border/60 bg-popover p-2 shadow-lg shadow-black/5">
             {columns.map((c) => (
               <Link
@@ -115,7 +110,6 @@ export function NavGroupMenu({
             ))}
           </div>
         ) : (
-          // Danh sách đơn cột
           <div className="min-w-[11rem] rounded-2xl border border-border/60 bg-popover p-1.5 shadow-lg shadow-black/5">
             {items?.map((i) => (
               <Link

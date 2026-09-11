@@ -48,7 +48,6 @@ export function ThreadLikeButton({
     });
   };
 
-  // Biến thể text (bình luận kiểu Facebook): chữ "Thích" đậm, xanh khi đã thích.
   if (variant === "text") {
     const cls = cn(
       "font-semibold transition-colors",

@@ -1,6 +1,5 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
-// Khung chờ cho trang tạo/sửa Place (khớp bố cục section 2 cột của PlaceForm).
 function SectionSkeleton({ rows = 1 }: { rows?: number }) {
   return (
     <div className="grid gap-x-8 gap-y-4 py-8 lg:grid-cols-3">
