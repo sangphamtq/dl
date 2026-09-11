@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Download, Loader2, Sliders } from "@/components/icons";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { Loader2 } from "@/components/icons";
+import { Glyph } from "@/components/site/glyphs";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { R_BADGE, R_CARD, R_CTRL } from "@/lib/radius";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,40 +18,22 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { PROVINCE_COUNT, PROVINCE_NAME_BY_SLUG } from "@/lib/provinces";
+import {
+  ACCENT_SWATCHES,
+  MAP_CARD_TEXT,
+  mapCardDefaultsFor,
+  type MapCardOptions,
+} from "@/lib/map-card";
+import { saveMapCardOptions } from "@/app/(site)/tai-khoan/da-den/actions";
 import { REGIONS } from "@/lib/regions";
 import { PILL_BASE, PILL_SURFACE } from "@/components/site/check-in-button";
 import { VN_MAP_PATHS } from "./vietnam-map-paths";
 import { VN_ISLANDS, VN_MAP_VIEWBOX_WIDE } from "./vietnam-islands";
 
-// ── Tuỳ chọn cá nhân hoá ảnh ────────────────────────────────────────────────
-export type ShareOptions = {
-  eyebrow: string;
-  headline: string; // dùng {n} để chèn "X/34"
-  name: string;
-  watermark: string;
-  accent: string; // màu nhấn (hex)
-  showMap: boolean;
-  showList: boolean;
-};
-
-const DEFAULTS: ShareOptions = {
-  eyebrow: "HÀNH TRÌNH VIỆT",
-  headline: "Tôi đã đến {n} tỉnh thành",
-  name: "",
-  watermark: "Khám phá Việt Nam cùng Halivivu",
-  accent: "#e3852f",
-  showMap: true,
-  showList: true,
-};
-
-const ACCENT_SWATCHES = [
-  "#e3852f",
-  "#e11d48",
-  "#0ea5e9",
-  "#16a34a",
-  "#7c3aed",
-  "#0f172a",
-];
+/* Tuỳ chọn nay lưu THEO NGƯỜI (`User.mapCardOptions`) chứ không còn là state
+   sống-chết theo một lần mở hộp thoại — kiểu và mặc định vì vậy chuyển sang
+   `lib/map-card.ts` để trang (Server Component) đọc được. Xem chú thích đầu
+   file đó về vì sao hằng dùng chung KHÔNG được nằm trong module client. */
 
 const LAND = "#e7e5e4";
 const INK = "#0f172a";
@@ -63,6 +47,8 @@ const CIRCLE_R = 13;
 const ITEM_GAP = 12; // khoảng cách ô tròn → chữ
 
 // Font viết tay Mali (nhúng vào ảnh) cho phần checklist.
+const MICRO = "text-[0.6rem] font-semibold uppercase tracking-[0.14em]";
+
 const LIST_FONT = "'MaliShare', 'Be Vietnam Pro', system-ui, sans-serif";
 
 function escapeXml(s: string): string {
@@ -71,7 +57,11 @@ function escapeXml(s: string): string {
   );
 }
 
-// Một mục checklist "○/✓ Tên" tại (x, cy).
+/* Một mục checklist "☐/☑ Tên" tại (x, cy).
+   Ô VUÔNG bo 3px — cùng hình với ô đánh dấu trên chính trang `/tai-khoan/da-den`
+   sinh ra tấm ảnh này. Bản trước dùng ô TRÒN ở đây trong khi trang dùng ô vuông
+   (hoặc ngược lại tuỳ đợt), nên người dùng tải ảnh về là thấy một danh sách hơi
+   khác thứ vừa bấm. */
 function checklistItem(
   x: number,
   cy: number,
@@ -81,11 +71,14 @@ function checklistItem(
 ): string {
   const cx = x + CIRCLE_R;
   const r = CIRCLE_R;
+  const bx = (cx - r).toFixed(1);
+  const by = (cy - r).toFixed(1);
+  const size = (r * 2).toFixed(1);
   const checkD = `M${(cx - r * 0.45).toFixed(1)} ${(cy + r * 0.05).toFixed(1)} l${(r * 0.33).toFixed(1)} ${(r * 0.36).toFixed(1)} l${(r * 0.58).toFixed(1)} -${(r * 0.72).toFixed(1)}`;
   const circle = visited
-    ? `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${accent}"/>
+    ? `<rect x="${bx}" y="${by}" width="${size}" height="${size}" rx="3" fill="${accent}"/>
   <path d="${checkD}" fill="none" stroke="#ffffff" stroke-width="${(r * 0.22).toFixed(1)}" stroke-linecap="round" stroke-linejoin="round"/>`
-    : `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#cbd5e1" stroke-width="2.4"/>`;
+    : `<rect x="${bx}" y="${by}" width="${size}" height="${size}" rx="3" fill="none" stroke="#cbd5e1" stroke-width="2.4"/>`;
   const tx = x + CIRCLE_R * 2 + ITEM_GAP;
   return `${circle}
   <text x="${tx}" y="${cy}" dominant-baseline="central" font-size="${ITEM_FS}" font-weight="${visited ? 600 : 500}" fill="${visited ? INK : MUTED}">${escapeXml(name)}</text>`;
@@ -117,8 +110,8 @@ function mapBlock(
   const fillW = Math.round((barW * total) / PROVINCE_COUNT);
   const percent = Math.round((total / PROVINCE_COUNT) * 100);
   const svg = `<svg x="${x}" y="${top}" width="${mapW}" height="${mapH}" viewBox="${VN_MAP_VIEWBOX_WIDE}">${shapes}</svg>
-  <rect x="${barX}" y="${barY}" width="${barW}" height="16" rx="8" fill="#e2e8f0"/>
-  <rect x="${barX}" y="${barY}" width="${fillW}" height="16" rx="8" fill="${accent}"/>
+  <rect x="${barX}" y="${barY}" width="${barW}" height="16" rx="3" fill="#e2e8f0"/>
+  <rect x="${barX}" y="${barY}" width="${fillW}" height="16" rx="3" fill="${accent}"/>
   <text x="${cx}" y="${barY + 46}" text-anchor="middle" font-size="26" font-weight="700" fill="${INK}">Hoàn thành ${percent}%</text>`;
   return { svg, bottom: barY + 60 };
 }
@@ -168,7 +161,7 @@ function listBlock(
 function buildShareCard(
   visited: Set<string>,
   total: number,
-  opts: ShareOptions,
+  opts: MapCardOptions,
   fontCss = "",
 ) {
   const { accent, showMap, showList } = opts;
@@ -176,13 +169,13 @@ function buildShareCard(
   // ── Header (eyebrow + headline + tên) ──
   const hasName = opts.name.trim().length > 0;
   const count = `${total}/${PROVINCE_COUNT}`;
-  const parts = opts.headline.split("{n}");
+  const parts = MAP_CARD_TEXT.headline.split("{n}");
   const headlineInner =
     escapeXml(parts[0]) +
     (parts.length > 1
       ? `<tspan fill="${accent}">${count}</tspan>${escapeXml(parts.slice(1).join("{n}"))}`
       : "");
-  let header = `<text x="${W / 2}" y="110" text-anchor="middle" font-size="26" font-weight="600" letter-spacing="4" fill="${accent}">${escapeXml(opts.eyebrow)}</text>
+  let header = `<text x="${W / 2}" y="110" text-anchor="middle" font-size="26" font-weight="600" letter-spacing="4" fill="${accent}">${escapeXml(MAP_CARD_TEXT.eyebrow)}</text>
   <text x="${W / 2}" y="184" text-anchor="middle" font-size="52" font-weight="800" fill="${INK}">${headlineInner}</text>`;
   if (hasName)
     header += `<text x="${W / 2}" y="226" text-anchor="middle" font-size="27" font-style="italic" fill="${MUTED}">— ${escapeXml(opts.name.trim())}</text>`;
@@ -233,7 +226,7 @@ function buildShareCard(
   <rect width="${W}" height="${H}" fill="url(#bg)"/>
   ${header}
   ${body}
-  <text x="${W / 2}" y="${wmY}" text-anchor="middle" font-size="24" fill="${MUTED}">${escapeXml(opts.watermark)}</text>
+  <text x="${W / 2}" y="${wmY}" text-anchor="middle" font-size="24" fill="${MUTED}">${escapeXml(MAP_CARD_TEXT.watermark)}</text>
 </svg>`;
 
   return { svg, w: W, h: H };
@@ -306,172 +299,335 @@ async function svgToPngBlob(svg: string, w: number, h: number): Promise<Blob> {
   );
 }
 
-// ── Editor cá nhân hoá + preview trực tiếp ──────────────────────────────────
-function ShareEditor({
+/* ── Xuất ảnh PNG từ bộ tuỳ chọn ĐANG LƯU ───────────────────────────────────
+   Tách hẳn khỏi hộp thoại tuỳ chỉnh. Trước đây "Tải ảnh" là nút chính NẰM TRONG
+   hộp thoại, nên muốn lấy lại tấm ảnh với đúng thiết lập cũ vẫn phải mở bảng
+   điều khiển, đi qua sáu ô nhập rồi mới tới nút — trong khi chỉnh là việc làm
+   một lần còn xuất ảnh là việc làm lại nhiều lần. */
+async function exportCard(
+  visited: string[],
+  total: number,
+  opts: MapCardOptions,
+) {
+  // Font Mali nhúng vào SVG để chữ checklist trong ảnh đúng nét viết tay như
+  // ngoài trang. Tải hỏng thì vẫn xuất được, chỉ rơi về font hệ thống.
+  const fontCss = await loadMaliFontCss().catch(() => "");
+  const card = buildShareCard(new Set(visited), total, opts, fontCss);
+  const blob = await svgToPngBlob(card.svg, card.w, card.h);
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "da-den-viet-nam.png";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+/** Nút XUẤT ẢNH — một chạm, không hộp thoại. Dùng đúng thiết lập đã lưu. */
+export function MapExportButton({
   visited,
   total,
+  opts,
+}: {
+  visited: string[];
+  total: number;
+  opts: MapCardOptions;
+}) {
+  const [busy, setBusy] = useState(false);
+  return (
+    <button
+      type="button"
+      disabled={busy}
+      onClick={async () => {
+        setBusy(true);
+        try {
+          await exportCard(visited, total, opts);
+          toast.success("Đã tải ảnh về máy");
+        } catch (e) {
+          toast.error(e instanceof Error ? e.message : "Không xuất được ảnh.");
+        } finally {
+          setBusy(false);
+        }
+      }}
+      className={cn(PILL_BASE, PILL_SURFACE)}
+    >
+      {busy ? (
+        <Loader2 className="size-4 animate-spin" aria-hidden />
+      ) : (
+        <Glyph name="download" className="size-4" />
+      )}
+      Xuất ảnh
+    </button>
+  );
+}
+
+/** Nút TUỲ CHỈNH — mở bảng điều khiển, lưu VĨNH VIỄN theo người dùng. */
+export function MapCustomizeButton({
+  visited,
+  total,
+  opts,
+  accountName,
+  onSaved,
+}: {
+  visited: string[];
+  total: number;
+  opts: MapCardOptions;
+  /** Tên trên tài khoản — chỗ "Đặt lại" quay về. */
+  accountName: string;
+  onSaved: (next: MapCardOptions) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className={cn(PILL_BASE, PILL_SURFACE)}
+      >
+        <Glyph name="sliders" className="size-4" />
+        Tuỳ chỉnh
+      </button>
+      <CustomizeDialog
+        visited={visited}
+        total={total}
+        saved={opts}
+        accountName={accountName}
+        onSaved={onSaved}
+        open={open}
+        onOpenChange={setOpen}
+      />
+    </>
+  );
+}
+
+/* ── Bảng điều khiển + xem trước ────────────────────────────────────────────
+   Hai nhóm, tách bằng một đường kẻ và một nhãn, vì chúng KHÔNG cùng phạm vi:
+     · **Màu nhấn** đổi cả TRANG (bản đồ, vạch tiến độ, ô đánh dấu, con số lớn)
+       lẫn tấm ảnh — đây mới là phần "tuỳ chỉnh trang này";
+     · **Chữ trên ảnh** chỉ sống trong tấm ảnh xuất ra.
+   Trộn hai nhóm vào một cột đều tăm tắp như bản trước thì người dùng không đoán
+   được thứ mình vừa sửa sẽ hiện ở đâu. */
+function CustomizeDialog({
+  visited,
+  total,
+  saved,
+  accountName,
+  onSaved,
   open,
   onOpenChange,
 }: {
   visited: string[];
   total: number;
+  saved: MapCardOptions;
+  accountName: string;
+  onSaved: (next: MapCardOptions) => void;
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
-  const [opts, setOpts] = useState<ShareOptions>(DEFAULTS);
-  const [busy, setBusy] = useState(false);
+  // Font Mali (nhúng) giữ ở ĐÂY, không ở trong `Editor`: `Editor` bị tháo mỗi
+  // lần đóng hộp thoại, để font trong đó thì mở lại là tải lại vài trăm KB.
   const [fontCss, setFontCss] = useState("");
-  const set = <K extends keyof ShareOptions>(k: K, v: ShareOptions[K]) =>
-    setOpts((o) => ({ ...o, [k]: v }));
-
-  // Nạp font Mali (nhúng) khi mở editor.
   useEffect(() => {
     if (open && !fontCss) loadMaliFontCss().then(setFontCss).catch(() => {});
   }, [open, fontCss]);
 
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        className={cn(R_CARD, "max-h-[92vh] gap-0 overflow-hidden p-0 sm:max-w-5xl")}
+      >
+        <DialogHeader className="border-b border-border px-5 py-4">
+          <DialogTitle>Tuỳ chỉnh trang &amp; ảnh chia sẻ</DialogTitle>
+          <DialogDescription>
+            Thiết lập được lưu cho riêng bạn — lần sau vào trang vẫn giữ nguyên.
+          </DialogDescription>
+        </DialogHeader>
+
+        {/* `Editor` nằm TRONG `DialogContent` nên Radix tháo nó khi đóng, và
+            bản nháp được gieo lại từ `saved` ở lần mở sau một cách tự nhiên —
+            khỏi cần một `useEffect` chỉ để đồng bộ state với prop (mẫu mà
+            `react-hooks/set-state-in-effect` chặn, và chặn đúng: nó gây thêm
+            một vòng render mỗi lần mở). */}
+        <Editor
+          visited={visited}
+          total={total}
+          saved={saved}
+          accountName={accountName}
+          fontCss={fontCss}
+          onSaved={onSaved}
+          onClose={() => onOpenChange(false)}
+        />
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* Bảng điều khiển + xem trước. Hai nhóm, tách bằng một đường kẻ và một nhãn, vì
+   chúng KHÔNG cùng phạm vi:
+     · **Màu nhấn** đổi cả TRANG (bản đồ, vạch tiến độ, ô đánh dấu) lẫn tấm ảnh
+       — đây mới là phần "tuỳ chỉnh trang này";
+     · **Chữ trên ảnh** chỉ sống trong tấm ảnh xuất ra.
+   Trộn hai nhóm vào một cột đều tăm tắp như bản trước thì người dùng không đoán
+   được thứ mình vừa sửa sẽ hiện ở đâu. */
+function Editor({
+  visited,
+  total,
+  saved,
+  accountName,
+  fontCss,
+  onSaved,
+  onClose,
+}: {
+  visited: string[];
+  total: number;
+  saved: MapCardOptions;
+  accountName: string;
+  fontCss: string;
+  onSaved: (next: MapCardOptions) => void;
+  onClose: () => void;
+}) {
+  // NHÁP: mọi thay đổi chỉ nằm trong hộp thoại cho tới khi bấm Lưu — đóng ngang
+  // thì trang trở lại đúng thứ đang lưu.
+  const [draft, setDraft] = useState<MapCardOptions>(saved);
+  const [saving, startSave] = useTransition();
+  const set = <K extends keyof MapCardOptions>(k: K, v: MapCardOptions[K]) =>
+    setDraft((o) => ({ ...o, [k]: v }));
+  const dirty = JSON.stringify(draft) !== JSON.stringify(saved);
+
   const card = useMemo(
-    () => buildShareCard(new Set(visited), total, opts, fontCss),
-    [visited, total, opts, fontCss],
+    () => buildShareCard(new Set(visited), total, draft, fontCss),
+    [visited, total, draft, fontCss],
   );
   const previewUrl =
     "data:image/svg+xml;charset=utf-8," + encodeURIComponent(card.svg);
 
-  async function download() {
-    setBusy(true);
-    try {
-      const blob = await svgToPngBlob(card.svg, card.w, card.h);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "da-den-viet-nam.png";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-      toast.success("Đã tải ảnh về máy");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Không xuất được ảnh.");
-    } finally {
-      setBusy(false);
-    }
+  function save() {
+    startSave(async () => {
+      const res = await saveMapCardOptions(draft);
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      onSaved(res.data);
+      toast.success("Đã lưu tuỳ chỉnh của bạn");
+      onClose();
+    });
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92vh] gap-0 overflow-hidden p-0 sm:max-w-5xl">
-        <DialogHeader className="border-b border-border/60 px-5 py-4">
-          <DialogTitle>Tuỳ chỉnh ảnh chia sẻ</DialogTitle>
-          <DialogDescription>
-            Chỉnh nội dung, màu sắc rồi tải ảnh cá nhân hoá của bạn.
-          </DialogDescription>
-        </DialogHeader>
+    <div className="grid max-h-[78vh] gap-0 overflow-hidden sm:grid-cols-[1fr_300px]">
+      {/* Xem trước */}
+      <div className="overflow-auto bg-muted/40 p-4">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={previewUrl}
+          alt="Xem trước ảnh chia sẻ"
+          className={cn(R_BADGE, "mx-auto w-full border border-border")}
+        />
+      </div>
 
-        <div className="grid max-h-[78vh] gap-0 overflow-hidden sm:grid-cols-[1fr_300px]">
-          {/* Preview */}
-          <div className="overflow-auto bg-muted/40 p-4">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={previewUrl}
-              alt="Xem trước ảnh chia sẻ"
-              className="mx-auto w-full rounded-xl border border-border/60 shadow-sm"
+      {/* Điều khiển */}
+      <div className="overflow-auto border-t border-border p-5 sm:border-l sm:border-t-0">
+        <Field label="Màu nhấn">
+          <div className="flex flex-wrap items-center gap-2">
+            {ACCENT_SWATCHES.map((c) => (
+              <button
+                key={c}
+                type="button"
+                aria-label={`Màu ${c}`}
+                onClick={() => set("accent", c)}
+                // Ô màu VUÔNG, và ô đang chọn đánh dấu bằng một vòng `ring`
+                // cách ra ngoài chứ không bằng viền dày: viền dày ăn vào chính
+                // mảng màu đang xem, làm nó nhìn khác với màu sẽ in ra.
+                className={cn(
+                  R_BADGE,
+                  "size-7 transition-shadow",
+                  draft.accent.toLowerCase() === c.toLowerCase()
+                    ? "ring-2 ring-foreground ring-offset-2 ring-offset-background"
+                    : "ring-1 ring-black/10",
+                )}
+                style={{ backgroundColor: c }}
+              />
+            ))}
+            <input
+              type="color"
+              aria-label="Màu tuỳ chọn"
+              value={draft.accent}
+              onChange={(e) => set("accent", e.target.value)}
+              className={cn(
+                R_BADGE,
+                "size-7 cursor-pointer border border-border bg-transparent p-0",
+              )}
             />
           </div>
+        </Field>
+        <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+          Màu này tô luôn{" "}
+          <strong className="font-semibold text-foreground">
+            bản đồ và vạch tiến độ
+          </strong>{" "}
+          ngoài trang, không chỉ trong ảnh.
+        </p>
 
-          {/* Controls */}
-          <div className="space-y-4 overflow-auto border-t border-border/60 p-5 sm:border-l sm:border-t-0">
-            <Field label="Dòng nhãn">
+        {/* ── Ảnh chia sẻ ────────────────────────────────────────────────
+            Bản trước là BỐN ô nhập tự do (dòng nhãn, tiêu đề, tên, dòng chân)
+            xếp thành một cột đều tăm tắp. Nay chỉ còn **một ô: TÊN** — ba dòng
+            kia cố định trong `MAP_CARD_TEXT` (xem lý do ở đó).
+            Không bày ba dòng cố định ra đây dưới dạng ô khoá: bản xem trước bên
+            trái đã in chúng to rõ, thêm ba ô xám không bấm được chỉ là ba dòng
+            chữ mời người ta thử bấm rồi thất vọng. */}
+        <div className="mt-6 border-t border-border pt-5">
+          <p className={cn(MICRO, "text-muted-foreground")}>Ảnh chia sẻ</p>
+
+          <div className="mt-3 space-y-4">
+            <Field label="Tên hiện trên ảnh">
               <Input
-                value={opts.eyebrow}
-                onChange={(e) => set("eyebrow", e.target.value)}
-              />
-            </Field>
-            <Field label="Tiêu đề (dùng {n} cho số tỉnh)">
-              <Input
-                value={opts.headline}
-                onChange={(e) => set("headline", e.target.value)}
-              />
-            </Field>
-            <Field label="Tên của bạn (tuỳ chọn)">
-              <Input
-                value={opts.name}
-                placeholder="vd: Minh Anh"
+                value={draft.name}
+                placeholder="Để trống nếu không muốn hiện tên"
                 onChange={(e) => set("name", e.target.value)}
               />
-            </Field>
-            <Field label="Dòng chân ảnh">
-              <Input
-                value={opts.watermark}
-                onChange={(e) => set("watermark", e.target.value)}
-              />
-            </Field>
-
-            <Field label="Màu nhấn">
-              <div className="flex flex-wrap items-center gap-2">
-                {ACCENT_SWATCHES.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    aria-label={`Màu ${c}`}
-                    onClick={() => set("accent", c)}
-                    className={cn(
-                      "size-7 rounded-full border-2 transition-transform hover:scale-110",
-                      opts.accent.toLowerCase() === c.toLowerCase()
-                        ? "border-foreground"
-                        : "border-transparent",
-                    )}
-                    style={{ backgroundColor: c }}
-                  />
-                ))}
-                <input
-                  type="color"
-                  aria-label="Màu tuỳ chọn"
-                  value={opts.accent}
-                  onChange={(e) => set("accent", e.target.value)}
-                  className="size-7 cursor-pointer rounded-full border border-border/60 bg-transparent p-0"
-                />
-              </div>
             </Field>
 
             <div className="space-y-2.5 pt-1">
               <ToggleRow
                 label="Hiện bản đồ"
-                checked={opts.showMap}
-                onChange={(v) => set("showMap", v || !opts.showList)}
+                checked={draft.showMap}
+                onChange={(v) => set("showMap", v || !draft.showList)}
               />
               <ToggleRow
                 label="Hiện danh sách tỉnh"
-                checked={opts.showList}
-                onChange={(v) => set("showList", v || !opts.showMap)}
+                checked={draft.showList}
+                onChange={(v) => set("showList", v || !draft.showMap)}
               />
-            </div>
-
-            <div className="flex gap-2 pt-2">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setOpts(DEFAULTS)}
-              >
-                Đặt lại
-              </Button>
-              <Button
-                type="button"
-                className="flex-1 rounded-full"
-                onClick={download}
-                disabled={busy}
-              >
-                {busy ? (
-                  <Loader2 className="size-4 animate-spin" aria-hidden />
-                ) : (
-                  <Download className="size-4" aria-hidden />
-                )}
-                Tải ảnh
-              </Button>
             </div>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+
+        <div className="mt-6 flex gap-2 border-t border-border pt-4">
+          {/* "Đặt lại" chỉ đổi BẢN NHÁP — vẫn phải bấm Lưu mới ghi. Đặt lại mà
+              ghi thẳng thì một cú bấm nhầm xoá sạch thiết lập đã lưu, và không
+              có đường lui. */}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setDraft(mapCardDefaultsFor(accountName))}
+          >
+            Đặt lại
+          </Button>
+          <Button
+            type="button"
+            className={cn(R_CTRL, "flex-1")}
+            onClick={save}
+            disabled={saving || !dirty}
+          >
+            {saving && <Loader2 className="size-4 animate-spin" aria-hidden />}
+            {dirty ? "Lưu thay đổi" : "Đã lưu"}
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -504,33 +660,5 @@ function ToggleRow({
       <span>{label}</span>
       <Switch checked={checked} onCheckedChange={onChange} />
     </label>
-  );
-}
-
-export function ShareMapButton({
-  visited,
-  total,
-}: {
-  visited: string[];
-  total: number;
-}) {
-  const [open, setOpen] = useState(false);
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className={cn(PILL_BASE, PILL_SURFACE)}
-      >
-        <Sliders className="size-4" aria-hidden />
-        Tuỳ chỉnh &amp; tải ảnh
-      </button>
-      <ShareEditor
-        visited={visited}
-        total={total}
-        open={open}
-        onOpenChange={setOpen}
-      />
-    </>
   );
 }

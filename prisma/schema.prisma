@@ -252,6 +252,15 @@ model User {
   role          UserRole  @default(user)
   homeProvince  String? // tỉnh/thành người dùng chọn (nơi ở / xuất phát) — cá nhân hoá sau này
 
+  // Tuỳ chỉnh trang "Nơi đã đến" (/tai-khoan/da-den) + tấm ảnh trang đó xuất ra:
+  // màu nhấn, các dòng chữ trên ảnh, hiện bản đồ / danh sách. Lưu THEO NGƯỜI vì
+  // đây là trang riêng tư — để ở localStorage thì đổi máy là mất, mà cả điểm
+  // của tính năng là "chỉnh một lần, lần sau vào vẫn thấy".
+  // Kiểu Json (không phải cột rời) vì đây là một túi tuỳ chọn của ĐÚNG MỘT màn
+  // hình, không có truy vấn nào lọc theo chúng. Đọc lại luôn qua
+  // `parseMapCardOptions()` — dữ liệu cũ/thiếu khoá tự rơi về mặc định.
+  mapCardOptions Json?
+
   accounts Account[]
   sessions Session[]
   posts    Post[] // bài blog do user này viết

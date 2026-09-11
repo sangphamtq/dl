@@ -22,6 +22,7 @@ export type GlyphName =
   | "sunrise"
   | "warn"
   | "check"
+  | "tick"
   | "search"
   | "grid"
   | "rows"
@@ -47,6 +48,8 @@ export type GlyphName =
   | "message"
   | "link"
   | "chef"
+  | "sliders"
+  | "download"
   | "car"
   | "bus"
   | "train"
@@ -117,6 +120,10 @@ const SHAPES: Record<GlyphName, React.ReactNode> = {
       <path d="m8.2 12.2 2.6 2.6 5-5.4" />
     </>
   ),
+  // Dấu tick TRẦN — dành cho ô đánh dấu đã có khung riêng. `check` (tick trong
+  // vòng tròn) nhét vào một ô vuông đặc sẽ ra một đốm tròn trong ô vuông, đọc
+  // không ra dấu tick nữa.
+  tick: <path d="M5.4 12.6 9.9 17.1 18.6 7.4" />,
   // Kính lúp: vòng tròn + cán chéo.
   search: (
     <>
@@ -243,6 +250,27 @@ const SHAPES: Record<GlyphName, React.ReactNode> = {
     </>
   ),
   "chevron-down": <path d="M5.2 9.2 12 16l6.8-6.8" />,
+  // HAI thanh trượt, núm lệch nhau — "tuỳ chỉnh".
+  // Bản đầu vẽ BA rãnh cho giống icon quen thuộc: ở 16px ba rãnh chỉ cách nhau
+  // ~2px nên cả hình bết thành một vệt xám, không đọc ra cái gì. Hai rãnh cách
+  // 7.2 đơn vị (~4,8px khi render) mới thở được, và núm to hơn để vẫn thấy rõ
+  // "mỗi thứ một mức" — thứ duy nhất cần giữ của hình này.
+  sliders: (
+    <>
+      <path d="M3.6 8.4h16.8" />
+      <path d="M3.6 15.6h16.8" />
+      <circle cx="9" cy="8.4" r="2.3" />
+      <circle cx="15.4" cy="15.6" r="2.3" />
+    </>
+  ),
+  // Mũi tên rơi xuống khay — "tải về".
+  download: (
+    <>
+      <path d="M12 4.2v10" />
+      <path d="M8.2 10.6 12 14.2l3.8-3.6" />
+      <path d="M4.8 16.2v2.2a1.4 1.4 0 0 0 1.4 1.4h11.6a1.4 1.4 0 0 0 1.4-1.4v-2.2" />
+    </>
+  ),
   // Khiên — dùng cho dải an toàn của tab Lưu trú. Chỉ bao ngoài, phần "đã xác
   // minh / chưa xác minh" để `check` và `warn` nói, khỏi vẽ ba biến thể khiên.
   shield: (

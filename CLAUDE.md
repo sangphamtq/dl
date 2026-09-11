@@ -1624,6 +1624,123 @@ về cùng một tập nội dung, người dùng đi qua lại giữa chúng:
 > trước khi `Place.lat/lng` ra đời, chú thích trong file còn ghi "Place không có lat/lng
 > riêng") — nên toạ độ biên tập tự nhập trong CMS **không** đưa được nơi đó lên bản đồ.
 
+## Nơi đã đến (`/tai-khoan/da-den`)
+
+Bản đồ 34 tỉnh + checklist, **chung một state** nên bấm ở bản đồ hay ở danh sách cũng như
+nhau. Trang riêng tư (bắt đăng nhập), và là nơi duy nhất của site **xuất ra một tấm ảnh để
+chia sẻ** (`ShareMapButton` → `buildShareCard`).
+
+- **Không khung bọc, không nền gradient.** Bản trước đóng cả bản đồ lẫn danh sách vào một
+  khung `rounded-3xl border bg-card/50 shadow-lg backdrop-blur`, đặt trên một dải gradient
+  `sky-*` kèm ba vòng tròn đồng tâm trang trí. Gỡ hết: bo góc lạc bộ 6/4/3px; một khối khai
+  độ nổi **ba lần** (viền + bóng + nền mờ); `sky-*` là màu cứng nên dark mode phải rẽ nhánh
+  riêng; và khung chỉ vẽ lại một hình chữ nhật quanh hai thứ vốn đã tự đứng được. Nền càng
+  phẳng thì mảng cam của tỉnh đã đến càng nổi — **bản đồ CHÍNH LÀ phần nhìn của trang**.
+- **Tiến độ là một VẠCH NGANG ở đầu trang, không phải vòng tròn % nổi trên bản đồ.** Bản đồ
+  Việt Nam rất hẹp và dọc nên thẻ nổi kia không thực sự đè lên gì, chỉ lửng lơ giữa vùng
+  trống; mà con số tiến độ là chuyện của cả trang. Vạch ngang còn **khớp với tấm ảnh chia
+  sẻ**, thứ vốn đã dùng đúng một vạch ngang.
+- **Checklist ĐÚNG HAI cột** (trước là 3 từ `sm`). Đo: ở 3 cột danh sách chỉ cao ~370px
+  trong khi bản đồ cao ~600px → nửa dưới cột phải là một mảng trắng bằng một phần ba khối.
+  Hai cột kéo lên ~620px, vừa khớp, và tên dài ("Quảng Ninh") thôi bó sát mép. Vẫn vừa ở
+  320px.
+- **Ô đánh dấu VUÔNG** (`R_BADGE`) + glyph **`tick`** (dấu tick TRẦN). Ô tròn là hình của
+  *radio* — chọn một trong nhiều — còn đây là 34 công tắc độc lập. Và đừng nhét `check` vào
+  đó: `check` là tick **trong vòng tròn**, lồng vào ô vuông đặc thì ra một đốm tròn trong ô
+  vuông, không đọc ra dấu tick nữa. (`tick` sinh ra ở đây và dùng lại cho ô "Chỉ đánh giá có
+  viết" ở mục Đánh giá.)
+- **Font Mali chỉ cho TÊN TỈNH**, không cho tiêu đề miền: đó đúng vai "nhãn viết tay" mà
+  skill `design` dành cho font này, và nó là chữ duy nhất của trang khớp với tấm ảnh chia sẻ
+  (ảnh cũng nhúng Mali cho checklist).
+- **Tấm ảnh xuất ra phải nói cùng hình với trang**: ô đánh dấu trong `checklistItem` và hai
+  thanh tiến độ trong `mapBlock` đều đã chuyển sang chữ nhật `rx="3"`. Đổi hình ở trang thì
+  đổi luôn ở đây, kẻo tải ảnh về lại thấy một danh sách hơi khác thứ vừa bấm.
+- ⚠️ **Lỗi hydration im lặng đã sửa — đừng dựng lại:** `<title>` trong SVG của `VietnamMap`
+  từng nhận **hai** biểu thức con (`{tên}{isVisited ? " — đã đến" : ""}`). Hai child liền
+  nhau thì React SSR phải chèn dấu ngăn, mà `<title>` của SVG không giữ được nó; cộng thêm
+  nhánh chuỗi rỗng không sinh node ở server nhưng client vẫn chờ một node → cây lệch, React
+  dựng lại cả nhánh (chỉ hiện thành "1 Issue" trong overlay dev, không có gì báo khác).
+  **Ghép chuỗi trong JS để `<title>` có đúng MỘT child.**
+- `PILL_BASE` (nút chia sẻ dùng chung với `ShareButton`/`StayShare`) đổi `rounded-lg` →
+  **4px** cùng đợt — sửa ở hằng dùng chung, không truyền class bo góc riêng từng trang.
+
+### Tuỳ chỉnh — lưu VĨNH VIỄN theo từng người
+
+Thiết lập nằm ở **`User.mapCardOptions` (Json?)**, đọc/ghi qua **`parseMapCardOptions()`**
+trong `lib/map-card.ts`, ghi bằng server action `saveMapCardOptions` (`da-den/actions.ts`).
+
+- **Không dùng `localStorage`.** Trang này bắt đăng nhập, mà cả điểm của tính năng là "chỉnh
+  một lần, lần sau vào vẫn thấy" — để ở trình duyệt thì đổi máy là mất, tức là hỏng đúng lời
+  hứa của nó.
+- **Cột Json chứ không phải cột rời**: đây là một túi tuỳ chọn của ĐÚNG MỘT màn hình, không
+  truy vấn nào lọc theo chúng. Đổi lại, **mọi lối vào ra đều phải qua `parseMapCardOptions()`**
+  — bản ghi cũ thiếu khoá, kiểu sai, hex hỏng, chữ nhiều dòng, cả hai công tắc cùng tắt: tất
+  cả rơi về mặc định. Server action cũng gọi đúng hàm đó trước khi ghi, nên cột không bao giờ
+  chứa thứ giao diện đọc lại không được.
+- Trang đọc thiết lập **ở server** rồi truyền xuống `initialOptions`, nên HTML lần đầu đã
+  đúng màu — không nháy một nhịp cam mặc định rồi mới đổi sau khi hydrate. Client giữ một bản
+  sao để đổi màu NGAY khi lưu, khỏi chờ `revalidatePath`.
+
+**HAI NHÓM tuỳ chọn, đừng trộn** (đây là thứ quyết định cách bày bảng điều khiển):
+
+| | Nhóm | Áp ở đâu |
+|---|---|---|
+| `accent` | màu nhấn | **cả TRANG lẫn ảnh** — bản đồ, vạch tiến độ, ô đánh dấu |
+| `name` `showMap` `showList` | tên & bố cục ảnh | **chỉ tấm ảnh** |
+
+**BA DÒNG CHỮ CỦA ẢNH LÀ CỐ ĐỊNH** — `MAP_CARD_TEXT` trong `lib/map-card.ts`:
+
+```
+HÀNH TRÌNH VIỆT NAM                          ← nhãn
+Đã đặt chân tới {n} tỉnh thành               ← tiêu đề ({n} = "9/34", tô màu nhấn)
+— Tên của bạn                                ← ô DUY NHẤT còn sửa được
+…bản đồ / danh sách…
+Tự tạo bản đồ hành trình của bạn trên Halivivu   ← dòng chân
+```
+
+- Trước đây cả ba là ô nhập tự do, và đó là ba ô sai. **Nhãn** và **tiêu đề** là GIỌNG của
+  sản phẩm: tấm ảnh này là thứ đi ra ngoài Halivivu và gần như là quảng cáo duy nhất của
+  site, mỗi người sửa một kiểu thì mỗi lần đọc một khác — mà lỗi hay gặp nhất là bỏ trống
+  rồi không biết khôi phục thế nào. **Dòng chân** phải nói đúng một việc: tấm ảnh này tạo ở
+  đâu; để sửa được thì chính câu đáng giữ nhất lại là câu dễ bị xoá nhất.
+- ⚠️ **KHÔNG nhét tên miền vào dòng chân.** Dự án chưa chốt domain ở bất kỳ đâu trong mã
+  nguồn (không có `metadataBase`, không có `NEXT_PUBLIC_SITE_URL`) — viết đại một cái là in
+  một thông tin sai lên tấm ảnh người ta đem đi chia sẻ. Tên thương hiệu đủ để tìm ra.
+- **Tên điền sẵn từ tài khoản** (`session.user.name`) khi người dùng chưa từng lưu gì, và
+  nút **"Đặt lại"** cũng quay về đó (`mapCardDefaultsFor`) chứ không về chuỗi rỗng — đặt lại
+  mà xoá luôn tên thì nó lấy đi đúng thứ duy nhất người dùng không phải tự gõ.
+  · Nhưng khi bản ghi ĐÃ có khoá `name`, **kể cả chuỗi rỗng, thì tôn trọng** — nếu không,
+    người cố tình bỏ tên khỏi ảnh sẽ không bao giờ bỏ được.
+- Bảng điều khiển **không bày ba dòng cố định ra dưới dạng ô khoá**: bản xem trước bên trái
+  đã in chúng to rõ, thêm ba ô xám không bấm được chỉ là ba dòng chữ mời người ta thử bấm
+  rồi thất vọng.
+
+- ⚠️ **`accent` chỉ tô MẢNG, không bao giờ tô CHỮ.** Nó là một hex người dùng tự chọn nên
+  không ai bảo đảm nó đọc được trên nền trang — ngay cam mặc định `#e3852f` cũng chỉ đạt
+  ~2,5:1, dưới cả ngưỡng 3:1 của chữ cỡ lớn. Vì vậy con số lớn và nhãn miền đã đổi từ
+  `text-warm-ink` sang `text-foreground`: màu của trang nay nằm ở tấm bản đồ, vạch tiến độ và
+  34 ô đánh dấu, chứ không rải vào chữ.
+- Dấu tick trong ô đánh dấu để **trắng cứng**: nền ô là hex bất kỳ nên không suy ra được màu
+  chữ tương phản, mà trắng đọc được trên cả sáu màu gợi ý lẫn phần lớn màu tự chọn.
+- Tỉnh đã đến trên bản đồ tô qua **`style`**, nên trạng thái rê chuột đổi bằng **độ mờ** chứ
+  không bằng một class màu thứ hai — `hover:fill-*` không biết gì về hex đó.
+
+**HAI NÚT, hai tần suất khác hẳn nhau:**
+
+- **"Tuỳ chỉnh"** mở bảng điều khiển; nút chính trong đó là **"Lưu thay đổi"** (tắt khi chưa
+  có gì đổi). "Đặt lại" chỉ đổi **bản nháp** — vẫn phải bấm Lưu mới ghi, kẻo một cú bấm nhầm
+  xoá sạch thiết lập đã lưu mà không có đường lui. Đóng ngang = bỏ nháp.
+- **"Xuất ảnh"** tải PNG ngay, không hộp thoại, dùng đúng thiết lập đã lưu. Bản trước gộp
+  thành một nút "Tuỳ chỉnh & tải ảnh" nên muốn tấm ảnh mới (đi thêm một tỉnh) vẫn phải mở
+  bảng điều khiển, đi qua sáu ô nhập rồi mới tới nút tải — trong khi **chỉnh là việc làm một
+  lần, xuất ảnh là việc làm lại nhiều lần**.
+- Bản nháp sống trong component `Editor` nằm **bên trong `DialogContent`**: Radix tháo nó khi
+  đóng nên nháp tự gieo lại từ bản đã lưu ở lần mở sau. Đừng đồng bộ bằng `useEffect` →
+  `setDraft(saved)`: `react-hooks/set-state-in-effect` chặn đúng, mẫu đó tốn thêm một vòng
+  render mỗi lần mở.
+- Font Mali (nhúng vào SVG) giữ ở component **cha**, không trong `Editor` — để trong đó thì
+  mỗi lần mở lại là tải lại vài trăm KB.
+
 ## Nút "Lịch trình" (nút nổi kéo thả được, ở mọi trang)
 
 `src/components/trip/trip-dock.tsx` — nút nổi **kéo thả được** trên **mọi trang công khai**,

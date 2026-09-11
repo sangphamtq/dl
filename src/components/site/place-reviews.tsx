@@ -18,11 +18,11 @@ import {
   MapPin,
   Plus,
   MoreHorizontal,
-  Check,
   Info,
   type LucideIcon,
 } from "@/components/icons";
 import { toast } from "sonner";
+import { Glyph } from "@/components/site/glyphs";
 import { cn } from "@/lib/utils";
 import { R_BADGE, R_CARD, R_CTRL } from "@/lib/radius";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -293,7 +293,7 @@ export function ReviewsSection({
                       : "border-border",
                   )}
                 >
-                  {contentOnly && <Check className="size-3" aria-hidden />}
+                  {contentOnly && <Glyph name="tick" className="size-3" />}
                 </span>
                 Chỉ đánh giá có viết
               </button>
