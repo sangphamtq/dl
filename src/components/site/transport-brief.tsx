@@ -1,14 +1,4 @@
-import {
-  Bus,
-  Car,
-  TrainFront,
-  Plane,
-  Ship,
-  Bike,
-  Footprints,
-  CarTaxiFront,
-  Navigation,
-} from "@/components/icons";
+import { Glyph, type GlyphName } from "@/components/site/glyphs";
 import { cn } from "@/lib/utils";
 
 export type TransportBriefItem = {
@@ -45,20 +35,26 @@ export type TransportBriefItem = {
 //
 // Là Server Component: tĩnh hoàn toàn, không tốn byte JS nào.
 
-const MODE_ICON: Record<string, typeof Bus> = {
-  car: Car,
-  bus: Bus,
-  train: TrainFront,
-  plane: Plane,
-  boat: Ship,
-  motorbike: Bike,
-  bike: Bike,
-  taxi: CarTaxiFront,
-  grab: CarTaxiFront,
-  walk: Footprints,
-  cyclo: Bike,
-  shuttle: Bus,
-  other: Navigation,
+/* 13 `mode` → 7 glyph. Bảng này KHỚP với `MODE_GLYPH` của tab Di chuyển: cùng
+   một phương tiện phải ra cùng một hình ở cả bản xem trước lẫn màn hình đầy đủ.
+   Gộp taxi/grab/shuttle về `car` và cyclo/bike về `two-wheel` là cố ý — bộ
+   glyph vẽ tay dựng trên khung 24 với nét 1.8, ở cỡ 16px thì một chiếc xích lô
+   và một chiếc xe đạp không còn phân biệt được bằng hình, chỉ bằng chữ ngay
+   cạnh. */
+const MODE_GLYPH: Record<string, GlyphName> = {
+  car: "car",
+  taxi: "car",
+  grab: "car",
+  shuttle: "car",
+  bus: "bus",
+  train: "train",
+  plane: "plane",
+  boat: "boat",
+  motorbike: "two-wheel",
+  bike: "two-wheel",
+  cyclo: "two-wheel",
+  walk: "walk",
+  other: "navigation",
 };
 
 /**
@@ -136,7 +132,6 @@ export function TransportBrief({ items }: { items: TransportBriefItem[] }) {
 
                 <ul className={cn(g.from && "mt-2 space-y-2")}>
                   {g.items.map((t) => {
-                    const Icon = MODE_ICON[t.mode] ?? Navigation;
                     const price = money(t.priceFrom, t.priceTo);
                     return (
                       <li
@@ -148,9 +143,9 @@ export function TransportBrief({ items }: { items: TransportBriefItem[] }) {
                         className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-6"
                       >
                         <span className="flex min-w-0 items-baseline gap-2.5">
-                          <Icon
+                          <Glyph
+                            name={MODE_GLYPH[t.mode] ?? "navigation"}
                             className="size-4 shrink-0 translate-y-0.5 text-muted-foreground"
-                            aria-hidden
                           />
                           <span className="min-w-0">
                             <span className={cn(!g.from && "font-medium")}>
@@ -167,17 +162,20 @@ export function TransportBrief({ items }: { items: TransportBriefItem[] }) {
                         {/* Giờ và giá — căn phải từ sm để các dòng thẳng cột và
                             so được theo chiều dọc. `tabular-nums` giữ bề ngang
                             chữ số không nhảy giữa các hàng. */}
-                        <span className="shrink-0 pl-6.5 text-sm tabular-nums text-muted-foreground sm:pl-0 sm:text-right">
-                          {t.duration}
-                          {t.duration && price && (
-                            <span aria-hidden className="px-1.5 text-border">
-                              ·
+                        {/* Giờ và giá ngăn nhau bằng KHOẢNG TRẮNG RỘNG, không
+                            bằng dấu chấm giữa (quy ước `design`) — và giá in
+                            đậm hơn một bậc để nó làm mốc bắt đầu của mẩu thứ
+                            hai, đúng vai trò mà dấu ngăn từng gánh. */}
+                        <span className="flex shrink-0 items-baseline gap-x-4 pl-6.5 text-sm tabular-nums text-muted-foreground sm:justify-end sm:pl-0">
+                          {t.duration && <span>{t.duration}</span>}
+                          {price && (
+                            <span className="font-medium text-foreground">
+                              {price}
                             </span>
                           )}
-                          {price}
-                          {!t.duration && !price && t.distanceKm != null
-                            ? `${t.distanceKm} km`
-                            : null}
+                          {!t.duration && !price && t.distanceKm != null ? (
+                            <span>{t.distanceKm} km</span>
+                          ) : null}
                         </span>
                       </li>
                     );
@@ -201,18 +199,17 @@ export function TransportBrief({ items }: { items: TransportBriefItem[] }) {
               trái: bên kia có kẻ ngăn dòng và cột phải căn lề, bên này không. */}
           <ul className="mt-4 space-y-2.5">
             {around.map((t) => {
-              const Icon = MODE_ICON[t.mode] ?? Navigation;
               const price = money(t.priceFrom, t.priceTo);
               return (
                 <li key={t.id} className="flex items-baseline gap-2.5">
-                  <Icon
+                  <Glyph
+                    name={MODE_GLYPH[t.mode] ?? "navigation"}
                     className="size-4 shrink-0 translate-y-0.5 text-muted-foreground"
-                    aria-hidden
                   />
                   <span className="min-w-0 flex-1">
                     <span className="text-sm">{t.name}</span>
                     {price && (
-                      <span className="ml-2 whitespace-nowrap text-sm tabular-nums text-muted-foreground">
+                      <span className="ml-4 whitespace-nowrap text-sm font-medium tabular-nums text-foreground">
                         {price}
                       </span>
                     )}

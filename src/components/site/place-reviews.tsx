@@ -24,6 +24,7 @@ import {
 } from "@/components/icons";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { R_BADGE, R_CARD, R_CTRL } from "@/lib/radius";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -247,7 +248,7 @@ export function ReviewsSection({
                 hơn hẳn các mục trên. Giải pháp không phải bỏ tint (sẽ vỡ nhịp
                 trắng–nhạt xen kẽ của trang) mà là trả section về đúng ngôn ngữ
                 thẻ của các mục còn lại. */}
-            <div className="rounded-2xl border border-border/60 bg-card p-5 sm:p-6">
+            <div className={cn(R_CARD, "border border-border bg-card p-5 sm:p-6")}>
               <Summary
                 summary={summary}
                 activeStance={stanceFilter}
@@ -259,7 +260,7 @@ export function ReviewsSection({
           </div>
 
           {/* Phải: danh sách đánh giá */}
-          <div className="rounded-2xl border border-border/60 bg-card p-5 sm:p-6">
+          <div className={cn(R_CARD, "border border-border bg-card p-5 sm:p-6")}>
             <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-2">
               {stanceFilter && (
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
@@ -285,7 +286,8 @@ export function ReviewsSection({
               >
                 <span
                   className={cn(
-                    "flex size-4 items-center justify-center rounded border transition-colors",
+                    R_BADGE,
+                    "flex size-4 items-center justify-center border transition-colors",
                     contentOnly
                       ? "border-primary bg-primary text-primary-foreground"
                       : "border-border",
@@ -328,7 +330,7 @@ export function ReviewsSection({
           </div>
         </div>
       ) : (
-        <div className="mt-6 rounded-2xl border border-border/60 bg-card p-5 sm:p-6">
+        <div className={cn(R_CARD, "mt-6 border border-border bg-card p-5 sm:p-6")}>
           <p className="font-medium">Chưa có đánh giá nào</p>
           <p className="mt-1 max-w-sm text-sm text-muted-foreground">
             Là Vivu-er đầu tiên chia sẻ cảm nhận về {target.name}.
@@ -336,7 +338,7 @@ export function ReviewsSection({
           <button
             type="button"
             onClick={onWrite}
-            className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className={cn(R_CTRL, "mt-4 inline-flex items-center gap-1.5 bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90")}
           >
             <PenLine className="size-4" aria-hidden />
             Đánh dấu đã đến & đánh giá
@@ -448,7 +450,8 @@ function StanceRows({
             onClick={() => onSelect(s.value)}
             aria-pressed={on}
             className={cn(
-              "block w-full rounded-lg px-2 py-2 text-left transition-colors",
+              R_CTRL,
+              "block w-full px-2 py-2 text-left transition-colors",
               empty ? "cursor-default" : on ? "bg-muted" : "hover:bg-muted/60",
             )}
           >
@@ -472,9 +475,12 @@ function StanceRows({
                 {s.pct}%
               </span>
             </div>
-            <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-muted">
+            {/* Vạch VUÔNG: cả site chạy ngôn ngữ hình khối vuông (bo tối đa
+                6px), mà một thanh cao 4px bo `rounded-full` thì hai đầu thành
+                nửa hình tròn — hình duy nhất trên trang không thuộc hệ. */}
+            <div className="mt-1.5 h-1 w-full overflow-hidden bg-muted">
               <div
-                className={cn("h-full rounded-full", BAR_TONE[s.tone])}
+                className={cn("h-full", BAR_TONE[s.tone])}
                 style={{ width: `${(s.count / max) * 100}%` }}
               />
             </div>
@@ -485,9 +491,11 @@ function StanceRows({
   );
 }
 
-// Nhãn nổi bật: một dòng tiêu đề + các nhãn nối bằng dấu chấm giữa. Bản trước
-// đóng mỗi nhãn thành một viên chip màu — bốn nhãn thành bốn viên, cộng với chip
-// trên từng đánh giá bên phải nữa thì cả mục thành một rổ viên thuốc.
+/* Nhãn nổi bật: một dòng tiêu đề + các nhãn ngăn nhau bằng KHOẢNG TRẮNG RỘNG.
+   Không chip (bản trước đóng mỗi nhãn thành một viên màu — bốn nhãn thành bốn
+   viên, cộng chip trên từng đánh giá bên phải thì cả mục thành một rổ viên
+   thuốc) và không dấu chấm giữa (quy ước `design`: ngăn bằng khoảng trắng, mốc
+   bắt đầu mỗi mẩu là từ khoá). */
 function AspectGroup({
   title,
   items,
@@ -496,18 +504,17 @@ function AspectGroup({
   items: { value: string; label: string; count: number }[];
 }) {
   return (
-    <p className="text-sm">
-      <span className="text-muted-foreground">{title}: </span>
-      {items.map((it, i) => (
-        <span key={it.value}>
-          {i > 0 && <span className="text-muted-foreground"> · </span>}
-          <span className="text-foreground/90">{it.label}</span>
+    <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm">
+      <span className="text-muted-foreground">{title}</span>
+      {items.map((it) => (
+        <span key={it.value} className="text-foreground/90">
+          {it.label}
           {it.count > 1 && (
             <span className="tabular-nums text-muted-foreground"> {it.count}</span>
           )}
         </span>
       ))}
-    </p>
+    </div>
   );
 }
 
@@ -659,15 +666,24 @@ function ReviewCard({
           </p>
         )}
 
+        {/* Nhãn của một đánh giá — ngăn bằng khoảng trắng rộng, không dấu
+            chấm giữa. */}
         {hlLabels.length > 0 && (
-          <p className="mt-2 text-sm text-muted-foreground">
-            {hlLabels.join(" · ")}
-          </p>
+          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+            {hlLabels.map((l) => (
+              <span key={l}>{l}</span>
+            ))}
+          </div>
         )}
         {cvLabels.length > 0 && (
-          <p className="mt-1 text-sm text-muted-foreground">
-            Lưu ý: {cvLabels.join(" · ")}
-          </p>
+          <div className="mt-1 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm text-muted-foreground">
+            <span>Lưu ý</span>
+            {cvLabels.map((l) => (
+              <span key={l} className="text-foreground/80">
+                {l}
+              </span>
+            ))}
+          </div>
         )}
       </div>
     </li>
@@ -753,10 +769,10 @@ export function ReviewForm({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[88vh] max-w-lg gap-0 overflow-hidden rounded-2xl p-0">
+      <DialogContent className={cn(R_CARD, "max-h-[88vh] max-w-lg gap-0 overflow-hidden p-0")}>
         {/* Header — bối cảnh nơi + xác nhận đã đánh dấu */}
         <div className="flex items-center gap-3 border-b border-border/60 px-5 py-3 pr-12">
-          <div className="relative size-10 shrink-0 overflow-hidden rounded-lg bg-muted">
+          <div className={cn(R_BADGE, "relative size-10 shrink-0 overflow-hidden bg-muted")}>
             {target.image ? (
               <Image
                 src={target.image}
@@ -811,7 +827,8 @@ export function ReviewForm({
                     onClick={() => setStance(s.value)}
                     aria-pressed={on}
                     className={cn(
-                      "flex w-full items-center gap-2.5 rounded-xl border px-3 py-2 text-left transition-colors",
+                      R_CTRL,
+                      "flex w-full items-center gap-2.5 border px-3 py-2 text-left transition-colors",
                       on
                         ? STANCE_SELECTED[s.tone]
                         : "border-border/60 hover:bg-muted/60",
@@ -819,7 +836,8 @@ export function ReviewForm({
                   >
                     <span
                       className={cn(
-                        "flex size-8 shrink-0 items-center justify-center rounded-full",
+                        R_BADGE,
+                        "flex size-8 shrink-0 items-center justify-center",
                         on ? "bg-background/70" : PILL_TONE[s.tone],
                       )}
                     >
@@ -897,7 +915,7 @@ export function ReviewForm({
             <button
               type="button"
               onClick={() => setShowDetails(true)}
-              className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-border/70 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+              className={cn(R_CTRL, "flex w-full items-center justify-center gap-1.5 border border-dashed border-border py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground")}
             >
               <Plus className="size-4" aria-hidden />
               Thêm chi tiết{" "}
@@ -977,7 +995,8 @@ function ChipPicker({
               onClick={() => onToggle(o.value)}
               aria-pressed={on}
               className={cn(
-                "rounded-full border px-3 py-1 text-sm font-medium transition-colors",
+                R_CTRL,
+                "border px-3 py-1 text-sm font-medium transition-colors",
                 on
                   ? cn(activeClass, "border-transparent")
                   : "border-border/60 text-muted-foreground hover:bg-muted",

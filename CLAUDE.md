@@ -305,6 +305,18 @@ loại hình & ngân sách, đủ thông tin vị trí/giá/liên hệ **đã ki
 > cảnh báo → chặn phần lớn kịch bản lừa cọc mà không ôm rủi ro dữ liệu tài chính.
 
 **Hiển thị (drawer + trang chi tiết cùng tồn tại):**
+- **Lưu trú dùng chung ngôn ngữ vật liệu với ba tab danh sách kia** (bố cục và mọi quyết
+  định bên dưới giữ nguyên): thẻ **bỏ khung** (hết `rounded-2xl` + `bg-card` + bóng), ảnh
+  **3/2** bo `R_CARD`, huy hiệu xác minh vuông `R_BADGE`, tên dùng **font display**, chip
+  lọc dùng chung `FilterChip`, kicker "loại hình + khu vực" ngăn bằng khoảng trắng rộng
+  thay dấu `·`. **Popup cũng chuyển cùng đợt** nên hai popup (Quán ăn · Lưu trú) lại nói
+  cùng một ngôn ngữ overlay đúng như mục này yêu cầu.
+- Icon của cả tab (section + popup) lấy từ `glyphs.tsx`; thêm `shield` · `wallet` ·
+  `message` · `link`. **`check` = đã xác minh, `warn` = chưa xác minh** — dùng lại hai hình
+  đã có thay vì vẽ ba biến thể khiên.
+- ⚠️ Hai nút "Xem nhanh" (bản chuột / bản cảm ứng, tách bằng `@media (pointer: …)`) chỉ đổi
+  bo góc; **cơ chế giữ nguyên** — đừng gộp lại thành một.
+
 - **Màn hình `/diem-den/[placeSlug]/luu-tru`** (`AccommodationSection`) lấy **trạng thái xác
   minh làm xương sống**, không phải một huy hiệu góc ảnh:
 
@@ -402,6 +414,19 @@ Lọc theo loại hình
 Mỗi entity nên có tối thiểu: `id`, `slug`, `name`, `description`, và khóa ngoại tới cha
 (`parentId` với `Place`; `placeId` với các `Listing`). Ảnh tách riêng thành entity
 `Image` (xem "Ảnh / media"); trường trạng thái/sắp xếp xem "Trường quản trị".
+
+> **Màn hình Di chuyển cũng chạy ngôn ngữ chung của các tab con.** Nó là tab DUY NHẤT
+> không có ảnh (quy ước: icon theo phương tiện, KHÔNG dùng ảnh), nên icon chính là phần
+> nhìn của tab — vì thế bộ `glyphs.tsx` có thêm **bảy hình phương tiện** vẽ theo HỌ chứ
+> không theo từng `mode`: `car` (ô tô · taxi · xe ghép · xe đưa đón) · `bus` · `train` ·
+> `plane` · `boat` · `two-wheel` (xe máy · xe đạp · xích lô) · `walk`; `other` rơi về
+> `navigation`. Ở 20px, một chiếc taxi và một chiếc ô tô chỉ khác cái mào đèn — vẽ ra là
+> hai vệt gần giống nhau, trong khi **nhãn chữ ngay cạnh đã nói chính xác là gì**.
+>
+> Cùng đợt: chip nhảy mục thành hairline vuông, ô icon `R_CARD`, tên phương tiện dùng font
+> display, và **dòng meta bỏ dấu `·`** (`metaParts()` trả mảng rời, render bằng khoảng
+> trắng rộng). **Giá bỏ màu xanh** → `foreground` đậm: trong ngôn ngữ chung, xanh có nghĩa
+> "đi lúc nào cho đúng" (giờ đẹp / mùa), không phải tiền.
 
 ### `Transport` — chi tiết
 
@@ -784,11 +809,10 @@ Trải nghiệm ẩm thực (Activity category=food) — khối riêng cuối tr
   tên quán dùng **font display** như tên trên thẻ ngoài lưới (popup và thẻ là hai lần nhìn
   thấy cùng một quán, đổi kiểu chữ giữa hai lần là bắt mắt nhận diện lại); toàn bộ icon
   chuyển sang bộ `glyphs.tsx`, thêm `phone` · `globe` · `navigation` · `external` ·
-  `close` · `plus` · `forward` · `chevron-down` · `expand`.
+  `close` · `plus` · `forward` · `chevron-down` · `expand` · `chef`.
+  ⇒ Cả năm tab con (section + popup) nay **không còn import `@/components/icons`**.
 - ⚠️ **`AddToTripButton` vẫn giữ icon của bộ Material** — nó là component dùng chung cả
   site, đổi ở đây là đổi mọi trang.
-- ⚠️ **Popup Nơi lưu trú CHƯA chuyển**, mà CLAUDE.md yêu cầu hai popup nói cùng một ngôn
-  ngữ overlay. Đây là món nợ đã biết: làm tab Lưu trú thì phải làm luôn.
 - **Chi tiết quán mở bằng POPUP** (`Dialog`), không phải ngăn trượt. Từ `lg` là **hai cột**:
   trái là **nửa hình ảnh**, phải là phần đọc cuộn riêng + **thanh hành động ghim đáy** với
   **"Chỉ đường"** làm nút chính (đây là trang thông tin, không phải nơi đặt bàn — việc kế
@@ -929,8 +953,9 @@ một lát cắt thời điểm, trung thực hơn.
   co giãn** theo cả hai, không phải ép hai khối cân nhau.
 
 **Ẩm thực ở tab tổng quan** (`/diem-den/[placeSlug]`, `FoodMenu`) — **MỘT HÀNG BỐN Ô**, cùng
-khuôn thẻ với `StayDirectory`/`SpotSpotlight`: ảnh 4/3 lồng trong thẻ → nhãn loại → tên →
-dòng nhấn ở đáy. Một link "Xem tất cả" duy nhất trên tiêu đề.
+khuôn thẻ với `StayDirectory`/`ExperienceGrid`: ảnh 4/3 **không khung** mang huy hiệu loại
+(trái) + hướng nhìn (phải) → tên → dòng nhấn. Một link "Xem tất cả" duy nhất trên tiêu đề.
+Vật liệu lấy từ `components/site/preview-tile.tsx` — xem mục "Tab tổng quan" bên dưới.
 
 - **KHÔNG tách quán ăn / quán nước thành hai khối.** Trục ăn-uống là thứ cần khi xếp lịch
   bữa — việc của màn hình Ẩm thực đầy đủ. Ở bản xem trước câu hỏi chỉ là "quanh đây ăn uống
@@ -952,6 +977,61 @@ dòng nhấn ở đáy. Một link "Xem tất cả" duy nhất trên tiêu đề
 - Khối "Món phải thử" (6 món, hàng menu ảnh vuông + dây chấm dẫn) đã gỡ cùng đợt tắt phần
   món ăn. Tiêu đề section đổi "Ăn gì ở X" → **"Ăn uống ở X"**, đơn vị đếm "món & quán" →
   "quán", và tab Ẩm thực chỉ còn đếm `counts.eatery` (`buildPlaceTabs`).
+
+### Tab TỔNG QUAN của trang điểm đến (`/diem-den/[placeSlug]/page.tsx`)
+
+Tab này là **bản XEM TRƯỚC của năm tab con**, nên nó phải nói đúng thứ tiếng của chúng.
+Vật liệu dùng chung nằm ở **`components/site/preview-tile.tsx`** (`TilePhoto` · `PhotoBadge`
+· `TileName` · `FactLine` · `StatRow`/`Stat`/`N`) — **đừng dựng thẻ riêng cho từng mục nữa**,
+đó đúng là thứ vừa phải dọn: bốn mục xem trước mỗi mục một khuôn khác nhau.
+
+- **Thẻ KHÔNG khung.** `FoodMenu`/`StayDirectory` từng bọc mỗi ô trong `border bg-card p-2`
+  rồi lồng ảnh vào trong. Bỏ: quy ước `design` để viền phân biệt thứ bấm được với thứ không,
+  mà cả bốn ô đều bấm được nên viền chẳng phân biệt gì — và năm tab con đã bỏ khung từ trước,
+  giữ lại ở riêng bản xem trước thì cùng một quán hiện ra hai hình ở hai trang.
+- **Huy hiệu: TRÁI là "thứ gì" (loại, chữ hoa giãn), PHẢI là "đáng khoe / mất bao nhiêu"**
+  (đã xác minh · nhìn ra biển · giá vé). Hai huy hiệu chung một góc thì cái sau che cái trước
+  trên ô hẹp 170px.
+- **Màu dòng dữ kiện mang nghĩa, giống hệt năm tab con:** xanh = *đi lúc nào cho đúng*
+  (`bestTime`, `seasonText`), cam = cảnh báo (`notice`), xám = phần còn lại.
+- **Dải dữ kiện mở đầu mỗi mục** = `StatRow` (glyph + số đậm, ngăn bằng khoảng trắng rộng),
+  mở bằng **câu THÀNH PHẦN** (`compositionLine`) chứ không đếm lại — con số tổng đã nằm
+  nguyên trong nhãn link ngay bên phải ("Xem tất cả 15 quán").
+- ⚠️ **Con số trong dải phải đếm trên TOÀN BỘ danh sách, không trên mấy mục đang hiện.**
+  `place.spots`/`activities`/`eateries`/`accommodations` chỉ lấy đúng số mục cần HIỂN THỊ
+  (5 / 4 / 6 / 4), nên đếm trên chúng cho ra những câu kiểu "4 vào tự do" đứng ngay cạnh
+  "Xem tất cả 8 địa điểm". Vì vậy có **bốn truy vấn GẦY** (`spotFacts` · `activityFacts` ·
+  `foodFacts` · `stayFacts` — vài cột, không ảnh) chạy chung một `Promise.all`, rồi truyền
+  xuống qua prop `facts`. `verifiedStays` cũng lấy từ `stayFacts` (trước là một `count`
+  riêng).
+- **Nhịp nền nhạt/trắng bắt đầu ngay từ mục Địa điểm đáng ghé**; chỉ mục mở đầu (Đôi nét) để
+  trắng. `Band` không còn prop `bleed` — không mục nào tràn viền nữa.
+
+**"Địa điểm đáng ghé" = `SpotPreview`** (Server Component): **một thẻ dẫn lớn + danh sách
+hàng có hairline** — hai dạng xem của chính tab Địa điểm đặt cạnh nhau, và là hình thái DUY
+NHẤT trên trang không phải lưới ô đều, nên mục mở đầu có trọng lượng riêng mà không cần tràn
+viền hay tự động chạy.
+
+> **ĐÃ GỠ HẲN `SpotSpotlight`** (~680 dòng client: dải tràn viền tự đổi mục 7 giây, ảnh lồng
+> khung mat kiểu ảnh in, cột sáu hàng có thanh tiến trình, cộng một carousel Embla thứ hai cho
+> khổ hẹp). **Đừng dựng lại.** Ba lý do, không phải vì nó xấu:
+> · hero ngay trên đã là một dải ảnh tự đổi có play/pause — hai thứ tự chạy trên một trang;
+> · một BẢN XEM TRƯỚC không được nặng hơn thứ nó xem trước (nó tải JS nhiều hơn cả tab Địa
+>   điểm thật, vốn chỉ có bộ lọc);
+> · nó không có chỗ cho `bestTime`/`notice` — hai thứ đổi kế hoạch mạnh nhất của một địa điểm.
+> Keyframes `spot-progress` trong `globals.css` đã xoá cùng đợt.
+
+- **Huy hiệu giá chỉ cho nơi BÁN VÉ.** `ticketPriceLabel()` trả "Miễn phí" khi `ticketFree`;
+  dán chữ đó lên thẻ dẫn thì huy hiệu giá mất hết nghĩa (nó đánh dấu NGOẠI LỆ). Số nơi vào tự
+  do đã gộp lên dải dữ kiện.
+- **Lưới CO THEO SỐ LƯỢNG** ở hai mục hay chỉ có 1–2 mục con: *Điểm đến ở X* (`place.children`)
+  và *Gợi ý lịch trình*. Để nguyên `lg:grid-cols-4` thì hai thẻ nép mép trái dưới một tiêu đề
+  chạy hết bề ngang, đọc ra "lưới bốn ô bị thiếu hai ô".
+- **Khối "Đôi nét" cố tình KHÔNG có `SectionHeading`** (hero + thanh tab đã nói tên nơi hai
+  lần), lede cỡ lớn có drop cap tự đóng vai mở màn; "Thông tin chung" là hàng khép đáy trải
+  hết bề ngang. Đánh đổi đã biết và đã chấp nhận: khi `Place` có video TikTok (cột 24rem,
+  khổ 9/16) thì cột chữ bên trái hụt đáy — **đừng đuổi theo chiều cao hai cột**, đó là lý do
+  bảng dữ kiện đã được đưa xuống dưới.
 
 **Mẫu hiển thị Listing — mọi Listing đều CÓ trang chi tiết:**
 - **Trang danh sách** (`/diem-den/[placeSlug]/[loai]`): render **card preview** (ảnh bìa

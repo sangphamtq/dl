@@ -3,14 +3,8 @@
 import { useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  MapPin,
-  BadgeCheck,
-  ShieldCheck,
-  ShieldAlert,
-  ArrowRight,
-  X,
-} from "@/components/icons";
+import { FilterChip } from "@/components/site/listing-filter";
+import { R_BADGE, R_CARD, R_CTRL } from "@/lib/radius";
 import { cn } from "@/lib/utils";
 import { coverUrl } from "@/lib/place-image";
 import { ACCOMMODATION_CATEGORY_LABELS, label } from "@/lib/listing-labels";
@@ -155,8 +149,8 @@ export function AccommodationSection({
       {/* ── Dải an toàn: nói thẳng đây KHÔNG phải nơi đặt phòng, và quy tắc
              chuyển khoản. Đây là câu phải đọc trước khi cọc, không phải một
              đoạn giới thiệu — nên nó là một dải riêng, không trộn vào header. ── */}
-      <div className="mt-6 flex items-start gap-3 rounded-2xl bg-primary/[0.07] p-4 sm:p-5">
-        <ShieldCheck className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden />
+      <div className={cn(R_CARD, "mt-6 flex items-start gap-3 bg-primary/[0.07] p-4 sm:p-5")}>
+        <Glyph name="shield" className="mt-0.5 size-5 shrink-0 text-primary" />
         <div className="text-sm leading-relaxed">
           <p className="font-semibold">
             Đây là danh bạ thông tin, không phải nơi đặt phòng.
@@ -173,13 +167,13 @@ export function AccommodationSection({
              đã tách sẵn hai nhóm nên nút đó thành thừa. ── */}
       {catOptions.length > 1 && (
         <div className="hide-scrollbar mt-6 flex items-center gap-2 overflow-x-auto">
-          <Chip active={cat === "all"} onClick={() => setCat("all")}>
+          <FilterChip active={cat === "all"} onClick={() => setCat("all")}>
             Tất cả
-          </Chip>
+          </FilterChip>
           {catOptions.map((c) => (
-            <Chip key={c} active={cat === c} onClick={() => setCat(c)}>
+            <FilterChip key={c} active={cat === c} onClick={() => setCat(c)}>
               {label(ACCOMMODATION_CATEGORY_LABELS, c)}
-            </Chip>
+            </FilterChip>
           ))}
         </div>
       )}
@@ -235,10 +229,10 @@ export function AccommodationSection({
           showCloseButton={false}
           className={cn(
             "w-full max-w-none gap-0 overflow-hidden border-0 p-0 shadow-2xl",
-            "top-auto bottom-0 left-0 max-h-[92dvh] translate-x-0 translate-y-0 rounded-3xl rounded-b-none",
+            "top-auto bottom-0 left-0 max-h-[92dvh] translate-x-0 translate-y-0 rounded-t-[6px]",
             "data-[state=open]:slide-in-from-bottom-6 data-[state=closed]:slide-out-to-bottom-6",
             "sm:bottom-auto sm:top-1/2 sm:left-1/2 sm:max-h-[88vh] sm:-translate-x-1/2 sm:-translate-y-1/2",
-            "sm:max-w-[min(64rem,calc(100vw-3rem))] sm:rounded-b-3xl",
+            "sm:max-w-[min(64rem,calc(100vw-3rem))] sm:rounded-b-[6px]",
             "sm:data-[state=open]:slide-in-from-bottom-0 sm:data-[state=closed]:slide-out-to-bottom-0",
           )}
         >
@@ -247,10 +241,10 @@ export function AccommodationSection({
               <AccommodationDetail data={active} />
               {/* Nút đóng tự dựng: chữ X trần mặc định chìm nghỉm trên ảnh. */}
               <DialogClose
-                className="absolute right-3 top-3 z-10 grid size-9 place-items-center rounded-full bg-background/85 text-foreground shadow-sm backdrop-blur transition-colors hover:bg-background"
+                className={cn(R_CTRL, "absolute right-3 top-3 z-10 grid size-9 place-items-center bg-background/85 text-foreground shadow-sm backdrop-blur transition-colors hover:bg-background")}
                 aria-label="Đóng"
               >
-                <X className="size-4" aria-hidden />
+                <Glyph name="close" className="size-4" />
               </DialogClose>
             </>
           )}
@@ -303,15 +297,12 @@ function StayGroup({
       <div className="flex items-start gap-3">
         <span
           className={cn(
-            "grid size-10 shrink-0 place-items-center rounded-xl",
+            R_CARD,
+            "grid size-10 shrink-0 place-items-center",
             ok ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground",
           )}
         >
-          {ok ? (
-            <BadgeCheck className="size-5" aria-hidden />
-          ) : (
-            <ShieldAlert className="size-5" aria-hidden />
-          )}
+          <Glyph name={ok ? "check" : "warn"} className="size-5" />
         </span>
         <div className="min-w-0">
           <h3 className="text-xl font-bold tracking-tight sm:text-2xl">
@@ -365,8 +356,10 @@ function StayCard({
     // đọc đúng "Sunny House Homestay" chứ không phải "link"), rồi `after:inset-0`
     // trải vùng bấm ra cả thẻ. Nút "Xem nhanh" đặt trên ẢNH, tách hẳn khỏi khối
     // chữ và nâng `z-10` để nằm trên vùng bấm đó — hai đích không giẫm nhau.
-    <article className="group relative flex flex-col overflow-hidden rounded-2xl bg-card text-left shadow-sm shadow-black/5 transition-shadow duration-200 hover:shadow-lg hover:shadow-black/5">
-      <div className="relative aspect-[4/3] shrink-0 overflow-hidden bg-muted">
+    <article className="group relative text-left">
+      <div
+        className={cn(R_CARD, "relative aspect-[3/2] overflow-hidden bg-muted")}
+      >
         <Image
           src={coverUrl(a.images, a.slug)}
           alt={a.name}
@@ -378,13 +371,23 @@ function StayCard({
           )}
         />
         {a.isVerified ? (
-          <span className="absolute left-2.5 top-2.5 inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground shadow-sm">
-            <BadgeCheck className="size-3.5 shrink-0" aria-hidden />
+          <span
+            className={cn(
+              R_BADGE,
+              "absolute left-3 top-3 inline-flex items-center gap-1 bg-primary px-2.5 py-1 text-[0.6875rem] font-semibold text-primary-foreground shadow-sm",
+            )}
+          >
+            <Glyph name="check" className="size-3.5 shrink-0" />
             Đã xác minh
           </span>
         ) : (
-          <span className="absolute left-2.5 top-2.5 inline-flex items-center gap-1 rounded-full bg-background/90 px-2.5 py-1 text-xs font-semibold text-muted-foreground shadow-sm backdrop-blur-sm">
-            <ShieldAlert className="size-3.5 shrink-0" aria-hidden />
+          <span
+            className={cn(
+              R_BADGE,
+              "absolute left-3 top-3 inline-flex items-center gap-1 bg-background/90 px-2.5 py-1 text-[0.6875rem] font-semibold text-muted-foreground shadow-sm backdrop-blur-sm",
+            )}
+          >
+            <Glyph name="warn" className="size-3.5 shrink-0" />
             Chưa xác minh
           </span>
         )}
@@ -404,7 +407,7 @@ function StayCard({
           aria-label={`Xem nhanh ${a.name}`}
           className="absolute inset-0 z-10 hidden place-items-center bg-black/30 opacity-0 backdrop-blur-[1px] transition-opacity duration-200 group-hover:opacity-100 focus-visible:opacity-100 [@media(pointer:fine)]:grid"
         >
-          <span className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-neutral-900 shadow-lg">
+          <span className={cn(R_CTRL, "bg-white px-4 py-2 text-xs font-semibold text-neutral-900 shadow-lg")}>
             Xem nhanh
           </span>
         </button>
@@ -415,40 +418,38 @@ function StayCard({
           type="button"
           onClick={onOpen}
           aria-label={`Xem nhanh ${a.name}`}
-          className="absolute bottom-2.5 right-2.5 z-10 rounded-full bg-black/55 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-md [@media(pointer:fine)]:hidden"
+          className={cn(R_BADGE, "absolute bottom-3 right-3 z-10 bg-black/55 px-3 py-1.5 text-[0.6875rem] font-semibold text-white backdrop-blur-md [@media(pointer:fine)]:hidden")}
         >
           Xem nhanh
         </button>
       </div>
 
-      <div className="flex flex-1 flex-col p-4">
-        <p className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
-          <span className="font-semibold text-primary">{category}</span>
-          {area && (
-            <>
-              <span aria-hidden>·</span>
-              <span className="inline-flex items-center gap-1">
-                <MapPin className="size-3 shrink-0" aria-hidden />
-                {area}
-              </span>
-            </>
-          )}
-        </p>
+      {/* Kicker: loại hình + khu vực, ngăn bằng KHOẢNG TRẮNG RỘNG chứ không
+          phải dấu chấm giữa (quy ước dải phân cách của dự án). */}
+      <p className="mt-3.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+        <span className="font-semibold text-primary">{category}</span>
+        {area && (
+          <span className="inline-flex items-center gap-1">
+            <Glyph name="pin" className="size-3.5 shrink-0" />
+            {area}
+          </span>
+        )}
+      </p>
 
         {/* Mũi tên "đi tiếp" nằm ngay cạnh TÊN — đó mới là chỗ mắt dừng lại, và
             nhờ vậy khỏi cần một hàng CTA riêng ở đáy thẻ. */}
-        <h4 className="mt-1 flex items-start justify-between gap-2 font-semibold leading-snug tracking-tight">
-          <Link
-            href={`/luu-tru/${a.slug}`}
-            className="transition-colors after:absolute after:inset-0 after:content-[''] group-hover:text-primary"
-          >
-            {a.name}
-          </Link>
-          <ArrowRight
-            className="mt-0.5 size-4 shrink-0 -translate-x-1 text-primary opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100"
-            aria-hidden
-          />
-        </h4>
+      <h4 className="mt-1 flex items-start justify-between gap-2 font-[family-name:var(--font-display)] text-lg font-semibold leading-snug tracking-tight">
+        <Link
+          href={`/luu-tru/${a.slug}`}
+          className="underline-offset-4 after:absolute after:inset-0 after:content-[''] group-hover:underline"
+        >
+          {a.name}
+        </Link>
+        <Glyph
+          name="forward"
+          className="mt-1 size-4 shrink-0 -translate-x-1 text-primary opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100"
+        />
+      </h4>
 
         {/* THẺ CHỈ CÒN BỐN THỨ: loại hình · khu vực → tên → mô tả.
             Đã lần lượt bỏ khỏi thẻ: hàng icon kênh liên hệ (12/12 chỗ đều có
@@ -457,38 +458,12 @@ function StayCard({
             Cọc & kênh liên hệ vẫn còn nguyên ở popup và trang chi tiết — tức là
             đúng lúc khách đã chọn một chỗ cụ thể để cân nhắc, chứ không phải khi
             còn đang lướt so sánh mười hai thẻ. */}
-        {a.description && (
-          <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
-            {a.description}
-          </p>
-        )}
-      </div>
+      {a.description && (
+        <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+          {a.description}
+        </p>
+      )}
     </article>
   );
 }
 
-function Chip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={cn(
-        "shrink-0 rounded-full px-3.5 py-2 text-sm font-medium transition-colors",
-        active
-          ? "bg-foreground text-background"
-          : "bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground",
-      )}
-    >
-      {children}
-    </button>
-  );
-}

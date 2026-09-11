@@ -1,14 +1,16 @@
-import Image from "next/image";
 import Link from "next/link";
+import { Glyph } from "@/components/site/glyphs";
 import {
-  ArrowUpRight,
-  BadgeCheck,
-  MapPin,
-  ShieldCheck,
-} from "@/components/icons";
-import { cn } from "@/lib/utils";
-import { R_BADGE, R_CARD, R_CTRL } from "@/lib/radius";
+  FactLine,
+  N,
+  PhotoBadge,
+  Stat,
+  StatRow,
+  TileName,
+  TilePhoto,
+} from "@/components/site/preview-tile";
 import { coverUrl } from "@/lib/place-image";
+import { compositionLine, countByLabel } from "@/lib/listing-summary";
 import { ACCOMMODATION_CATEGORY_LABELS, label } from "@/lib/listing-labels";
 import { SectionHeading } from "@/components/site/section-heading";
 
@@ -20,21 +22,6 @@ export type StayEntry = {
   isVerified: boolean;
   images: { url: string; isCover: boolean }[];
 };
-
-const MICRO = "text-[0.6rem] font-semibold uppercase tracking-[0.14em]";
-
-// Kính mờ trên ảnh — dùng cho cả huy hiệu xác minh và chip loại hình để hai đầu
-// hàng trên cùng một chất liệu.
-// Huy hiệu xác minh — NỀN ĐẶC, không phải kính.
-//
-// Bản kính (`bg-black/35 backdrop-blur-md` + chữ trắng) đo được ~2,6:1 trên ảnh
-// Sunny House (nhà trắng, cát nhạt) — dưới cả ngưỡng 4,5:1 của chữ lẫn 3:1 của
-// phần tử phi văn bản. Mà ảnh homestay đa số là ngoại thất ban ngày sáng, nên
-// đó là ca THƯỜNG chứ không phải ca biên. Đây lại đúng là nhãn mang tính quyết
-// định của cả mục: nó tồn tại để chống lừa cọc.
-// Nền đặc theo token thì tương phản không còn phụ thuộc vào bức ảnh nằm dưới.
-const VERIFIED_BADGE =
-  "bg-white/95 text-neutral-900 shadow-sm backdrop-blur-sm";
 
 // Section "Nơi lưu trú" của trang Place — MỘT HÀNG BỐN THẺ.
 //
@@ -58,18 +45,24 @@ const VERIFIED_BADGE =
 // một cảnh báo cọc cho cả section.
 //
 // Là Server Component: mọi thứ tĩnh, không tốn byte JS nào.
+/** Dữ kiện của TOÀN BỘ danh sách (không phải của 4 ô đang hiện) — xem chú thích
+ *  ở chỗ truy vấn trong `page.tsx`. */
+export type StayFacts = { categoryLabel: string | null };
+
 export function StayDirectory({
   placeName,
   href,
   total,
   verifiedTotal,
   stays,
+  facts,
 }: {
   placeName: string;
   href: string;
   total?: number;
   verifiedTotal: number;
   stays: StayEntry[];
+  facts: StayFacts[];
 }) {
   if (stays.length === 0) return null;
 
@@ -83,36 +76,41 @@ export function StayDirectory({
         unit="chỗ ở"
       />
 
-      {/* DỮ KIỆN, không phải lời giới thiệu.
-          Bản trước mở bằng một câu quảng bá ("Danh bạ để bạn liên hệ trực tiếp
-          chủ nhà — không qua trung gian, không đặt phòng tại đây"), rồi mỗi thẻ
-          lại ghi "Liên hệ chính chủ", rồi cuối section lại một đoạn dặn dò nữa:
-          BA lớp chữ nói đúng một điều, bao quanh bốn tấm ảnh trong một bản xem
-          trước. Nay còn hai NHÃN — mỗi nhãn một dữ kiện tra được. */}
-      <div className="mt-6 flex flex-wrap items-center gap-2">
-        <span className="bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
-          Danh bạ liên hệ chính chủ
-        </span>
+      {/* DỮ KIỆN, không phải lời giới thiệu — và nay dùng ĐÚNG dải "glyph + số
+          đậm" của bốn mục xem trước còn lại, thay cho hai viên pill.
+          Một viên có viền là hình của thứ BẤM ĐƯỢC trên site này (chip lọc,
+          thanh tab), nên hai nhãn tĩnh đeo viền đọc ra như hai bộ lọc không
+          chịu hoạt động. Dải dữ kiện thì tự nói nó chỉ để đọc.
+          Bản trước nữa mở bằng một câu quảng bá, rồi mỗi thẻ lại ghi "Liên hệ
+          chính chủ", rồi cuối section một đoạn dặn dò nữa: BA lớp chữ nói đúng
+          một điều, bao quanh bốn tấm ảnh trong một bản xem trước. */}
+      <StatRow>
+        <Stat glyph="bed">
+          {compositionLine(
+            countByLabel(facts.map((f) => f.categoryLabel)),
+            facts.length,
+          ) ?? (
+            <>
+              <N>{total ?? stays.length}</N> chỗ ở
+            </>
+          )}
+        </Stat>
         {verifiedTotal > 0 ? (
-          <span className={cn(R_CTRL, "inline-flex items-center gap-1.5 border border-border px-2.5 py-1 text-xs font-semibold text-primary-ink")}>
-            <BadgeCheck className="size-3.5 shrink-0" aria-hidden />
-            {`${verifiedTotal}${total ? `/${total}` : ""} đã xác minh chính chủ`}
-          </span>
+          <Stat glyph="check">
+            <N>{verifiedTotal}</N> đã xác minh chính chủ
+          </Stat>
         ) : (
-          <span className="inline-flex items-center gap-1.5 bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
-            <ShieldCheck className="size-3.5 shrink-0" aria-hidden />
-            Chưa chỗ nào được xác minh
-          </span>
+          <Stat glyph="shield">Chưa chỗ nào được xác minh</Stat>
         )}
-      </div>
+      </StatRow>
 
       {/* XÁC MINH NGHĨA LÀ GÌ — một câu, đặt ngay dưới con số.
           Trước đây trang này chưa bao giờ nói huy hiệu "Đã xác minh" là xác
           minh CÁI GÌ, BỞI AI. Một chỗ đã xác minh và một chỗ chưa nằm cạnh nhau
-          trong cùng một hàng, khác nhau đúng một viên pill nhỏ — mà chính sự
+          trong cùng một hàng, khác nhau đúng một huy hiệu nhỏ — mà chính sự
           khác nhau đó mới là sản phẩm. Nhãn không tự định nghĩa thì nó chỉ là
           trang trí, và ở mục chống lừa cọc thì đó là trang trí nguy hiểm. */}
-      <p className="mt-2.5 max-w-2xl text-xs leading-relaxed text-muted-foreground">
+      <p className="mt-3 max-w-2xl text-xs leading-relaxed text-muted-foreground">
         <strong className="font-semibold text-foreground">Đã xác minh</strong> =
         Halivivu đã đối chiếu kênh liên hệ (Zalo, Facebook, điện thoại) với chủ
         nhà. Chỗ chưa xác minh vẫn hiện, nhưng bạn nên tự kiểm trước khi chuyển
@@ -126,7 +124,7 @@ export function StayDirectory({
           LỚN NHẤT trang ở khổ 390 (18% tổng chiều cao), trong khi mục Ẩm thực
           — thứ trang cố ý dựng làm đỉnh — chỉ 652px. Một bản XEM TRƯỚC bốn ô
           không được nặng hơn đỉnh của trang. */}
-      <ul className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
+      <ul className="mt-6 grid grid-cols-2 gap-x-5 gap-y-9 sm:gap-x-6 md:grid-cols-4">
         {stays.map((s, i) => (
           <StayTile key={s.slug} s={s} priority={i < 4} />
         ))}
@@ -135,73 +133,55 @@ export function StayDirectory({
       {/* Cảnh báo cọc — MỘT câu, luôn đúng, không rẽ nhánh theo số đã xác minh.
           Đây là lý do mục này tồn tại (xem CLAUDE.md) nên không được bỏ; nhưng
           nó là một QUY TẮC, không phải đoạn giải nghĩa huy hiệu. */}
-      <p className="mt-4 flex items-start gap-2 text-xs leading-relaxed text-muted-foreground">
-        <ShieldCheck className="mt-0.5 size-3.5 shrink-0 text-warm" aria-hidden />
+      <p className="mt-6 flex items-start gap-2 text-xs leading-relaxed text-muted-foreground">
+        <Glyph name="shield" className="mt-0.5 size-3.5 shrink-0 text-warm" />
         Chỉ chuyển cọc qua kênh liên hệ hiển thị trên trang từng chỗ ở.
       </p>
     </div>
   );
 }
 
-// Một thẻ: ảnh 4/3 lồng trong lòng thẻ (+ huy hiệu xác minh nổi trên ảnh) → nhãn
-// loại hình → tên → địa chỉ.
+/* Một thẻ — THẺ KHÔNG KHUNG, đúng khuôn thẻ của tab Nơi lưu trú: ảnh 4/3 bo
+   `R_CARD` mang huy hiệu loại hình (trái) và huy hiệu xác minh (phải) → tên →
+   khu vực.
+
+   Huy hiệu xác minh nền TRẮNG ĐẶC, không phải kính mờ: bản kính
+   (`bg-black/35 backdrop-blur-md` + chữ trắng) đo được ~2,6:1 trên ảnh Sunny
+   House (nhà trắng, cát nhạt) — dưới cả ngưỡng 4,5:1 của chữ lẫn 3:1 của phần
+   tử phi văn bản, mà ảnh homestay đa số là ngoại thất ban ngày nên đó là ca
+   THƯỜNG. Đây lại đúng là nhãn mang tính quyết định của cả mục: nó tồn tại để
+   chống lừa cọc. */
 function StayTile({ s, priority }: { s: StayEntry; priority: boolean }) {
   return (
-    <li className="h-full">
-      <Link
-        href={`/luu-tru/${s.slug}`}
-        className={cn(R_CARD, "group flex h-full flex-col border border-border bg-card p-2 transition-colors duration-200 hover:border-foreground")}
-      >
-        <span className={cn(R_BADGE, "relative block aspect-[4/3] overflow-hidden bg-muted")}>
-          <Image
-            src={coverUrl(s.images, s.slug, 800, 600)}
-            alt=""
-            fill
-            // Bốn thẻ một hàng từ lg → mỗi ảnh ~1/4 bề ngang cột nội dung.
-            sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
-            priority={priority}
-            className="object-cover"
-          />
-          {s.isVerified && (
-            // Huy hiệu là thứ DUY NHẤT còn nằm trên ảnh: nó phải đọc được ngay
-            // từ lúc mắt còn ở khuôn hình, chưa xuống tới chữ.
-            <span
-              className={cn(
-                VERIFIED_BADGE,
-                "absolute left-2.5 top-2.5 inline-flex items-center gap-1 py-1 pl-1.5 pr-2.5 text-[0.7rem] font-semibold",
-              )}
-            >
-              <BadgeCheck className="size-4 shrink-0" aria-hidden />
-              Đã xác minh
-            </span>
-          )}
-        </span>
-
-        <span className="flex flex-1 flex-col px-1.5 pb-1 pt-3">
+    <li>
+      <Link href={`/luu-tru/${s.slug}`} className="group block">
+        <TilePhoto
+          src={coverUrl(s.images, s.slug, 800, 600)}
+          sizes="(min-width: 768px) 23vw, 46vw"
+          priority={priority}
+        >
           {s.category && (
-            <span className={cn(MICRO, "text-warm-ink")}>
+            <PhotoBadge>
               {label(ACCOMMODATION_CATEGORY_LABELS, s.category)}
-            </span>
+            </PhotoBadge>
           )}
-
-          <span className="mt-1 flex items-start gap-2">
-            {/* line-clamp-2: thẻ hẹp ~300px ở lg nên tên dài phải có điểm dừng. */}
-            <span className="line-clamp-2 min-w-0 flex-1 font-[family-name:var(--font-display)] text-base font-semibold leading-snug tracking-tight underline-offset-4 group-hover:underline sm:text-lg">
-              {s.name}
-            </span>
-            <ArrowUpRight
-              className="mt-0.5 size-4 shrink-0 text-muted-foreground opacity-0 transition-all duration-200 group-hover:translate-x-0.5 group-hover:opacity-100 motion-reduce:transition-none"
-              aria-hidden
-            />
-          </span>
-
-          {s.address && (
-            <span className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-              <MapPin className="size-3.5 shrink-0" aria-hidden />
-              <span className="truncate">{s.address}</span>
-            </span>
+          {s.isVerified && (
+            <PhotoBadge side="right" tone="mark" glyph="check">
+              Đã xác minh
+            </PhotoBadge>
           )}
-        </span>
+        </TilePhoto>
+
+        <div className="mt-3.5 flex min-h-[3.25rem] items-start">
+          {/* line-clamp-2: ô hẹp ~300px ở lg nên tên dài phải có điểm dừng. */}
+          <TileName className="line-clamp-2">{s.name}</TileName>
+        </div>
+
+        {s.address && (
+          <div className="mt-1">
+            <FactLine glyph="pin">{s.address}</FactLine>
+          </div>
+        )}
       </Link>
     </li>
   );

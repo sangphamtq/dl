@@ -1,9 +1,17 @@
-import Image from "next/image";
 import Link from "next/link";
-import { Ic } from "@/components/icon";
-import { cn } from "@/lib/utils";
-import { R_CARD } from "@/lib/radius";
 import { SectionHeading } from "@/components/site/section-heading";
+import {
+  FactLine,
+  N,
+  PhotoBadge,
+  Stat,
+  StatRow,
+  TileName,
+  TilePhoto,
+} from "@/components/site/preview-tile";
+import { compositionLine, countByLabel } from "@/lib/listing-summary";
+import { R_BADGE } from "@/lib/radius";
+import { cn } from "@/lib/utils";
 
 export type ExperienceItem = {
   slug: string;
@@ -17,62 +25,78 @@ export type ExperienceItem = {
   spotCount: number;
 };
 
-const MICRO = "text-[0.66rem] font-medium uppercase tracking-[0.16em]";
+/* ──────────────────────────────────────────────────────────────────
+   "Trải nghiệm nổi bật" — bản xem trước của tab TRẢI NGHIỆM. BỐN THẺ DỌC, tĩnh.
 
-// Section "Trải nghiệm nổi bật" của trang Place — BỐN THẺ DỌC, tĩnh.
-//
-// Bản trước là băng ảnh kéo ngang tràn viền. Bỏ vì hai lẽ:
-//  - dải "Địa điểm đáng ghé" ngay trên đã là một khối tràn viền tự đổi mục; hai
-//    khối lớn liền nhau cùng đòi tương tác thì trang thành một chuỗi băng chuyền;
-//  - băng kéo phải cuộn mới thấy hết, mà mục này chỉ cần cho xem TRƯỚC vài trải
-//    nghiệm rồi dẫn sang trang danh mục. Bốn thẻ nằm sẵn trên màn hình đọc xong
-//    trong một cái nhìn.
-//
-// Mỗi thẻ trả lời đúng ba câu hỏi của một trải nghiệm — khác hẳn một món ăn:
-//  1. LÀ GÌ: ảnh dọc lớn + tên (+ nhãn nhóm).
-//  2. BAO LÂU / MÙA NÀO: hàng fact có icon — `durationText` và `seasonText`.
-//  3. DIỄN RA Ở ĐÂU: tên các `Spot` liên kết. Quan hệ M:N Activity↔Spot là
-//     xương sống của phần này (xem CLAUDE.md) nhưng trước giờ không hiện ở đâu
-//     trên trang tổng quan cả.
-//
-// Khác thực đơn Ẩm thực bên dưới (cũng là danh sách có ảnh): ở đây thẻ DỌC, ảnh
-// lớn, bốn cột; dưới đó là hàng NGANG, ảnh nhỏ, hai cột. Cùng một lối thông tin
-// nhưng hai hình khối rõ ràng khác nhau.
-//
-// Là Server Component: tĩnh hoàn toàn, không tốn byte JS nào ở client.
+   Bản trước là băng ảnh kéo ngang tràn viền. Bỏ vì mục "Địa điểm đáng ghé"
+   ngay trên đã là một khối lớn; hai khối liền nhau cùng đòi tương tác thì trang
+   thành một chuỗi băng chuyền. Bốn thẻ nằm sẵn trên màn hình đọc xong trong một
+   cái nhìn.
+
+   Mỗi thẻ trả lời đúng ba câu hỏi của một trải nghiệm:
+     1. LÀ GÌ — ảnh dọc + huy hiệu nhóm trên ảnh + tên;
+     2. MÙA NÀO / BAO LÂU — `seasonText` (dòng XANH: đi lúc nào cho đúng) rồi
+        `durationText` (xám). Đúng thứ tự và đúng màu của thẻ ở tab Trải nghiệm;
+     3. DIỄN RA Ở ĐÂU — tên các `Spot` liên kết, dạng chip nền như `TagLine` bên
+        tab kia. Trước đây chúng nối nhau bằng dấu chấm giữa, thứ quy ước
+        `design` cấm; mà chúng vốn là những mẩu RỜI nên chip mới là hình đúng.
+
+   Nhãn nhóm chuyển từ một dòng chữ cam dưới ảnh LÊN HUY HIỆU TRẮNG TRÊN ẢNH —
+   cùng chỗ, cùng chất liệu với ba mục xem trước còn lại và với năm tab con.
+
+   Là Server Component: tĩnh hoàn toàn, không tốn byte JS nào.
+   ────────────────────────────────────────────────────────────────── */
+/** Dữ kiện của TOÀN BỘ danh sách (không phải của 4 ô đang hiện) — xem chú thích
+ *  ở chỗ truy vấn trong `page.tsx`. */
+export type ExperienceFacts = { categoryLabel: string | null; seasonal: boolean };
+
 export function ExperienceGrid({
   title,
   href,
   count,
   unit,
   items,
+  facts,
 }: {
   title: string;
   href?: string;
   count?: number;
   unit?: string;
   items: ExperienceItem[];
+  facts: ExperienceFacts[];
 }) {
   if (items.length === 0) return null;
 
+  const cats = countByLabel(facts.map((f) => f.categoryLabel));
+  const composition = compositionLine(cats, facts.length);
+  const seasonal = facts.filter((f) => f.seasonal).length;
+
   return (
     <div>
-      <SectionHeading
-        serif
-        title={title}
-        href={href}
-        count={count}
-        unit={unit}
-      />
+      <SectionHeading serif title={title} href={href} count={count} unit={unit} />
+
+      <StatRow>
+        <Stat glyph="sparkle">
+          {composition ?? (
+            <>
+              <N>{count ?? facts.length}</N> trải nghiệm
+            </>
+          )}
+        </Stat>
+        {seasonal > 0 && (
+          <Stat glyph="calendar">
+            <N>{seasonal}</N> việc có mùa riêng
+          </Stat>
+        )}
+      </StatRow>
 
       {/* Bậc `md` bị thiếu: mọi chuyển cột của trang đều gác ở `lg`, nên
           768–1023px nhận bố cục điện thoại với đệm desktop — đo được đó là bản
           render CAO NHẤT của cả trang, cao hơn cả ở 390px.
           Đi thẳng `md:grid-cols-4`, KHÔNG qua 3: các lưới này luôn có ĐÚNG 4
           mục, nên 3 cột vẫn là hai hàng (3 + 1 mồ côi) — tức tốn y hệt chiều
-          cao của 2 cột mà lại thêm một ô lẻ. Bốn cột ở 768px cho ô rộng ~170px,
-          đúng bằng ô ở khổ 390px hai cột, nên chữ vẫn vừa. */}
-      <ul className="mt-6 grid grid-cols-2 gap-x-5 gap-y-9 sm:gap-x-6 md:grid-cols-4">
+          cao của 2 cột mà lại thêm một ô lẻ. */}
+      <ul className="mt-7 grid grid-cols-2 gap-x-5 gap-y-9 sm:gap-x-6 md:grid-cols-4">
         {items.map((it) => (
           <Card key={it.slug} it={it} />
         ))}
@@ -82,71 +106,60 @@ export function ExperienceGrid({
 }
 
 function Card({ it }: { it: ExperienceItem }) {
-  const facts = [
-    it.duration && { icon: "clock", text: it.duration },
-    it.season && { icon: "calendar", text: it.season },
-  ].filter((f): f is { icon: string; text: string } => Boolean(f));
-
   return (
     <li>
       <Link href={`/hoat-dong/${it.slug}`} className="group block">
-        <span className={cn(R_CARD, "relative block aspect-[4/5] overflow-hidden bg-muted")}>
-          <Image
-            src={it.image}
-            alt=""
-            fill
-            sizes="(min-width: 1024px) 23vw, 46vw"
-            className="object-cover"
-          />
-        </span>
-
-        {it.category && (
-          <span className={cn(MICRO, "mt-4 block text-warm-ink")}>{it.category}</span>
-        )}
+        {/* Ảnh DỌC 4/5 — thứ phân biệt mục này với hai lưới 4/3 bên dưới (Ăn
+            uống, Lưu trú). Ba lưới bốn ô liền nhau thì tỉ lệ ảnh là tín hiệu rẻ
+            nhất và rõ nhất để chúng không đọc thành một khối. */}
+        <TilePhoto
+          src={it.image}
+          ratio="aspect-[4/5]"
+          sizes="(min-width: 768px) 23vw, 46vw"
+        >
+          {it.category && <PhotoBadge>{it.category}</PhotoBadge>}
+        </TilePhoto>
 
         {/* Chiều cao tối thiểu cho khối tên: tên một dòng và tên hai dòng nằm
-            cạnh nhau thì các hàng fact bên dưới vẫn thẳng hàng. */}
-        <span className="mt-1.5 flex min-h-[3.5rem] items-start">
-          <span className="line-clamp-2 font-[family-name:var(--font-display)] text-lg font-semibold leading-snug tracking-tight underline-offset-4 group-hover:underline">
-            {it.name}
-          </span>
-        </span>
+            cạnh nhau thì các dòng dữ kiện bên dưới vẫn thẳng hàng. */}
+        <div className="mt-3.5 flex min-h-[3.25rem] items-start">
+          <TileName className="line-clamp-2">{it.name}</TileName>
+        </div>
 
-        {/* Bao lâu · mùa nào — chữ thường có icon, KHÔNG phải chữ hoa giãn ký tự
-            như nhãn nhóm: đây là dữ kiện để đọc, không phải nhãn để nhận diện. */}
-        {facts.length > 0 && (
-          <span className="mt-0.5 flex flex-col gap-1">
-            {facts.map((f) => (
-              <span
-                key={f.icon}
-                className="flex items-baseline gap-1.5 text-sm text-muted-foreground"
-              >
-                <Ic
-                  icon={f.icon}
-                  className="size-3.5 shrink-0 translate-y-0.5"
-                  aria-hidden
-                />
-                <span className="truncate">{f.text}</span>
-              </span>
-            ))}
-          </span>
+        {(it.season || it.duration) && (
+          <div className="mt-1 space-y-1.5">
+            {it.season && (
+              <FactLine glyph="calendar" tone="time">
+                {it.season}
+              </FactLine>
+            )}
+            {it.duration && <FactLine glyph="clock">{it.duration}</FactLine>}
+          </div>
         )}
 
-        {/* Diễn ra ở đâu — tên Spot thật. Trải nghiệm trải nhiều spot (chèo
-            kayak, săn mây) là chuyện thường, nên đây là thông tin, không phải
-            trang trí. */}
+        {/* Diễn ra ở đâu — tên Spot thật, mỗi tên một chip. Trải nghiệm trải
+            nhiều spot (chèo kayak, săn mây) là chuyện thường, nên đây là thông
+            tin chứ không phải trang trí. Chip dùng NỀN chứ không viền: cả thẻ
+            đã là một link, chip có viền sẽ mời bấm vào thứ không bấm được. */}
         {it.spotNames.length > 0 && (
-          <span className="mt-2.5 block border-t border-border/60 pt-2.5 text-sm text-foreground/80">
-            <span className="line-clamp-2">
-              {it.spotNames.join(" · ")}
-              {it.spotCount > it.spotNames.length && (
-                <span className="text-muted-foreground">
-                  {" "}
-                  +{it.spotCount - it.spotNames.length}
-                </span>
-              )}
-            </span>
-          </span>
+          <div className="mt-2.5 flex flex-wrap gap-1.5">
+            {it.spotNames.map((nme) => (
+              <span
+                key={nme}
+                className={cn(
+                  R_BADGE,
+                  "max-w-full truncate bg-muted px-2 py-0.5 text-xs text-muted-foreground",
+                )}
+              >
+                {nme}
+              </span>
+            ))}
+            {it.spotCount > it.spotNames.length && (
+              <span className="py-0.5 text-xs text-muted-foreground/80">
+                +{it.spotCount - it.spotNames.length}
+              </span>
+            )}
+          </div>
         )}
       </Link>
     </li>

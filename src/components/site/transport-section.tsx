@@ -1,22 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Glyph, type GlyphName } from "@/components/site/glyphs";
+import { R_CARD, R_CTRL } from "@/lib/radius";
 import { cn } from "@/lib/utils";
-import {
-  Bus,
-  PlaneLanding,
-  Navigation,
-  Phone,
-  TriangleAlert,
-  ArrowRight,
-  Car,
-  TrainFront,
-  Plane,
-  Ship,
-  Bike,
-  Footprints,
-  CarTaxiFront,
-} from "@/components/icons";
 
 export type TransportItem = {
   id: string;
@@ -37,21 +24,24 @@ export type TransportItem = {
   description: string | null;
 };
 
-const MODE_ICON: Record<string, typeof Bus> = {
-  car: Car,
-  bus: Bus,
-  train: TrainFront,
-  plane: Plane,
-  boat: Ship,
-  motorbike: Bike,
-  bike: Bike,
-  taxi: CarTaxiFront,
-  grab: CarTaxiFront,
-  walk: Footprints,
-  cyclo: Bike,
-  shuttle: Bus,
-  other: Navigation,
+// Mode → HỌ phương tiện (xem ghi chú ở `glyphs.tsx`): mười ba mode dùng chung
+// bảy hình. Nhãn chữ ngay cạnh vẫn nói chính xác là gì.
+const MODE_GLYPH: Record<string, GlyphName> = {
+  car: "car",
+  taxi: "car",
+  grab: "car",
+  shuttle: "car",
+  bus: "bus",
+  train: "train",
+  plane: "plane",
+  boat: "boat",
+  motorbike: "two-wheel",
+  bike: "two-wheel",
+  cyclo: "two-wheel",
+  walk: "walk",
+  other: "navigation",
 };
+
 const MODE_LABEL: Record<string, string> = {
   car: "Ô tô",
   bus: "Xe khách",
@@ -79,14 +69,14 @@ function formatPrice(t: TransportItem): string | null {
   return null;
 }
 
-function metaLine(t: TransportItem): string {
+// Các mẩu meta trả về RỜI, không nối bằng dấu chấm giữa — quy ước dải phân
+// cách của dự án là ngăn bằng khoảng trắng rộng.
+function metaParts(t: TransportItem): string[] {
   return [
     MODE_LABEL[t.mode] ?? t.mode,
     t.duration,
     t.distanceKm != null ? `${t.distanceKm} km` : null,
-  ]
-    .filter(Boolean)
-    .join("  ·  ");
+  ].filter(Boolean) as string[];
 }
 
 function PhoneLink({ phone }: { phone: string }) {
@@ -95,7 +85,7 @@ function PhoneLink({ phone }: { phone: string }) {
       href={`tel:${phone.replace(/\s+/g, "")}`}
       className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
     >
-      <Phone className="size-3.5" aria-hidden /> {phone}
+      <Glyph name="phone" className="size-3.5" /> {phone}
     </a>
   );
 }
@@ -103,21 +93,31 @@ function PhoneLink({ phone }: { phone: string }) {
 // Một lựa chọn — mọi phương tiện đồng cấp: huy hiệu icon + tên + meta thanh lịch,
 // mô tả, cảnh báo, đơn vị · hotline · đặt. Ngăn nhau bằng hairline của danh sách.
 function Option({ t }: { t: TransportItem }) {
-  const Icon = MODE_ICON[t.mode] ?? Navigation;
   const price = formatPrice(t);
   return (
     <div className="flex gap-4 py-5 first:pt-0">
-      <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
-        <Icon className="size-5" aria-hidden />
+      <span
+        className={cn(
+          R_CARD,
+          "grid size-11 shrink-0 place-items-center bg-primary/10 text-primary",
+        )}
+      >
+        <Glyph name={MODE_GLYPH[t.mode] ?? "navigation"} className="size-5" />
       </span>
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h4 className="text-base font-bold tracking-tight">{t.name}</h4>
-            <p className="mt-1 text-sm text-muted-foreground">{metaLine(t)}</p>
+            <h4 className="font-[family-name:var(--font-display)] text-base font-semibold tracking-tight">
+              {t.name}
+            </h4>
+            <p className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+              {metaParts(t).map((m) => (
+                <span key={m}>{m}</span>
+              ))}
+            </p>
           </div>
           {price && (
-            <span className="shrink-0 text-right text-base font-bold text-primary">
+            <span className="shrink-0 text-right text-base font-semibold tabular-nums">
               {price}
             </span>
           )}
@@ -131,10 +131,7 @@ function Option({ t }: { t: TransportItem }) {
 
         {t.notice && (
           <p className="mt-2.5 flex max-w-2xl items-start gap-1.5 text-sm text-muted-foreground">
-            <TriangleAlert
-              className="mt-0.5 size-4 shrink-0 text-warm"
-              aria-hidden
-            />
+            <Glyph name="warn" className="mt-0.5 size-4 shrink-0 text-warm" />
             <span>{t.notice}</span>
           </p>
         )}
@@ -152,7 +149,7 @@ function Option({ t }: { t: TransportItem }) {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 font-semibold text-primary hover:underline"
               >
-                Đặt vé <ArrowRight className="size-4" aria-hidden />
+                Đặt vé <Glyph name="forward" className="size-4" />
               </a>
             )}
           </div>
@@ -174,11 +171,16 @@ function groupByOrigin(items: TransportItem[]): [string, TransportItem[]][] {
   return [...map.entries()];
 }
 
-function GroupHead({ icon: Icon, title }: { icon: typeof Bus; title: string }) {
+function GroupHead({ glyph, title }: { glyph: GlyphName; title: string }) {
   return (
     <div className="flex items-center gap-3">
-      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
-        <Icon className="size-5" aria-hidden />
+      <span
+        className={cn(
+          R_CARD,
+          "grid size-10 shrink-0 place-items-center bg-primary/10 text-primary",
+        )}
+      >
+        <Glyph name={glyph} className="size-5" />
       </span>
       <h3 className="text-2xl font-bold tracking-tight sm:text-3xl">{title}</h3>
     </div>
@@ -198,13 +200,14 @@ export function TransportSection({
   const getAround = transports.filter((t) => t.direction === "getAround");
 
   const navItems = [
-    getTo.length > 0 && { id: "den-noi", label: "Đến nơi", icon: PlaneLanding },
+    getTo.length > 0 &&
+      { id: "den-noi", label: "Đến nơi", glyph: "plane" as GlyphName },
     getAround.length > 0 && {
       id: "tai-cho",
       label: "Đi lại tại chỗ",
-      icon: Navigation,
+      glyph: "navigation" as GlyphName,
     },
-  ].filter(Boolean) as { id: string; label: string; icon: typeof Bus }[];
+  ].filter(Boolean) as { id: string; label: string; glyph: GlyphName }[];
 
   const [active, setActive] = useState(navItems[0]?.id ?? "");
   const jumpingRef = useRef<string | null>(null);
@@ -268,7 +271,7 @@ export function TransportSection({
       {navItems.length > 1 && (
         <nav className="hide-scrollbar sticky top-12 z-30 -mx-4 flex gap-2 overflow-x-auto border-b border-border/60 bg-background/85 px-4 py-2.5 backdrop-blur-lg sm:-mx-6 sm:px-6 lg:top-28">
           {navItems.map((it) => {
-            const Icon = it.icon;
+
             return (
               <button
                 key={it.id}
@@ -276,13 +279,14 @@ export function TransportSection({
                 onClick={() => jumpTo(it.id)}
                 aria-current={active === it.id}
                 className={cn(
-                  "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors",
+                  R_CTRL,
+                  "inline-flex h-9 shrink-0 items-center gap-1.5 border px-3.5 text-[0.8125rem] font-medium transition-colors",
                   active === it.id
-                    ? "bg-foreground text-background"
-                    : "bg-muted text-muted-foreground hover:text-foreground",
+                    ? "border-foreground bg-foreground text-background"
+                    : "border-border text-muted-foreground hover:border-foreground hover:text-foreground",
                 )}
               >
-                <Icon className="size-4" aria-hidden />
+                <Glyph name={it.glyph} className="size-4" />
                 {it.label}
               </button>
             );
@@ -293,7 +297,7 @@ export function TransportSection({
       <div className="space-y-16 pt-8">
         {getTo.length > 0 && (
           <section id="den-noi" className="scroll-mt-40">
-            <GroupHead icon={PlaneLanding} title={`Đến ${placeName}`} />
+            <GroupHead glyph="plane" title={`Đến ${placeName}`} />
             <div className="mt-8 space-y-10">
               {groupByOrigin(getTo).map(([origin, items]) => (
                 <div key={origin}>
@@ -316,7 +320,7 @@ export function TransportSection({
 
         {getAround.length > 0 && (
           <section id="tai-cho" className="scroll-mt-40">
-            <GroupHead icon={Navigation} title={`Đi lại tại ${placeName}`} />
+            <GroupHead glyph="navigation" title={`Đi lại tại ${placeName}`} />
             <div className="mt-6 divide-y divide-border/60">
               {getAround.map((t) => (
                 <Option key={t.id} t={t} />

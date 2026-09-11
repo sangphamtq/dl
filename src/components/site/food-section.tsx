@@ -4,10 +4,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  ChefHat,
-  X,
-} from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { Glyph, type GlyphName } from "@/components/site/glyphs";
 import { FilterChip } from "@/components/site/listing-filter";
@@ -344,7 +340,7 @@ export function FoodSection({
             className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-foreground transition-colors hover:bg-muted/70"
           >
             Bỏ lọc
-            <X className="size-3 opacity-60" aria-hidden />
+            <Glyph name="close" className="size-3 opacity-60" />
           </button>
         )}
       </p>
@@ -383,7 +379,7 @@ export function FoodSection({
         <section className="mt-16 border-t border-border/60 pt-10">
           <div className="flex items-center gap-3">
             <span className={cn(R_CARD, "grid size-10 shrink-0 place-items-center bg-warm/10 text-warm")}>
-              <ChefHat className="size-5" aria-hidden />
+              <Glyph name="chef" className="size-5" />
             </span>
             <div>
               <h3 className="text-xl font-bold tracking-tight sm:text-2xl">
@@ -435,7 +431,7 @@ export function FoodSection({
                 className={cn(R_CTRL, "absolute right-3 top-3 z-10 grid size-9 place-items-center bg-background/85 text-foreground shadow-sm backdrop-blur transition-colors hover:bg-background")}
                 aria-label="Đóng"
               >
-                <X className="size-4" aria-hidden />
+                <Glyph name="close" className="size-4" />
               </DialogClose>
             </>
           )}

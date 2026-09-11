@@ -1,9 +1,17 @@
-import Image from "next/image";
 import Link from "next/link";
-import { ArrowUpRight, Eye, Sunrise } from "@/components/icons";
+import {
+  FactLine,
+  N,
+  PhotoBadge,
+  Stat,
+  StatRow,
+  TileName,
+  TilePhoto,
+} from "@/components/site/preview-tile";
 import { cn } from "@/lib/utils";
-import { R_BADGE, R_CARD } from "@/lib/radius";
+import { R_BADGE } from "@/lib/radius";
 import { coverUrl } from "@/lib/place-image";
+import { compositionLine, countByLabel } from "@/lib/listing-summary";
 import {
   EATERY_CATEGORY_LABELS,
   MEAL_LABELS,
@@ -23,14 +31,6 @@ export type FoodVenue = {
   wardName: string | null;
   images: { url: string; isCover: boolean }[];
 };
-
-const MICRO = "text-[0.6rem] font-semibold uppercase tracking-[0.14em]";
-
-// Kính mờ trên ảnh — cùng chất liệu với huy hiệu của StayDirectory, để hai
-// section cạnh nhau đọc như một hệ.
-// Huy hiệu trên ảnh: khối TRẮNG vuông, chữ mực — cùng huy hiệu "Nổi bật"
-// của thẻ điểm đến, thay cho viên kính tối bo tròn.
-const GLASS = "bg-white/95 text-neutral-900 shadow-sm backdrop-blur-sm";
 
 // Số ô của cả section (một hàng ở lg) và số ô tối đa nhường cho quán nước.
 const SLOTS = 4;
@@ -66,21 +66,44 @@ const DRINK_SLOTS = 2;
 // trong khối chữ; giờ nó nói được đúng thứ khách tranh nhau.
 //
 // Là Server Component: tĩnh hoàn toàn, không carousel, không tốn byte JS nào.
+/** Dữ kiện của TOÀN BỘ danh sách quán (không phải của 4 ô đang hiện) — xem chú
+ *  thích ở chỗ truy vấn trong `page.tsx`. */
+export type FoodFacts = {
+  categoryLabel: string | null;
+  hasView: boolean;
+  hasBestTime: boolean;
+};
+
 export function FoodMenu({
   placeName,
   href,
   count,
+  facts,
   eateries,
   drinks = [],
 }: {
   placeName: string;
   href: string;
   count?: number;
+  facts: FoodFacts[];
   eateries: FoodVenue[];
   drinks?: FoodVenue[];
 }) {
   const venues = pickVenues(eateries, drinks);
   if (venues.length === 0) return null;
+
+  // Dữ kiện mở đầu — cùng khuôn "glyph + số đậm" với dải mở đầu của năm tab
+  // con, và đếm trên TOÀN BỘ danh sách quán (xem `facts`). Hai con số này là
+  // thứ chỉ thấy khi nhìn cả danh sách: bao nhiêu chỗ ngồi được ngắm cảnh, và
+  // bao nhiêu chỗ có giờ vàng riêng.
+  const withView = facts.filter((f) => f.hasView).length;
+  const withBest = facts.filter((f) => f.hasBestTime).length;
+  // Mục đầu nói THÀNH PHẦN, không đếm lại: con số tổng đã nằm nguyên trong nhãn
+  // link ngay bên phải ("Xem tất cả 15 quán").
+  const composition = compositionLine(
+    countByLabel(facts.map((f) => f.categoryLabel)),
+    facts.length,
+  );
 
   return (
     <div>
@@ -92,6 +115,26 @@ export function FoodMenu({
         unit="quán"
       />
 
+      <StatRow>
+        <Stat glyph="bowl">
+          {composition ?? (
+            <>
+              <N>{count ?? facts.length}</N> quán ăn &amp; quán nước
+            </>
+          )}
+        </Stat>
+        {withView > 0 && (
+          <Stat glyph="eye">
+            <N>{withView}</N> chỗ ngồi có view
+          </Stat>
+        )}
+        {withBest > 0 && (
+          <Stat glyph="sunrise">
+            <N>{withBest}</N> nơi có giờ đẹp riêng
+          </Stat>
+        )}
+      </StatRow>
+
       {/* Một hàng: bốn ô từ lg. Hẹp hơn thì hai cột rồi một cột — bốn ô dàn ngang
           trên màn 768px chỉ còn ~180px/ô, nhãn trên ảnh hết chỗ. */}
       {/* `grid-cols-2 md:grid-cols-4` — KHỚP với ExperienceGrid và
@@ -99,7 +142,7 @@ export function FoodMenu({
           lg:grid-cols-4` để bậc chuyển cột ở `lg`, nên quãng 768–1023px nhận
           bố cục điện thoại với đệm desktop; và 4 mục ở 3 cột vẫn là hai hàng
           (3 + 1 mồ côi) nên đi thẳng 4 cột. */}
-      <ul className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+      <ul className="mt-7 grid grid-cols-2 gap-x-5 gap-y-9 sm:gap-x-6 md:grid-cols-4">
         {venues.map((v, i) => (
           <VenueTile key={v.slug} v={v} priority={i < SLOTS} href={href} />
         ))}
@@ -132,8 +175,14 @@ function pickVenues(eats: FoodVenue[], drinks: FoodVenue[]): FoodVenue[] {
   return out.slice(0, SLOTS);
 }
 
-// Một ô: ảnh 4/3 lồng trong lòng thẻ (+ huy hiệu hướng nhìn nổi trên ảnh) →
-// nhãn loại → tên → dòng nhấn ở đáy (giờ vàng với quán view, bữa với quán ăn).
+/* Một ô — THẺ KHÔNG KHUNG, đúng khuôn thẻ của tab Ẩm thực: ảnh 4/3 bo `R_CARD`
+   mang huy hiệu loại (trái) và hướng nhìn (phải) → tên → dòng nhấn.
+
+   Bản trước bọc cả ô trong `border border-border bg-card p-2` rồi lồng ảnh vào
+   trong. Bỏ khung vì hai lẽ: quy ước `design` để viền cho thứ BẤM ĐƯỢC phân
+   biệt với thứ không, mà ở đây cả bốn ô đều bấm được nên viền không phân biệt
+   gì; và năm tab con đã bỏ khung từ đợt trước — giữ lại ở riêng bản xem trước
+   thì cùng một quán hiện ra hai hình khác nhau ở hai trang. */
 function VenueTile({
   v,
   priority,
@@ -155,81 +204,62 @@ function VenueTile({
   // Mỗi mẩu thông tin là MỘT CHIP, không nối bằng dấu ngăn: bữa và khu vực là
   // hai loại dữ kiện khác nhau, gộp thành một chuỗi thì mắt phải tự tách ra.
   const facts = [
-    ...(v.meals
+    ...v.meals
       .map((m) => label(MEAL_LABELS, m))
       .filter((m): m is string => Boolean(m))
-      .slice(0, 2)),
+      .slice(0, 2),
     v.wardName,
   ].filter((f): f is string => Boolean(f));
 
   return (
-    <li className="h-full">
-      <Link
-        href={`${href}#eatery-${v.slug}`}
-        className={cn(R_CARD, "group flex h-full flex-col border border-border bg-card p-2 transition-colors duration-200 hover:border-foreground")}
-      >
-        <span className={cn(R_BADGE, "relative block aspect-[4/3] overflow-hidden bg-muted")}>
-          <Image
-            src={coverUrl(v.images, v.slug, 800, 600)}
-            alt=""
-            fill
-            sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
-            priority={priority}
-            className="object-cover"
-          />
+    <li>
+      <Link href={`${href}#eatery-${v.slug}`} className="group block">
+        <TilePhoto
+          src={coverUrl(v.images, v.slug, 800, 600)}
+          sizes="(min-width: 768px) 23vw, 46vw"
+          priority={priority}
+        >
+          <PhotoBadge>{kicker}</PhotoBadge>
+          {/* Hướng nhìn sang góc PHẢI: góc trái đã là chỗ của huy hiệu loại ở
+              cả bốn mục xem trước, hai huy hiệu chồng một góc thì cái sau che
+              cái trước trên ô hẹp 170px. */}
           {viewLabel && (
-            // Thứ DUY NHẤT nằm trên ảnh: hướng nhìn phải đọc được ngay khi mắt
-            // còn ở khuôn hình. Hiện cho cả quán ăn có view, không riêng quán nước.
-            <span
-              className={cn(
-                GLASS,
-                "absolute left-2.5 top-2.5 inline-flex items-center gap-1 py-1 pl-1.5 pr-2.5 text-[0.7rem] font-semibold",
-              )}
-            >
-              <Eye className="size-4 shrink-0" aria-hidden />
+            <PhotoBadge side="right" tone="mark" glyph="eye">
               {viewLabel}
-            </span>
+            </PhotoBadge>
           )}
-        </span>
+        </TilePhoto>
 
-        <span className="flex flex-1 flex-col px-1.5 pb-1 pt-3">
-          <span className={cn(MICRO, "text-warm-ink")}>{kicker}</span>
+        <div className="mt-3.5 flex min-h-[3.25rem] items-start">
+          <TileName className="line-clamp-2">{v.name}</TileName>
+        </div>
 
-          <span className="mt-1 flex items-start gap-2">
-            <span className="line-clamp-2 min-w-0 flex-1 font-[family-name:var(--font-display)] text-base font-semibold leading-snug tracking-tight underline-offset-4 group-hover:underline sm:text-lg">
-              {v.name}
-            </span>
-            <ArrowUpRight
-              className="mt-0.5 size-4 shrink-0 text-muted-foreground opacity-0 transition-all duration-200 group-hover:translate-x-0.5 group-hover:opacity-100 motion-reduce:transition-none"
-              aria-hidden
-            />
-          </span>
-
-          {/* Dòng nhấn ở đáy — đúng chỗ thẻ thương mại đặt giá.
-              · Có giờ vàng → một dòng `text-primary`: nó là MỘT dữ kiện và là
-                thứ quyết định có đi hay không, nên đứng riêng, không thành chip.
-              · Không có → các dữ kiện rời (bữa, khu vực) thành CHIP, mỗi mẩu
-                một viên. */}
-          {v.bestTime ? (
-            <span className="mt-auto flex items-center gap-1.5 pt-3 text-xs">
-              <Sunrise className="size-3.5 shrink-0 text-primary" aria-hidden />
-              <span className="truncate font-medium text-primary">
-                {v.bestTime}
+        {/* Dòng nhấn:
+            · có giờ vàng → một dòng XANH (cùng màu, cùng glyph với thẻ quán ăn
+              ở tab Ẩm thực và với `bestTime` của địa điểm) — nó là thứ quyết
+              định có đi hay không nên đứng riêng;
+            · không có → bữa và khu vực thành chip, mỗi mẩu một viên. */}
+        {v.bestTime ? (
+          <div className="mt-1">
+            <FactLine glyph="sunrise" tone="time">
+              {v.bestTime}
+            </FactLine>
+          </div>
+        ) : facts.length > 0 ? (
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            {facts.map((f) => (
+              <span
+                key={f}
+                className={cn(
+                  R_BADGE,
+                  "max-w-full truncate bg-muted px-2 py-0.5 text-xs text-muted-foreground",
+                )}
+              >
+                {f}
               </span>
-            </span>
-          ) : facts.length > 0 ? (
-            <span className="mt-auto flex flex-wrap gap-1.5 pt-3">
-              {facts.map((f) => (
-                <span
-                  key={f}
-                  className="bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
-                >
-                  {f}
-                </span>
-              ))}
-            </span>
-          ) : null}
-        </span>
+            ))}
+          </div>
+        ) : null}
       </Link>
     </li>
   );

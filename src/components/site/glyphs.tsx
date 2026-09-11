@@ -41,7 +41,19 @@ export type GlyphName =
   | "navigation"
   | "external"
   | "expand"
-  | "chevron-down";
+  | "chevron-down"
+  | "shield"
+  | "wallet"
+  | "message"
+  | "link"
+  | "chef"
+  | "car"
+  | "bus"
+  | "train"
+  | "plane"
+  | "boat"
+  | "two-wheel"
+  | "walk";
 
 const SHAPES: Record<GlyphName, React.ReactNode> = {
   // Ghim bản đồ — CÙNG thân ghim với `spot` của `nav-icons` (hai vai thẳng chạy
@@ -231,6 +243,98 @@ const SHAPES: Record<GlyphName, React.ReactNode> = {
     </>
   ),
   "chevron-down": <path d="M5.2 9.2 12 16l6.8-6.8" />,
+  // Khiên — dùng cho dải an toàn của tab Lưu trú. Chỉ bao ngoài, phần "đã xác
+  // minh / chưa xác minh" để `check` và `warn` nói, khỏi vẽ ba biến thể khiên.
+  shield: (
+    <path d="M12 3.4 4.8 6.2v5.6c0 4.3 2.9 7.5 7.2 8.8 4.3-1.3 7.2-4.5 7.2-8.8V6.2L12 3.4Z" />
+  ),
+  // Ví: thân + nắp gập + chốt tròn. Dùng cho chính sách cọc.
+  wallet: (
+    <>
+      <path d="M4.2 8.4h13.6a2 2 0 0 1 2 2v7.4a2 2 0 0 1-2 2H6.2a2 2 0 0 1-2-2V8.4Z" />
+      <path d="M4.2 8.4V6.8a1.8 1.8 0 0 1 1.8-1.8h9.4" />
+      <circle cx="16" cy="14.1" r="1.1" />
+    </>
+  ),
+  // Bong bóng hội thoại — cùng dáng với `community` của `nav-icons` (bỏ ba
+  // chấm bên trong: ở 16px chúng dính thành một vệt).
+  message: (
+    <path d="M3 12.6V8.2a3.6 3.6 0 0 1 3.6-3.6h10.8A3.6 3.6 0 0 1 21 8.2v4.4a3.6 3.6 0 0 1-3.6 3.6h-6L6.9 20.05a.6.6 0 0 1-.99-.52l.69-3.33A3.6 3.6 0 0 1 3 12.6Z" />
+  ),
+  // Mắt xích: hai nửa vòng nối nhau — ký hiệu quy ước cho "liên kết".
+  link: (
+    <>
+      <path d="M10.4 13.6a3.6 3.6 0 0 0 5.4.4l2.4-2.4a3.6 3.6 0 0 0-5.1-5.1l-1.4 1.4" />
+      <path d="M13.6 10.4a3.6 3.6 0 0 0-5.4-.4l-2.4 2.4a3.6 3.6 0 0 0 5.1 5.1l1.4-1.4" />
+    </>
+  ),
+  // Mũ đầu bếp: chỏm ba múi + vành. Dùng cho khối "Trải nghiệm ẩm thực" —
+  // tour/lớp học, tức là ĐI XEM CÁCH LÀM chứ không phải đi ăn, nên không dùng
+  // lại hình cái tô.
+  chef: (
+    <>
+      <path d="M7.6 12.4a3.8 3.8 0 1 1 1.2-7.4 3.6 3.6 0 0 1 6.4 0 3.8 3.8 0 1 1 1.2 7.4" />
+      <path d="M7.6 12.4h8.8v5.8a1.8 1.8 0 0 1-1.8 1.8H9.4a1.8 1.8 0 0 1-1.8-1.8v-5.8Z" />
+    </>
+  ),
+  /* ── Phương tiện (tab Di chuyển) ──────────────────────────────────
+     Vẽ theo HỌ chứ không theo từng `mode`: bảy hình cho mười ba mode.
+     Taxi · xe ghép · xe đưa đón đều ra hình Ô TÔ; xe máy · xe đạp · xích lô
+     đều ra hình HAI BÁNH. Lý do: ở 20px, một chiếc taxi và một chiếc ô tô
+     khác nhau đúng cái mào đèn — vẽ thì thành hai vệt gần giống nhau, mà cái
+     nhãn chữ ngay cạnh đã nói chính xác là gì rồi. Icon ở đây làm việc "nhận
+     ra họ phương tiện trong một cái liếc", không phải phân loại. */
+  car: (
+    <>
+      <path d="M5.2 14.2 6.9 9.4a2.2 2.2 0 0 1 2.1-1.5h6a2.2 2.2 0 0 1 2.1 1.5l1.7 4.8" />
+      <path d="M4.8 14.2h14.4a1.6 1.6 0 0 1 1.6 1.6v2.4H3.2v-2.4a1.6 1.6 0 0 1 1.6-1.6Z" />
+      <circle cx="7.4" cy="18.2" r="1.6" />
+      <circle cx="16.6" cy="18.2" r="1.6" />
+    </>
+  ),
+  bus: (
+    <>
+      <path d="M6 3.8h12a2 2 0 0 1 2 2v9.8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5.8a2 2 0 0 1 2-2Z" />
+      <path d="M4 10.4h16" />
+      <circle cx="7.6" cy="19.4" r="1.5" />
+      <circle cx="16.4" cy="19.4" r="1.5" />
+    </>
+  ),
+  train: (
+    <>
+      <path d="M7.4 3.8h9.2a2.2 2.2 0 0 1 2.2 2.2v8.6a2.2 2.2 0 0 1-2.2 2.2H7.4a2.2 2.2 0 0 1-2.2-2.2V6a2.2 2.2 0 0 1 2.2-2.2Z" />
+      <path d="M5.2 10.2h13.6" />
+      <path d="m7.8 16.8-2 3.4" />
+      <path d="m16.2 16.8 2 3.4" />
+    </>
+  ),
+  plane: (
+    <path d="M10.4 3.6a1.6 1.6 0 0 1 3.2 0v5.2l7.2 4v2.4l-7.2-2.2v4.2l2.4 1.8v1.6l-4-1.2-4 1.2v-1.6l2.4-1.8v-4.2L3.2 15.2v-2.4l7.2-4V3.6Z" />
+  ),
+  boat: (
+    <>
+      <path d="M3.4 15.6h17.2a8.8 8.8 0 0 1-17.2 0Z" />
+      <path d="M12 14V3.4" />
+      <path d="M12 5.6 18 13.2h-6V5.6Z" />
+    </>
+  ),
+  "two-wheel": (
+    <>
+      <circle cx="5.8" cy="16.6" r="3.4" />
+      <circle cx="18.2" cy="16.6" r="3.4" />
+      <path d="M5.8 16.6h5l4-7.2" />
+      <path d="M18.2 16.6 15 9.4h-2.6" />
+      <path d="M9 9.4h3.4" />
+    </>
+  ),
+  walk: (
+    <>
+      <circle cx="13.2" cy="4.9" r="2.1" />
+      <path d="M12.6 8.2 10.9 13.4l3 2.9.6 4.9" />
+      <path d="m10.9 13.4-2.6 3.3-.9 3.5" />
+      <path d="m12.2 9.6 3.4 1.9" />
+    </>
+  ),
   rows: (
     <>
       <rect x="3.4" y="4.6" width="5" height="5" rx="1.4" />

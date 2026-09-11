@@ -3,23 +3,8 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  MapPin,
-  Phone,
-  Globe,
-  ExternalLink,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  BadgeCheck,
-  ShieldAlert,
-  ShieldCheck,
-  MessageCircle,
-  Link2,
-  TriangleAlert,
-  Wallet,
-  ArrowRight,
-} from "@/components/icons";
+import { Glyph, type GlyphName } from "@/components/site/glyphs";
+import { R_BADGE, R_CARD, R_CTRL } from "@/lib/radius";
 import { cn } from "@/lib/utils";
 import { AddToTripButton } from "@/components/site/add-to-trip-button";
 import { coverUrl } from "@/lib/place-image";
@@ -150,16 +135,17 @@ export function AccommodationDetail({
             chỗ ở, không phải một dòng chữ đâu đó giữa cột chữ. */}
         <span
           className={cn(
-            "absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold shadow-sm",
+            R_BADGE,
+            "absolute left-4 top-4 inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold shadow-sm",
             data.isVerified
               ? "bg-primary text-primary-foreground"
               : "bg-background/90 text-muted-foreground backdrop-blur-sm",
           )}
         >
           {data.isVerified ? (
-            <BadgeCheck className="size-3.5 shrink-0" aria-hidden />
+            <Glyph name="check"  className="size-3.5 shrink-0" />
           ) : (
-            <ShieldAlert className="size-3.5 shrink-0" aria-hidden />
+            <Glyph name="warn"  className="size-3.5 shrink-0" />
           )}
           {data.isVerified ? "Đã xác minh chính chủ" : "Chưa xác minh"}
         </span>
@@ -168,7 +154,7 @@ export function AccommodationDetail({
           <>
             <ArrowBtn side="left" onClick={() => api?.scrollPrev()} />
             <ArrowBtn side="right" onClick={() => api?.scrollNext()} />
-            <span className="absolute right-4 top-4 rounded-full bg-background/85 px-2.5 py-1 text-xs font-semibold tabular-nums shadow-sm backdrop-blur">
+            <span className={cn(R_BADGE, "absolute right-4 top-4 bg-background/85 px-2.5 py-1 text-xs font-semibold tabular-nums shadow-sm backdrop-blur")}>
               {shot + 1}/{gallery.length}
             </span>
             <div className="pointer-events-none absolute inset-x-0 bottom-0 p-4">
@@ -183,7 +169,8 @@ export function AccommodationDetail({
                     aria-label={`Xem ảnh ${i + 1}`}
                     aria-current={i === shot}
                     className={cn(
-                      "relative size-14 shrink-0 overflow-hidden rounded-xl ring-2 transition-all",
+                      R_BADGE,
+                    "relative size-14 shrink-0 overflow-hidden ring-2 transition-all",
                       i === shot
                         ? "ring-white"
                         : "opacity-70 ring-white/0 hover:opacity-100",
@@ -221,20 +208,17 @@ export function AccommodationDetail({
           <div className="mt-4 space-y-2.5">
             <div
               className={cn(
-                "flex items-start gap-2.5 rounded-2xl p-4 text-sm leading-relaxed",
+                R_CARD,
+                "flex items-start gap-2.5 p-4 text-sm leading-relaxed",
                 data.isVerified ? "bg-primary/[0.08]" : "bg-muted/60",
               )}
             >
               {data.isVerified ? (
-                <ShieldCheck
-                  className="mt-0.5 size-4 shrink-0 text-primary"
-                  aria-hidden
-                />
+                <Glyph name="shield" 
+                  className="mt-0.5 size-4 shrink-0 text-primary" />
               ) : (
-                <ShieldAlert
-                  className="mt-0.5 size-4 shrink-0 text-muted-foreground"
-                  aria-hidden
-                />
+                <Glyph name="warn" 
+                  className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
               )}
               <span>
                 {data.isVerified ? (
@@ -255,11 +239,9 @@ export function AccommodationDetail({
             </div>
 
             {data.depositPolicy && (
-              <div className="flex items-start gap-2.5 rounded-2xl bg-muted/60 p-4 text-sm leading-relaxed">
-                <Wallet
-                  className="mt-0.5 size-4 shrink-0 text-muted-foreground"
-                  aria-hidden
-                />
+              <div className={cn(R_CARD, "flex items-start gap-2.5 bg-muted/60 p-4 text-sm leading-relaxed")}>
+                <Glyph name="wallet" 
+                  className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                 <span>
                   <span className="font-semibold">Cọc: </span>
                   {data.depositPolicy}
@@ -268,11 +250,9 @@ export function AccommodationDetail({
             )}
 
             {data.notice && (
-              <div className="flex items-start gap-2.5 rounded-2xl bg-warm/10 p-4 text-sm leading-relaxed">
-                <TriangleAlert
-                  className="mt-0.5 size-4 shrink-0 text-warm"
-                  aria-hidden
-                />
+              <div className={cn(R_CARD, "flex items-start gap-2.5 bg-warm/10 p-4 text-sm leading-relaxed")}>
+                <Glyph name="warn" 
+                  className="mt-0.5 size-4 shrink-0 text-warm" />
                 <span>{data.notice}</span>
               </div>
             )}
@@ -287,7 +267,7 @@ export function AccommodationDetail({
           {(data.address || data.phone) && (
             <dl className="mt-6 divide-y divide-border/60 border-y border-border/60">
               {data.address && (
-                <Row icon={MapPin} label="Địa chỉ">
+                <Row glyph="pin" label="Địa chỉ">
                   <span className="block leading-snug">{data.address}</span>
                   {hasMap && (
                     <button
@@ -297,19 +277,17 @@ export function AccommodationDetail({
                       className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
                     >
                       {mapOpen ? "Ẩn bản đồ" : "Xem trên bản đồ"}
-                      <ChevronDown
+                      <Glyph name="chevron-down" 
                         className={cn(
                           "size-3 transition-transform",
                           mapOpen && "rotate-180",
-                        )}
-                        aria-hidden
-                      />
+                        )} />
                     </button>
                   )}
                 </Row>
               )}
               {data.phone && (
-                <Row icon={Phone} label="Điện thoại">
+                <Row glyph="phone" label="Điện thoại">
                   <a href={`tel:${data.phone}`} className="hover:underline">
                     {data.phone}
                   </a>
@@ -319,7 +297,7 @@ export function AccommodationDetail({
           )}
 
           {hasMap && mapOpen && (
-            <div className="mt-4 overflow-hidden rounded-2xl border border-border/60">
+            <div className={cn(R_CARD, "mt-4 overflow-hidden border border-border/60")}>
               <iframe
                 title={`Bản đồ ${data.name}`}
                 className="aspect-[16/10] w-full"
@@ -334,7 +312,7 @@ export function AccommodationDetail({
               {data.tags.map((t) => (
                 <span
                   key={t}
-                  className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground"
+                  className={cn(R_BADGE, "bg-muted px-2.5 py-1 text-xs text-muted-foreground")}
                 >
                   {t}
                 </span>
@@ -357,7 +335,7 @@ export function AccommodationDetail({
               group FB). Popup chỉ là bản xem nhanh nên lối này phải rõ ràng. */}
           <Link
             href={`/luu-tru/${data.slug}`}
-            className="mt-6 flex items-center justify-between gap-3 rounded-2xl border border-border/60 p-4 text-sm transition-colors hover:border-border hover:bg-muted/40"
+            className={cn(R_CARD, "mt-6 flex items-center justify-between gap-3 border border-border/60 p-4 text-sm transition-colors hover:border-border hover:bg-muted/40")}
           >
             <span>
               <span className="block font-semibold">Xem trang đầy đủ</span>
@@ -365,7 +343,7 @@ export function AccommodationDetail({
                 Bản đồ, chỉ đường, mã QR chia sẻ
               </span>
             </span>
-            <ArrowRight className="size-4 shrink-0 text-primary" aria-hidden />
+            <Glyph name="forward" className="size-4 shrink-0 text-primary" />
           </Link>
         </div>
 
@@ -385,27 +363,27 @@ export function AccommodationDetail({
                 href={zaloHref(data.zalo)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                className={cn(R_CTRL, "inline-flex flex-1 items-center justify-center gap-2 bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90")}
               >
-                <MessageCircle className="size-4" aria-hidden />
+                <Glyph name="message"  className="size-4" />
                 Nhắn Zalo chính chủ
               </a>
             ) : data.phone ? (
               <a
                 href={`tel:${data.phone}`}
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                className={cn(R_CTRL, "inline-flex flex-1 items-center justify-center gap-2 bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90")}
               >
-                <Phone className="size-4" aria-hidden />
+                <Glyph name="phone" className="size-4" />
                 Gọi chính chủ
               </a>
             ) : null}
             {data.zalo && data.phone && (
-              <IconAction href={`tel:${data.phone}`} icon={Phone} label="Gọi" />
+              <IconAction href={`tel:${data.phone}`} glyph="phone" label="Gọi" />
             )}
             {data.facebookUrl && (
               <IconAction
                 href={data.facebookUrl}
-                icon={Link2}
+                glyph="link"
                 label="Facebook chính chủ"
                 external
               />
@@ -413,7 +391,7 @@ export function AccommodationDetail({
             {data.bookingUrl && (
               <IconAction
                 href={data.bookingUrl}
-                icon={ExternalLink}
+                glyph="external"
                 label="Trang đặt phòng"
                 external
               />
@@ -421,7 +399,7 @@ export function AccommodationDetail({
             {data.website && (
               <IconAction
                 href={data.website}
-                icon={Globe}
+                glyph="globe"
                 label="Website"
                 external
               />
@@ -435,17 +413,17 @@ export function AccommodationDetail({
 
 // Một dòng thông tin: icon · nhãn nhỏ · giá trị.
 function Row({
-  icon: Icon,
+  glyph,
   label: name,
   children,
 }: {
-  icon: React.ComponentType<{ className?: string }>;
+  glyph: GlyphName;
   label: string;
   children: React.ReactNode;
 }) {
   return (
     <div className="flex items-start gap-3 py-3">
-      <Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
+      <Glyph name={glyph} className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
       <div className="min-w-0 flex-1">
         <dt className="text-xs text-muted-foreground">{name}</dt>
         <dd className="text-sm">{children}</dd>
@@ -456,12 +434,12 @@ function Row({
 
 function IconAction({
   href,
-  icon: Icon,
+  glyph,
   label: text,
   external = false,
 }: {
   href: string;
-  icon: React.ComponentType<{ className?: string }>;
+  glyph: GlyphName;
   label: string;
   external?: boolean;
 }) {
@@ -471,9 +449,9 @@ function IconAction({
       title={text}
       aria-label={text}
       {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-      className="grid size-11 shrink-0 place-items-center rounded-full border border-border/70 text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+      className={cn(R_CTRL, "grid size-11 shrink-0 place-items-center border border-border/70 text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground")}
     >
-      <Icon className="size-4" />
+      <Glyph name={glyph} className="size-4" />
     </a>
   );
 }
@@ -486,7 +464,6 @@ function ArrowBtn({
   side: "left" | "right";
   onClick: () => void;
 }) {
-  const Icon = side === "left" ? ChevronLeft : ChevronRight;
   return (
     <button
       type="button"
@@ -494,11 +471,12 @@ function ArrowBtn({
       aria-label={side === "left" ? "Ảnh trước" : "Ảnh tiếp theo"}
       className={cn(
         // Ẩn dưới `sm`: ở đó vuốt là thao tác tự nhiên, mũi tên chỉ che ảnh.
-        "absolute top-1/2 hidden size-9 -translate-y-1/2 place-items-center rounded-full bg-background/85 text-foreground shadow-sm backdrop-blur transition-colors hover:bg-background sm:grid",
+        R_CTRL,
+        "absolute top-1/2 hidden size-9 -translate-y-1/2 place-items-center bg-background/85 text-foreground shadow-sm backdrop-blur transition-colors hover:bg-background sm:grid",
         side === "left" ? "left-3" : "right-3",
       )}
     >
-      <Icon className="size-4" aria-hidden />
+      <Glyph name={side === "left" ? "back" : "forward"} className="size-4" />
     </button>
   );
 }
