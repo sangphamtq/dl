@@ -14,7 +14,7 @@ export type MapCardOptions = {
   showList: boolean;
 };
 
-export const MAP_CARD_DEFAULTS: MapCardOptions = {
+const MAP_CARD_DEFAULTS: MapCardOptions = {
   accent: "#e3852f", // = token `warm`, nên mặc định trông y như trước khi có tính năng này
   name: "",
   showMap: true,

@@ -38,7 +38,7 @@ export default async function LoginPage({
         <div className="absolute inset-0 flex flex-col justify-between p-10 text-white">
           <Link href="/" className="flex items-center gap-2 font-semibold">
             <Image
-              src="/icon-192.png"
+              src="/icons/icon-192.png"
               alt=""
               width={28}
               height={28}
@@ -66,7 +66,7 @@ export default async function LoginPage({
               className="flex items-center gap-2 font-semibold tracking-tight lg:hidden"
             >
               <Image
-                src="/icon-192.png"
+                src="/icons/icon-192.png"
                 alt=""
                 width={24}
                 height={24}

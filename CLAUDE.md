@@ -406,7 +406,8 @@ Bản đồ 34 tỉnh + checklist **chung một state**; là nơi duy nhất c�
 **Next.js 16** (App Router, RSC) + **React 19** · **TypeScript** strict (`@/*` → `src/*`) ·
 **Tailwind v4** · **shadcn/ui** (`new-york`) trên **Radix** · **Prisma 7 + PostgreSQL**
 (client sinh ra `src/generated/prisma`, adapter `@prisma/adapter-pg`) · **Auth.js v5** ·
-**pnpm bắt buộc** (không có npm/npx).
+**pnpm bắt buộc** — máy có sẵn npm/npx nhưng đừng dùng: lockfile của dự án là
+`pnpm-lock.yaml`, chạy `npm install` là sinh lockfile thứ hai và cây phụ thuộc lệch đi.
 
 Thư viện lớn — **đừng thêm gói trùng vai trò**: `leaflet` + `react-leaflet` +
 `leaflet.markercluster` (luôn `ssr: false`, xem `components/map/*-inner.tsx`) · `uploadthing` ·
