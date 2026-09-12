@@ -71,6 +71,19 @@ export function isStance(v: unknown): v is ReviewStance {
   return v === "love" || v === "worthOnce" || v === "meh" || v === "bad";
 }
 
+/* Tông cảm nhận → màu CHỮ. Để ở `lib/` vì hai nơi dùng chung (mục Đánh giá và
+   popup "Vivu-er đã đến"); chép ra hai bản là kiểu trôi mỗi nơi một màu.
+
+   Dùng bản `-ink` cho cả hai tông dương: đây là CHỮ trên nền sáng, mà
+   `--primary`/`--warm` được chỉnh cho mảng nền đặc — làm chữ trên nền sáng thì
+   trượt tương phản (xem quy ước màu trong CLAUDE.md). */
+export const STANCE_TEXT: Record<StanceTone, string> = {
+  positive: "text-primary-ink",
+  posSoft: "text-primary-ink",
+  negSoft: "text-warm-ink",
+  negative: "text-destructive",
+};
+
 export function stanceMeta(value: ReviewStance) {
   return REVIEW_STANCES.find((s) => s.value === value) ?? REVIEW_STANCES[0];
 }

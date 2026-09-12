@@ -7,7 +7,7 @@ import { CheckInButton } from "@/components/site/check-in-button";
 import { PlanTripButton } from "@/components/site/plan-trip-button";
 import { CheckInFaces, type CheckInPerson } from "@/components/site/check-in-faces";
 import type { PlaceStat } from "@/lib/place-meta";
-import { regionOf } from "@/lib/regions";
+import { Glyph } from "@/components/site/glyphs";
 
 type PlaceHeroData = {
   id: string;
@@ -23,19 +23,13 @@ type PlaceHeroData = {
 const MICRO = "text-[0.72rem] font-medium uppercase tracking-[0.1em]";
 const DT = `${MICRO} text-white/75`;
 
-const KICKER =
-  "text-[clamp(0.9rem,2vw,1.35rem)] font-semibold uppercase leading-none tracking-[0.16em] text-white/90 [text-shadow:0_1px_2px_rgba(0,0,0,0.85),0_2px_12px_rgba(0,0,0,0.75),0_0_36px_rgba(0,0,0,0.55)]";
-
-const RULE =
-  "h-px w-10 shrink-0 bg-warm-bright sm:w-16";
-
 const BAR_TYPE = "text-[0.6rem] font-semibold uppercase tracking-[0.14em]";
 const BAR_BTN = `h-9 gap-2 whitespace-nowrap rounded-[4px] px-3 sm:px-4 ${BAR_TYPE}`;
 
-const BAR_BTN_COLLAPSE = `size-9 shrink-0 justify-center rounded-full border border-white/25 hover:border-white/60 sm:h-9 sm:w-auto sm:justify-start sm:gap-2 sm:whitespace-nowrap sm:rounded-[4px] sm:border-white/30 sm:px-4 sm:hover:border-white/70 ${BAR_TYPE}`;
+const BAR_BTN_COLLAPSE = `size-9 shrink-0 justify-center rounded-full border border-white/45 hover:border-white sm:h-9 sm:w-auto sm:justify-start sm:gap-2 sm:whitespace-nowrap sm:rounded-[4px] sm:border-white/50 sm:px-4 sm:hover:border-white ${BAR_TYPE}`;
 
 const CIRCLE =
-  "grid size-9 shrink-0 place-items-center rounded-full border border-white/25 transition-colors hover:border-white/60";
+  "grid size-9 shrink-0 place-items-center rounded-full border border-white/45 transition-colors hover:border-white";
 
 const ITEM =
   "px-2 text-center sm:border-l sm:border-white/25 sm:px-8 sm:first:border-l-0";
@@ -63,36 +57,59 @@ export function PlaceHeroCenter({
     (reviews && reviews.total > 0 ? 1 : 0);
   const hasMeta = metaCount >= 2;
 
-  const region = regionOf(place.slug);
-  const regionLabel =
-    region === "Khác"
-      ? place.kind === "province"
-        ? "Tỉnh"
-        : "Điểm đến"
-      : region;
-
   return (
     <PlaceHeroCanvas
       images={heroImages}
+      compact={!hasMeta && heroImages.length < 2}
       topBar={
-        <div className="flex items-center justify-between gap-4">
-          {back ? (
-            <Link
-              href={back.href}
-              className="group inline-flex items-center gap-2.5 text-white/65 transition-colors hover:text-white"
-            >
-              <span className={`${CIRCLE} group-hover:border-white/60`}>
-                <ChevronLeft
-                  className="size-[1.15rem] transition-transform group-hover:-translate-x-0.5"
-                  aria-hidden
+        // Dưới `sm` XUỐNG HAI HÀNG: đường dẫn một hàng, nút một hàng. Ở 320px
+        // cụm nút bên phải ăn gần hết bề ngang, để chung một hàng thì tên tỉnh
+        // bị `truncate` cụt còn đúng một ký tự — mà đó là mẩu tin đáng giữ nhất
+        // của hàng này trên điện thoại.
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+          {/* ĐƯỜNG DẪN THẬT, không phải một nút back cụt.
+              Tên tỉnh cha trước đây nằm thành một hàng riêng ngay trên tên điểm
+              đến — giữa ảnh, nên phải đeo ba lớp bóng đổ mới đọc được. Ở đây nó
+              về đúng chỗ của nó (CLAUDE.md: "phân cấp thể hiện qua breadcrumb"),
+              nằm trong dải trên vốn đã có scrim riêng, nên KHÔNG cần bóng.
+              Khổ hẹp bỏ chữ "Điểm đến" và dấu nối, giữ lại tỉnh cha — cấp cụ thể
+              hơn thì đáng giữ hơn; bản trước ở khổ đó chỉ còn trơ một mũi tên. */}
+          <nav
+            aria-label="Đường dẫn"
+            className="flex min-w-0 items-center gap-2.5"
+          >
+            {back && (
+              <Link
+                href={back.href}
+                className="group inline-flex shrink-0 items-center gap-2.5 text-white/85 transition-colors hover:text-white"
+              >
+                <span className={`${CIRCLE} group-hover:border-white/60`}>
+                  <ChevronLeft
+                    className="size-[1.15rem] transition-transform group-hover:-translate-x-0.5"
+                    aria-hidden
+                  />
+                </span>
+                <span className={MICRO}>{back.label}</span>
+              </Link>
+            )}
+            {place.parent && (
+              <>
+                <Glyph
+                  name="chevron-down"
+                  className="size-3.5 shrink-0 -rotate-90 text-white/45"
                 />
-              </span>
-              <span className={`${MICRO} hidden sm:inline`}>{back.label}</span>
-            </Link>
-          ) : (
-            <span />
-          )}
-          <div className="flex items-center gap-2">
+                <Link
+                  href={`/diem-den/${place.parent.slug}`}
+                  // Cấp hiện tại sáng hơn một bậc so với "Điểm đến": phân cấp
+                  // bằng ĐỘ SÁNG thay cho bóng đổ.
+                  className={`${MICRO} min-w-0 truncate text-white underline-offset-4 transition-colors hover:underline`}
+                >
+                  {place.parent.name}
+                </Link>
+              </>
+            )}
+          </nav>
+          <div className="flex items-center gap-2 self-end sm:self-auto">
             {checkIn && (
               <>
                 <PlanTripButton
@@ -120,29 +137,14 @@ export function PlaceHeroCenter({
             <ShareButton
               title={place.name}
               iconOnly
-              className={`${CIRCLE} text-white/65 hover:bg-transparent hover:text-white`}
+              className={`${CIRCLE} text-white/85 hover:bg-transparent hover:text-white`}
             />
           </div>
         </div>
       }
     >
       <div className="mx-auto w-full max-w-3xl text-center">
-        <div className="flex items-center justify-center gap-4 sm:gap-6">
-          <span aria-hidden className={RULE} />
-          {place.parent ? (
-            <Link
-              href={`/diem-den/${place.parent.slug}`}
-              className={`${KICKER} transition-colors hover:text-white`}
-            >
-              {place.parent.name}
-            </Link>
-          ) : (
-            <span className={KICKER}>{regionLabel}</span>
-          )}
-          <span aria-hidden className={RULE} />
-        </div>
-
-        <h1 className="mt-[calc(1.6rem-0.24em)] mb-[-0.16em] text-balance bg-gradient-to-b from-white from-45% to-white/30 bg-clip-text pb-[0.16em] pt-[0.24em] font-[family-name:var(--font-display)] text-[clamp(3.25rem,10vw,8.5rem)] font-extrabold leading-[0.88] tracking-[-0.045em] text-transparent">
+        <h1 className="text-balance font-[family-name:var(--font-display)] text-[clamp(3.25rem,10vw,8.5rem)] font-extrabold leading-[0.92] tracking-[-0.045em] text-white">
           {place.name}
         </h1>
 

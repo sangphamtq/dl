@@ -18,11 +18,6 @@ import { R_BADGE } from "@/lib/radius";
 
 const TILE = `group relative aspect-[3/4] w-14 cursor-pointer overflow-hidden transition-all duration-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black/50 sm:w-24 ${R_BADGE}`;
 
-const cloudPath = (radii: number[], base: number, h = 220) =>
-  `M0,${h} L0,${base} ` +
-  radii.map((r) => `a${r},${r} 0 0 1 ${2 * r},0`).join(" ") +
-  ` L1440,${h} Z`;
-
 const CONTENT_HITS = [
   "[&_a]:pointer-events-auto",
   "[&_button]:pointer-events-auto",
@@ -34,28 +29,18 @@ const CONTENT_HITS = [
 
 const FADE_DURATION = 55;
 
-const CLOUD_HAZE = cloudPath(
-  [70, 54, 62, 46, 74, 58, 50, 66, 44, 72, 56, 68],
-  92,
-);
-const CLOUD_BACK = cloudPath(
-  [52, 30, 44, 26, 58, 34, 40, 24, 50, 36, 46, 28, 54, 32, 42, 26, 48, 50],
-  108,
-);
-const CLOUD_FRONT = cloudPath(
-  [36, 48, 28, 56, 34, 44, 24, 52, 38, 30, 46, 26, 42, 32, 50, 28, 56, 50],
-  120,
-);
-
 export function PlaceHeroCanvas({
   images,
   topBar,
   children,
+  compact = false,
   intervalMs = 6500,
 }: {
   images: HeroImage[];
   topBar?: React.ReactNode;
   children: React.ReactNode;
+  /** Nơi có ít nội dung (một ảnh, chưa có số liệu) — xem chú thích ở chiều cao. */
+  compact?: boolean;
   intervalMs?: number;
 }) {
   const shots = images.slice(0, 5);
@@ -135,48 +120,23 @@ export function PlaceHeroCanvas({
           </CarouselContent>
         </Carousel>
 
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 from-10% via-black/30 via-45% to-black/10" />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/45 via-black/5 to-transparent" />
-        <svg
-          viewBox="0 0 1440 140"
-          preserveAspectRatio="none"
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-20 w-full sm:h-24 lg:h-28"
-        >
-          <defs>
-            <filter id="hero-cloud-soft" x="-5%" y="-40%" width="110%" height="180%">
-              <feGaussianBlur stdDeviation="9" />
-            </filter>
-            <filter id="hero-cloud-softer" x="-5%" y="-40%" width="110%" height="180%">
-              <feGaussianBlur stdDeviation="18" />
-            </filter>
-          </defs>
-          <path
-            d={CLOUD_HAZE}
-            filter="url(#hero-cloud-softer)"
-            className="fill-background/35"
-          />
-          <path
-            d={CLOUD_BACK}
-            filter="url(#hero-cloud-soft)"
-            className="fill-background/60"
-          />
-          <path
-            d={CLOUD_FRONT}
-            filter="url(#hero-cloud-soft)"
-            className="fill-background"
-          />
-        </svg>
+        {/* MỘT lớp phủ duy nhất, đều và nhẹ — xanh rừng rất sâu thay cho đen
+            thuần (đen rút sạch màu khỏi ảnh). Giữ đúng một lớp: chồng nhiều
+            gradient lên nhau là cách cũ làm ảnh đục. */}
+        <div className="pointer-events-none absolute inset-0 bg-[rgba(8,22,15,0.34)]" />
       </div>
 
       <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/45 via-black/15 to-transparent lg:hidden"
-      />
-
-      <div
         className={cn(
-          "pointer-events-none relative mx-auto flex h-auto min-h-[32rem] w-full max-w-7xl flex-col px-4 pb-10 pt-[calc(env(safe-area-inset-top)+0.875rem)] sm:px-6 sm:pb-14 lg:h-[100svh] lg:max-h-[58rem] lg:min-h-[38rem] lg:pb-20 lg:pt-[calc(4rem+1.25rem)]",
+                    // CHIỀU CAO CO THEO NỘI DUNG. Mặc định hero ăn trọn khung nhìn, nhưng
+          // nơi mới có một ảnh và chưa có đánh giá/lượt đến (Tà Xùa) thì không
+          // có dải ảnh nhỏ lẫn dải số liệu — ép 100svh ở đó để lại gần nửa dưới
+          // trống trơn, đọc ra như trang bị hụt nội dung chứ không phải một hero
+          // rộng rãi.
+                    "pointer-events-none relative mx-auto flex h-auto min-h-[32rem] w-full max-w-7xl flex-col px-4 pb-12 pt-[calc(env(safe-area-inset-top)+0.875rem)] sm:px-6 sm:pb-16 lg:pb-20 lg:pt-[calc(4rem+1.25rem)]",
+          compact
+            ? "lg:min-h-[34rem]"
+            : "lg:h-[100svh] lg:max-h-[58rem] lg:min-h-[38rem]",
           CONTENT_HITS,
         )}
       >
@@ -217,7 +177,11 @@ export function PlaceHeroCanvas({
                       TILE,
                       i === index
                         ? "shadow-[0_0_0_2px_var(--warm-bright)]"
-                        : "shadow-lg shadow-black/40",
+                        // Tách ô khỏi ảnh nền bằng một vòng SÁNG mảnh thay cho
+                        // bóng đen dày: từ khi hero chỉ còn một lớp phủ nhẹ,
+                        // bóng đen quanh mỗi ô cộng dồn với lớp phủ làm cả dải
+                        // ảnh xỉn hẳn so với vùng ảnh quanh nó.
+                        : "ring-1 ring-white/25 group-hover:ring-white/60",
                     )}
                   >
                     <Image
@@ -231,9 +195,11 @@ export function PlaceHeroCanvas({
                       aria-hidden
                       className={cn(
                         "absolute inset-0 bg-black transition-opacity duration-500",
+                        // 55% là mức của thời hero còn ba lớp phủ; giữ nguyên
+                        // ở nền sáng bây giờ thì ô chưa chọn thành mảng bùn.
                         i === index
                           ? "opacity-0"
-                          : "opacity-55 group-hover:opacity-25",
+                          : "opacity-30 group-hover:opacity-0",
                       )}
                     />
                   </button>
@@ -247,7 +213,7 @@ export function PlaceHeroCanvas({
                   }}
                   aria-label={`Xem tất cả ${total} ảnh`}
                   title={`Xem tất cả ${total} ảnh`}
-                  className={cn(TILE, "shadow-lg shadow-black/40")}
+                  className={cn(TILE, "ring-1 ring-white/25 hover:ring-white/60")}
                 >
                   {more ? (
                     <>
@@ -260,20 +226,27 @@ export function PlaceHeroCanvas({
                       />
                       <span
                         aria-hidden
-                        className="absolute inset-0 bg-black/60 transition-opacity duration-500 group-hover:opacity-75"
+                        className="absolute inset-0 bg-black/45 transition-opacity duration-500 group-hover:opacity-70"
                       />
                     </>
                   ) : (
                     <span
                       aria-hidden
-                      className="absolute inset-0 border border-white/30 bg-white/5 transition-colors group-hover:bg-white/15"
+                      className="absolute inset-0 border border-white/45 bg-white/10 transition-colors group-hover:bg-white/20"
                     />
                   )}
+                  {/* Chỉ in số khi CÒN ảnh chưa hiện (`+3`). Hết ảnh dư thì ô
+                      này nghĩa là "xem tất cả" — in trơ con số tổng ("5") cạnh
+                      đúng 5 ô ảnh đang bày ra thì nó đọc như một ô thứ sáu bị
+                      hỏng, không ai hiểu là nút. Số tổng vẫn có ở `aria-label`
+                      và tooltip. */}
                   <span className="relative flex h-full flex-col items-center justify-center gap-1 text-white">
                     <LayoutGrid className="size-4 shrink-0" aria-hidden />
-                    <span className="text-[0.65rem] font-semibold leading-none tabular-nums">
-                      {rest > 0 ? `+${rest}` : total}
-                    </span>
+                    {rest > 0 && (
+                      <span className="text-[0.65rem] font-semibold leading-none tabular-nums">
+                        +{rest}
+                      </span>
+                    )}
                   </span>
                 </button>
               </div>

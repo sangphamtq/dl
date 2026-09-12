@@ -6,6 +6,7 @@ import { ShareButton } from "@/components/site/share-button";
 import { CheckInButton } from "@/components/site/check-in-button";
 import { PlanTripButton } from "@/components/site/plan-trip-button";
 import { CheckInFaces, type CheckInPerson } from "@/components/site/check-in-faces";
+import { Glyph } from "@/components/site/glyphs";
 import type { PlaceStat } from "@/lib/place-meta";
 
 type PlaceHeroData = {
@@ -42,20 +43,38 @@ export function PlaceHero({
         <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-[1fr_1.4fr] lg:gap-12">
           <div>
             <div className="mb-5 flex items-center justify-between gap-3">
-              {back ? (
-                <Link
-                  href={back.href}
-                  className="group inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  <ChevronLeft
-                    className="size-4 transition-transform group-hover:-translate-x-0.5"
-                    aria-hidden
-                  />
-                  {back.label}
-                </Link>
-              ) : (
-                <span />
-              )}
+              {/* Đường dẫn thật — cùng nội dung với hero canh giữa. */}
+              <nav
+                aria-label="Đường dẫn"
+                className="flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground"
+              >
+                {back && (
+                  <Link
+                    href={back.href}
+                    className="group inline-flex shrink-0 items-center gap-1 transition-colors hover:text-foreground"
+                  >
+                    <ChevronLeft
+                      className="size-4 transition-transform group-hover:-translate-x-0.5"
+                      aria-hidden
+                    />
+                    <span className="hidden sm:inline">{back.label}</span>
+                  </Link>
+                )}
+                {place.parent && (
+                  <>
+                    <Glyph
+                      name="chevron-down"
+                      className="hidden size-3.5 shrink-0 -rotate-90 text-border sm:block"
+                    />
+                    <Link
+                      href={`/diem-den/${place.parent.slug}`}
+                      className="min-w-0 truncate underline-offset-4 transition-colors hover:text-foreground hover:underline"
+                    >
+                      {place.parent.name}
+                    </Link>
+                  </>
+                )}
+              </nav>
               <div className="flex items-center gap-2">
                 {checkIn && (
                   <CheckInButton
@@ -73,22 +92,7 @@ export function PlaceHero({
               </div>
             </div>
 
-            <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-              {place.parent ? (
-                <Link
-                  href={`/diem-den/${place.parent.slug}`}
-                  className="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-warm-bright transition-opacity hover:opacity-90 sm:text-xs"
-                >
-                  {place.parent.name}
-                </Link>
-              ) : (
-                <span className="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-warm-bright sm:text-xs">
-                  {place.kind === "province" ? "Tỉnh · Thành phố" : "Điểm đến"}
-                </span>
-              )}
-            </div>
-
-            <h1 className="mt-2 text-balance font-[family-name:var(--font-display)] text-[clamp(1.875rem,5vw,3rem)] font-normal uppercase leading-[1.1] tracking-[0.06em] text-foreground sm:tracking-[0.1em]">
+            <h1 className="text-balance font-[family-name:var(--font-display)] text-[clamp(1.875rem,5vw,3rem)] font-normal uppercase leading-[1.1] tracking-[0.06em] text-foreground sm:tracking-[0.1em]">
               {place.name}
             </h1>
             {place.tagline && (

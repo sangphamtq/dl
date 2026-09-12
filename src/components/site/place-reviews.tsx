@@ -54,6 +54,7 @@ import {
   REVIEW_HIGHLIGHTS,
   REVIEW_CAVEATS,
   stanceMeta,
+  STANCE_TEXT,
   labelsFor,
   MAX_CONTENT,
   SCORE_POS,
@@ -109,12 +110,6 @@ const STANCE_SELECTED: Record<StanceTone, string> = {
 const HL_CHIP = "bg-primary/10 text-primary";
 const CV_CHIP = "bg-warm/10 text-warm";
 
-const STANCE_TEXT: Record<StanceTone, string> = {
-  positive: "text-primary",
-  posSoft: "text-primary-ink",
-  negSoft: "text-warm",
-  negative: "text-destructive",
-};
 
 const initial = (name: string | null) =>
   (name?.trim().charAt(0) || "?").toUpperCase();
