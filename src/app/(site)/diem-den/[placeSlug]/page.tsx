@@ -350,6 +350,17 @@ export default async function PlaceDetailPage({
       : Promise.resolve([]),
   ]);
   const verifiedStays = stayFacts.filter((f) => f.isVerified).length;
+  // Ảnh cho ô "Xem tất cả": các địa điểm KẾ TIẾP sau 5 cái đã có ô, cùng thứ tự.
+  const moreSpotCovers =
+    counts.spot > place.spots.length
+      ? await prisma.spot.findMany({
+          where: { placeId: place.id, ...pub },
+          orderBy: [{ isFeatured: "desc" }, { order: "asc" }, { name: "asc" }],
+          skip: place.spots.length,
+          take: 3,
+          select: { slug: true, images: listingImages },
+        })
+      : [];
   const drinkVenues =
     counts.eatery > 0
       ? await prisma.eatery.findMany({
@@ -562,6 +573,7 @@ export default async function PlaceDetailPage({
               title="Địa điểm đáng ghé"
               count={counts.spot}
               allHref={`/diem-den/${place.slug}/dia-diem`}
+              moreImages={moreSpotCovers.map((s) => coverUrl(s.images, s.slug))}
               facts={spotFacts.map((f) => ({
                 categoryLabel: f.category
                   ? label(SPOT_CATEGORY_LABELS, f.category)

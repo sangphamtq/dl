@@ -42,7 +42,7 @@ export function PhotoBadge({
   children,
 }: {
   side?: "left" | "right";
-  tone?: "cat" | "mark" | "dark";
+  tone?: "cat" | "mark" | "dark" | "warn";
   glyph?: GlyphName;
   children: React.ReactNode;
 }) {
@@ -54,7 +54,9 @@ export function PhotoBadge({
         side === "left" ? "left-3" : "right-3",
         tone === "dark"
           ? "bg-neutral-900/85 text-[0.6875rem] font-semibold tabular-nums text-white"
-          : "bg-white/95 text-neutral-900",
+          : tone === "warn"
+            ? "bg-warm text-[0.6875rem] font-semibold text-neutral-950"
+            : "bg-white/95 text-neutral-900",
         tone === "cat" &&
           "text-[0.6rem] font-semibold uppercase tracking-[0.14em]",
         tone === "mark" && "text-[0.7rem] font-semibold",
@@ -108,9 +110,9 @@ export function FactLine({
       className={cn(
         "flex gap-1.5 text-xs",
         tone === "time"
-          ? "font-medium text-primary"
+          ? "font-medium text-primary-ink"
           : tone === "warn"
-            ? "text-warm"
+            ? "text-warm-ink"
             : "text-muted-foreground",
       )}
     >

@@ -144,6 +144,8 @@ export function SpotHero({
                   <CheckInFaces
                     people={visitors.people}
                     total={visitors.total}
+                    placeName={name}
+                    reviewsHref={reviewSummary.total > 0 ? reviewsHref : undefined}
                     dense
                   />
                 )}

@@ -208,6 +208,12 @@ export function PlaceHeroCenter({
                     people={visitors.people}
                     total={visitors.total}
                     tone="onDark"
+                    placeName={place.name}
+                    reviewsHref={
+                      reviews && reviews.total > 0
+                        ? `/diem-den/${place.slug}#danh-gia`
+                        : undefined
+                    }
                     label={`${visitors.total.toLocaleString("vi-VN")} Vivu-er`}
                     dense
                   />

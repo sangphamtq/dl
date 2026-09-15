@@ -210,6 +210,7 @@ export async function getVisitors(
       orderBy: { createdAt: "desc" },
       take,
       select: {
+        createdAt: true,
         user: {
           select: {
             id: true,
@@ -232,6 +233,7 @@ export async function getVisitors(
       name: c.user.name,
       image: c.user.image,
       stance: c.user.reviews[0]?.stance ?? null,
+      checkedAt: c.createdAt.toISOString(),
     })),
   };
 }

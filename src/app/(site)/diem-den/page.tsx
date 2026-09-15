@@ -177,7 +177,7 @@ export default async function DiemDenPage() {
           <>
             <section className="relative isolate overflow-hidden">
               <Image
-                src="/du-lich-viet-nam-2020-1.jpg"
+                src="/ta_xua_1.jpg"
                 alt=""
                 fill
                 priority

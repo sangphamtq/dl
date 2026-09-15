@@ -164,6 +164,12 @@ export function PlaceHero({
                   <CheckInFaces
                     people={visitors.people}
                     total={visitors.total}
+                    placeName={place.name}
+                    reviewsHref={
+                      reviews && reviews.total > 0
+                        ? `/diem-den/${place.slug}#danh-gia`
+                        : undefined
+                    }
                     dense
                   />
                 )}
