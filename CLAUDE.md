@@ -266,6 +266,51 @@ Trước khi dựng/chỉnh giao diện: theo **skill `design`** (`.claude/skill
 Mỗi tab **một component riêng**, dùng chung khung lọc ở **`listing-filter.tsx`**. Tab tổng quan
 là **bản xem trước** của năm tab đó, dùng chung vật liệu ở **`preview-tile.tsx`**.
 
+### Khối ngay dưới hero = **BẢNG QUYẾT ĐỊNH**, không phải lời giới thiệu
+
+`place-decision.tsx`. Hero đã trả lời "nơi này trông thế nào", năm tab dưới trả lời "có những
+gì" → chỗ ở giữa chỉ còn một việc: **chốt "có đi không"**. Dòng xếp theo **mức CHẶN quyết
+định** (đi tới → mùa → mấy ngày → vé → cảnh báo → khách nói), không theo thứ tự biên tập nhập.
+
+- **Chỉ nhận dữ liệu CÓ CẤU TRÚC**, và chỉ từ thứ trang đã truy vấn sẵn — **không thêm truy
+  vấn**. Thiếu dữ liệu thì **bỏ hẳn dòng**, không hiện ô rỗng; dưới 2 dòng thì cả khối biến mất.
+  Trang phải hỏi **`hasPlaceDecision()`** TRƯỚC, nếu không dải `Band` còn lại một khung rỗng.
+- ⚠️ **`quickInfo` (Json tự do) chỉ còn được đọc ĐÚNG HAI nhãn**: *mùa/thời điểm* và *nên đi*.
+  Mỗi nơi tự đặt một bộ nhãn khác nhau (Phan Thiết 4 ô, Tà Xùa 7 ô, **không trùng nhãn nào**)
+  nên không khối nào chịu được nếu nhận hết. Nhất là **"Phương tiện" thì BỎ** — `Transport` là
+  nguồn chân lý, và hai chỗ đã từng nói ngược nhau ("Máy bay" vs "bay Cam Ranh rồi đi xe").
+- Ngưỡng cố ý: cảnh báo chỉ hiện khi **≥ 3** địa điểm có `notice` (1–2 nơi thì ở đâu cũng có,
+  không nói lên đặc điểm điểm đến); "khách nói" cần **≥ 3** lượt đánh giá.
+- **Hình thức: CỘT DỮ KIỆN bên phải phần chữ** (kiểu trang sách hướng dẫn), nhãn cột *Trước
+  khi đi*. Ba số (đi tới · nên đi · vé) đặt cỡ lớn bằng `--font-display`, phần định tính
+  (mùa · cảnh báo · khách nói) xếp dưới. Hai bản đã thử và BỎ: ① mọi dòng cùng một cỡ chữ ⇒
+  khối không có điểm nhìn; ② ba số dàn ngang hết bề ngang trang ⇒ cách nhau quá xa nên trôi,
+  mà mép phải lại so le với khổ chữ 46rem bên dưới.
+  · Cột dữ kiện đặt **tường minh ở cột 2, trải 2 hàng**; câu mở đầu và đoạn mô tả để lưới tự
+    xếp vào cột 1 — nhờ vậy khi không tách được câu mở đầu thì đoạn mô tả vẫn lên hàng 1, và
+    dưới `lg` dữ kiện nằm **giữa** hai khối chữ chứ không rơi xuống cuối.
+  · ⚠️ Phải khai **`lg:grid-rows-[auto_1fr]`**: cột dữ kiện cao hơn tổng hai khối chữ nên nếu
+    để hàng tự chia, phần dư đội vào hàng 1 và hở một mảng giữa câu mở đầu với đoạn mô tả.
+  · ⚠️ **Số lớn phải MANG ĐƠN VỊ** để đọc được cạnh nhau (giờ · ngày · tiền). Tỉ lệ trần kiểu
+    "6/8" đứng giữa hai số kia thì không hiểu ngay — tỉ lệ lùi xuống dòng phụ.
+  · ⚠️ Khối nằm trong một **CỘT hẹp**, không phải cả bề ngang trang ⇒ cỡ chữ đo bằng
+    **`@container`**, không bằng breakpoint viewport.
+  · ⚠️ Các mẩu trong dòng phụ là **phần tử RỜI**, đừng nối thành một chuỗi nhiều dấu cách —
+    HTML gộp chúng lại thành một dấu, và "150k–290k 200 km" đọc ra thành một cụm.
+- **Không thêm ảnh vào khối này.** Nó nằm kẹp giữa dải ảnh hero và lưới mosaic; thứ giữ người
+  đọc lại đây là thông tin họ chưa biết, còn chính việc "không có ảnh" mới tạo nhịp cho trang.
+- ⚠️ **VIDEO TIKTOK Ở TRANG ĐIỂM ĐẾN ĐÃ GỠ — đừng dựng lại.** Và gỡ luôn **cả cột media bên
+  phải** (`AboutMedia` cũng đã xoá) — cột phải giờ là DỮ KIỆN. Bỏ mỗi video thì cột phải rơi về
+  ảnh, mà ảnh đó lấy cùng kho `heroImages` với lưới mosaic ngay dưới ⇒ lặp đúng tấm vừa hiện,
+  lại cao hơn cột trái ~300px thành khoảng trống chết. Lý do gỡ video: caption là của mình còn nội dung là của người khác,
+  không gì giữ hai thứ khớp nhau (seed từng gán CÙNG một videoId cho 6 điểm đến với 9 caption
+  khác nhau); clip hay là của bên bán tour nên hoá ra quảng bá miễn phí một đơn vị chưa xác
+  minh — ngược hẳn định vị "chống lừa cọc"; và iframe bên thứ ba nạp trên mọi lượt xem.
+  · **Bảng `PlaceVideo`, CMS và dữ liệu giữ NGUYÊN** — không xoá, không migration. Muốn dựng
+    lại giao diện thì lấy `place-about-video.tsx` trong git.
+  · **`SpotVideo` ở trang `/dia-diem/[slug]` thì VẪN chạy** — đây không phải quyết định bỏ
+    TikTok toàn site.
+
 - ⚠️ **`ListingView` đã XOÁ — đừng dựng lại component "danh sách chung chung"**: mỗi loại có bộ
   trường và bộ câu hỏi khác nhau; cái chung duy nhất là khung lọc, và nó đã tách ra rồi.
   Cũng đừng dựng thẻ riêng cho từng mục xem trước — đó là thứ vừa phải dọn.
@@ -276,12 +321,17 @@ là **bản xem trước** của năm tab đó, dùng chung vật liệu ở **`
 - ⚠️ **Con số trong dải phải đếm trên TOÀN BỘ danh sách, không trên mấy mục đang hiện.** Ở tab
   tổng quan có **bốn truy vấn GẦY** (`spotFacts` · `activityFacts` · `foodFacts` · `stayFacts`)
   chạy chung một `Promise.all`, truyền xuống qua prop `facts`.
+  · **Riêng mục *Địa điểm đáng ghé* KHÔNG có dải này** — đã gỡ, đừng thêm lại. `spotFacts` vẫn
+    được truy vấn nhưng giờ chỉ nuôi khối *Trước khi đi* ở đầu trang (dòng vé và dòng cảnh báo).
+  · **Thẻ địa điểm CHỈ CÒN TÊN** (ô lớn thêm một câu mô tả) — `bestTime`, loại địa điểm, huy
+    hiệu giá và huy hiệu "Lưu ý" đều đã gỡ. Lưới này giờ là ẢNH THUẦN, đừng dán gì lên nữa.
 - ⚠️ **KHÔNG in số sao lên thẻ.** `Review` là **`stance`** (love/worthOnce/meh/bad), không phải
   thang điểm. Bản cũ quy về sao: Bàu Trắng có ĐÚNG MỘT đánh giá "meh" nên thẻ hiện **"0,0"**.
   Nay hiện "3/4 khách thấy đáng đi" và **chỉ khi ≥ 3 lượt** (`MIN_REVIEWS`).
 - **Giá chỉ nói khi CÓ BÁN VÉ** — 6/8 địa điểm Phan Thiết vào tự do nên "Miễn phí" lặp sáu lần
   không phân biệt được gì. Huy hiệu dựng từ `ticketTiers`, cố ý **không rơi về `ticketInfo`**
-  (trường đó là câu văn, nhét vào huy hiệu góc ảnh thì vỡ).
+  (trường đó là câu văn, nhét vào huy hiệu góc ảnh thì vỡ). *Luật này còn hiệu lực cho các mục
+  dùng `PhotoBadge` (trải nghiệm · ăn uống · lưu trú); riêng lưới địa điểm đã bỏ hết huy hiệu.*
 - ⚠️ **`SpotSpotlight` đã gỡ hẳn, đừng dựng lại** — hero ngay trên đã là một dải ảnh tự đổi có
   play/pause, và một bản xem trước không được nặng hơn thứ nó xem trước.
 - **Ẩm thực ở tab tổng quan**: không tách quán ăn / quán nước thành hai khối; `pickVenues` giữ

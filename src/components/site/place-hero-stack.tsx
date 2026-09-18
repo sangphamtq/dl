@@ -225,8 +225,10 @@ export function PlaceHeroStack({
         <HeroLightbox
           images={images}
           index={index}
-          onIndexChange={setIndex}
-          onClose={() => setLightbox(false)}
+          onClose={(i) => {
+            setIndex(i);
+            setLightbox(false);
+          }}
         />
       )}
     </>

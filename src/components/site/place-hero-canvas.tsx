@@ -303,10 +303,10 @@ export function PlaceHeroCanvas({
         <HeroLightbox
           images={images}
           index={lbIndex}
-          onIndexChange={setLbIndex}
-          onClose={() => {
+          onClose={(i) => {
+            setLbIndex(i);
             setLightbox(false);
-            if (lbIndex < n) api?.scrollTo(lbIndex, true);
+            if (i < n) api?.scrollTo(i, true);
           }}
         />
       )}

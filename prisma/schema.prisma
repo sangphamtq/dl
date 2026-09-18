@@ -375,7 +375,7 @@ model Place {
   transports     Transport[]
 
   images       Image[]
-  videos       PlaceVideo[] // video TikTok giới thiệu (hiển thị ở hero + modal)
+  videos       PlaceVideo[] // ⚠️ KHÔNG còn hiển thị công khai (xem CLAUDE.md §3); CMS vẫn nhập được
   postRefs     PostRef[]
   threads      Thread[] // chủ đề cộng đồng gắn điểm đến này
   saleProfiles SaleProfile[] @relation("SaleAreas") // CTV phục vụ nơi này (M:N)
@@ -881,6 +881,8 @@ model Image {
 
 // Video TikTok gắn vào Place (giới thiệu điểm đến). Chỉ lưu videoId của TikTok
 // (vd 7486790456437787925) + caption; thumbnail lấy runtime qua oEmbed.
+// ⚠️ Video của ĐIỂM ĐẾN đã gỡ khỏi trang công khai — bảng, CMS và dữ liệu giữ
+// nguyên (xem CLAUDE.md §3). `SpotVideo` thì VẪN hiển thị ở trang địa điểm.
 model PlaceVideo {
   id        String   @id @default(cuid())
   placeId   String

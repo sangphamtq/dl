@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { createPortal } from "react-dom";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, X } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import {
@@ -16,52 +16,68 @@ import type { HeroImage } from "@/components/site/place-hero-stack";
 export function HeroLightbox({
   images,
   index,
-  onIndexChange,
   onClose,
 }: {
   images: HeroImage[];
   index: number;
-  onIndexChange: (i: number) => void;
-  onClose: () => void;
+  /** Nhận vị trí ảnh đang xem lúc đóng, để hero nhảy theo. */
+  onClose: (index: number) => void;
 }) {
   const [api, setApi] = useState<CarouselApi>();
   const n = images.length;
-  const active = images[index];
+
+  // Vị trí chạy CỤC BỘ trong lúc mở: đẩy ngược lên hero ngay sẽ khiến `opts`
+  // đổi giá trị ⇒ embla `reInit()` NGAY GIỮA CÚ KÉO (xem ghi chú ở `opts`).
+  const [current, setCurrent] = useState(index);
+  const active = images[current];
+
+  // ⚠️ `opts` phải GIỮ NGUYÊN GIÁ TRỊ suốt vòng đời: embla so sánh sâu options
+  // và `reInit()` khi thấy khác — reInit dựng lại engine rồi nhảy về
+  // `startIndex`, nên `startIndex` động làm cú kéo khựng/giật ngược.
+  const [startIndex] = useState(index);
+  const opts = useMemo(
+    () => ({ startIndex, loop: n > 1, watchDrag: n > 1 }),
+    [startIndex, n],
+  );
+
+  // Hero chỉ nhận vị trí mới LÚC ĐÓNG — mỗi lần hero render lại là một loạt
+  // transform 700ms chạy ngay dưới lớp phủ.
+  const close = useCallback(() => onClose(current), [current, onClose]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") close();
       if (e.key === "ArrowRight") api?.scrollNext();
       if (e.key === "ArrowLeft") api?.scrollPrev();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [api, onClose]);
+  }, [api, close]);
 
   useEffect(() => {
     if (!api) return;
-    const onSel = () => onIndexChange(api.selectedScrollSnap());
+    const onSel = () => setCurrent(api.selectedScrollSnap());
     api.on("select", onSel);
     return () => {
       api.off("select", onSel);
     };
-  }, [api, onIndexChange]);
+  }, [api]);
 
   if (typeof document === "undefined" || !active) return null;
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[60] flex flex-col bg-black/95 backdrop-blur-sm"
-      onClick={onClose}
+      className="fixed inset-0 z-[60] flex flex-col bg-black/95"
+      onClick={close}
     >
       <div className="flex items-center justify-between gap-4 px-4 py-3 sm:px-6">
         <span className="rounded-full bg-white/10 px-3 py-1 text-sm font-medium tabular-nums text-white/80">
-          {index + 1} / {n}
+          {current + 1} / {n}
         </span>
         <button
           type="button"
           aria-label="Đóng"
-          onClick={onClose}
+          onClick={close}
           className="grid size-10 place-items-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
         >
           <X className="size-5" aria-hidden />
@@ -69,11 +85,7 @@ export function HeroLightbox({
       </div>
 
       <div className="relative min-h-0 flex-1">
-        <Carousel
-          setApi={setApi}
-          opts={{ startIndex: index, loop: n > 1, watchDrag: n > 1 }}
-          className="h-full [&>div]:h-full"
-        >
+        <Carousel setApi={setApi} opts={opts} className="h-full [&>div]:h-full">
           <CarouselContent className="ml-0 h-full">
             {images.map((img, i) => (
               <CarouselItem key={i} className="h-full pl-0">
@@ -83,6 +95,7 @@ export function HeroLightbox({
                     src={img.url}
                     alt={img.alt ?? ""}
                     draggable={false}
+                    decoding="async"
                     onClick={(e) => e.stopPropagation()}
                     className="max-h-full max-w-full select-none object-contain"
                   />
@@ -138,10 +151,10 @@ export function HeroLightbox({
                     api?.scrollTo(i);
                   }}
                   aria-label={`Ảnh ${i + 1}`}
-                  aria-current={i === index ? "true" : undefined}
+                  aria-current={i === current ? "true" : undefined}
                   className={cn(
                     "relative aspect-[3/2] w-16 shrink-0 overflow-hidden rounded-md transition-all",
-                    i === index
+                    i === current
                       ? "ring-2 ring-white"
                       : "opacity-50 hover:opacity-100",
                   )}

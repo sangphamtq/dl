@@ -101,10 +101,6 @@ export const getPlaceHero = cache(async function getPlaceHero(
         take: 6,
         select: { slug: true, name: true, images: cover },
       },
-      videos: {
-        orderBy: [{ order: "asc" }, { createdAt: "asc" }],
-        select: { videoId: true, caption: true },
-      },
     },
   });
   if (!place) return null;
@@ -115,8 +111,7 @@ export const getPlaceHero = cache(async function getPlaceHero(
     place.slug,
     place.name,
   );
-  const videos = await resolveVideos(place.videos);
-  return { place, heroImages, videos };
+  return { place, heroImages };
 });
 
 export type PlaceCounts = {

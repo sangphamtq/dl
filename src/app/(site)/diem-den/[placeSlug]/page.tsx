@@ -5,9 +5,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { coverUrl } from "@/lib/place-image";
 import { cn } from "@/lib/utils";
-import { PlaceAboutVideo } from "@/components/site/place-about-video";
 import {
-  SPOT_CATEGORY_LABELS,
   ACTIVITY_CATEGORY_LABELS,
   ACCOMMODATION_CATEGORY_LABELS,
   EATERY_CATEGORY_LABELS,
@@ -29,12 +27,16 @@ import { PlaceViewTracker } from "@/components/site/place-view-tracker";
 import { PlaceHero } from "@/components/site/place-hero";
 import { PlaceHeroCenter } from "@/components/site/place-hero-center";
 import { PlaceTabs } from "@/components/site/place-tabs";
+import {
+  PlaceDecision,
+  hasPlaceDecision,
+  type DecisionInput,
+} from "@/components/site/place-decision";
 import { ReviewsSection, type ReviewListItem } from "@/components/site/place-reviews";
 import { summarizeReviews } from "@/lib/review-meta";
 import { PeerBar } from "@/components/site/peer-bar";
 import { PlainProse } from "@/components/site/plain-prose";
 import { Glyph } from "@/components/site/glyphs";
-import { ticketPriceLabel } from "@/lib/tickets";
 import { R_CARD } from "@/lib/radius";
 
 import { getDestinationPeerGroups } from "@/lib/peers";
@@ -43,7 +45,6 @@ import {
   buildPlaceTabs,
   buildPlaceStats,
   buildHeroImages,
-  resolveVideos,
   getVisitors,
 } from "@/lib/place-meta";
 import { notFoundMetadata } from "@/lib/metadata";
@@ -170,13 +171,7 @@ export default async function PlaceDetailPage({
           name: true,
           tagline: true,
           description: true,
-          category: true,
-          wardName: true,
           images: listingImages,
-          bestTime: true,
-          notice: true,
-          ticketFree: true,
-          ticketTiers: true,
         },
       },
       // Đặc sản (Specialty) KHÔNG còn được lấy: phần món ăn đã tắt hiển thị
@@ -232,10 +227,6 @@ export default async function PlaceDetailPage({
           priceTo: true,
           isRecommended: true,
         },
-      },
-      videos: {
-        orderBy: [{ order: "asc" }, { createdAt: "asc" }],
-        select: { videoId: true, caption: true },
       },
     },
   });
@@ -432,12 +423,18 @@ export default async function PlaceDetailPage({
     place.accommodations.length > 0 ||
     counts.transport > 0;
 
-  const videos = await resolveVideos(place.videos);
-
-  const quickFacts =
-    (place.quickInfo as { label: string; value: string }[] | null) ?? [];
-
   const [lede, descBody] = splitLede(place.description);
+
+  // Khối "trước khi đi" dựng từ dữ liệu đã truy vấn sẵn; nó tự ẩn khi điểm đến
+  // chưa đủ dữ kiện, nên phải biết TRƯỚC để quyết định có dựng cả dải không.
+  const decisionInput: DecisionInput = {
+    transports: place.transports,
+    spots: spotFacts,
+    reviews: isDestination ? reviewSummary : null,
+    templateDays: tripTemplates.map((t) => t._count.days),
+    quickInfo: place.quickInfo,
+  };
+  const showDecision = hasPlaceDecision(decisionInput);
 
   let bandIndex = 0;
   const tinted = () => bandIndex++ % 2 === 0;
@@ -475,69 +472,70 @@ export default async function PlaceDetailPage({
 
         <PlaceTabs items={tabs} />
 
-        {(place.description || quickFacts.length > 0 || showChildren) && (
+        {(place.description || showDecision || showChildren) && (
         <Band>
-          {(place.description || quickFacts.length > 0) && (
+          {(place.description || showDecision) && (
+            // Cột phải là DỮ KIỆN, không phải ảnh: hero ngay trên đã là dải
+            // ảnh lớn và lưới mosaic ngay dưới là 5 ảnh nữa — ảnh thứ ba ở giữa
+            // vừa thừa vừa TRÙNG (cùng kho `heroImages` với lưới bên dưới).
             <section id="doi-net" className="scroll-mt-32">
-              <div className="grid grid-cols-1 gap-8 md:grid-cols-[1fr_18rem] md:items-start md:gap-10 lg:grid-cols-[1fr_24rem] lg:gap-14">
-                <div>
-                  {lede && (
-                    <p className="max-w-[46rem] text-xl font-medium leading-relaxed text-foreground first-letter:float-left first-letter:mr-2.5 first-letter:mt-1 first-letter:text-[3.25rem] first-letter:font-semibold first-letter:leading-[0.85] sm:text-2xl sm:leading-relaxed sm:first-letter:text-[4rem]">
-                      {lede}
-                    </p>
-                  )}
-                  {descBody && (
-                    <PlainProse
-                      text={descBody}
-                      className="mt-4 max-w-[46rem] leading-7 text-muted-foreground"
-                    />
-                  )}
-                  {introPost && (
-                    <Link
-                      href={`/blog/${introPost.slug}`}
-                      className="group mt-6 flex max-w-[46rem] items-center gap-4"
-                    >
-                      <span className={cn(R_CARD, "relative size-14 shrink-0 overflow-hidden bg-muted")}>
-                        <Image
-                          src={coverUrl(
-                            introPost.images,
-                            introPost.slug,
-                            160,
-                            160,
-                          )}
-                          alt=""
-                          fill
-                          sizes="56px"
-                          className="object-cover"
-                        />
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-[0.65rem] font-semibold uppercase tracking-wide text-muted-foreground">
-                          Bài giới thiệu
-                        </span>
-                        <span className="mt-0.5 line-clamp-2 font-semibold leading-6 text-foreground decoration-primary/40 underline-offset-4 transition-colors group-hover:text-primary group-hover:underline">
-                          {introPost.title}
-                        </span>
-                      </span>
-                      <Glyph
-                        name="forward"
-                        className="size-4 shrink-0 text-muted-foreground transition-all group-hover:translate-x-0.5 group-hover:text-primary"
-                      />
-                    </Link>
-                  )}
-                </div>
-                {videos.length > 0 ? (
-                  <PlaceAboutVideo videos={videos} placeName={place.name} />
-                ) : (
-                  <AboutMedia
-                    images={heroImages}
-                    slug={place.slug}
-                    name={place.name}
-                  />
-                )}
-              </div>
+              {/* Cột dữ kiện đặt TƯỜNG MINH ở cột 2 và trải 2 hàng; câu mở đầu
+                  với đoạn mô tả tự rơi vào cột 1 theo thứ tự DOM — nhờ vậy khi
+                  không tách được câu mở đầu thì đoạn mô tả lên đúng hàng 1, và
+                  dưới `lg` dữ kiện vẫn nằm GIỮA hai khối chữ. */}
+              <div className="grid gap-y-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:grid-rows-[auto_1fr] lg:items-start lg:gap-x-14">
+              {lede && (
+                <p className="max-w-[46rem] text-balance text-xl font-medium leading-relaxed text-foreground first-letter:float-left first-letter:mr-2.5 first-letter:mt-1 first-letter:text-[3.25rem] first-letter:font-semibold first-letter:leading-[0.85] sm:text-2xl sm:leading-relaxed sm:first-letter:text-[4rem] lg:text-[1.7rem] lg:leading-[1.5]">
+                  {lede}
+                </p>
+              )}
 
-              {quickFacts.length > 0 && <QuickInfo facts={quickFacts} />}
+              {showDecision && (
+                <PlaceDecision
+                  {...decisionInput}
+                  transportHref={`/diem-den/${place.slug}/di-chuyen`}
+                  className="lg:col-start-2 lg:row-start-1 lg:row-span-2"
+                />
+              )}
+
+              <div className="min-w-0">
+              {descBody && (
+                <PlainProse
+                  text={descBody}
+                  className="max-w-[46rem] leading-7 text-muted-foreground"
+                />
+              )}
+
+              {introPost && (
+                <Link
+                  href={`/blog/${introPost.slug}`}
+                  className="group mt-6 flex max-w-[46rem] items-center gap-4"
+                >
+                  <span className={cn(R_CARD, "relative size-14 shrink-0 overflow-hidden bg-muted")}>
+                    <Image
+                      src={coverUrl(introPost.images, introPost.slug, 160, 160)}
+                      alt=""
+                      fill
+                      sizes="56px"
+                      className="object-cover"
+                    />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[0.65rem] font-semibold uppercase tracking-wide text-muted-foreground">
+                      Bài giới thiệu
+                    </span>
+                    <span className="mt-0.5 line-clamp-2 font-semibold leading-6 text-foreground decoration-primary/40 underline-offset-4 transition-colors group-hover:text-primary group-hover:underline">
+                      {introPost.title}
+                    </span>
+                  </span>
+                  <Glyph
+                    name="forward"
+                    className="size-4 shrink-0 text-muted-foreground transition-all group-hover:translate-x-0.5 group-hover:text-primary"
+                  />
+                </Link>
+              )}
+              </div>
+              </div>
             </section>
           )}
 
@@ -574,28 +572,11 @@ export default async function PlaceDetailPage({
               count={counts.spot}
               allHref={`/diem-den/${place.slug}/dia-diem`}
               moreImages={moreSpotCovers.map((s) => coverUrl(s.images, s.slug))}
-              facts={spotFacts.map((f) => ({
-                categoryLabel: f.category
-                  ? label(SPOT_CATEGORY_LABELS, f.category)
-                  : null,
-                free: f.ticketFree,
-                paid: !f.ticketFree && !!ticketPriceLabel(false, f.ticketTiers),
-                noticed: !!f.notice,
-              }))}
               spots={place.spots.map((s) => ({
                 slug: s.slug,
                 name: s.name,
                 tagline: s.tagline,
                 description: s.description,
-                categoryLabel: s.category
-                  ? label(SPOT_CATEGORY_LABELS, s.category)
-                  : null,
-                area: s.wardName ?? null,
-                bestTime: s.bestTime,
-                notice: s.notice,
-                price: s.ticketFree
-                  ? null
-                  : ticketPriceLabel(false, s.ticketTiers),
                 image: coverUrl(s.images, s.slug),
               }))}
             />
@@ -830,59 +811,5 @@ function splitLede(text: string | null): [string | null, string | null] {
   const first = m?.[1];
   if (!first || first.length < 40 || first.length > 320) return [null, text];
   return [first, text.slice(m[0].length) || null];
-}
-
-function AboutMedia({
-  images,
-  slug,
-  name,
-}: {
-  images: { url: string; alt?: string | null }[];
-  slug: string;
-  name: string;
-}) {
-  const big = images[0] ?? { url: coverUrl([], `${slug}-doi-net`, 900, 1100) };
-  const small = images[1];
-  return (
-    <div className="mx-auto w-full max-w-[15rem] space-y-3 lg:max-w-none">
-      <div className={cn(R_CARD, "relative aspect-[3/4] overflow-hidden bg-muted")}>
-        <Image
-          src={big.url}
-          alt={big.alt || name}
-          fill
-          sizes="(min-width: 1024px) 16rem, 15rem"
-          className="object-cover"
-        />
-      </div>
-      {small && (
-        <div className={cn(R_CARD, "relative aspect-[16/10] overflow-hidden bg-muted")}>
-          <Image
-            src={small.url}
-            alt={small.alt || name}
-            fill
-            sizes="(min-width: 1024px) 16rem, 15rem"
-            className="object-cover"
-          />
-        </div>
-      )}
-    </div>
-  );
-}
-
-function QuickInfo({ facts }: { facts: { label: string; value: string }[] }) {
-  return (
-    <dl className="mt-7 grid grid-cols-2 gap-x-6 gap-y-5 border-y border-border/60 py-6 md:grid-cols-4">
-      {facts.map((f, i) => (
-        <div key={i}>
-          <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {f.label}
-          </dt>
-          <dd className="mt-1.5 break-words text-sm font-medium leading-6 text-foreground">
-            {f.value}
-          </dd>
-        </div>
-      ))}
-    </dl>
-  );
 }
 

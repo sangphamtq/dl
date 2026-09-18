@@ -1,9 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Glyph } from "@/components/site/glyphs";
-import { PhotoBadge } from "@/components/site/preview-tile";
 import type { SpotPreviewItem } from "@/components/site/spot-preview";
-import { R_BADGE, R_CARD } from "@/lib/radius";
+import { R_BADGE, R_CARD, R_CTRL } from "@/lib/radius";
 import { cn } from "@/lib/utils";
 
 // Lưới 12 cột từ lg; ô "Xem tất cả" là một ô của lưới. Ô cuối và ô xem tất cả
@@ -92,7 +91,6 @@ export function SpotMosaic({
             <Tile
               key={s.slug}
               s={s}
-              index={i}
               lead={lead}
               className={cn(
                 wideSmall
@@ -118,12 +116,10 @@ export function SpotMosaic({
 
 function Tile({
   s,
-  index,
   lead,
   className,
 }: {
   s: SpotPreviewItem;
-  index: number;
   lead: boolean;
   className?: string;
 }) {
@@ -147,61 +143,29 @@ function Tile({
             ? "(min-width: 1024px) 45vw, 100vw"
             : "(min-width: 1024px) 30vw, 50vw"
         }
-        className="-z-10 object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+        className="-z-10 object-cover"
       />
-
-      {s.notice && (
-        // Ô vuông trên điện thoại (~170px) không đủ chỗ cho cả hai huy hiệu.
-        <span className={cn(s.price && !lead && "max-sm:hidden")}>
-          <PhotoBadge tone="warn" glyph="warn">
-            Lưu ý
-          </PhotoBadge>
-        </span>
-      )}
-      {s.price && (
-        <PhotoBadge side="right" tone="dark" glyph="ticket">
-          {s.price}
-        </PhotoBadge>
-      )}
 
       {/* Nhãn kính mờ thay cho lớp phủ tối trùm ảnh: ảnh giữ nguyên độ sáng,
           chữ vẫn đọc được trên mọi nền (trời trắng, cát, biển). */}
       <div
         className={cn(
-          "w-fit max-w-full rounded-[4px] bg-black/45 text-white backdrop-blur-md transition-colors duration-300 group-hover:bg-black/60",
-          lead ? "px-3.5 py-2.5 sm:px-4 sm:py-3" : "px-2.5 py-1.5 sm:px-3 sm:py-2",
+          R_CTRL,
+          "w-fit max-w-full bg-black/45 text-white ring-1 ring-inset ring-white/12 backdrop-blur-md transition-[background-color,translate] duration-300 group-hover:-translate-y-0.5 group-hover:bg-black/65 motion-reduce:transition-none",
+          lead ? "px-4 py-3 sm:px-5 sm:py-4" : "px-3 py-2 sm:px-3.5 sm:py-2.5",
         )}
       >
-        <p className="flex items-baseline gap-2">
-          <span className="shrink-0 text-[0.6rem] font-semibold tabular-nums text-white/55">
-            {String(index + 1).padStart(2, "0")}
-          </span>
-          <span
-            className={cn(
-              "min-w-0 font-[family-name:var(--font-display)] font-semibold leading-snug tracking-tight",
-              lead
-                ? "text-lg sm:text-2xl"
-                : "line-clamp-2 text-sm sm:text-base",
-            )}
-          >
-            {s.name}
-          </span>
+        <p
+          className={cn(
+            "font-[family-name:var(--font-display)] font-semibold leading-tight tracking-tight text-balance",
+            lead ? "text-xl sm:text-3xl" : "line-clamp-2 text-[0.9375rem] sm:text-lg",
+          )}
+        >
+          {s.name}
         </p>
         {lead && subline && (
-          <p className="mt-1 hidden max-w-md text-sm leading-relaxed text-white/80 sm:block">
+          <p className="mt-1.5 hidden max-w-md text-sm leading-relaxed text-white/75 sm:block">
             <span className="line-clamp-2">{subline}</span>
-          </p>
-        )}
-        {(s.bestTime || s.categoryLabel) && (
-          <p
-            className={cn(
-              "mt-0.5 flex items-center gap-1.5 truncate text-xs",
-              s.bestTime ? "font-medium text-[#b4efa8]" : "text-white/65",
-              lead ? "sm:mt-1.5" : "max-sm:hidden",
-            )}
-          >
-            {s.bestTime && <Glyph name="sunrise" className="size-3.5 shrink-0" />}
-            <span className="truncate">{s.bestTime ?? s.categoryLabel}</span>
           </p>
         )}
       </div>
@@ -217,7 +181,7 @@ const PRINTS = [
   "right-[5%] top-[24%] h-[54%] rotate-[14deg] group-hover:translate-x-4 group-hover:rotate-[22deg]",
 ];
 
-// Nền xanh rừng đậm viết thẳng mã màu: ô tối ở CẢ HAI theme.
+// Nền xanh nhạt qua token `accent` (không viết mã màu) để dark mode tự đổi.
 function AllTile({
   href,
   more,
@@ -234,7 +198,7 @@ function AllTile({
       href={href}
       className={cn(
         R_CARD,
-        "group relative isolate flex min-h-0 flex-col justify-end overflow-hidden bg-[#10231a] p-5 text-white outline-offset-2 transition-colors hover:bg-[#15301f] focus-visible:outline-2 focus-visible:outline-ring sm:p-6",
+        "group relative isolate flex min-h-0 flex-col justify-end overflow-hidden bg-[color-mix(in_oklch,var(--accent),var(--primary)_14%)] p-5 text-accent-foreground outline-offset-2 transition-colors hover:bg-[color-mix(in_oklch,var(--accent),var(--primary)_22%)] focus-visible:outline-2 focus-visible:outline-ring sm:p-6",
         className,
       )}
     >
@@ -244,7 +208,7 @@ function AllTile({
             key={src}
             className={cn(
               R_BADGE,
-              "absolute aspect-[4/5] overflow-hidden bg-white p-1 shadow-[0_14px_28px_-10px_rgba(0,0,0,0.6)] transition-[rotate,translate] duration-500 ease-out motion-reduce:transition-none",
+              "absolute aspect-[4/5] overflow-hidden bg-white p-1 shadow-[0_14px_28px_-12px_rgba(0,0,0,0.35)] transition-[rotate,translate] duration-500 ease-out motion-reduce:transition-none",
               PRINTS[i],
             )}
           >
@@ -258,7 +222,7 @@ function AllTile({
       <span className="font-[family-name:var(--font-display)] text-5xl font-semibold leading-none tabular-nums tracking-tight sm:text-6xl">
         {more > 0 ? `+${more}` : "Tất cả"}
       </span>
-      <span className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-white/85">
+      <span className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-accent-foreground/80">
         {more > 0 ? "địa điểm nữa" : "địa điểm"}
         <Glyph
           name="forward"

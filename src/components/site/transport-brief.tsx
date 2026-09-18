@@ -1,4 +1,5 @@
-import { Glyph, type GlyphName } from "@/components/site/glyphs";
+import { Glyph } from "@/components/site/glyphs";
+import { MODE_GLYPH, money } from "@/lib/transport-format";
 import { cn } from "@/lib/utils";
 
 export type TransportBriefItem = {
@@ -13,36 +14,6 @@ export type TransportBriefItem = {
   priceTo: number | null;
   isRecommended: boolean;
 };
-
-const MODE_GLYPH: Record<string, GlyphName> = {
-  car: "car",
-  taxi: "car",
-  grab: "car",
-  shuttle: "car",
-  bus: "bus",
-  train: "train",
-  plane: "plane",
-  boat: "boat",
-  motorbike: "two-wheel",
-  bike: "two-wheel",
-  cyclo: "two-wheel",
-  walk: "walk",
-  other: "navigation",
-};
-
-function money(from: number | null, to: number | null): string | null {
-  if (from == null && to == null) return null;
-  const unit = (n: number) => {
-    if (n >= 1_000_000)
-      return `${(n / 1_000_000).toFixed(1).replace(/[.,]0$/, "").replace(".", ",")}tr`;
-    if (n >= 1000) return `${Math.round(n / 1000)}k`;
-    return `${n}đ`;
-  };
-  if (from != null && to != null)
-    return from === to ? unit(from) : `${unit(from)}–${unit(to)}`;
-  if (from != null) return `từ ${unit(from)}`;
-  return `đến ${unit(to as number)}`;
-}
 
 function groupByOrigin(items: TransportBriefItem[]) {
   const out: { from: string | null; items: TransportBriefItem[] }[] = [];
