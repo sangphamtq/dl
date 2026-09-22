@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { ArrowRight, ChevronDown, Plus, RotateCcw, Trash2, X } from "@/components/icons";
+import { RotateCcw } from "@/components/icons";
+import { Glyph } from "@/components/site/glyphs";
 import { cn } from "@/lib/utils";
 import { formatVnd, initials, timeAgo } from "@/lib/format";
 import { Input } from "@/components/ui/input";
@@ -63,12 +64,12 @@ export function TripMoney({
         </strong>{" "}
         đã chi
         {alive.length > 0 && (
-          <span className="ml-3 border-l border-border pl-3 tabular-nums">
+          <span className="ms-5 tabular-nums">
             {alive.length} khoản
           </span>
         )}
         {!solo && alive.length > 0 && (
-          <span className="ml-3 border-l border-border pl-3 tabular-nums">
+          <span className="ms-5 tabular-nums">
             {formatVnd(ceilTo(total / people.length))}/người
           </span>
         )}
@@ -90,7 +91,7 @@ export function TripMoney({
             Ít lượt chuyển khoản nhất để mọi người hoà nhau. Phần chia làm tròn lên nghìn —
             người ứng tiền chịu phần lẻ, nên số phải chuyển luôn là số tròn.
           </p>
-          <ul className="mt-3 divide-y divide-border/60 border-t border-border/60">
+          <ul className="mt-3 divide-y divide-border/60">
             {owed.map((s) => (
               <li
                 key={s.fromId + s.toId}
@@ -98,7 +99,7 @@ export function TripMoney({
               >
                 <Face person={personOf(s.fromId)} />
                 <span className="min-w-0 truncate">{nameOf(s.fromId)}</span>
-                <ArrowRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                <Glyph name="forward" className="size-4 shrink-0 text-muted-foreground" />
                 <Face person={personOf(s.toId)} />
                 <span className="min-w-0 truncate">{nameOf(s.toId)}</span>
                 <strong className="ml-auto shrink-0 font-semibold tabular-nums">
@@ -127,7 +128,7 @@ export function TripMoney({
             </p>
           </div>
         ) : (
-          <ul className="mt-3 divide-y divide-border/60 border-t border-border/60">
+          <ul className="mt-3 divide-y divide-border/60">
             {alive.map((e) => (
               <li key={e.id} className="group/exp flex items-center gap-3 py-3">
                 <div className="min-w-0 flex-1">
@@ -153,9 +154,9 @@ export function TripMoney({
                   disabled={pending}
                   aria-label={`Xoá ${e.title}`}
                   title="Xoá"
-                  className="grid size-7 shrink-0 place-items-center rounded-full text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-destructive focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring group-hover/exp:opacity-100 [@media(pointer:coarse)]:opacity-100"
+                  className="grid size-7 shrink-0 place-items-center rounded-[3px] text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-destructive focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring group-hover/exp:opacity-100 [@media(pointer:coarse)]:opacity-100"
                 >
-                  <Trash2 className="size-4" aria-hidden />
+                  <Glyph name="trash" className="size-4" />
                 </button>
               </li>
             ))}
@@ -186,21 +187,20 @@ function DeletedLog({
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="flex items-center gap-2 rounded-lg py-1 text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="flex items-center gap-2 rounded-[4px] py-1 text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
-        <ChevronDown
+        <Glyph name="chevron-down"
           className={cn(
             "size-4 shrink-0 transition-transform duration-200 motion-reduce:transition-none",
             !open && "-rotate-90",
           )}
-          aria-hidden
         />
         Đã xoá
         <span className="tabular-nums text-muted-foreground/60">{removed.length}</span>
       </button>
 
       {open && (
-        <ul className="mt-2 divide-y divide-border/60 border-t border-border/60">
+        <ul className="mt-2 divide-y divide-border/60">
           {removed.map((e) => (
             <li key={e.id} className="flex items-center gap-3 py-3">
               <div className="min-w-0 flex-1">
@@ -223,7 +223,7 @@ function DeletedLog({
                 disabled={pending}
                 aria-label={`Khôi phục ${e.title}`}
                 title="Khôi phục"
-                className="grid size-7 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="grid size-7 shrink-0 place-items-center rounded-[3px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <RotateCcw className="size-4" aria-hidden />
               </button>
@@ -287,16 +287,16 @@ function ExpenseForm({
   }
 
   return (
-    <form onSubmit={submit} className="mt-5 rounded-2xl border p-3 sm:p-4">
+    <form onSubmit={submit} className="mt-5 rounded-[6px] bg-muted/40 p-3 sm:p-4">
       <div className="flex flex-wrap gap-2">
         <Input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Tiền phòng, tiền xăng, bữa tối…"
           aria-label="Tên khoản chi"
-          className="h-10 min-w-[12rem] flex-1 rounded-xl"
+          className="h-10 min-w-[12rem] flex-1 rounded-[4px]"
         />
-        <label className="flex h-10 w-36 items-center rounded-xl border border-input bg-transparent pl-3 pr-2 shadow-xs transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50">
+        <label className="flex h-10 w-36 items-center rounded-[4px] border border-input bg-transparent pl-3 pr-2 shadow-xs transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50">
           <input
             value={raw}
             onChange={(e) => setRaw(e.target.value)}
@@ -309,8 +309,8 @@ function ExpenseForm({
             .000đ
           </span>
         </label>
-        <Button type="submit" disabled={pending || !canSubmit} className="h-10 rounded-xl">
-          <Plus className="size-4" aria-hidden />
+        <Button type="submit" disabled={pending || !canSubmit} className="h-10 rounded-[4px]">
+          <Glyph name="plus" className="size-4" />
           Thêm
         </Button>
       </div>
@@ -322,7 +322,7 @@ function ExpenseForm({
             type="button"
             onClick={() => bump(d)}
             aria-label={`Cộng ${d} nghìn`}
-            className="rounded-full border border-border px-2.5 py-1 text-xs tabular-nums text-muted-foreground transition-colors hover:border-foreground/25 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="rounded-[4px] border border-border px-2.5 py-1 text-xs tabular-nums text-muted-foreground transition-colors hover:border-foreground/25 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             +{d}k
           </button>
@@ -332,9 +332,9 @@ function ExpenseForm({
             type="button"
             onClick={() => setRaw("")}
             aria-label="Xoá số tiền"
-            className="grid size-6 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="grid size-6 place-items-center rounded-[3px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <X className="size-3.5" aria-hidden />
+            <Glyph name="close" className="size-3.5" />
           </button>
         )}
         <span className="ml-auto min-h-4 text-xs tabular-nums text-muted-foreground">
@@ -372,7 +372,7 @@ function PayerPicker({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="inline-flex items-center gap-1.5 rounded-full px-2 py-1 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="inline-flex items-center gap-1.5 rounded-[4px] px-2 py-1 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Face person={cur ?? null} size="xs" />
           <span className="max-w-[8rem] truncate font-medium text-foreground">
@@ -392,7 +392,7 @@ function PayerPicker({
               setOpen(false);
             }}
             className={cn(
-              "flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-sm transition-colors hover:bg-muted",
+              "flex w-full items-center gap-2.5 rounded-[4px] px-2 py-1.5 text-left text-sm transition-colors hover:bg-muted",
               p.id === value && "bg-muted font-medium",
             )}
           >
@@ -424,7 +424,7 @@ function SharePicker({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="inline-flex items-center gap-1 rounded-full px-2 py-1 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="inline-flex items-center gap-1 rounded-[4px] px-2 py-1 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           chia cho
           <span className="font-medium text-foreground">
@@ -463,7 +463,7 @@ function SharePicker({
               }
               aria-pressed={on}
               className={cn(
-                "flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-sm transition-colors hover:bg-muted",
+                "flex w-full items-center gap-2.5 rounded-[4px] px-2 py-1.5 text-left text-sm transition-colors hover:bg-muted",
                 on && "font-medium",
               )}
             >
@@ -498,7 +498,7 @@ function QuickPick({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex-1 rounded-lg border px-2 py-1.5 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        "flex-1 rounded-[4px] border px-2 py-1.5 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         active
           ? "border-primary bg-primary/10 font-medium text-primary"
           : "border-border text-muted-foreground hover:bg-muted hover:text-foreground",

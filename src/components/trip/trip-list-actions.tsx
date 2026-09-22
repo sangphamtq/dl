@@ -3,7 +3,8 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Check, Loader2, MoreHorizontal, Pin, Plus, Trash2 } from "@/components/icons";
+import { Loader2 } from "@/components/icons";
+import { Glyph } from "@/components/site/glyphs";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -49,7 +50,7 @@ export function NewTripButton() {
       {pending ? (
         <Loader2 className="size-4 animate-spin" aria-hidden />
       ) : (
-        <Plus className="size-4" aria-hidden />
+        <Glyph name="plus" className="size-4" />
       )}
       Tạo lịch trình
     </Button>
@@ -83,7 +84,7 @@ export function TripCardMenu({
                 "absolute right-2 top-2 bg-background/85 shadow-sm backdrop-blur-sm hover:bg-background",
             )}
           >
-            <MoreHorizontal className="size-4" aria-hidden />
+            <Glyph name="more" className="size-4" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
@@ -101,9 +102,9 @@ export function TripCardMenu({
             }
           >
             {isPlanning ? (
-              <Check className="size-4" aria-hidden />
+              <Glyph name="tick" className="size-4" />
             ) : (
-              <Pin className="size-4" aria-hidden />
+              <Glyph name="pin" className="size-4" />
             )}
             {isPlanning ? "Đang lên lịch trình" : "Lên lịch trình cho chuyến này"}
           </DropdownMenuItem>
@@ -114,7 +115,7 @@ export function TripCardMenu({
               setConfirmOpen(true);
             }}
           >
-            <Trash2 className="size-4" aria-hidden />
+            <Glyph name="trash" className="size-4" />
             Xoá lịch trình
           </DropdownMenuItem>
         </DropdownMenuContent>

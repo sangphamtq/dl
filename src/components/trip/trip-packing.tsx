@@ -2,7 +2,8 @@
 
 import { useMemo, useOptimistic, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Check, ChevronDown, Plus, Trash2, User, UserPlus, Users, X } from "@/components/icons";
+import { User, UserPlus } from "@/components/icons";
+import { Glyph, type GlyphName } from "@/components/site/glyphs";
 import { cn } from "@/lib/utils";
 import { initials } from "@/lib/format";
 import { Input } from "@/components/ui/input";
@@ -93,7 +94,7 @@ export function TripPacking({
       <Section
         label="Đồ chung của nhóm"
         note="Một cái cho cả nhóm — nhớ gán ai mang"
-        icon={Users}
+        glyph="people"
         scope="group"
         items={group}
         doneCount={group.filter((i) => i.isReady).length}
@@ -102,7 +103,7 @@ export function TripPacking({
       <Section
         label="Đồ riêng của bạn"
         note="Ai cũng cần một cái. Tick ở đây chỉ mình bạn thấy"
-        icon={User}
+        glyph="people"
         scope="personal"
         grouped
         items={personal}
@@ -118,13 +119,13 @@ function StateMark({ state }: { state: PackState }) {
     <span
       aria-hidden
       className={cn(
-        "grid size-[1.125rem] shrink-0 place-items-center rounded-full border transition-colors",
+        "grid size-[1.125rem] shrink-0 place-items-center rounded-[3px] border transition-colors",
         state === "none" && "border-border",
         state === "ready" && "border-primary text-primary",
         state === "packed" && "border-primary bg-primary text-primary-foreground",
       )}
     >
-      {state !== "none" && <Check className="size-3" />}
+      {state !== "none" && <Glyph name="tick" className="size-3" />}
     </span>
   );
 }
@@ -132,7 +133,7 @@ function StateMark({ state }: { state: PackState }) {
 function Section({
   label,
   note,
-  icon: Icon,
+  glyph,
   scope,
   grouped,
   items,
@@ -144,7 +145,7 @@ function Section({
 }: {
   label: string;
   note: string;
-  icon: typeof Users;
+  glyph: GlyphName;
   scope: "group" | "personal";
   grouped?: boolean;
   items: TripPackRow[];
@@ -161,7 +162,7 @@ function Section({
     <section className="mt-9">
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <h2 className={cn(MICRO, "flex items-center gap-1.5 text-muted-foreground")}>
-          <Icon className="size-3.5 shrink-0" aria-hidden />
+          <Glyph name={glyph} className="size-3.5 shrink-0" />
           {label}
         </h2>
         {items.length > 0 && (
@@ -185,19 +186,19 @@ function Section({
                   {list.filter((i) => i.isReady).length}/{list.length}
                 </span>
               </div>
-              <ul className="mt-1 divide-y divide-border/60 border-t border-border/60">
+              <ul className="mt-1 divide-y divide-border/60">
                 {list.map((item) => (
                   <PackRow key={item.id} {...{ item, people, pending, run }} />
                 ))}
               </ul>
             </div>
           ))}
-          <div className="mt-3 border-t border-border/60">
+          <div className="mt-3">
             <AddRow scope={scope} tripId={tripId} draft={draft} setDraft={setDraft} run={run} />
           </div>
         </div>
       ) : (
-        <ul className="mt-3 divide-y divide-border/60 border-t border-border/60">
+        <ul className="mt-3 divide-y divide-border/60">
           {items.map((item) => (
             <PackRow key={item.id} {...{ item, people, pending, run }} />
           ))}
@@ -244,7 +245,7 @@ function AddRow({
         }}
         className="flex items-center gap-3 py-1.5"
       >
-        <Plus className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+        <Glyph name="plus" className="size-4 shrink-0 text-muted-foreground" />
         <Input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -290,7 +291,7 @@ function PackRow({
           STATE_LABEL[state === "none" ? "ready" : state === "ready" ? "packed" : "none"]
         }`}
         title={STATE_LABEL[state]}
-        className="shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="shrink-0 rounded-[3px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <StateMark state={state} />
       </button>
@@ -324,7 +325,7 @@ function PackRow({
           }
           disabled={pending}
         >
-          {item.scope === "group" ? <User className="size-4" /> : <Users className="size-4" />}
+          {item.scope === "group" ? <User className="size-4" /> : <Glyph name="people" className="size-4" />}
         </IconBtn>
         <IconBtn
           label={`Xoá ${item.name}`}
@@ -332,7 +333,7 @@ function PackRow({
           onClick={() => run(() => deletePackItem(item.id))}
           disabled={pending}
         >
-          <Trash2 className="size-4" />
+          <Glyph name="trash" className="size-4" />
         </IconBtn>
       </span>
     </li>
@@ -360,7 +361,7 @@ function IconBtn({
       aria-label={label}
       title={label}
       className={cn(
-        "grid size-7 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        "grid size-7 place-items-center rounded-[3px] text-muted-foreground transition-colors hover:bg-muted focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         danger ? "hover:text-destructive" : "hover:text-foreground",
       )}
     >
@@ -397,7 +398,7 @@ function AssigneePicker({
           disabled={pending}
           aria-label={item.assignee ? `Đổi người mang ${item.name}` : `Chọn người mang ${item.name}`}
           className={cn(
-            "flex shrink-0 items-center gap-1.5 rounded-full px-2 py-1 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            "flex shrink-0 items-center gap-1.5 rounded-[4px] px-2 py-1 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
             item.assignee
               ? "text-muted-foreground hover:bg-muted"
               : "bg-warm/10 text-warm hover:bg-warm/20",
@@ -430,7 +431,7 @@ function AssigneePicker({
             type="button"
             onClick={() => pick(p.id)}
             className={cn(
-              "flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-sm transition-colors hover:bg-muted",
+              "flex w-full items-center gap-2.5 rounded-[4px] px-2 py-1.5 text-left text-sm transition-colors hover:bg-muted",
               item.assignee?.id === p.id && "bg-muted font-medium",
             )}
           >
@@ -445,9 +446,9 @@ function AssigneePicker({
           <button
             type="button"
             onClick={() => pick(null)}
-            className="mt-1 flex w-full items-center gap-2.5 rounded-lg border-t px-2 py-1.5 pt-2.5 text-left text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="mt-1 flex w-full items-center gap-2.5 rounded-[4px] px-2 py-1.5 pt-2.5 text-left text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
-            <X className="size-4 shrink-0" aria-hidden />
+            <Glyph name="close" className="size-4 shrink-0" />
             Bỏ gán
           </button>
         )}
@@ -502,19 +503,19 @@ export function PackSuggestions({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="sticky top-0 z-10 border-b bg-background px-3 py-2.5">
+      <div className="sticky top-0 z-10 bg-muted/40 px-3 py-2.5 backdrop-blur">
         <div className="flex items-center gap-1.5">
           <span className="shrink-0 text-xs text-muted-foreground">Thêm vào</span>
           <ScopeButton
             active={scope === "personal"}
             onClick={() => setScope("personal")}
-            icon={User}
+            glyph="people"
             label="Đồ riêng"
           />
           <ScopeButton
             active={scope === "group"}
             onClick={() => setScope("group")}
-            icon={Users}
+            glyph="people"
             label="Đồ chung"
           />
         </div>
@@ -539,12 +540,12 @@ export function PackSuggestions({
 function ScopeButton({
   active,
   onClick,
-  icon: Icon,
+  glyph,
   label,
 }: {
   active: boolean;
   onClick: () => void;
-  icon: typeof Users;
+  glyph: GlyphName;
   label: string;
 }) {
   return (
@@ -553,11 +554,11 @@ function ScopeButton({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        "inline-flex items-center gap-1.5 rounded-[4px] px-2.5 py-1 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         active ? "bg-foreground font-medium text-background" : "text-muted-foreground hover:bg-muted",
       )}
     >
-      <Icon className="size-3.5 shrink-0" aria-hidden />
+      <Glyph name={glyph} className="size-3.5 shrink-0" />
       {label}
     </button>
   );
@@ -578,19 +579,18 @@ function Group({
   const added = group.items.filter((i) => has(i)).length;
 
   return (
-    <section className="border-b border-border/60 last:border-b-0">
+    <section>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="flex w-full items-center gap-2 rounded-lg px-1 py-2 text-left transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="flex w-full items-center gap-2 rounded-[4px] px-1 py-2 text-left transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
-        <ChevronDown
+        <Glyph name="chevron-down"
           className={cn(
             "size-4 shrink-0 text-muted-foreground transition-transform duration-200 motion-reduce:transition-none",
             !open && "-rotate-90",
           )}
-          aria-hidden
         />
         <span className={cn(MICRO, "min-w-0 flex-1 truncate text-muted-foreground")}>
           {group.label}
@@ -623,18 +623,18 @@ function Group({
                   tabIndex={open ? 0 : -1}
                   onClick={() => onClick(name)}
                   className={cn(
-                    "flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    "flex w-full items-center gap-2.5 rounded-[4px] px-2 py-1.5 text-left text-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                     on && "text-muted-foreground",
                   )}
                 >
                   <span
                     aria-hidden
                     className={cn(
-                      "grid size-[1.125rem] shrink-0 place-items-center rounded-full border transition-colors",
+                      "grid size-[1.125rem] shrink-0 place-items-center rounded-[3px] border transition-colors",
                       on ? "border-primary bg-primary text-primary-foreground" : "border-border",
                     )}
                   >
-                    {on && <Check className="size-3" />}
+                    {on && <Glyph name="tick" className="size-3" />}
                   </span>
                   <span className="min-w-0 flex-1">{name}</span>
                   {on && <span className="shrink-0 text-xs">bỏ ra</span>}

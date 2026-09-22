@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ChevronDown } from "@/components/icons";
+import { Glyph } from "@/components/site/glyphs";
 import { cn } from "@/lib/utils";
 import { R_CTRL } from "@/lib/radius";
 import { TRIP_SORTS, type TripSortKey } from "@/lib/trip-template-sort";
@@ -72,9 +72,8 @@ export function TripControls({
             )}
           >
             {current.label}
-            <ChevronDown
+            <Glyph name="chevron-down"
               className="size-3.5 shrink-0 text-muted-foreground"
-              aria-hidden
             />
           </button>
         </DropdownMenuTrigger>

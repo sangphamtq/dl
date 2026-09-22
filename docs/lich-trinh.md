@@ -129,7 +129,7 @@ Phải sửa kèm:
 | `/lich-trinh/[slug]` | **Công khai** — một lịch trình mẫu | ✅ index, SEO chính |
 | `/lich-trinh/cua-toi` | Chủ sở hữu — danh sách chuyến của tôi | noindex |
 | `/lich-trinh/cua-toi/[id]` | Chủ sở hữu — **trình soạn** | noindex |
-| `/lich-trinh/cua-toi/[id]/[muc]` | Chủ sở hữu — ghi chú · đồ · chi phí | noindex |
+| `/lich-trinh/cua-toi/[id]/[muc]` | Chủ sở hữu — bản đồ · ghi chú · đồ · chi phí | noindex |
 | `/lich-trinh/s/[shareId]` | Ai có link — **chỉ đọc** | noindex |
 
 **Vì sao sắp lại (bản đầu để mọi thứ phẳng dưới `/lich-trinh`):** trang `/lich-trinh` khi
@@ -235,27 +235,61 @@ Có thể thêm sau: `Eatery.meals[]` không khớp bữa tại giờ dự kiế
 **Hiệu năng:** fetch **một ma trận thời gian cho cả ngày** rồi tính lại giờ **ở client**
 khi kéo thả. Đừng gọi lại API mỗi lần đổi thứ tự.
 
-## 6. Bố cục — BA CỘT TRÀN VIỀN
+## 6. Bố cục — HAI CỘT TRONG MỘT CONTAINER, BẢN ĐỒ LÀ MỘT MỤC
 
 Dùng chung cho **cả ba** trang (soạn · bản chia sẻ · lịch trình mẫu) qua
 `components/trip/trip-shell.tsx`. Ba trang là anh em — người dùng bấm "Dùng lịch trình
 này" là đi thẳng từ trang mẫu sang trang soạn, nên khung lệch nhau lộ ngay.
 
 ```
-┌ header TRÀN VIỀN: tên · ngày đi · số người · chia sẻ ─────────────────┐
-├────────────┬────────────────────────────┬─────────────────────────────┤
-│ Chưa xếp 4 │ [Ngày1][Ngày2 ●]   👁 Hiển │                             │
-│          « │                            │  BẢN ĐỒ của NGÀY ĐANG CHỌN  │
-│ □ Hòn Rơm  │ Ngày 2  T7 12/9  🌅 4:30 → │      ②────①                 │
-│ □ Làng chài│  ① 4:30  Đồi cát bay       │       │      ○ ← chấm mờ:   │
-│ □ Suối Tiên│     ↓ 12 phút di chuyển    │      ③       mục chưa xếp   │
-│ + tự thêm  │  ② 6:00  Bàu Trắng         │                             │
-└────────────┴────────────────────────────┴─────────────────────────────┘
-   14rem · thu gọn được thành thanh 2.75rem
+MỤC "LỊCH TRÌNH"                        MỤC "BẢN ĐỒ"
+┌ header: tên · ngày đi · số người ───┐  ┌────────────┬──────────────────────┐
+├──────────┬──────────────────────────┤  │ Lịch trình │ [Ngày1][Ngày2 ●]     │
+│ Lịch trình●│ [Ngày1][Ngày2 ●] 👁 Hiển│  │ Bản đồ   ● │ ┌──────────────────┐ │
+│ Bản đồ   │ Ngày 2  T7 12/9 🌅4:30 → │  │ Ghi chú    │ │   ②────①         │ │
+│ Ghi chú  │  ① 4:30  Đồi cát bay     │  │ Đồ mang theo│ │    │   ○ ← chấm mờ│ │
+│ Đồ mang  │     ↓ 12 phút di chuyển  │  │ Chi phí    │ │   ③              │ │
+│ Chi phí  │  ② 6:00  Bàu Trắng       │  │            │ └──────────────────┘ │
+│          │                          │  └────────────┴──────────────────────┘
+│ Chưa xếp4│  (cột đọc, max-w-3xl)    │      bản đồ chiếm TRỌN cột giữa
+│ □ Hòn Rơm│                          │
+└──────────┴──────────────────────────┘
+  13rem · thu gọn được thành thanh 2.5rem
 ```
 
-- **KHÔNG giới hạn bề ngang.** Vỏ `(site)` vốn không chặn; giới hạn cũ (`max-w-7xl`) nằm
-  ngay trong hai component lịch trình, đã bỏ.
+- **Cả khung nằm trong container `max-w-7xl`** (`SHELL` ở `trip-shell.tsx`). Bản tràn viền
+  đã bỏ: trên màn hình rộng nó kéo bản đồ ra tới mép phải trong khi cột chữ đứng lệch hẳn
+  về trái, và không trang nào khác của site làm vậy. Header nằm TRONG container luôn — kể
+  cả header ảnh của trang mẫu/bản chia sẻ — để mép ảnh thẳng hàng với ba cột ngay dưới.
+- ⚠️ **Ngăn vùng bằng NỀN, ngăn hàng bằng NÉT — và chỉ thế.** Hai bản đã sai về hai phía,
+  ghi lại để khỏi đi lại:
+  ① Bản tràn viền kẻ nét ở mọi mép (khung · đáy header · `border-r` cột trái · `border-l`
+  cột phải · thanh chọn khung nhìn · mỗi ngày · mỗi hàng chưa xếp). Hồi tràn viền những nét
+  đó còn là mép màn hình; vào container chúng thành một cái lưới bảng tính.
+  ② Bản gỡ sạch nét thì cột trái hoá ra một dải chữ trôi cạnh cột giữa, và các ngày chỉ còn
+  cách nhau bằng khoảng trắng nên đọc thành một mạch dài.
+  ✅ Cách đang dùng:
+  · **Cột trái và bảng công cụ là KHỐI NỀN** `rounded-[6px] bg-muted/40` (hằng `PANEL`), ôm
+    sát nội dung bằng `lg:self-start` — kéo dài 100dvh thì ở mấy mục chỉ có 5 hàng nav nó
+    đọc ra như trang lỗi. Cột rộng **14rem**: 13rem không đủ cho ảnh + tên + hai nút.
+  · **Mục chưa xếp ngày là HÀNG THƯỜNG trên nền bảng** (ảnh 40px · tên tối đa 2 dòng · nút
+    "xếp vào ngày" neo mép phải), ngăn nhau bằng `divide-y`. Bản "mỗi mục một ô TRẮNG" đã bỏ:
+    ⚠️ `ul` để `grid` thì mỗi ô mặc định `min-width: auto` nên hàng KHÔNG co được — ô nền
+    tràn khỏi mép bảng và mỗi hàng thò ra một kiểu. Danh sách thường + nét ngăn vừa hết lỗi
+    vừa canh thẳng hàng với tiêu đề khối.
+  · Dưới `lg`, dải mục trong cột trái **ẩn đi** — viên chọn mục trên header đã làm đúng việc
+    đó rồi.
+  · **Bản đồ** là khối `R_CARD` + `overflow-hidden`.
+  · Nét chỉ còn **ba chỗ có việc**: đáy header trang, đáy dải chọn ngày (thanh dính thì phải
+    có mép — cùng khuôn `PlaceTabs`), và nét ngăn **giữa hai ngày**. Cộng thêm gạch chân mục
+    đang chọn, nét ngăn giữa các HÀNG trong danh sách, viền của thứ bấm được, và khung nét
+    đứt của ô rỗng.
+  · Mọi mục đều bó cột giữa `lg:max-w-3xl` — kể cả dòng thời gian. Không bó thì tên mục
+    nằm mép trái còn giờ kết thúc ngày văng sang mép phải cách đó gần 700px.
+- **Icon lấy từ `components/site/glyphs.tsx`** (SVG tự vẽ, khung 24 nét 1.8) chứ không phải
+  `@/components/icons` (Material) — xem `CLAUDE.md` §3. Bộ glyph được bổ sung cho phần này:
+  `note` · `bag` · `people` · `mountain` · `compass` · `more` · `info` · `grip` · `trash`.
+  `TripSection.glyph` giữ **tên glyph** (chuỗi), không giữ component icon.
 - **"Chưa xếp ngày" là cột trái HẸP (14rem) và THU GỌN ĐƯỢC** thành thanh dọc 2.75rem
   (icon + số đếm). Bốn lần thử, ghi lại để khỏi lặp:
   1. Khối gập dưới đáy cột lịch trình → phải cuộn qua hết mọi ngày mới tới.
@@ -283,6 +317,16 @@ này" là đi thẳng từ trang mẫu sang trang soạn, nên khung lệch nhau
   Viên ngày có **chấm đỏ** khi ngày đó có mục chưa mở cửa.
 - **Các ngày render HẾT** ở cột giữa, không phải một-ngày-một-lần: chuyến nhiều ngày thì
   phải nhìn toàn cảnh mới xếp được. Dải chỉ lo phần "bản đồ đang vẽ ngày nào".
+- **Bản đồ là MỘT MỤC riêng** (`/lich-trinh/cua-toi/[id]/ban-do`, token `ban-do` trong
+  `lib/trip-sections.ts`), không còn là cột phải. Trong container `max-w-7xl`, cột phải chỉ
+  còn ~400px — hẹp hơn cả bản điện thoại và không đọc nổi tuyến; thành mục riêng thì bản đồ
+  lấy trọn cột giữa (~1040px × 830px ở 1280). Đổi lại: không vừa xếp vừa nhìn tuyến được
+  nữa, bù bằng dải chọn ngày đặt ngay trên bản đồ.
+  · ⚠️ **Bản đồ phải dựng CÓ ĐIỀU KIỆN** (`{tab === "ban-do" && …}`), đừng nhét sẵn vào một
+    `div` `hidden` như mấy mục kia: Leaflet đo khung lúc khởi tạo, nằm trong `display:none`
+    thì nó dựng ở 0×0 rồi giữ nguyên kích thước đó khi hiện ra.
+  · Trang mẫu / bản chia sẻ (`trip-view.tsx`) **vẫn dùng cột bản đồ** — chúng không có dải
+    mục để chứa một màn riêng. Prop `map` của `TripShell` giữ lại cho hai trang đó.
 - **Bản đồ chỉ vẽ MỘT ngày.** Vẽ cả chuyến 4 ngày thành mớ bòng bong.
 - **Dưới `lg`**: ba cột không nhét vừa → **ba phần chia đều cả bề ngang**
   (Lịch trình · Chưa xếp ngày · Bản đồ). Không có chuyện thu gọn ở khổ này — ở đó nó là một
@@ -302,7 +346,7 @@ không phải "thiếu đẹp" mà là **không dùng ngôn ngữ vốn có củ
 
 | Lỗi ở bản đầu | Vì sao sai | Đã sửa thành |
 |---|---|---|
-| Dải `from-sky-100/70 to-background` làm header cả ba trang | Không nói gì, chỉ tô màu — dán vào trang nào cũng vừa | Trang công khai: **ảnh bìa tràn viền + tên bằng font display**. Trang soạn: bỏ hẳn nền, phân cấp bằng **chữ** (eyebrow micro cam + display + vạch dọc ngăn dữ kiện) |
+| Dải `from-sky-100/70 to-background` làm header cả ba trang | Không nói gì, chỉ tô màu — dán vào trang nào cũng vừa | Trang công khai: **ảnh bìa tràn viền + tên bằng font display**. Trang soạn: bỏ hẳn nền, phân cấp bằng **chữ** (eyebrow micro + tên bằng font display + dữ kiện ngăn bằng khoảng trắng) |
 | Ngày = thẻ bo góc có viền + bóng; trong đó mỗi mục lại là một ô | Bốn tầng hộp lồng nhau, không tầng nào thêm nghĩa. `CLAUDE.md` đã chốt ở popup Quán ăn: **"chỉ thẻ BẤM ĐƯỢC mới có viền"** | Ngày ngăn nhau bằng **hairline + khoảng trống**; mục không có hộp. Hình khối duy nhất còn lại là **ảnh nhỏ** |
 | Dòng thời gian không phải dòng thời gian: ô giờ, chấm số, thẻ, rồi một vạch dọc cụt cho chặng đi | Không có gì nối các mốc lại; chặng đi đứng ngang hàng với điểm dừng dù nó là *khoảng cách giữa* hai điểm | **Một đường 1px chạy suốt**, mốc giờ treo trên đó, chữ chặng đi nằm **trên ray** giữa hai mốc |
 | Dải chọn ngày = viên bo góc có viền; chuyển khung nhìn mobile = segmented pill | `place-tabs.tsx` ghi rõ: *"Đã thử và bỏ: viên nền cho mục đang mở (thành mấy mảng màu xếp ngang, giống thanh bộ lọc của app thương mại điện tử)"* — tôi dựng lại đúng thứ đã bị bỏ | **Chữ + gạch chân cam** (dải ngày) và **icon tô cam + chữ đậm** (chuyển khung nhìn) |
@@ -402,10 +446,9 @@ Bản đầu chỉ lấy **nút tròn đánh số** làm tay cầm, không kèm 
 con trỏ khi rê trúng, còn cảm ứng thì **không có tín hiệu gì**. Tối giản đến mức **giấu mất
 tính năng** thì không phải tối giản. Hiện tại:
 
-- **Nút grip nhìn thấy được** (`GripVertical` = `drag-indicator` của Material Symbols, thêm
-  qua `scripts/build-icons.mjs` — **KHÔNG sửa tay `icons.tsx`**) là tay cầm chính, và là tay
-  cầm cho **bàn phím** (nhận `attributes` + `listeners`). Hiện theo luật của hàng nút thao
-  tác: rê chuột / tab tới mới hiện, máy cảm ứng thì luôn hiện.
+- **Nút grip nhìn thấy được** (glyph `grip` ở `components/site/glyphs.tsx` — sáu chấm) là tay
+  cầm chính, và là tay cầm cho **bàn phím** (nhận `attributes` + `listeners`). Hiện theo luật
+  của hàng nút thao tác: rê chuột / tab tới mới hiện, máy cảm ứng thì luôn hiện.
   ⚠️ Đừng thay bằng `ChevronsUpDown` — trong codebase này nó là icon của combobox.
 - **Tay cầm phụ**: nút tròn đánh số (dòng thời gian) và ảnh nhỏ (cột Chưa xếp ngày), chỉ
   nhận `listeners` — không nhận `attributes` để bàn phím chỉ gặp MỘT tab stop.
@@ -870,7 +913,7 @@ dài, vắt qua nhiều ngày và nhiều tỉnh**.
 | Trang | `src/app/(site)/lich-trinh/{page,[slug],cua-toi/page,cua-toi/[id],s/[shareId]}` | Danh sách mẫu (công khai) · một mẫu · chuyến của tôi · trình soạn · bản chia sẻ |
 | Kéo–thả | `src/components/trip/trip-dnd.ts` | Bàn id theo vùng + `applyMove` (§6c) · kiểm bằng `pnpm check:trip-dnd` |
 | Mục của chuyến | `src/lib/trip-sections.ts` · `trip-side-nav.tsx` · `trip-topbar.tsx` · `trip-soon.tsx` · `[id]/[muc]/page.tsx` | Sidebar 5 mục + route. **Ghi chú** · **Đồ mang theo** · **Chi phí** đã dựng (`trip-notes/packing/money.tsx`). Mục *Phân công* đã **bỏ hẳn** — xem [lich-trinh-cong-cu-nhom.md](lich-trinh-cong-cu-nhom.md) |
-| Vỏ chung | `src/components/trip/trip-shell.tsx` · `trip-day-strip.tsx` · **`trip-rail.tsx`** | Khung BA CỘT tràn viền · dải chọn ngày · **dòng thời gian dạng ray** — dùng chung cả ba trang (§6a) |
+| Vỏ chung | `src/components/trip/trip-shell.tsx` · `trip-day-strip.tsx` · **`trip-rail.tsx`** | Khung BA CỘT trong container `max-w-7xl` · dải chọn ngày · **dòng thời gian dạng ray** — dùng chung cả ba trang (§6a) |
 | UI soạn | `src/components/trip/trip-editor.tsx` | Dòng thời gian, cột Chưa xếp ngày, đổi thứ tự, sửa thời gian ở lại |
 | UI đọc | `src/components/trip/trip-view.tsx` | Bản chỉ đọc dùng cho chia sẻ + mẫu |
 | Bản đồ | `src/components/trip/trip-map{,-inner}.tsx` | Pin **đánh số theo thứ tự** + tuyến của MỘT ngày |

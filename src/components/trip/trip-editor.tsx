@@ -4,15 +4,9 @@ import { Fragment, useEffect, useState, useTransition, type ReactNode } from "re
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
-import {
-  GripVertical,
-  Clock,
-  Loader2,
-  MoreHorizontal,
-  Plus,
-  Sunrise,
-  Trash2,
-} from "@/components/icons";
+import { Loader2 } from "@/components/icons";
+import { Glyph } from "@/components/site/glyphs";
+import { R_CARD } from "@/lib/radius";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -234,7 +228,7 @@ export function TripEditor({
             aside: (
           <>
             {backlog.length === 0 ? (
-              <div className="rounded-xl border border-dashed px-3 py-6 text-center">
+              <div className="rounded-[6px] border border-dashed px-3 py-6 text-center">
                 <p className="text-sm leading-relaxed text-muted-foreground">
                   Chưa có mục nào chờ xếp. Bấm{" "}
                   <strong className="font-medium text-foreground">Thêm vào lịch trình</strong> ở
@@ -277,8 +271,11 @@ export function TripEditor({
           })}
         main={
           <>
-          <div className={tab === null ? undefined : "hidden"}>
-            <div className="sticky top-0 z-20 -mx-4 flex items-center gap-3 border-b bg-background/90 px-4 pt-2 backdrop-blur sm:-mx-6 sm:px-6">
+          {/* Dòng thời gian là CỘT ĐỌC, không phải bảng: bỏ cột bản đồ ra rồi
+              mà để tự do thì tên mục nằm mép trái còn giờ kết thúc ngày văng
+              sang mép phải cách đó cả 700px. */}
+          <div className={cn("lg:max-w-3xl", tab === null ? undefined : "hidden")}>
+            <div className="sticky top-0 z-20 flex items-center gap-3 border-b border-border/60 bg-background pb-1 pt-1">
               <div className="min-w-0 flex-1">
                 <TripDayStrip days={days} activeId={activeDay?.id ?? null} onPick={pickDay} />
               </div>
@@ -309,21 +306,76 @@ export function TripEditor({
                 variant="outline"
                 onClick={() => run(() => addDay(trip.id))}
                 disabled={pending}
-                className="mt-2 w-full rounded-xl border-dashed"
+                className="mt-2 w-full rounded-[4px] border-dashed"
               >
-                <Plus className="size-4" aria-hidden />
+                <Glyph name="plus" className="size-4" />
                 Thêm ngày {days.length + 1}
               </Button>
             </div>
           </div>
 
-          <div className={tab === "ghi-chu" ? undefined : "hidden"}>
+          {/* ⚠️ Bản đồ dựng CÓ ĐIỀU KIỆN, không nấp trong `hidden` như mấy mục
+              kia: Leaflet đo khung lúc khởi tạo, nằm trong `display:none` thì
+              nó dựng ở 0×0 rồi ở luôn kích thước đó khi hiện ra. */}
+          {tab === "ban-do" && (
+            <div>
+              <div className="flex items-center gap-3">
+                <div className="min-w-0 flex-1">
+                  <TripDayStrip
+                    days={days}
+                    activeId={activeDay?.id ?? null}
+                    onPick={pickDay}
+                  />
+                </div>
+              </div>
+
+              <div
+                className={cn(
+                  R_CARD,
+                  "mt-4 overflow-hidden bg-muted",
+                  "h-[min(calc(100dvh-13rem),46rem)] min-h-[26rem]",
+                )}
+              >
+                <TripMap
+                  key={activeDay?.id ?? "empty"}
+                  dayLabel={activeDay ? `Ngày ${activeDay.index + 1}` : ""}
+                  ghosts={backlog
+                    .filter((i) => i.lat != null && i.lng != null)
+                    .map((i) => ({
+                      id: i.id,
+                      name: i.name,
+                      lat: i.lat as number,
+                      lng: i.lng as number,
+                    }))}
+                  points={(activeDay?.items ?? [])
+                    .filter((i) => i.lat != null && i.lng != null)
+                    .map((i, idx) => ({
+                      id: i.id,
+                      order: idx + 1,
+                      name: i.name,
+                      kind: i.kind,
+                      lat: i.lat as number,
+                      lng: i.lng as number,
+                    }))}
+                />
+              </div>
+
+              <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+                Bản đồ vẽ <strong className="font-medium text-foreground">một ngày</strong> —
+                chọn ngày ở dải trên. Vòng tròn nét đứt là mục chưa xếp ngày nhưng có toạ độ.
+              </p>
+            </div>
+          )}
+
+          {/* Mục chỉ có CHỮ: bó bề ngang cho dễ đọc — không có cột phải nào
+              chặn nên để tự do là dòng dài cả nghìn pixel. */}
+          <div className={cn("lg:max-w-3xl", tab === "ghi-chu" ? undefined : "hidden")}>
             <TripNotes tripId={trip.id} notes={notes} />
           </div>
           <div className={tab === "do-mang-theo" ? undefined : "hidden"}>
             <TripPacking tripId={trip.id} items={packing} people={trip.people} />
           </div>
-          <div className={tab === "chi-phi" ? undefined : "hidden"}>
+          <div className={cn("lg:max-w-3xl", tab === "chi-phi" ? undefined : "hidden")}>
             <TripMoney
               tripId={trip.id}
               expenses={expenses}
@@ -333,34 +385,11 @@ export function TripEditor({
           </div>
           </>
         }
-        {...(tab !== null
-          ? {}
-          : {
-              map: (
-          <TripMap
-            key={activeDay?.id ?? "empty"}
-            dayLabel={activeDay ? `Ngày ${activeDay.index + 1}` : ""}
-            ghosts={backlog
-              .filter((i) => i.lat != null && i.lng != null)
-              .map((i) => ({ id: i.id, name: i.name, lat: i.lat as number, lng: i.lng as number }))}
-            points={(activeDay?.items ?? [])
-              .filter((i) => i.lat != null && i.lng != null)
-              .map((i, idx) => ({
-                id: i.id,
-                order: idx + 1,
-                name: i.name,
-                kind: i.kind,
-                lat: i.lat as number,
-                lng: i.lng as number,
-              }))}
-          />
-              ),
-            })}
       />
 
       <DragOverlay dropAnimation={null}>
         {activeItem ? (
-          <div className="flex items-center gap-3 rounded-xl border bg-card px-3 py-2 shadow-lg shadow-black/10">
+          <div className="flex items-center gap-3 rounded-[6px] bg-card px-3 py-2 shadow-lg shadow-black/10">
             <Thumb item={activeItem} size="sm" />
             <span className="max-w-[16rem] truncate text-sm font-medium">
               {activeItem.name}
@@ -390,8 +419,8 @@ function BacklogList({
       <ul
         ref={setNodeRef}
         className={cn(
-          "-mx-2 min-h-[3rem] rounded-xl px-2 transition-colors",
-          isOver && "bg-primary/5 ring-1 ring-primary/20",
+          "-mx-1.5 min-h-[3rem] divide-y divide-border/50 rounded-[4px] px-1.5 transition-colors",
+          isOver && "bg-primary/10",
         )}
       >
         {ids.map((id) => {
@@ -422,7 +451,7 @@ function BacklogRow({
       ref={setNodeRef}
       style={{ transform: CSS.Translate.toString(transform), transition }}
       className={cn(
-        "group flex items-center gap-2 border-b border-border/60 py-2.5 last:border-b-0",
+        "group flex min-w-0 items-center gap-2.5 py-2",
         isDragging && "opacity-40",
       )}
     >
@@ -434,7 +463,9 @@ function BacklogRow({
       </span>
 
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium leading-snug">{item.name}</p>
+        <p className="line-clamp-2 text-[0.8125rem] font-medium leading-snug">
+          {item.name}
+        </p>
       </div>
 
       <DragGrip
@@ -448,9 +479,9 @@ function BacklogRow({
           <button
             type="button"
             aria-label={`Xếp ${item.name} vào ngày`}
-            className="grid size-7 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="grid size-6 shrink-0 place-items-center rounded-[3px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
-            <Plus className="size-4" aria-hidden />
+            <Glyph name="plus" className="size-4" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
@@ -476,7 +507,7 @@ function BacklogRow({
             variant="destructive"
             onSelect={() => run(() => removeItem(item.id), "Đã bỏ khỏi lịch trình")}
           >
-            <Trash2 className="size-4" aria-hidden />
+            <Glyph name="trash" className="size-4" />
             Bỏ khỏi lịch trình
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -518,9 +549,9 @@ function DayBlock({
       onFocusCapture={onFocus}
       onMouseDown={onFocus}
       className={cn(
-        "group/day relative scroll-mt-28 border-t border-border/60 py-9 first:border-t-0 first:pt-1 lg:scroll-mt-24",
+        "group/day relative scroll-mt-28 border-t border-border/60 py-9 first:border-t-0 first:pt-5 lg:scroll-mt-24",
         active &&
-          "before:absolute before:-left-3 before:top-9 before:h-7 before:w-1 before:rounded-full before:bg-warm first:before:top-1 sm:before:-left-5",
+          "before:absolute before:-left-3 before:top-9 before:h-7 before:w-[3px] before:rounded-[2px] before:bg-warm first:before:top-2",
       )}
     >
       <DayHeading
@@ -549,7 +580,7 @@ function DayBlock({
         right={
           <div className="flex items-center gap-1">
             <label className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <Sunrise className="size-4 shrink-0" aria-hidden />
+              <Glyph name="sunrise" className="size-4 shrink-0" />
               <input
                 type="time"
                 defaultValue={toTimeValue(day.startMin)}
@@ -573,9 +604,9 @@ function DayBlock({
                   <button
                     type="button"
                     aria-label={`Tuỳ chọn ngày ${day.index + 1}`}
-                    className="grid size-8 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted"
+                    className="grid size-8 place-items-center rounded-[3px] text-muted-foreground transition-colors hover:bg-muted"
                   >
-                    <MoreHorizontal className="size-4" aria-hidden />
+                    <Glyph name="more" className="size-4" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -585,7 +616,7 @@ function DayBlock({
                       run(() => removeDay(day.id), "Đã xoá ngày — các mục về lại mục Chưa xếp ngày")
                     }
                   >
-                    <Trash2 className="size-4" aria-hidden />
+                    <Glyph name="trash" className="size-4" />
                     Xoá ngày này
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -616,7 +647,7 @@ function DayBlock({
         <ol
           ref={setNodeRef}
           className={cn(
-            "-mx-2 mt-6 min-h-[4rem] rounded-xl px-2 transition-colors",
+            "-mx-2 mt-6 min-h-[4rem] rounded-[6px] px-2 transition-colors",
             isOver && "bg-primary/5 ring-1 ring-primary/20",
           )}
         >
@@ -677,9 +708,9 @@ function DragGrip({
       {...listeners}
       title={label}
       aria-label={label}
-      className="grid size-7 shrink-0 cursor-grab touch-none place-items-center rounded-full text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-focus-within:opacity-100 group-hover:opacity-100 active:cursor-grabbing [@media(pointer:coarse)]:opacity-100"
+      className="grid size-6 shrink-0 cursor-grab touch-none place-items-center rounded-[3px] text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-focus-within:opacity-100 group-hover:opacity-100 active:cursor-grabbing [@media(pointer:coarse)]:opacity-100"
     >
-      <GripVertical className="size-4" aria-hidden />
+      <Glyph name="grip" className="size-4" />
     </button>
   );
 }
@@ -746,9 +777,9 @@ function ItemActions({
           <button
             type="button"
             aria-label={`Tuỳ chọn cho ${item.name}`}
-            className="grid size-7 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="grid size-7 place-items-center rounded-[3px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
-            <MoreHorizontal className="size-4" aria-hidden />
+            <Glyph name="more" className="size-4" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
@@ -779,7 +810,7 @@ function ItemActions({
             variant="destructive"
             onSelect={() => run(() => removeItem(item.id), "Đã bỏ khỏi lịch trình")}
           >
-            <Trash2 className="size-4" aria-hidden />
+            <Glyph name="trash" className="size-4" />
             Bỏ khỏi lịch trình
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -816,7 +847,7 @@ function StayPicker({
           type="button"
           className="inline-flex items-center gap-1 rounded underline-offset-2 transition-colors hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <Clock className="size-3.5" aria-hidden />
+          <Glyph name="clock" className="size-3.5" />
           {fmtDuration(item.effectiveStayMin)}
         </button>
       </PopoverTrigger>
@@ -831,7 +862,7 @@ function StayPicker({
               type="button"
               onClick={() => set(m)}
               className={cn(
-                "rounded-full px-2.5 py-1 text-xs tabular-nums transition-colors",
+                "rounded-[4px] px-2.5 py-1 text-xs tabular-nums transition-colors",
                 item.effectiveStayMin === m
                   ? "bg-primary text-primary-foreground"
                   : "bg-muted hover:bg-muted/70",
@@ -858,9 +889,9 @@ function StayPicker({
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             aria-label="Số phút ở lại"
-            className="h-9 rounded-lg tabular-nums"
+            className="h-9 rounded-[4px] tabular-nums"
           />
-          <Button type="submit" variant="outline" className="h-9 shrink-0 rounded-lg px-3">
+          <Button type="submit" variant="outline" className="h-9 shrink-0 rounded-[4px] px-3">
             Đặt
           </Button>
         </form>
@@ -922,7 +953,7 @@ function InlineEdit({
     return multiline ? (
       <Textarea {...shared} rows={2} className="mt-1.5 min-h-0 resize-none text-xs" />
     ) : (
-      <Input {...shared} className="mt-1 h-9 rounded-lg" />
+      <Input {...shared} className="mt-1 h-9 rounded-[4px]" />
     );
   }
 
@@ -961,24 +992,24 @@ function CustomItemForm({
         onAdd(t);
         setTitle("");
       }}
-      className="mt-3 flex gap-2"
+      className="mt-3 grid gap-2"
     >
       <Input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        placeholder="Tự thêm: chuyến bay, nhà người quen…"
+        placeholder="Tự thêm mục…"
         aria-label="Tên mục tự thêm"
-        className="h-9 rounded-lg"
+        className="h-9 rounded-[4px] bg-background"
       />
       {/* KHÔNG dùng size="sm": nút đó cao h-8 còn Input là h-9, đứng cạnh nhau
-          là lệch 4px. Ép cùng h-9 và cùng bo góc rounded-lg. */}
+          là lệch 4px. Ép cùng h-9 và cùng bo góc rounded-[4px]. */}
       <Button
         type="submit"
         variant="outline"
         disabled={pending || !title.trim()}
-        className="h-9 shrink-0 rounded-lg px-3"
+        className="h-9 rounded-[4px] bg-background px-3"
       >
-        {pending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Plus className="size-4" aria-hidden />}
+        {pending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Glyph name="plus" className="size-4" />}
         Thêm
       </Button>
     </form>

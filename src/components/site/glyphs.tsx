@@ -39,7 +39,16 @@ export type GlyphName =
   | "plane"
   | "boat"
   | "two-wheel"
-  | "walk";
+  | "walk"
+  | "note"
+  | "bag"
+  | "people"
+  | "mountain"
+  | "compass"
+  | "more"
+  | "info"
+  | "grip"
+  | "trash";
 
 const SHAPES: Record<GlyphName, React.ReactNode> = {
   pin: (
@@ -288,6 +297,71 @@ const SHAPES: Record<GlyphName, React.ReactNode> = {
       <path d="M11.6 9.4h6" />
       <path d="M11.6 16h9" />
       <path d="M11.6 19.2h6" />
+    </>
+  ),
+  note: (
+    <>
+      <path d="M6.6 3.8h10.8a1.8 1.8 0 0 1 1.8 1.8v12.8a1.8 1.8 0 0 1-1.8 1.8H6.6a1.8 1.8 0 0 1-1.8-1.8V5.6a1.8 1.8 0 0 1 1.8-1.8Z" />
+      <path d="M8.6 9h6.8" />
+      <path d="M8.6 12.4h6.8" />
+      <path d="M8.6 15.8h4" />
+    </>
+  ),
+  bag: (
+    <>
+      <path d="M7.4 8.2h9.2a2.6 2.6 0 0 1 2.6 2.6v6.6a2.6 2.6 0 0 1-2.6 2.6H7.4a2.6 2.6 0 0 1-2.6-2.6v-6.6a2.6 2.6 0 0 1 2.6-2.6Z" />
+      <path d="M9.2 8.2V6.6a2.8 2.8 0 0 1 5.6 0v1.6" />
+      <path d="M9.4 13.4h5.2" />
+    </>
+  ),
+  people: (
+    <>
+      <circle cx="9.2" cy="8.2" r="3.1" />
+      <path d="M3.6 19.6a5.6 5.6 0 0 1 11.2 0" />
+      <path d="M16.2 5.6a3.1 3.1 0 0 1 0 5.2" />
+      <path d="M17.4 14.6a5.6 5.6 0 0 1 3 4.4" />
+    </>
+  ),
+  mountain: (
+    <path d="M2.6 19.4h18.8L14.4 8.2l-2.9 4.6-2.3-3.2-6.6 9.8Z" />
+  ),
+  compass: (
+    <>
+      <circle cx="12" cy="12" r="8.4" />
+      <path d="m15.4 8.6-1.9 4.9-4.9 1.9 1.9-4.9 4.9-1.9Z" />
+    </>
+  ),
+  // Ba chấm: vẽ bằng ba đoạn dài 0.01 — `stroke-linecap: round` của <Glyph> bo
+  // chúng thành chấm tròn, khỏi phải thêm ba <circle> đặc.
+  more: (
+    <>
+      <path d="M6.2 12h.01" />
+      <path d="M12 12h.01" />
+      <path d="M17.8 12h.01" />
+    </>
+  ),
+  info: (
+    <>
+      <circle cx="12" cy="12" r="8.4" />
+      <path d="M12 11.4v4.8" />
+      <path d="M12 7.9h.01" />
+    </>
+  ),
+  grip: (
+    <>
+      <path d="M9.4 6.4h.01" />
+      <path d="M14.6 6.4h.01" />
+      <path d="M9.4 12h.01" />
+      <path d="M14.6 12h.01" />
+      <path d="M9.4 17.6h.01" />
+      <path d="M14.6 17.6h.01" />
+    </>
+  ),
+  trash: (
+    <>
+      <path d="M4.6 6.9h14.8" />
+      <path d="M9.6 6.9V5.4a1.4 1.4 0 0 1 1.4-1.4h2a1.4 1.4 0 0 1 1.4 1.4v1.5" />
+      <path d="M6.8 6.9h10.4l-.8 12a1.4 1.4 0 0 1-1.4 1.3H9a1.4 1.4 0 0 1-1.4-1.3l-.8-12Z" />
     </>
   ),
 };

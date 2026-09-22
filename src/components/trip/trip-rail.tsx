@@ -3,30 +3,20 @@
 import type { CSSProperties, ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  AlertCircle,
-  BedDouble,
-  Car,
-  Clock,
-  Compass,
-  Mountain,
-  Pin,
-  TriangleAlert,
-  UtensilsCrossed,
-} from "@/components/icons";
-import type { LucideIcon } from "@/components/icons";
+import { Glyph, type GlyphName } from "@/components/site/glyphs";
+import { R_CTRL } from "@/lib/radius";
 import { cn } from "@/lib/utils";
 import { formatMinutes, fmtDuration, type TripWarning } from "@/lib/trip-time";
 import type { ItemView, ResolvedItem } from "@/lib/trip";
 import type { TripItemKind } from "@/lib/trip-time";
 import { ALL_ON, type TripFields } from "@/components/trip/trip-fields";
 
-const TYPE_ICON: Record<TripItemKind, LucideIcon> = {
-  spot: Mountain,
-  eatery: UtensilsCrossed,
-  accommodation: BedDouble,
-  activity: Compass,
-  custom: Pin,
+const TYPE_GLYPH: Record<TripItemKind, GlyphName> = {
+  spot: "mountain",
+  eatery: "bowl",
+  accommodation: "bed",
+  activity: "compass",
+  custom: "pin",
 };
 
 const TIME = "w-[3.25rem] shrink-0 pt-0.5 text-right text-sm font-semibold tabular-nums sm:w-16 sm:text-[0.95rem]";
@@ -125,7 +115,7 @@ export function RailItem({
                 {fields.stay &&
                   (stay ?? (
                     <span className="inline-flex items-center gap-1">
-                      <Clock className="size-3.5" aria-hidden />
+                      <Glyph name="clock" className="size-3.5" />
                       {fmtDuration(item.effectiveStayMin)}
                     </span>
                   ))}
@@ -159,7 +149,7 @@ export function RailLeg({ item }: { item: ItemView }) {
       <p className="flex min-w-0 flex-1 items-center gap-1.5 pb-5 text-xs text-muted-foreground">
         {item.driveToNextMin != null ? (
           <>
-            <Car className="size-3.5 shrink-0" aria-hidden />
+            <Glyph name="car" className="size-3.5 shrink-0" />
             {item.driveApprox ? "~" : ""}
             {fmtDuration(item.driveToNextMin)} di chuyển
           </>
@@ -180,30 +170,37 @@ export function Thumb({
   size?: "sm" | "md";
   hideImage?: boolean;
 }) {
-  const Icon = TYPE_ICON[item.kind];
+  const glyph = TYPE_GLYPH[item.kind];
   const box = size === "sm" ? "size-10" : "size-12";
 
   if (!item.image || hideImage) {
     return (
-      <div className={cn("grid shrink-0 place-items-center rounded-lg bg-muted", box)}>
-        <Icon className="size-4 text-muted-foreground" aria-hidden />
+      <div className={cn(R_CTRL, "grid shrink-0 place-items-center bg-muted", box)}>
+        <Glyph name={glyph} className="size-4 text-muted-foreground" />
         <span className="sr-only">{item.typeLabel}</span>
       </div>
     );
   }
 
   return (
-    <div className={cn("relative shrink-0 rounded-lg bg-muted", box)}>
+    <div className={cn(R_CTRL, "relative shrink-0 overflow-hidden bg-muted", box)}>
       <Image
         src={item.image}
         alt={item.name}
         fill
         draggable={false}
         sizes={size === "sm" ? "40px" : "48px"}
-        className="rounded-lg object-cover"
+        className="object-cover"
       />
-      <span className="absolute -bottom-1 -left-1 grid size-[1.375rem] place-items-center rounded-full bg-background text-foreground/70 ring-1 ring-border">
-        <Icon className="size-3.5" aria-hidden />
+      {/* Huy hiệu loại nằm TRONG ảnh, nền đặc — bản cũ tràn ra ngoài khung và
+          phải thêm `ring` để tách khỏi ảnh; ở đây nền đã đủ tách. */}
+      <span
+        className={cn(
+          "absolute bottom-0 left-0 grid place-items-center rounded-tr-[4px] bg-background text-foreground/70",
+          size === "sm" ? "size-[0.875rem]" : "size-[1.125rem]",
+        )}
+      >
+        <Glyph name={glyph} className={size === "sm" ? "size-2.5" : "size-3"} />
         <span className="sr-only">{item.typeLabel}</span>
       </span>
     </div>
@@ -218,18 +215,18 @@ export function Warning({
   className?: string;
 }) {
   const high = warning.level === "high";
-  const Icon = warning.level === "info" ? AlertCircle : TriangleAlert;
+  const glyph: GlyphName = warning.level === "info" ? "info" : "warn";
   return (
     <p
       className={cn(
         "mt-1.5 flex items-start gap-1.5 text-xs leading-relaxed",
-        high && "rounded-md bg-destructive/10 px-2 py-1 font-medium text-destructive",
+        high && "rounded-[4px] bg-destructive/10 px-2 py-1 font-medium text-destructive",
         warning.level === "medium" && "text-warm",
         warning.level === "info" && "text-muted-foreground",
         className,
       )}
     >
-      <Icon className="mt-px size-3.5 shrink-0" aria-hidden />
+      <Glyph name={glyph} className="mt-px size-3.5 shrink-0" />
       {warning.text}
     </p>
   );
@@ -261,14 +258,9 @@ export function DayHeading({
       <div className="min-w-0">
         {named ? (
           <>
-            <span className={cn(MICRO, "flex items-center gap-2 text-warm")}>
+            <span className={cn(MICRO, "flex items-center gap-x-4 text-warm")}>
               Ngày {index + 1}
-              {dateLabel && (
-                <>
-                  <span aria-hidden className="h-2.5 w-px bg-border" />
-                  <span className="text-muted-foreground">{dateLabel}</span>
-                </>
-              )}
+              {dateLabel && <span className="text-muted-foreground">{dateLabel}</span>}
             </span>
             {titleNode ?? (
               <h2 className={cn(DISPLAY, "mt-1 text-2xl sm:text-[1.75rem]")}>{title}</h2>

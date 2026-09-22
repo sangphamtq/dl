@@ -2,7 +2,8 @@
 
 import { useState, useTransition, type ReactNode } from "react";
 import { toast } from "sonner";
-import { Check, Loader2, NotebookPen, Pencil, Pin, PinOff, Trash2, X } from "@/components/icons";
+import { Loader2, Pencil, PinOff } from "@/components/icons";
+import { Glyph } from "@/components/site/glyphs";
 import { cn } from "@/lib/utils";
 import { initials, timeAgo } from "@/lib/format";
 import { Button } from "@/components/ui/button";
@@ -102,7 +103,7 @@ export function TripNotes({ tripId, notes }: { tripId: string; notes: TripNoteRo
                 onClick={() => run(() => setNotePinned(n.id, !n.isPinned))}
                 disabled={pending}
               >
-                {n.isPinned ? <PinOff className="size-4" /> : <Pin className="size-4" />}
+                {n.isPinned ? <PinOff className="size-4" /> : <Glyph name="pin" className="size-4" />}
               </IconBtn>
               <IconBtn label="Sửa" onClick={() => setEditing(n.id)} disabled={pending}>
                 <Pencil className="size-4" />
@@ -113,7 +114,7 @@ export function TripNotes({ tripId, notes }: { tripId: string; notes: TripNoteRo
                 onClick={() => run(() => deleteNote(n.id))}
                 disabled={pending}
               >
-                <Trash2 className="size-4" />
+                <Glyph name="trash" className="size-4" />
               </IconBtn>
             </span>
           </div>
@@ -151,7 +152,7 @@ export function TripNotes({ tripId, notes }: { tripId: string; notes: TripNoteRo
             <section>
               {rest.length > 0 && (
                 <h2 className={cn(MICRO, "flex items-center gap-1.5 pb-4 text-warm")}>
-                  <Pin className="size-3.5" aria-hidden />
+                  <Glyph name="pin" className="size-3.5" />
                   Đã ghim
                 </h2>
               )}
@@ -160,7 +161,7 @@ export function TripNotes({ tripId, notes }: { tripId: string; notes: TripNoteRo
           )}
 
           {rest.length > 0 && (
-            <section className={cn(pinned.length > 0 && "mt-7 border-t pt-7")}>
+            <section className={cn(pinned.length > 0 && "mt-9")}>
               {pinned.length > 0 && (
                 <h2 className={cn(MICRO, "pb-4 text-muted-foreground")}>Gần đây</h2>
               )}
@@ -188,9 +189,9 @@ function Composer({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex w-full items-center gap-2.5 rounded-xl border border-dashed border-border px-4 py-3 text-left text-sm text-muted-foreground transition-colors hover:border-foreground/25 hover:bg-muted/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="flex w-full items-center gap-2.5 rounded-[6px] border border-dashed border-border px-4 py-3 text-left text-sm text-muted-foreground transition-colors hover:border-foreground/25 hover:bg-muted/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
-        <NotebookPen className="size-4 shrink-0" aria-hidden />
+        <Glyph name="note" className="size-4 shrink-0" />
         Ghi gì đó cho cả nhóm…
       </button>
     );
@@ -241,7 +242,7 @@ function NoteForm({
           if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && dirty) onSubmit(body);
           if (e.key === "Escape") onCancel();
         }}
-        className="resize-y rounded-xl text-base leading-[1.7]"
+        className="resize-y rounded-[6px] text-base leading-[1.7]"
       />
       <div className="mt-2.5 flex items-center gap-3">
         <span className="text-xs tabular-nums text-muted-foreground">
@@ -253,16 +254,16 @@ function NoteForm({
             variant="ghost"
             onClick={onCancel}
             disabled={pending}
-            className="h-9 rounded-lg"
+            className="h-9 rounded-[4px]"
           >
-            <X className="size-4" aria-hidden />
+            <Glyph name="close" className="size-4" />
             Huỷ
           </Button>
-          <Button type="submit" disabled={pending || !dirty} className="h-9 rounded-lg">
+          <Button type="submit" disabled={pending || !dirty} className="h-9 rounded-[4px]">
             {pending ? (
               <Loader2 className="size-4 animate-spin" aria-hidden />
             ) : (
-              <Check className="size-4" aria-hidden />
+              <Glyph name="tick" className="size-4" />
             )}
             {submitLabel}
           </Button>
@@ -293,7 +294,7 @@ function IconBtn({
       aria-label={label}
       title={label}
       className={cn(
-        "grid size-7 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        "grid size-7 place-items-center rounded-[3px] text-muted-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         danger ? "hover:text-destructive" : "hover:text-foreground",
       )}
     >

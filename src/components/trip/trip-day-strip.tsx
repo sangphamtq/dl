@@ -36,7 +36,7 @@ export function TripDayStrip({
   return (
     <div
       ref={railRef}
-      className="hide-scrollbar -mx-4 flex gap-6 overflow-x-auto px-4 sm:-mx-6 sm:gap-7 sm:px-6"
+      className="hide-scrollbar flex gap-6 overflow-x-auto sm:gap-7"
     >
       {days.map((day) => {
         const on = day.id === activeId;

@@ -3,7 +3,8 @@
 import { useState, useTransition } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
-import { Check, Link2, Loader2, LogOut, Plus, Share2, X } from "@/components/icons";
+import { Loader2, LogOut, Share2 } from "@/components/icons";
+import { Glyph } from "@/components/site/glyphs";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
@@ -158,7 +159,7 @@ export function TripShare({
           <button
             type="button"
             aria-label={`Chia sẻ ${title}`}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border/60 bg-background/70 px-4 text-sm font-medium backdrop-blur-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="inline-flex h-9 items-center gap-1.5 rounded-[4px] border border-border/60 bg-background/70 px-4 text-sm font-medium backdrop-blur-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <Share2 className="size-4" aria-hidden />
             Chia sẻ
@@ -177,18 +178,18 @@ export function TripShare({
               onChange={(e) => setEmail(e.target.value)}
               placeholder="email@gmail.com"
               aria-label="Email người muốn mời"
-              className="h-9 rounded-lg"
+              className="h-9 rounded-[4px]"
             />
             <Button
               type="submit"
               variant="outline"
               disabled={pending || !email.trim()}
-              className="h-9 shrink-0 rounded-lg px-3"
+              className="h-9 shrink-0 rounded-[4px] px-3"
             >
               {pending ? (
                 <Loader2 className="size-4 animate-spin" aria-hidden />
               ) : (
-                <Plus className="size-4" aria-hidden />
+                <Glyph name="plus" className="size-4" />
               )}
               Mời
             </Button>
@@ -224,9 +225,9 @@ export function TripShare({
                     onClick={() => remove(m)}
                     disabled={pending}
                     aria-label={`Gỡ ${m.name ?? m.email}`}
-                    className="grid size-7 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    className="grid size-7 shrink-0 place-items-center rounded-[3px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                   >
-                    <X className="size-4" aria-hidden />
+                    <Glyph name="close" className="size-4" />
                   </button>
                 )}
               </li>
@@ -275,18 +276,18 @@ export function TripShare({
 
           {on && url && (
             <>
-              <div className="mt-3 flex justify-center rounded-xl border bg-white p-3">
+              <div className="mt-3 flex justify-center rounded-[6px] bg-white p-3">
                 <QRCodeSVG value={url} size={132} marginSize={0} />
               </div>
               <button
                 type="button"
                 onClick={copy}
-                className="mt-2 flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-sm transition-colors hover:bg-muted"
+                className="mt-2 flex w-full items-center gap-2 rounded-[4px] px-2.5 py-2 text-sm transition-colors hover:bg-muted"
               >
                 {copied ? (
-                  <Check className="size-4 text-primary" aria-hidden />
+                  <Glyph name="tick" className="size-4 text-primary" />
                 ) : (
-                  <Link2 className="size-4" aria-hidden />
+                  <Glyph name="link" className="size-4" />
                 )}
                 {copied ? "Đã sao chép!" : "Sao chép liên kết"}
               </button>

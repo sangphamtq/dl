@@ -5,8 +5,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { CalendarDays, Loader2, MapPin, Plus } from "@/components/icons";
+import { Loader2 } from "@/components/icons";
+import { Glyph, type GlyphName } from "@/components/site/glyphs";
 import { cn } from "@/lib/utils";
+import { R_CARD } from "@/lib/radius";
 import { Button } from "@/components/ui/button";
 import type { DayView, ResolvedItem } from "@/lib/trip";
 import { formatMinutes } from "@/lib/trip-time";
@@ -69,7 +71,7 @@ export function TripView({
   return (
     <TripShell
       header={
-        <header className="relative isolate overflow-hidden">
+        <header className={cn(R_CARD, "relative isolate overflow-hidden")}>
           {trip.coverImage ? (
             <>
               <Image
@@ -106,11 +108,11 @@ export function TripView({
               )}
 
               <div className="mt-6 flex flex-wrap items-center gap-y-3 text-white [text-shadow:0_0_12px_rgba(0,0,0,0.55)]">
-                <Fact icon={CalendarDays} value={`${days.length} ngày`} first />
+                <Fact glyph="calendar" value={`${days.length} ngày`} />
                 <Fact value={`${totalItems} điểm dừng`} />
                 {trip.placeName && trip.placeSlug && (
                   <Fact
-                    icon={MapPin}
+                    glyph="pin"
                     value={
                       <Link href={`/diem-den/${trip.placeSlug}`} className="hover:underline">
                         {trip.placeName}
@@ -123,12 +125,12 @@ export function TripView({
               <Button
                 onClick={clone}
                 disabled={pending}
-                className="mt-7 h-11 rounded-lg bg-warm px-6 text-base text-warm-foreground shadow-lg shadow-black/20 hover:bg-warm/90"
+                className="mt-7 h-11 rounded-[4px] bg-warm px-6 text-base text-warm-foreground shadow-lg shadow-black/20 hover:bg-warm/90"
               >
                 {pending ? (
                   <Loader2 className="size-4 animate-spin" aria-hidden />
                 ) : (
-                  <Plus className="size-4" aria-hidden />
+                  <Glyph name="plus" className="size-4" />
                 )}
                 Dùng lịch trình này
               </Button>
@@ -178,7 +180,7 @@ export function TripView({
       }
       main={
         <>
-          <div className="sticky top-0 z-20 -mx-4 flex items-center gap-3 border-b bg-background/90 px-4 pt-2 backdrop-blur sm:-mx-6 sm:px-6">
+          <div className="sticky top-0 z-20 flex items-center gap-3 border-b border-border/60 bg-background pb-1 pt-1">
             <div className="min-w-0 flex-1">
               <TripDayStrip days={days} activeId={activeDay?.id ?? null} onPick={pickDay} />
             </div>
@@ -193,7 +195,7 @@ export function TripView({
                 key={day.id}
                 id={`day-${day.id}`}
                 onMouseDown={() => setActiveDayId(day.id)}
-                className="scroll-mt-28 border-t border-border/60 pt-9 first:border-t-0 first:pt-0 lg:scroll-mt-24"
+                className="scroll-mt-28 border-t border-border/60 pt-10 first:border-t-0 first:pt-5 lg:scroll-mt-24"
               >
                 <DayHeading
                   index={day.index}
@@ -257,22 +259,15 @@ export function TripView({
 }
 
 function Fact({
-  icon: Icon,
+  glyph,
   value,
-  first,
 }: {
-  icon?: React.ComponentType<{ className?: string }>;
+  glyph?: GlyphName;
   value: React.ReactNode;
-  first?: boolean;
 }) {
   return (
-    <div
-      className={cn(
-        "flex items-center gap-1.5 px-4 text-sm first:pl-0",
-        !first && "border-l border-white/25",
-      )}
-    >
-      {Icon && <Icon className="size-4 shrink-0" />}
+    <div className="flex items-center gap-1.5 pe-6 text-sm">
+      {glyph && <Glyph name={glyph} className="size-4 shrink-0" />}
       <span className="font-medium">{value}</span>
     </div>
   );

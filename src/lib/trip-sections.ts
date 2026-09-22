@@ -1,29 +1,17 @@
-import { Backpack, NotebookPen, Route, Wallet } from "@/components/icons";
-import type { LucideIcon } from "@/components/icons";
+import type { GlyphName } from "@/components/site/glyphs";
 
 export type TripSection = {
   token: string | null;
   label: string;
-  icon: LucideIcon;
+  glyph: GlyphName;
 };
 
 export const TRIP_SECTIONS: TripSection[] = [
-  { token: null, label: "Lịch trình", icon: Route },
-  {
-    token: "ghi-chu",
-    label: "Ghi chú",
-    icon: NotebookPen,
-  },
-  {
-    token: "do-mang-theo",
-    label: "Đồ mang theo",
-    icon: Backpack,
-  },
-  {
-    token: "chi-phi",
-    label: "Chi phí",
-    icon: Wallet,
-  },
+  { token: null, label: "Lịch trình", glyph: "route" },
+  { token: "ban-do", label: "Bản đồ", glyph: "pin" },
+  { token: "ghi-chu", label: "Ghi chú", glyph: "note" },
+  { token: "do-mang-theo", label: "Đồ mang theo", glyph: "bag" },
+  { token: "chi-phi", label: "Chi phí", glyph: "wallet" },
 ];
 
 export const tripSectionHref = (tripId: string, token: string | null) =>

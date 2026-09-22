@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import { Loader2, MapPin } from "@/components/icons";
+import { Loader2 } from "@/components/icons";
+import { Glyph } from "@/components/site/glyphs";
 import { getRoute } from "@/lib/map-actions";
 import type { TripMapPoint } from "@/components/trip/trip-map-inner";
 
@@ -48,7 +49,7 @@ export function TripMap({
     return (
       <div className="grid h-full min-h-[24rem] place-items-center bg-muted/40 px-6 text-center">
         <div>
-          <MapPin className="mx-auto size-8 text-muted-foreground/40" aria-hidden />
+          <Glyph name="pin" className="mx-auto size-8 text-muted-foreground/40" />
           <p className="mt-3 text-sm font-medium">Chưa có điểm nào trên bản đồ</p>
           <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
             Xếp vài mục có toạ độ vào {dayLabel || "ngày này"} để xem tuyến đường.

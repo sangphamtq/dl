@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { ChevronDown } from "@/components/icons";
+import { Glyph } from "@/components/site/glyphs";
+import { R_CTRL } from "@/lib/radius";
 import { cn } from "@/lib/utils";
 import {
   Sheet,
@@ -28,7 +29,7 @@ function navClick(e: React.MouseEvent<HTMLAnchorElement>, href: string) {
 }
 
 const rowBase =
-  "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+  "flex items-center gap-2.5 rounded-[4px] px-2.5 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 function Row({
   section,
@@ -41,7 +42,6 @@ function Row({
   active: boolean;
   onNavigate?: () => void;
 }) {
-  const Icon = section.icon;
   const href = tripSectionHref(tripId, section.token);
   return (
     <Link
@@ -59,7 +59,10 @@ function Row({
           : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
       )}
     >
-      <Icon className={cn("size-4 shrink-0", active && "text-warm")} aria-hidden />
+      <Glyph
+        name={section.glyph}
+        className={cn("size-4 shrink-0", active && "text-warm")}
+      />
       <span className="truncate">{section.label}</span>
     </Link>
   );
@@ -72,7 +75,6 @@ export function TripSideNav({ tripId, collapsed }: { tripId: string; collapsed?:
     return (
       <nav aria-label="Mục của lịch trình" className="grid gap-1">
         {TRIP_SECTIONS.map((s) => {
-          const Icon = s.icon;
           const active = s.token === token;
           return (
             <Link
@@ -83,13 +85,14 @@ export function TripSideNav({ tripId, collapsed }: { tripId: string; collapsed?:
               title={s.label}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "relative grid size-8 place-items-center justify-self-center rounded-lg transition-colors",
+                R_CTRL,
+                "relative grid size-8 place-items-center justify-self-center transition-colors",
                 active
                   ? "bg-muted text-warm"
                   : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
               )}
             >
-              <Icon className="size-4" aria-hidden />
+              <Glyph name={s.glyph} className="size-4" />
               <span className="sr-only">{s.label}</span>
             </Link>
           );
@@ -111,22 +114,24 @@ export function TripSectionSheet({ tripId }: { tripId: string }) {
   const token = useActiveToken(tripId);
   const [open, setOpen] = useState(false);
   const current = TRIP_SECTIONS.find((s) => s.token === token) ?? TRIP_SECTIONS[0];
-  const Icon = current.icon;
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <button
           type="button"
-          className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border/60 bg-background/70 px-3.5 text-sm font-medium backdrop-blur-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:hidden"
+          className={cn(
+            R_CTRL,
+            "inline-flex h-9 items-center gap-1.5 bg-muted px-3 text-sm font-medium transition-colors hover:bg-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:hidden",
+          )}
         >
-          <Icon className="size-4 shrink-0 text-warm" aria-hidden />
+          <Glyph name={current.glyph} className="size-4 shrink-0 text-warm" />
           <span className="max-w-[8rem] truncate">{current.label}</span>
-          <ChevronDown className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+          <Glyph name="chevron-down" className="size-4 shrink-0 text-muted-foreground" />
         </button>
       </SheetTrigger>
 
-      <SheetContent side="bottom" className="rounded-t-2xl">
+      <SheetContent side="bottom" className="rounded-t-[6px]">
         <SheetHeader className="pb-0">
           <SheetTitle>Mục của chuyến này</SheetTitle>
           <SheetDescription className="sr-only">

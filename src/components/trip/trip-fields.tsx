@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { Eye } from "@/components/icons";
+import { Glyph } from "@/components/site/glyphs";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
@@ -83,11 +83,11 @@ export function TripFieldsMenu() {
         <button
           type="button"
           className={cn(
-            "inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-medium transition-colors hover:bg-muted",
+            "inline-flex shrink-0 items-center gap-1.5 rounded-[4px] px-2.5 py-1.5 text-xs font-medium transition-colors hover:bg-muted",
             hidden > 0 ? "text-foreground" : "text-muted-foreground",
           )}
         >
-          <Eye className="size-4" aria-hidden />
+          <Glyph name="eye" className="size-4" />
           Hiển thị
           {hidden > 0 && <span className="tabular-nums text-muted-foreground">−{hidden}</span>}
         </button>
@@ -102,7 +102,7 @@ export function TripFieldsMenu() {
         <ul className="mt-3 -mx-1">
           {LABELS.map((f) => (
             <li key={f.id}>
-              <label className="flex cursor-pointer items-start gap-2.5 rounded-lg px-1 py-1.5 transition-colors hover:bg-muted">
+              <label className="flex cursor-pointer items-start gap-2.5 rounded-[4px] px-1 py-1.5 transition-colors hover:bg-muted">
                 <input
                   type="checkbox"
                   checked={fields[f.id]}
