@@ -1,22 +1,16 @@
 import Link from "next/link";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { coverUrl } from "@/lib/place-image";
 import { cn } from "@/lib/utils";
-import {
-  ACTIVITY_CATEGORY_LABELS,
-  ACCOMMODATION_CATEGORY_LABELS,
-  EATERY_CATEGORY_LABELS,
-  label,
-} from "@/lib/listing-labels";
+import { ACTIVITY_CATEGORY_LABELS, label } from "@/lib/listing-labels";
 import { RelatedPosts } from "@/components/site/related-posts";
 import { isStaffViewer } from "@/lib/preview";
 import { PlaceCard } from "@/components/site/place-card";
 import { SectionHeading } from "@/components/site/section-heading";
 import { SpotPreview } from "@/components/site/spot-preview";
-import { ExperienceGrid } from "@/components/site/experience-grid";
+import { ExperiencePreview } from "@/components/site/experience-preview";
 import { FoodMenu } from "@/components/site/food-menu";
 import { StayDirectory } from "@/components/site/stay-directory";
 import { TransportBrief } from "@/components/site/transport-brief";
@@ -27,18 +21,14 @@ import { PlaceViewTracker } from "@/components/site/place-view-tracker";
 import { PlaceHero } from "@/components/site/place-hero";
 import { PlaceHeroCenter } from "@/components/site/place-hero-center";
 import { PlaceTabs } from "@/components/site/place-tabs";
-import {
-  PlaceDecision,
-  hasPlaceDecision,
-  type DecisionInput,
-} from "@/components/site/place-decision";
 import { ReviewsSection, type ReviewListItem } from "@/components/site/place-reviews";
 import { summarizeReviews } from "@/lib/review-meta";
 import { PeerBar } from "@/components/site/peer-bar";
-import { PlainProse } from "@/components/site/plain-prose";
+import { PlaceIntro } from "@/components/site/place-intro";
 import { Glyph } from "@/components/site/glyphs";
 import { R_CARD } from "@/lib/radius";
 
+import { ticketPriceLabel } from "@/lib/tickets";
 import { getDestinationPeerGroups } from "@/lib/peers";
 import {
   getPlaceCounts,
@@ -78,6 +68,16 @@ const listingImages = {
   where: { isCover: true },
   take: 1,
   select: { url: true, isCover: true },
+};
+
+/* Lấy cả gallery (KHÔNG lọc `isCover`) để biết mục nào THẬT SỰ có ảnh: `coverUrl`
+   rơi về ảnh stock ngẫu nhiên theo slug nên không phân biệt được. Dùng cho các
+   mục xem trước chịu được chuyện thiếu ảnh (trải nghiệm, ăn uống). */
+const galleryCover = {
+  where: { kind: "gallery" as const },
+  orderBy: [{ isCover: "desc" as const }, { order: "asc" as const }],
+  take: 1,
+  select: { url: true },
 };
 
 export async function generateMetadata({
@@ -121,7 +121,6 @@ export default async function PlaceDetailPage({
       tagline: true,
       description: true,
       tags: true,
-      quickInfo: true,
       isFeatured: true,
       viewCount: true,
       provinceName: true,
@@ -145,7 +144,7 @@ export default async function PlaceDetailPage({
       activities: {
         where: { ...pub, kind: { not: "spot" } },
         orderBy: [{ isFeatured: "desc" }, { order: "asc" }, { name: "asc" }],
-        take: 4,
+        take: 6,
         select: {
           slug: true,
           name: true,
@@ -153,13 +152,9 @@ export default async function PlaceDetailPage({
           category: true,
           durationText: true,
           seasonText: true,
-          images: listingImages,
-          spotLinks: {
-            take: 2,
-            orderBy: { order: "asc" },
-            select: { spot: { select: { name: true } } },
-          },
-          _count: { select: { spotLinks: true } },
+          ticketFree: true,
+          ticketTiers: true,
+          images: galleryCover,
         },
       },
       spots: {
@@ -186,13 +181,8 @@ export default async function PlaceDetailPage({
         select: {
           slug: true,
           name: true,
-          category: true,
-          venueKind: true,
-          viewType: true,
-          bestTime: true,
           meals: true,
-          wardName: true,
-          images: listingImages,
+          images: galleryCover,
         },
       },
       accommodations: {
@@ -202,10 +192,9 @@ export default async function PlaceDetailPage({
         select: {
           slug: true,
           name: true,
-          category: true,
           address: true,
           isVerified: true,
-          images: listingImages,
+          images: galleryCover,
         },
       },
       // Di chuyển — mục này trước đây KHÔNG được truy vấn ở trang tổng quan, dù
@@ -314,33 +303,6 @@ export default async function PlaceDetailPage({
 
   const counts = await getPlaceCounts(place.id);
 
-  const [spotFacts, activityFacts, foodFacts, stayFacts] = await Promise.all([
-    counts.spot > 0
-      ? prisma.spot.findMany({
-          where: { placeId: place.id, ...pub },
-          select: { category: true, ticketFree: true, ticketTiers: true, notice: true },
-        })
-      : Promise.resolve([]),
-    counts.activity > 0
-      ? prisma.activity.findMany({
-          where: { placeId: place.id, ...pub, kind: { not: "spot" } },
-          select: { category: true, seasonText: true },
-        })
-      : Promise.resolve([]),
-    counts.eatery > 0
-      ? prisma.eatery.findMany({
-          where: { placeId: place.id, ...pub },
-          select: { category: true, viewType: true, bestTime: true },
-        })
-      : Promise.resolve([]),
-    counts.accommodation > 0
-      ? prisma.accommodation.findMany({
-          where: { placeId: place.id, ...pub },
-          select: { category: true, isVerified: true },
-        })
-      : Promise.resolve([]),
-  ]);
-  const verifiedStays = stayFacts.filter((f) => f.isVerified).length;
   // Ảnh cho ô "Xem tất cả": các địa điểm KẾ TIẾP sau 5 cái đã có ô, cùng thứ tự.
   const moreSpotCovers =
     counts.spot > place.spots.length
@@ -352,6 +314,69 @@ export default async function PlaceDetailPage({
           select: { slug: true, images: listingImages },
         })
       : [];
+  // Ảnh cho dòng "Xem tất cả" của mục Trải nghiệm: các việc KẾ TIẾP sau những
+  // việc đã hiện. Chỉ lấy việc CÓ ảnh thật — xấp ảnh mà lẫn ô xám thì thà ít tấm.
+  const moreActivityCovers =
+    counts.activity > place.activities.length
+      ? (
+          await prisma.activity.findMany({
+            where: {
+              placeId: place.id,
+              ...pub,
+              kind: { not: "spot" },
+              slug: { notIn: place.activities.map((a) => a.slug) },
+              images: { some: { kind: "gallery" } },
+            },
+            orderBy: [{ isFeatured: "desc" }, { order: "asc" }, { name: "asc" }],
+            take: 3,
+            select: {
+              images: {
+                where: { kind: "gallery" },
+                orderBy: [{ isCover: "desc" }, { order: "asc" }],
+                take: 1,
+                select: { url: true },
+              },
+            },
+          })
+        ).flatMap((a) => (a.images[0] ? [a.images[0].url] : []))
+      : [];
+
+  // Ảnh cho dải "Xem tất cả" của mục Ăn uống — chỉ quán CÓ ảnh thật.
+  const moreEateryCovers =
+    counts.eatery > 0
+      ? (
+          await prisma.eatery.findMany({
+            where: {
+              placeId: place.id,
+              ...pub,
+              images: { some: { kind: "gallery" } },
+            },
+            orderBy: [{ isFeatured: "desc" }, { order: "asc" }, { name: "asc" }],
+            take: 8,
+            select: { slug: true, images: galleryCover },
+          })
+        ).flatMap((e) => (e.images[0] ? [{ slug: e.slug, url: e.images[0].url }] : []))
+      : [];
+
+  // Ảnh cho dòng "Xem tất cả" của mục Lưu trú: các chỗ KẾ TIẾP sau 4 cái đã có
+  // ô, cùng thứ tự — mục này không xếp lại nên `skip` là đúng chỗ đã hiện.
+  const moreStayCovers =
+    counts.accommodation > place.accommodations.length
+      ? (
+          await prisma.accommodation.findMany({
+            where: {
+              placeId: place.id,
+              ...pub,
+              images: { some: { kind: "gallery" } },
+            },
+            orderBy: [{ isFeatured: "desc" }, { order: "asc" }, { name: "asc" }],
+            skip: place.accommodations.length,
+            take: 3,
+            select: { images: galleryCover },
+          })
+        ).flatMap((a) => (a.images[0] ? [a.images[0].url] : []))
+      : [];
+
   const drinkVenues =
     counts.eatery > 0
       ? await prisma.eatery.findMany({
@@ -369,13 +394,8 @@ export default async function PlaceDetailPage({
           select: {
             slug: true,
             name: true,
-            category: true,
-            venueKind: true,
-            viewType: true,
-            bestTime: true,
             meals: true,
-            wardName: true,
-            images: listingImages,
+            images: galleryCover,
           },
         })
       : [];
@@ -425,17 +445,6 @@ export default async function PlaceDetailPage({
 
   const [lede, descBody] = splitLede(place.description);
 
-  // Khối "trước khi đi" dựng từ dữ liệu đã truy vấn sẵn; nó tự ẩn khi điểm đến
-  // chưa đủ dữ kiện, nên phải biết TRƯỚC để quyết định có dựng cả dải không.
-  const decisionInput: DecisionInput = {
-    transports: place.transports,
-    spots: spotFacts,
-    reviews: isDestination ? reviewSummary : null,
-    templateDays: tripTemplates.map((t) => t._count.days),
-    quickInfo: place.quickInfo,
-  };
-  const showDecision = hasPlaceDecision(decisionInput);
-
   let bandIndex = 0;
   const tinted = () => bandIndex++ % 2 === 0;
 
@@ -472,70 +481,26 @@ export default async function PlaceDetailPage({
 
         <PlaceTabs items={tabs} />
 
-        {(place.description || showDecision || showChildren) && (
+        {(place.description || showChildren) && (
         <Band>
-          {(place.description || showDecision) && (
-            // Cột phải là DỮ KIỆN, không phải ảnh: hero ngay trên đã là dải
-            // ảnh lớn và lưới mosaic ngay dưới là 5 ảnh nữa — ảnh thứ ba ở giữa
-            // vừa thừa vừa TRÙNG (cùng kho `heroImages` với lưới bên dưới).
+          {place.description && (
+            // Khối này CỐ Ý không có ảnh: hero ngay trên là dải ảnh lớn và lưới
+            // mosaic ngay dưới là 5 ảnh nữa (cùng kho `heroImages`) — chính việc
+            // ở giữa chỉ có chữ mới tạo nhịp cho trang.
             <section id="doi-net" className="scroll-mt-32">
-              {/* Cột dữ kiện đặt TƯỜNG MINH ở cột 2 và trải 2 hàng; câu mở đầu
-                  với đoạn mô tả tự rơi vào cột 1 theo thứ tự DOM — nhờ vậy khi
-                  không tách được câu mở đầu thì đoạn mô tả lên đúng hàng 1, và
-                  dưới `lg` dữ kiện vẫn nằm GIỮA hai khối chữ. */}
-              <div className="grid gap-y-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:grid-rows-[auto_1fr] lg:items-start lg:gap-x-14">
-              {lede && (
-                <p className="max-w-[46rem] text-balance text-xl font-medium leading-relaxed text-foreground first-letter:float-left first-letter:mr-2.5 first-letter:mt-1 first-letter:text-[3.25rem] first-letter:font-semibold first-letter:leading-[0.85] sm:text-2xl sm:leading-relaxed sm:first-letter:text-[4rem] lg:text-[1.7rem] lg:leading-[1.5]">
-                  {lede}
-                </p>
-              )}
-
-              {showDecision && (
-                <PlaceDecision
-                  {...decisionInput}
-                  transportHref={`/diem-den/${place.slug}/di-chuyen`}
-                  className="lg:col-start-2 lg:row-start-1 lg:row-span-2"
-                />
-              )}
-
-              <div className="min-w-0">
-              {descBody && (
-                <PlainProse
-                  text={descBody}
-                  className="max-w-[46rem] leading-7 text-muted-foreground"
-                />
-              )}
-
-              {introPost && (
-                <Link
-                  href={`/blog/${introPost.slug}`}
-                  className="group mt-6 flex max-w-[46rem] items-center gap-4"
-                >
-                  <span className={cn(R_CARD, "relative size-14 shrink-0 overflow-hidden bg-muted")}>
-                    <Image
-                      src={coverUrl(introPost.images, introPost.slug, 160, 160)}
-                      alt=""
-                      fill
-                      sizes="56px"
-                      className="object-cover"
-                    />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[0.65rem] font-semibold uppercase tracking-wide text-muted-foreground">
-                      Bài giới thiệu
-                    </span>
-                    <span className="mt-0.5 line-clamp-2 font-semibold leading-6 text-foreground decoration-primary/40 underline-offset-4 transition-colors group-hover:text-primary group-hover:underline">
-                      {introPost.title}
-                    </span>
-                  </span>
-                  <Glyph
-                    name="forward"
-                    className="size-4 shrink-0 text-muted-foreground transition-all group-hover:translate-x-0.5 group-hover:text-primary"
-                  />
-                </Link>
-              )}
-              </div>
-              </div>
+              <PlaceIntro
+                lede={lede}
+                body={descBody}
+                post={
+                  introPost
+                    ? {
+                        slug: introPost.slug,
+                        title: introPost.title,
+                        image: coverUrl(introPost.images, introPost.slug, 160, 160),
+                      }
+                    : null
+                }
+              />
             </section>
           )}
 
@@ -587,28 +552,24 @@ export default async function PlaceDetailPage({
         {place.activities.length > 0 && (
           <Band tint={tinted()}>
             <section id="trai-nghiem" className="scroll-mt-32">
-              <ExperienceGrid
+              <ExperiencePreview
                 title="Trải nghiệm nổi bật"
                 href={`/diem-den/${place.slug}/hoat-dong`}
                 count={counts.activity}
                 unit="trải nghiệm"
-                facts={activityFacts.map((f) => ({
-                  categoryLabel: f.category
-                    ? label(ACTIVITY_CATEGORY_LABELS, f.category)
-                    : null,
-                  seasonal: !!f.seasonText,
-                }))}
+                moreImages={moreActivityCovers}
                 items={place.activities.map((a) => ({
                   slug: a.slug,
                   name: a.name,
                   category: a.category
                     ? label(ACTIVITY_CATEGORY_LABELS, a.category)
                     : null,
-                  image: coverUrl(a.images, a.slug),
+                  image: a.images[0]?.url ?? null,
+                  description: a.description,
                   duration: shortFact(a.durationText),
                   season: shortFact(a.seasonText),
-                  spotNames: a.spotLinks.map((l) => l.spot.name),
-                  spotCount: a._count.spotLinks,
+                  price: ticketPriceLabel(a.ticketFree, a.ticketTiers),
+                  free: a.ticketFree,
                 }))}
               />
             </section>
@@ -622,16 +583,9 @@ export default async function PlaceDetailPage({
                 placeName={place.name}
                 href={`/diem-den/${place.slug}/am-thuc`}
                 count={counts.eatery}
-                facts={foodFacts.map((f) => ({
-                  categoryLabel:
-                    f.category && f.category !== "other"
-                      ? label(EATERY_CATEGORY_LABELS, f.category)
-                      : null,
-                  hasView: !!f.viewType,
-                  hasBestTime: !!f.bestTime,
-                }))}
-                eateries={place.eateries}
-                drinks={drinkVenues}
+                eateries={place.eateries.map(toVenue)}
+                drinks={drinkVenues.map(toVenue)}
+                moreImages={moreEateryCovers}
               />
             </section>
           </Band>
@@ -644,13 +598,11 @@ export default async function PlaceDetailPage({
                 placeName={place.name}
                 href={`/diem-den/${place.slug}/luu-tru`}
                 total={counts.accommodation}
-                verifiedTotal={verifiedStays}
-                facts={stayFacts.map((f) => ({
-                  categoryLabel: f.category
-                    ? label(ACCOMMODATION_CATEGORY_LABELS, f.category)
-                    : null,
+                moreImages={moreStayCovers}
+                stays={place.accommodations.map((a) => ({
+                  ...a,
+                  image: a.images[0]?.url ?? null,
                 }))}
-                stays={place.accommodations}
               />
             </section>
           </Band>
@@ -666,7 +618,7 @@ export default async function PlaceDetailPage({
                 linkLabel="Xem hướng dẫn đầy đủ"
               />
               <div className="mt-7">
-                <TransportBrief items={place.transports} />
+                <TransportBrief items={place.transports} placeName={place.name} />
               </div>
             </section>
           </Band>
@@ -715,7 +667,7 @@ export default async function PlaceDetailPage({
                           điểm dừng
                         </span>
                       </span>
-                      <span className="mt-2 font-[family-name:var(--font-display)] font-semibold leading-snug tracking-tight underline-offset-4 group-hover:underline">
+                      <span className="mt-2 font-[family-name:var(--font-display)] font-semibold leading-snug tracking-tight">
                         {t.title}
                       </span>
                       {t.summary && (
@@ -798,6 +750,15 @@ export default async function PlaceDetailPage({
   );
 }
 
+
+function toVenue(v: {
+  slug: string;
+  name: string;
+  meals: string[];
+  images: { url: string }[];
+}) {
+  return { ...v, image: v.images[0]?.url ?? null };
+}
 
 function shortFact(text: string | null): string | null {
   if (!text) return null;

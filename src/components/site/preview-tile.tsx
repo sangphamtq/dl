@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { Glyph, type GlyphName } from "@/components/site/glyphs";
 import { R_BADGE, R_CARD } from "@/lib/radius";
 import { cn } from "@/lib/utils";
@@ -28,7 +29,7 @@ export function TilePhoto({
         fill
         sizes={sizes}
         priority={priority}
-        className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.045] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+        className="object-cover"
       />
       {children}
     </div>
@@ -80,7 +81,9 @@ export function TileName({
   return (
     <h3
       className={cn(
-        "font-[family-name:var(--font-display)] font-semibold leading-snug tracking-tight underline-offset-4 group-hover:underline",
+        // Không zoom ảnh, không gạch chân: dấu hiệu bấm được duy nhất ở các mục
+        // xem trước là TÊN ĐỔI MÀU.
+        "font-[family-name:var(--font-display)] font-semibold leading-snug tracking-tight transition-colors group-hover:text-primary",
         size === "lead"
           ? "text-2xl sm:text-[1.75rem]"
           : size === "row"
@@ -124,34 +127,73 @@ export function FactLine({
   );
 }
 
-export function StatRow({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
-      {children}
-    </div>
-  );
-}
-
-export function Stat({
-  glyph,
-  children,
+/* Dòng "xem tất cả" dùng chung cho các mục xem trước. CỐ Ý không phải một dải
+   nền đặc: ô "Xem tất cả" của lưới địa điểm tô nền được vì nó là MỘT Ô giữa các
+   ô ảnh, còn ở đây nó nằm cuối một danh sách/lưới chữ — một mảng màu trải hết
+   bề ngang là hình khối không có ở đâu khác trên trang, đọc ra như banner dán
+   thêm. Nổi bật ở đây đến từ CON SỐ và xấp ảnh, không từ màu nền. */
+export function PreviewAllRow({
+  href,
+  more,
+  unit,
+  allLabel,
+  images = [],
+  thumb = "square",
 }: {
-  glyph: GlyphName;
-  children: React.ReactNode;
+  href: string;
+  more: number;
+  /** Danh từ đi sau số: "trải nghiệm nữa", "quán nữa". */
+  unit: string;
+  /** Nhãn khi không còn mục nào ngoài những mục đang hiện. */
+  allLabel: string;
+  images?: string[];
+  thumb?: "square" | "wide";
 }) {
-  return (
-    <span className="inline-flex items-center gap-1.5">
-      <Glyph
-        name={glyph}
-        className="size-[1.05rem] shrink-0 text-muted-foreground/70"
-      />
-      {children}
-    </span>
-  );
-}
+  const wide = thumb === "wide";
 
-export function N({ children }: { children: React.ReactNode }) {
   return (
-    <b className="font-semibold tabular-nums text-foreground">{children}</b>
+    <Link href={href} className="group flex items-center gap-4 py-4">
+      {images.length > 0 && (
+        <span
+          aria-hidden
+          className={cn("flex shrink-0", wide ? "-space-x-5" : "-space-x-4")}
+        >
+          {images.slice(0, 3).map((src, i) => (
+            <span
+              key={src}
+              className={cn(
+                R_BADGE,
+                "relative overflow-hidden bg-muted ring-2 ring-background transition-transform duration-300 ease-out motion-reduce:transition-none",
+                wide ? "aspect-[3/2] w-16" : "size-11",
+                i === 1 && "group-hover:translate-x-1.5",
+                i === 2 && "group-hover:translate-x-3",
+              )}
+            >
+              <Image
+                src={src}
+                alt=""
+                fill
+                sizes={wide ? "64px" : "44px"}
+                className="object-cover"
+              />
+            </span>
+          ))}
+        </span>
+      )}
+
+      <span className="flex min-w-0 flex-1 items-baseline gap-2">
+        <span className="font-[family-name:var(--font-display)] text-3xl font-semibold leading-none tabular-nums tracking-tight text-foreground transition-colors group-hover:text-primary">
+          {more > 0 ? `+${more}` : "Tất cả"}
+        </span>
+        <span className="truncate text-sm text-muted-foreground">
+          {more > 0 ? unit : allLabel}
+        </span>
+      </span>
+
+      <Glyph
+        name="forward"
+        className="size-5 shrink-0 text-muted-foreground transition-all group-hover:translate-x-1 group-hover:text-primary motion-reduce:transition-none"
+      />
+    </Link>
   );
 }

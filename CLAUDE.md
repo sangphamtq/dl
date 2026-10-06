@@ -266,43 +266,41 @@ Trước khi dựng/chỉnh giao diện: theo **skill `design`** (`.claude/skill
 Mỗi tab **một component riêng**, dùng chung khung lọc ở **`listing-filter.tsx`**. Tab tổng quan
 là **bản xem trước** của năm tab đó, dùng chung vật liệu ở **`preview-tile.tsx`**.
 
-### Khối ngay dưới hero = **BẢNG QUYẾT ĐỊNH**, không phải lời giới thiệu
+### Khối ngay dưới hero — một cột CHỮ, lề trái
 
-`place-decision.tsx`. Hero đã trả lời "nơi này trông thế nào", năm tab dưới trả lời "có những
-gì" → chỗ ở giữa chỉ còn một việc: **chốt "có đi không"**. Dòng xếp theo **mức CHẶN quyết
-định** (đi tới → mùa → mấy ngày → vé → cảnh báo → khách nói), không theo thứ tự biên tập nhập.
+`place-intro.tsx` (`#doi-net`): câu mở đầu · đoạn mô tả · link bài giới thiệu — một cột lề trái
+khổ `42rem`. **Không có gì ở cột phải, và không có tiêu đề mục** (hero ngay trên đã xưng tên,
+dải tab ngay trên đã nói có những gì).
 
-- **Chỉ nhận dữ liệu CÓ CẤU TRÚC**, và chỉ từ thứ trang đã truy vấn sẵn — **không thêm truy
-  vấn**. Thiếu dữ liệu thì **bỏ hẳn dòng**, không hiện ô rỗng; dưới 2 dòng thì cả khối biến mất.
-  Trang phải hỏi **`hasPlaceDecision()`** TRƯỚC, nếu không dải `Band` còn lại một khung rỗng.
-- ⚠️ **`quickInfo` (Json tự do) chỉ còn được đọc ĐÚNG HAI nhãn**: *mùa/thời điểm* và *nên đi*.
-  Mỗi nơi tự đặt một bộ nhãn khác nhau (Phan Thiết 4 ô, Tà Xùa 7 ô, **không trùng nhãn nào**)
-  nên không khối nào chịu được nếu nhận hết. Nhất là **"Phương tiện" thì BỎ** — `Transport` là
-  nguồn chân lý, và hai chỗ đã từng nói ngược nhau ("Máy bay" vs "bay Cam Ranh rồi đi xe").
-- Ngưỡng cố ý: cảnh báo chỉ hiện khi **≥ 3** địa điểm có `notice` (1–2 nơi thì ở đâu cũng có,
-  không nói lên đặc điểm điểm đến); "khách nói" cần **≥ 3** lượt đánh giá.
-- **Hình thức: CỘT DỮ KIỆN bên phải phần chữ** (kiểu trang sách hướng dẫn), nhãn cột *Trước
-  khi đi*. Ba số (đi tới · nên đi · vé) đặt cỡ lớn bằng `--font-display`, phần định tính
-  (mùa · cảnh báo · khách nói) xếp dưới. Hai bản đã thử và BỎ: ① mọi dòng cùng một cỡ chữ ⇒
-  khối không có điểm nhìn; ② ba số dàn ngang hết bề ngang trang ⇒ cách nhau quá xa nên trôi,
-  mà mép phải lại so le với khổ chữ 46rem bên dưới.
-  · Cột dữ kiện đặt **tường minh ở cột 2, trải 2 hàng**; câu mở đầu và đoạn mô tả để lưới tự
-    xếp vào cột 1 — nhờ vậy khi không tách được câu mở đầu thì đoạn mô tả vẫn lên hàng 1, và
-    dưới `lg` dữ kiện nằm **giữa** hai khối chữ chứ không rơi xuống cuối.
-  · ⚠️ Phải khai **`lg:grid-rows-[auto_1fr]`**: cột dữ kiện cao hơn tổng hai khối chữ nên nếu
-    để hàng tự chia, phần dư đội vào hàng 1 và hở một mảng giữa câu mở đầu với đoạn mô tả.
-  · ⚠️ **Số lớn phải MANG ĐƠN VỊ** để đọc được cạnh nhau (giờ · ngày · tiền). Tỉ lệ trần kiểu
-    "6/8" đứng giữa hai số kia thì không hiểu ngay — tỉ lệ lùi xuống dòng phụ.
-  · ⚠️ Khối nằm trong một **CỘT hẹp**, không phải cả bề ngang trang ⇒ cỡ chữ đo bằng
-    **`@container`**, không bằng breakpoint viewport.
-  · ⚠️ Các mẩu trong dòng phụ là **phần tử RỜI**, đừng nối thành một chuỗi nhiều dấu cách —
-    HTML gộp chúng lại thành một dấu, và "150k–290k 200 km" đọc ra thành một cụm.
+- ⚠️ **Dữ liệu thật: mô tả gần như luôn NGẮN và TRÙNG với tagline của hero.** Chỉ **10/94** nơi
+  có `description`; 8 trong số đó dài **150–185 ký tự** (đúng hai câu) mà câu đầu nói lại đúng
+  điều tagline vừa nói cách đó chưa tới 300px (*Hạ Long*: tagline "Du thuyền giữa vịnh di sản" ↔
+  mô tả "Vịnh Hạ Long — di sản thiên nhiên thế giới…"). Chỉ **Tà Xùa** (889, 5 đoạn) và **Phan
+  Thiết** (443) là bài viết thật. **Không bố cục nào cứu được đoạn văn nhắc lại thứ vừa đọc** —
+  phóng to hay căn giữa chỉ làm chỗ rỗng nổi hơn. Muốn khối này đáng đọc thì phải sửa NỘI DUNG,
+  đừng sửa CSS.
+- **Đã chốt: giữ khối cho mọi nơi có mô tả** (không gài ngưỡng độ dài để ẩn bớt).
+- Câu mở đầu (`splitLede`) chỉ **nhỉnh hơn phần thân một bậc** (`1.3–1.45rem`, `--font-display`).
+  Tách không ra câu mở đầu thì **cả đoạn xuống làm phần thân** — nâng nguyên đoạn lên cỡ chữ lớn
+  sẽ đè cả khối phía dưới.
+- ⚠️ **Hai bản đã thử và BỎ**: ① cột dữ kiện *Trước khi đi* bên phải (xem dưới); ② đề từ căn giữa
+  trang, cỡ chữ `clamp` tới `1.85rem` — chữ ít đọc ra như một lựa chọn, nhưng với 8/10 nơi thì nó
+  phóng to đúng đoạn văn thừa.
+- ⚠️ **Không drop cap**: bản cũ có, nhưng chữ thả nổi `float-left` ngay dưới một thanh tab dính
+  mép thì rối, và cỡ chữ câu mở đầu đã đủ nói "bắt đầu đọc ở đây".
+- ⚠️ **Cột dữ kiện *Trước khi đi* ĐÃ GỠ (5/10/2026, biên tập yêu cầu) — đừng tự dựng lại.**
+  `place-decision.tsx` xoá hẳn; `hasPlaceDecision()` và truy vấn `spotFacts` gỡ theo; `quickInfo`
+  **không còn chỗ nào công khai đọc** (CMS vẫn nhập được). Dựng lại thì lấy trong git: ở đó có
+  sẵn các ngưỡng đã chốt (cảnh báo khi **≥ 3** địa điểm có `notice`, "khách nói" cần **≥ 3** lượt)
+  và luật `quickInfo` **chỉ đọc hai nhãn** *mùa/thời điểm* với *nên đi* — mỗi nơi tự đặt một bộ
+  nhãn khác nhau (Phan Thiết 4 ô, Tà Xùa 7 ô, không trùng nhãn nào), nhất là **"Phương tiện" thì
+  BỎ** vì `Transport` mới là nguồn chân lý và hai chỗ đã từng nói ngược nhau.
 - **Không thêm ảnh vào khối này.** Nó nằm kẹp giữa dải ảnh hero và lưới mosaic; thứ giữ người
   đọc lại đây là thông tin họ chưa biết, còn chính việc "không có ảnh" mới tạo nhịp cho trang.
 - ⚠️ **VIDEO TIKTOK Ở TRANG ĐIỂM ĐẾN ĐÃ GỠ — đừng dựng lại.** Và gỡ luôn **cả cột media bên
-  phải** (`AboutMedia` cũng đã xoá) — cột phải giờ là DỮ KIỆN. Bỏ mỗi video thì cột phải rơi về
-  ảnh, mà ảnh đó lấy cùng kho `heroImages` với lưới mosaic ngay dưới ⇒ lặp đúng tấm vừa hiện,
-  lại cao hơn cột trái ~300px thành khoảng trống chết. Lý do gỡ video: caption là của mình còn nội dung là của người khác,
+  phải** (`AboutMedia` cũng đã xoá). Bỏ mỗi video thì cột phải rơi về ảnh, mà ảnh đó lấy cùng
+  kho `heroImages` với lưới mosaic ngay dưới ⇒ lặp đúng tấm vừa hiện, lại cao hơn cột trái
+  ~300px thành khoảng trống chết. Lý do gỡ video: caption là của mình còn nội dung là của người khác,
   không gì giữ hai thứ khớp nhau (seed từng gán CÙNG một videoId cho 6 điểm đến với 9 caption
   khác nhau); clip hay là của bên bán tour nên hoá ra quảng bá miễn phí một đơn vị chưa xác
   minh — ngược hẳn định vị "chống lừa cọc"; và iframe bên thứ ba nạp trên mọi lượt xem.
@@ -318,11 +316,15 @@ gì" → chỗ ở giữa chỉ còn một việc: **chốt "có đi không"**. 
   giọng **"việc + nơi"**; dải dữ kiện **KHÔNG đếm lại thứ màn hình đã đếm** mà dùng
   **`compositionLine()`** (*Nhiều nhất là biển*…). Dùng "nhiều nhất" chứ không "phần lớn" —
   trên dữ liệu thật loại đông nhất chỉ chiếm khoảng một phần ba.
-- ⚠️ **Con số trong dải phải đếm trên TOÀN BỘ danh sách, không trên mấy mục đang hiện.** Ở tab
-  tổng quan có **bốn truy vấn GẦY** (`spotFacts` · `activityFacts` · `foodFacts` · `stayFacts`)
-  chạy chung một `Promise.all`, truyền xuống qua prop `facts`.
-  · **Riêng mục *Địa điểm đáng ghé* KHÔNG có dải này** — đã gỡ, đừng thêm lại. `spotFacts` vẫn
-    được truy vấn nhưng giờ chỉ nuôi khối *Trước khi đi* ở đầu trang (dòng vé và dòng cảnh báo).
+- ⚠️ **TAB TỔNG QUAN KHÔNG CÒN DẢI DỮ KIỆN DƯỚI TIÊU ĐỀ** (dòng *Nhiều nhất là…*  *N chỗ ngồi có
+  view*  *N đã xác minh chính chủ*) — **đã gỡ ở CẢ BỐN mục, đừng thêm lại.** Mỗi mục giờ đi thẳng
+  từ tiêu đề vào nội dung. Gỡ theo luôn: prop `facts` của ba component, ba truy vấn
+  `activityFacts` · `foodFacts` · `stayFacts`, và `StatRow`/`Stat`/`N` trong `preview-tile.tsx`.
+  · **Các TAB CON thì vẫn giữ dải của mình** (`spot-section` · `activity-section` ·
+    `food-section` · `accommodation-section`, mỗi tab tự dựng `Stat` riêng) — ở đó luật cũ còn
+    nguyên: **con số phải đếm trên TOÀN BỘ danh sách, không trên mấy mục đang hiện.**
+  · Đi cùng lần gỡ này: **số chỗ ở đã xác minh** biến khỏi tab tổng quan. Câu giải thích *"Đã xác
+    minh = …"* và huy hiệu trên từng thẻ vẫn còn, nên thông điệp không mất.
   · **Thẻ địa điểm CHỈ CÒN TÊN** (ô lớn thêm một câu mô tả) — `bestTime`, loại địa điểm, huy
     hiệu giá và huy hiệu "Lưu ý" đều đã gỡ. Lưới này giờ là ẢNH THUẦN, đừng dán gì lên nữa.
 - ⚠️ **KHÔNG in số sao lên thẻ.** `Review` là **`stance`** (love/worthOnce/meh/bad), không phải
@@ -332,12 +334,86 @@ gì" → chỗ ở giữa chỉ còn một việc: **chốt "có đi không"**. 
   không phân biệt được gì. Huy hiệu dựng từ `ticketTiers`, cố ý **không rơi về `ticketInfo`**
   (trường đó là câu văn, nhét vào huy hiệu góc ảnh thì vỡ). *Luật này còn hiệu lực cho các mục
   dùng `PhotoBadge` (trải nghiệm · ăn uống · lưu trú); riêng lưới địa điểm đã bỏ hết huy hiệu.*
+- ⚠️ **Ở TRANG ĐIỂM ĐẾN: không hover zoom ảnh, không gạch chân tên** (đã gỡ ở `preview-tile.tsx`,
+  `experience-preview.tsx`, `place-card.tsx` và thẻ lịch trình mẫu trong `page.tsx`). Dấu hiệu
+  bấm được duy nhất của các mục xem trước là **TÊN ĐỔI MÀU** (`group-hover:text-primary`); thẻ nào
+  có viền thì viền đổi màu. Hai trang danh sách `/diem-den` và `/dia-diem` **vẫn giữ zoom** —
+  đây là quyết định riêng cho trang điểm đến.
+- ⚠️ **"Xem tất cả" của các mục xem trước KHÔNG tô nền** (`PreviewAllRow` trong `preview-tile.tsx`,
+  dùng chung cho trải nghiệm & ăn uống): nó là **dòng cuối cùng của chính danh sách** — hairline,
+  xấp ảnh, con số cỡ `--font-display`, mũi tên ở mép phải. Nổi bật đến từ CON SỐ, không từ màu.
+  · ⚠️ Bản tô nền (`color-mix(accent, primary)`) **đã thử và BỎ**: ô "Xem tất cả" của lưới địa
+    điểm tô nền được vì nó là MỘT Ô giữa các ô ảnh, còn một mảng màu trải hết bề ngang dưới một
+    danh sách chữ là hình khối không có ở đâu khác trên trang — đọc ra như banner dán thêm.
 - ⚠️ **`SpotSpotlight` đã gỡ hẳn, đừng dựng lại** — hero ngay trên đã là một dải ảnh tự đổi có
   play/pause, và một bản xem trước không được nặng hơn thứ nó xem trước.
-- **Ẩm thực ở tab tổng quan**: không tách quán ăn / quán nước thành hai khối; `pickVenues` giữ
-  **tối đa 2/4 ô cho quán nước** và vì vậy quán nước phải **truy vấn RIÊNG** — xếp chung rồi
-  cắt thì chúng gần như không bao giờ lọt (đứng cuối theo `order`).
-- **Lưu trú** lấy **trạng thái xác minh làm xương sống**: TÁCH HAI NHÓM theo `isVerified`, mỗi
+- **Trải nghiệm ở tab tổng quan — `experience-preview.tsx`, CỐ Ý không phải lưới ảnh đều nhau.**
+  `Spot` là một CHỖ nên ảnh chính là nội dung; `Activity` là một VIỆC, thứ chốt quyết định là
+  **bao lâu · bao nhiêu tiền · mùa nào**. Nên: **một việc dẫn cỡ lớn + chỉ mục các việc còn lại
+  kèm ảnh nhỏ** (96px, `R_CTRL`), giá dóng về **mép phải** để so được giữa các dòng. Cũng là cách
+  tách nhịp — trước đây trải nghiệm · ăn uống · lưu trú dùng CHUNG một lưới 4 cột nên trang đọc
+  ra như lặp.
+  · **Mỗi mục chỉ giữ ĐÚNG BỐN thứ**: ảnh · tên · (bao lâu + mùa) · giá. Tên spot và đơn vị khai
+    thác để dành cho tab `/hoat-dong` và trang chi tiết — bản xem trước không được nặng ngang thứ
+    nó xem trước.
+  · ⚠️ **Việc chưa có ảnh thì để Ô XÁM có ký hiệu, KHÔNG rơi về `coverUrl()`** — hàm đó trả ảnh
+    stock ngẫu nhiên theo slug, mà một tấm ảnh lạ dán tên "Trải nghiệm nhà thùng nước mắm" còn sai
+    hơn là không có ảnh (2/9 việc của Phan Thiết không có ảnh). Query lấy ảnh **lọc
+    `kind: "gallery"`, KHÔNG lọc `isCover`** rồi tự hỏi `images[0]`.
+  · **Không việc nào có ảnh thật (Tà Xùa) ⇒ bỏ cả ô dẫn lẫn cột ảnh**, chỉ mục chạy hai cột
+    (`columns-2`, nhớ `break-inside-avoid` kẻo một dòng bị cắt đôi) — sáu ô xám xếp dọc thì thà
+    đừng dựng cột ảnh.
+  · **"Miễn phí" KHÔNG lên huy hiệu ảnh** (huy hiệu chỉ dành cho giá có số) nhưng **vẫn hiện ở
+    dòng giá**: ở đây chỉ 2/9 việc miễn phí nên nó phân biệt được — khác hẳn lưới địa điểm, nơi
+    6/8 nơi vào tự do nên "Miễn phí" lặp sáu lần.
+  · ⚠️ **Giá render HAI BẢN, `display` chọn**: dưới `sm` nó đi cùng dòng dữ kiện, từ `sm` mới về
+    cột phải. Giữ cột giá ở khổ hẹp thì tên việc bị bóp còn một hai chữ ("Mô tô nước & thể…").
+  · **Dòng "xem tất cả" là DÒNG CUỐI của chính chỉ mục** (`PreviewAllRow`): cùng hairline, xấp ảnh
+    nằm đúng **cột ảnh**, mũi tên nằm đúng **cột giá** của các dòng trên. Ảnh lấy từ các việc KẾ
+    TIẾP (`moreActivityCovers`), **chỉ lấy việc có ảnh thật** — không có tấm nào thì dòng vẫn
+    chạy, còn số + mũi tên.
+  · ⚠️ `sizes` của ảnh phải ghi bằng **px** (`96px`/`320px`), đừng ghi `rem`: Next không quy ra
+    được nên rơi về bề rộng lớn nhất và tải ảnh **3840px** cho một ô 320px.
+- **Ẩm thực ở tab tổng quan — `food-menu.tsx`, dựng theo NHỊP MỘT NGÀY**: `Sáng → Trưa → Cà phê →
+  Tối → Ăn đêm`, **mỗi bữa đúng một quán**. Đây là trục riêng của phần ăn (các mục kia chọn theo
+  thứ tự biên tập), và dữ liệu đỡ được: `meals[]` điền ĐỦ 15/15 quán Phan Thiết, 7/7 quán Tà Xùa.
+  Mỗi ô chỉ còn **nhãn bữa · ảnh · tên** — giờ mở cửa và huy hiệu hướng nhìn đã gỡ, chúng sống ở
+  tab (nơi có cả huy hiệu "đang mở").
+  · **Quán nước tự có chỗ ở ô "Cà phê"** nên không phải tách khối riêng (luật cũ vẫn đúng: KHÔNG
+    chia khối theo `venueKind`). Nhưng **vẫn phải truy vấn RIÊNG** — xếp chung rồi cắt thì quán
+    nước gần như không bao giờ lọt vào `take` vì đứng cuối theo `order`.
+  · **`snack` KHÔNG có ô riêng**: trên dữ liệu thật mọi quán ăn vặt đều kiêm một bữa khác (8/15
+    quán Phan Thiết có `snack`), để thành ô chỉ làm loãng dải.
+  · **Dòng "xem tất cả" khép lại một ngày ăn** — cùng `PreviewAllRow` với mục trải nghiệm, đặt
+    dưới một hairline; riêng ở đây xấp ảnh dùng khuôn NGANG 3:2 như mọi ô trong dải.
+    ⚠️ **Ảnh của dải phải lọc theo `slug`, không `skip` theo số ô**: ô nào hiện ra là do
+    `pickSlots` chọn THEO BỮA (không phải 5 quán đầu theo `order`), nên trang không biết trước —
+    `skip: 5` làm xấp ảnh lặp lại đúng mấy quán vừa hiện ngay bên trên. Trang đưa xuống ứng viên
+    kèm `slug`, component tự lọc.
+  · **Không quán nào có ảnh thật ⇒ bỏ hẳn ảnh**, dải thành bảng thực đơn bằng chữ (Tà Xùa: 0/7
+    quán có ảnh) — cùng luật "ảnh thật hoặc không ảnh" với mục Trải nghiệm.
+- **Lưu trú ở tab tổng quan — `stay-directory.tsx`**: 4 thẻ **DỌC 4:5** (khác 3:2 của ăn uống và
+  4:3 của trải nghiệm), ảnh để TRƠN không huy hiệu, mỗi thẻ chỉ **ảnh · tên · khu vực**.
+  · **Dấu xác minh nằm TRONG dòng tên** (`check` màu `primary`, đi theo chữ cuối nên không trôi ra
+    mép phải khi tên xuống hai dòng) — đúng ngữ pháp "tài khoản đã xác minh" mà ai cũng đọc được.
+    Cùng màu với huy hiệu ở `/luu-tru/[slug]` và `/kiem-tra`: **cùng một thứ thì cùng một màu**.
+  · ⚠️ **Hai câu chữ của mục này ĐÃ GỠ KHỎI TAB TỔNG QUAN** — câu "Đã xác minh = …" dưới tiêu đề
+    và câu an toàn cọc ở cuối. Dấu tick tự nói; lời cảnh báo cọc vẫn sống nguyên ở **tab Lưu trú**
+    (hai nhóm kèm giải thích) và ở **trang chi tiết `/luu-tru/[slug]`**.
+  · Khu vực lấy bằng `areaOf(address)` — mẩu cuối không trùng tên điểm đến; **không dùng
+    `wardName`** (sau sáp nhập 2025 nó mất sức phân biệt).
+- **Đi lại ở tab tổng quan — `transport-brief.tsx`, là một BẢNG SO SÁNH.** Đây là mục duy nhất
+  của trang **không được dùng ảnh** (xem §Transport) và cũng là mục duy nhất có dữ liệu so sánh
+  được, nên nó dựng thành bảng: **thời gian và giá dóng thành hai cột RỘNG CỐ ĐỊNH** (`sm:w-32` ·
+  `sm:w-24`, `tabular-nums`) chạy suốt mọi nhóm — đọc dọc là so được tuyến nào nhanh/rẻ hơn.
+  · Nhóm theo **nơi xuất phát**, kèm `distanceKm` cạnh tên nơi đó. "Đi lại tại chỗ" là lưới 2–3
+    cột bên dưới, **cùng khổ `56rem`** với bảng trên để cả mục đọc ra MỘT bảng chứ không phải hai
+    danh sách rời.
+  · Mô tả, nhà xe, hotline, cảnh báo của từng tuyến **để dành cho `/di-chuyen`** — bản xem trước
+    chỉ trả lời *từ đâu · bằng gì · bao lâu · bao nhiêu*.
+  · ⚠️ **"Phổ biến" để XÁM, không mượn màu cam**: nó là ghi chú trung tính, không phải cảnh báo
+    (bản cũ dùng `text-warm-ink`, lệch quy ước màu §3).
+- **Lưu trú Ở TAB CON** lấy **trạng thái xác minh làm xương sống**: TÁCH HAI NHÓM theo `isVerified`, mỗi
   nhóm một câu nói rõ trạng thái đó nghĩa là gì (nên **không có** nút lọc "chỉ chỗ đã xác
   minh"). Thẻ giữ tối thiểu; kênh liên hệ/tag/chính sách cọc **chỉ ở popup / trang chi tiết**.
   · Thẻ có HAI đích tách bằng VỊ TRÍ: link thật ở TÊN + `after:absolute after:inset-0`
@@ -479,6 +555,12 @@ pnpm set-role <email> [role] · pnpm seed:*
 
 - ⚠️ **`proxy.ts` chứ không phải `middleware.ts`** (Next 16 đổi tên quy ước). Đặt ở
   `src/proxy.ts`, export default.
+- ⚠️ **`experimental.appNewScrollHandler: true` BẮT BUỘC GIỮ** — bộ xử lý cuộn cũ của Next lấy
+  `findDOMNode` của segment, mà React hoist thẻ metadata lên `<head>` nên nó bắt được một
+  `<script>`/`<meta>` rỗng, đi hết anh em trong `<head>` rồi **thoát mà không cuộn gì**. Hệ quả:
+  bấm từ trang danh sách (đang cuộn giữa trang) sang trang chi tiết thì trang mới mở ra ở lưng
+  hoặc **rơi hẳn xuống đáy** (vị trí cuộn bị kẹp theo màn chờ thấp, rồi scroll anchoring đẩy
+  xuống khi nội dung thật cao lên). Typecheck · lint · build đều sạch, không gì báo.
 - **Server Components mặc định**; chỉ `"use client"` khi thật sự cần. Truy vấn dữ liệu làm ở
   Server Component.
 - ⚠️ **Auth split config (BẮT BUỘC giữ):** `auth.config.ts` edge-safe (**KHÔNG import Prisma**)
@@ -511,6 +593,14 @@ pnpm set-role <email> [role] · pnpm seed:*
 > lặng. Vì vậy có **`pnpm check:loading`** (Chrome headless qua CDP, bóp mạng 3G, BẤM THẬT một
 > link rồi xem `.page-loading` có vào DOM không). Thêm route mới → thêm một dòng vào `CASES`.
 
+- ⚠️ **`html { overflow-anchor: none }` trong `globals.css` BẮT BUỘC GIỮ** (bạn đồng hành của cờ
+  `appNewScrollHandler` ở trên, nhưng là ca KHÁC: **tải lại trang**). Trang stream theo Suspense
+  nên lúc trình duyệt khôi phục vị trí cuộn, tài liệu mới chỉ cao bằng màn chờ ⇒ vị trí bị **kẹp
+  xuống đáy khung ngắn đó**, neo rơi trúng chân trang, rồi nội dung thật cao lên mà neo vẫn giữ
+  chân trang trong tầm nhìn ⇒ **cả trang nhảy xuống ĐÁY**. Hay gặp nhất khi dev server tự tải lại.
+  · Chỉ tắt ở khung cuộn GỐC — mọi khung cuộn con vẫn giữ scroll anchoring.
+  · Đổi lại: trang nào stream chậm thì F5 về gần đỉnh thay vì đúng chỗ cũ (lệch ~150–250px).
+    Khôi phục đúng vị trí đòi `scrollRestoration = "manual"` + tự lưu/khôi phục, **chưa làm**.
 - Màn chờ **hoãn 120ms** mới hiện — đo trên mạng chậm, đừng kết luận từ máy dev.
 - **Tab con của trang điểm đến có màn chờ RIÊNG** (`(tabs)/loading.tsx`): khung xám nội tuyến,
   **không** dùng `PageLoading` (nó `min-h-svh`, sẽ đội trang cao vọt).

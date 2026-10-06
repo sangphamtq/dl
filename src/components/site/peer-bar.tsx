@@ -58,11 +58,36 @@ export function PeerBar({
   const mode = useSyncExternalStore(subResize, getMode, () => "dock");
   const railRef = useRef<HTMLAnchorElement>(null);
   const dockRef = useRef<HTMLAnchorElement>(null);
+  const railBoxRef = useRef<HTMLDivElement>(null);
+  const dockBoxRef = useRef<HTMLDivElement>(null);
 
+  // Cuộn CHÍNH hai dải này bằng `scrollTop`/`scrollLeft`, KHÔNG dùng `scrollIntoView`: panel
+  // nằm trong khối `fixed`, trình duyệt sẽ cuộn luôn CẢ TRANG để nó "lọt tầm nhìn".
   useEffect(() => {
     if (hidden) return;
-    railRef.current?.scrollIntoView({ block: "nearest", behavior: "auto" });
-    dockRef.current?.scrollIntoView({ inline: "center", block: "nearest" });
+    const rail = railBoxRef.current;
+    const railItem = railRef.current;
+    if (rail && railItem) {
+      const top =
+        railItem.getBoundingClientRect().top -
+        rail.getBoundingClientRect().top +
+        rail.scrollTop;
+      const bottom = top + railItem.offsetHeight;
+      if (top < rail.scrollTop) rail.scrollTo({ top });
+      else if (bottom > rail.scrollTop + rail.clientHeight)
+        rail.scrollTo({ top: bottom - rail.clientHeight });
+    }
+    const dock = dockBoxRef.current;
+    const dockItem = dockRef.current;
+    if (dock && dockItem) {
+      const offset =
+        dockItem.getBoundingClientRect().left -
+        dock.getBoundingClientRect().left +
+        dock.scrollLeft;
+      dock.scrollTo({
+        left: offset - (dock.clientWidth - dockItem.clientWidth) / 2,
+      });
+    }
   }, [hidden, mode]);
 
   const total = groups.reduce((n, g) => n + g.items.length, 0);
@@ -98,7 +123,10 @@ export function PeerBar({
             <X className="size-3.5" aria-hidden />
           </button>
         </div>
-        <div className="flex flex-col gap-px overflow-y-auto px-1 pb-1.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div
+          ref={railBoxRef}
+          className="flex flex-col gap-px overflow-y-auto px-1 pb-1.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
           {groups.map((g, gi) => (
             <Fragment key={g.label ?? gi}>
               {g.label && (
@@ -145,7 +173,10 @@ export function PeerBar({
       <div aria-hidden className="h-20" />
       <div className="pointer-events-none fixed inset-x-0 bottom-[calc(0.75rem+var(--bottom-nav-h))] z-40 flex justify-center px-3">
         <div className="pointer-events-auto flex max-w-[calc(100vw-1.5rem)] items-center gap-2 rounded-2xl border border-border/60 bg-background/80 p-1.5 shadow-xl shadow-black/5 backdrop-blur-xl">
-          <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div
+            ref={dockBoxRef}
+            className="flex min-w-0 items-center gap-1.5 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
             {groups.map((g, gi) => (
               <Fragment key={g.label ?? gi}>
                 {g.label && (

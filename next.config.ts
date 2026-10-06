@@ -3,6 +3,10 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["192.168.1.145"],
 
+  // Bộ xử lý cuộn cũ bắt phải thẻ metadata React hoist lên <head> rồi thoát mà không cuộn
+  // ⇒ chuyển trang không reset vị trí cuộn. Xem CLAUDE.md §4.
+  experimental: { appNewScrollHandler: true },
+
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "picsum.photos" },

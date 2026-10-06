@@ -1,44 +1,59 @@
 import Link from "next/link";
 import { Glyph } from "@/components/site/glyphs";
 import {
-  FactLine,
-  N,
-  PhotoBadge,
-  Stat,
-  StatRow,
+  PreviewAllRow,
   TileName,
   TilePhoto,
 } from "@/components/site/preview-tile";
-import { coverUrl } from "@/lib/place-image";
-import { compositionLine, countByLabel } from "@/lib/listing-summary";
-import { ACCOMMODATION_CATEGORY_LABELS, label } from "@/lib/listing-labels";
 import { SectionHeading } from "@/components/site/section-heading";
+import { R_CARD } from "@/lib/radius";
+import { cn } from "@/lib/utils";
+
+/* Xem trước tab Lưu trú. Trục của mục này là NIỀM TIN, không phải ảnh đẹp hay
+   giá (schema cố ý không có `priceRange`): giá trị độc nhất của dự án là danh bạ
+   chỗ ở đã xác minh chính chủ. Vì vậy dấu xác minh đặt ngay CẠNH TÊN — chỗ mắt
+   dừng lại — chứ không phải một huy hiệu góc ảnh; nó tự giải thích theo đúng
+   ngữ pháp "tài khoản đã xác minh" mà ai cũng đọc được, nên khối này không cần
+   một câu chú thích dưới tiêu đề.
+
+   Thẻ giữ TỐI THIỂU (ảnh · tên · khu vực): kênh liên hệ, chính sách cọc và tag
+   chỉ sống ở popup của tab và trang chi tiết `/luu-tru/[slug]`. */
 
 export type StayEntry = {
   slug: string;
   name: string;
-  category: string | null;
   address: string | null;
   isVerified: boolean;
-  images: { url: string; isCover: boolean }[];
+  /** null = chưa có ảnh THẬT; đừng rơi về ảnh stock. */
+  image: string | null;
 };
 
-export type StayFacts = { categoryLabel: string | null };
+/* Lấy mẩu địa chỉ có sức phân biệt nhất: mẩu cuối KHÔNG trùng tên điểm đến
+   ("…, Hàm Tiến, Mũi Né, TP. Phan Thiết" → "Mũi Né"). Sau sáp nhập 2025 tên
+   xã/phường mất sức phân biệt nên không dùng `wardName` (CLAUDE.md §1). */
+function areaOf(address: string | null, placeName: string): string | null {
+  if (!address) return null;
+  const parts = address
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .filter((p) => !p.toLowerCase().includes(placeName.toLowerCase()));
+  return parts[parts.length - 1] ?? null;
+}
 
 export function StayDirectory({
   placeName,
   href,
   total,
-  verifiedTotal,
   stays,
-  facts,
+  moreImages = [],
 }: {
   placeName: string;
   href: string;
   total?: number;
-  verifiedTotal: number;
   stays: StayEntry[];
-  facts: StayFacts[];
+  /** Ảnh bìa của các chỗ ở chưa có ô, cho dòng "Xem tất cả". */
+  moreImages?: string[];
 }) {
   if (stays.length === 0) return null;
 
@@ -52,76 +67,77 @@ export function StayDirectory({
         unit="chỗ ở"
       />
 
-      <StatRow>
-        <Stat glyph="bed">
-          {compositionLine(
-            countByLabel(facts.map((f) => f.categoryLabel)),
-            facts.length,
-          ) ?? (
-            <>
-              <N>{total ?? stays.length}</N> chỗ ở
-            </>
-          )}
-        </Stat>
-        {verifiedTotal > 0 ? (
-          <Stat glyph="check">
-            <N>{verifiedTotal}</N> đã xác minh chính chủ
-          </Stat>
-        ) : (
-          <Stat glyph="shield">Chưa chỗ nào được xác minh</Stat>
-        )}
-      </StatRow>
-
-      <p className="mt-3 max-w-2xl text-xs leading-relaxed text-muted-foreground">
-        <strong className="font-semibold text-foreground">Đã xác minh</strong> =
-        Halivivu đã đối chiếu kênh liên hệ (Zalo, Facebook, điện thoại) với chủ
-        nhà. Chỗ chưa xác minh vẫn hiện, nhưng bạn nên tự kiểm trước khi chuyển
-        cọc.
-      </p>
-
-      <ul className="mt-6 grid grid-cols-2 gap-x-5 gap-y-9 sm:gap-x-6 md:grid-cols-4">
+      <ul className="mt-7 grid grid-cols-2 gap-x-5 gap-y-8 sm:gap-x-6 md:grid-cols-4">
         {stays.map((s, i) => (
-          <StayTile key={s.slug} s={s} priority={i < 4} />
+          <Card key={s.slug} s={s} placeName={placeName} priority={i < 4} />
         ))}
       </ul>
 
-      <p className="mt-6 flex items-start gap-2 text-xs leading-relaxed text-muted-foreground">
-        <Glyph name="shield" className="mt-0.5 size-3.5 shrink-0 text-warm" />
-        Chỉ chuyển cọc qua kênh liên hệ hiển thị trên trang từng chỗ ở.
-      </p>
+      <div className="mt-6 border-t border-border/60">
+        <PreviewAllRow
+          href={href}
+          more={Math.max(0, (total ?? stays.length) - stays.length)}
+          unit="chỗ ở nữa"
+          allLabel="chỗ ở"
+          images={moreImages}
+        />
+      </div>
+
     </div>
   );
 }
 
-function StayTile({ s, priority }: { s: StayEntry; priority: boolean }) {
+function Card({
+  s,
+  placeName,
+  priority,
+}: {
+  s: StayEntry;
+  placeName: string;
+  priority: boolean;
+}) {
+  const area = areaOf(s.address, placeName);
+
   return (
     <li>
       <Link href={`/luu-tru/${s.slug}`} className="group block">
-        <TilePhoto
-          src={coverUrl(s.images, s.slug, 800, 600)}
-          sizes="(min-width: 768px) 23vw, 46vw"
-          priority={priority}
-        >
-          {s.category && (
-            <PhotoBadge>
-              {label(ACCOMMODATION_CATEGORY_LABELS, s.category)}
-            </PhotoBadge>
-          )}
+        {s.image ? (
+          <TilePhoto
+            src={s.image}
+            ratio="aspect-[4/5]"
+            sizes="(min-width: 768px) 23vw, 46vw"
+            priority={priority}
+          />
+        ) : (
+          <span
+            className={cn(
+              R_CARD,
+              "grid aspect-[4/5] place-items-center bg-muted",
+            )}
+          >
+            <Glyph name="bed" className="size-6 text-muted-foreground/40" />
+          </span>
+        )}
+
+        <TileName className="mt-3 line-clamp-2">
+          {s.name}
+          {/* Dấu xác minh nằm TRONG dòng chữ (đi theo chữ cuối cùng, không trôi
+              ra mép phải khi tên xuống hai dòng) và dùng đúng màu primary như
+              huy hiệu ở trang chi tiết với trang /kiem-tra. */}
           {s.isVerified && (
-            <PhotoBadge side="right" tone="mark" glyph="check">
-              Đã xác minh
-            </PhotoBadge>
+            <Glyph
+              name="check"
+              className="ml-1.5 inline-block size-4 -translate-y-px text-primary"
+              aria-label="Đã xác minh chính chủ"
+            />
           )}
-        </TilePhoto>
+        </TileName>
 
-        <div className="mt-3.5 flex min-h-[3.25rem] items-start">
-          <TileName className="line-clamp-2">{s.name}</TileName>
-        </div>
-
-        {s.address && (
-          <div className="mt-1">
-            <FactLine glyph="pin">{s.address}</FactLine>
-          </div>
+        {area && (
+          <p className="mt-1 flex gap-1.5 text-xs text-muted-foreground">
+            <Glyph name="pin" className="mt-px size-3.5 shrink-0" />
+            <span className="line-clamp-1">{area}</span>
+          </p>
         )}
       </Link>
     </li>

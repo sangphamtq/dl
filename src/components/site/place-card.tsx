@@ -39,7 +39,7 @@ export function PlaceCard({ place }: { place: PlaceCardData }) {
           />
           {isProvince ? "Tỉnh / Thành phố" : "Điểm đến"}
         </div>
-        <h3 className="mt-1 font-semibold tracking-tight underline-offset-4 group-hover:underline">
+        <h3 className="mt-1 font-semibold tracking-tight">
           {place.name}
         </h3>
         {place.description && (

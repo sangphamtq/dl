@@ -135,8 +135,15 @@
   body {
     @apply bg-background text-foreground;
   }
+  /* Tắt scroll anchoring của trình duyệt trên khung cuộn GỐC (các khung cuộn
+     con vẫn giữ). Trang stream theo Suspense nên lúc trình duyệt khôi phục vị
+     trí cuộn (F5, hoặc dev server tự tải lại) tài liệu mới chỉ cao bằng màn
+     chờ ⇒ vị trí bị KẸP xuống đáy khung ngắn đó, neo rơi trúng chân trang, rồi
+     nội dung thật cao lên mà neo vẫn giữ chân trang trong tầm nhìn ⇒ cả trang
+     nhảy xuống ĐÁY. */
   html {
     @apply font-sans;
+    overflow-anchor: none;
   }
   h1, h2, h3, h4, h5, h6 {
     @apply font-heading;
