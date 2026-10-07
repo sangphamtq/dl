@@ -112,11 +112,13 @@ enum ContentReportStatus {
 }
 
 // Cảm nhận chung của một review điểm đến (chọn 1) — thang 4 mức thay cho số sao.
+// 5 mức, mỗi mức = đúng một số sao (5→1). Nhãn & số sao: lib/review-meta.ts.
 enum ReviewStance {
-  love // tuyệt vời, muốn quay lại
-  worthOnce // đáng đi một lần
-  meh // không có gì đặc biệt
-  bad // thất vọng, không nên đi
+  love // 5★ tuyệt vời, muốn quay lại
+  worth // 4★ đáng đi
+  okay // 3★ bình thường
+  letdown // 2★ hơi thất vọng
+  bad // 1★ không nên đi
 }
 
 /// Mức giá tương đối: budget=$ · moderate=$$ · premium=$$$ · luxury=$$$$

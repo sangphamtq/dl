@@ -21,7 +21,7 @@ import {
 import { cn } from "@/lib/utils";
 import { timeAgo } from "@/lib/format";
 import { R_CARD, R_CTRL } from "@/lib/radius";
-import { STANCE_TEXT, stanceMeta, type ReviewStance } from "@/lib/review-meta";
+import { STANCE_TEXT, isWorthGoing, stanceMeta, type ReviewStance } from "@/lib/review-meta";
 
 export type CheckInPerson = {
   id: string;
@@ -64,9 +64,7 @@ export function CheckInFaces({
   // and a ratio over a partial list would describe a different set than `total`.
   const complete = people.length >= total;
   const reviewed = people.filter((p) => p.stance).length;
-  const worth = people.filter(
-    (p) => p.stance === "love" || p.stance === "worthOnce",
-  ).length;
+  const worth = people.filter((p) => isWorthGoing(p.stance)).length;
   const rest = total - people.length;
 
   return (

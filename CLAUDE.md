@@ -135,6 +135,15 @@ Cả `Spot` lẫn `Activity` đều có hai trường (`Json`, helper ở `lib/t
 > route `[loai]`, **không tạo file route mới**). **KHÔNG trang chi tiết per-item, không slug,
 > KHÔNG dùng ảnh** — nhận diện bằng icon theo `mode`.
 
+> ⚠️ **`Transport` ĐANG TẮT** (cờ `TRANSPORT_ENABLED` trong `lib/place-meta.ts`): dữ liệu tuyến
+> khó thu thập cho đủ. **Bảng, CMS, dữ liệu, `transport-brief.tsx`/`transport-section.tsx` giữ
+> NGUYÊN.** Khi tắt, mục "Di chuyển" của điểm đến là **MỘT BÀI BLOG**: `Post.category =
+> "di-chuyen"` + `PostRef` tới `Place` (`getTransportPost`). Tab `/di-chuyen` **render nguyên bài**
+> (`transport-article.tsx`, canonical trỏ về `/blog/[slug]`; không có bài → 404 và tab không
+> hiện); tab tổng quan hiện `TransportPreview` — bản xem trước của CHÍNH bài: tóm tắt + chỉ mục các phần H2 (link `#id` vào tab) + ảnh bìa thật (không có thì bỏ cột ảnh, không rơi về ảnh stock). Mọi nơi render bài phải qua `prepareArticle()` để id tiêu đề khớp nhau. **Thích/bình luận chỉ ở trang
+> blog** — tab chỉ để link sang, đừng dựng lại lần hai. Thân bài dùng chung `articleProseClass`
+> (`lib/prose.ts`) với trang blog. Bài này bị **loại khỏi mục bài viết cuối trang** (`excludeCategory`).
+
 - `direction` = `getTo` (đến nơi từ bên ngoài, có `fromName`) | `getAround` (phương tiện tại chỗ).
 - `glyphs.tsx` có **7 hình vẽ theo HỌ** chứ không theo từng `mode`: `car` (ô tô·taxi·xe
   ghép·đưa đón) · `bus` · `train` · `plane` · `boat` · `two-wheel` (xe máy·xe đạp·xích lô) ·
@@ -266,37 +275,15 @@ Trước khi dựng/chỉnh giao diện: theo **skill `design`** (`.claude/skill
 Mỗi tab **một component riêng**, dùng chung khung lọc ở **`listing-filter.tsx`**. Tab tổng quan
 là **bản xem trước** của năm tab đó, dùng chung vật liệu ở **`preview-tile.tsx`**.
 
-### Khối ngay dưới hero — một cột CHỮ, lề trái
+### Khối ngay dưới hero — ĐÃ GỠ (8/10/2026, biên tập yêu cầu)
 
-`place-intro.tsx` (`#doi-net`): câu mở đầu · đoạn mô tả · link bài giới thiệu — một cột lề trái
-khổ `42rem`. **Không có gì ở cột phải, và không có tiêu đề mục** (hero ngay trên đã xưng tên,
-dải tab ngay trên đã nói có những gì).
+Trang tổng quan đi thẳng từ dải tab vào mục đầu tiên (Địa điểm, hoặc "Điểm đến ở …" với tỉnh).
+`place-intro.tsx` và `plain-prose.tsx` đã xoá, truy vấn `introPost` và `splitLede()` gỡ theo.
+**`Place.description` vẫn còn và vẫn nhập ở CMS** — chỉ không còn chỗ nào công khai đọc ở trang này.
+Dựng lại thì lấy trong git; lý do cũ vẫn đúng: **10/94** nơi có mô tả và **8/10** trong số đó chỉ
+hai câu nhắc lại tagline của hero — muốn khối này đáng đọc thì sửa NỘI DUNG, đừng sửa CSS.
+Cột *Trước khi đi* (`place-decision.tsx`) cũng đã gỡ trước đó — đừng tự dựng lại.
 
-- ⚠️ **Dữ liệu thật: mô tả gần như luôn NGẮN và TRÙNG với tagline của hero.** Chỉ **10/94** nơi
-  có `description`; 8 trong số đó dài **150–185 ký tự** (đúng hai câu) mà câu đầu nói lại đúng
-  điều tagline vừa nói cách đó chưa tới 300px (*Hạ Long*: tagline "Du thuyền giữa vịnh di sản" ↔
-  mô tả "Vịnh Hạ Long — di sản thiên nhiên thế giới…"). Chỉ **Tà Xùa** (889, 5 đoạn) và **Phan
-  Thiết** (443) là bài viết thật. **Không bố cục nào cứu được đoạn văn nhắc lại thứ vừa đọc** —
-  phóng to hay căn giữa chỉ làm chỗ rỗng nổi hơn. Muốn khối này đáng đọc thì phải sửa NỘI DUNG,
-  đừng sửa CSS.
-- **Đã chốt: giữ khối cho mọi nơi có mô tả** (không gài ngưỡng độ dài để ẩn bớt).
-- Câu mở đầu (`splitLede`) chỉ **nhỉnh hơn phần thân một bậc** (`1.3–1.45rem`, `--font-display`).
-  Tách không ra câu mở đầu thì **cả đoạn xuống làm phần thân** — nâng nguyên đoạn lên cỡ chữ lớn
-  sẽ đè cả khối phía dưới.
-- ⚠️ **Hai bản đã thử và BỎ**: ① cột dữ kiện *Trước khi đi* bên phải (xem dưới); ② đề từ căn giữa
-  trang, cỡ chữ `clamp` tới `1.85rem` — chữ ít đọc ra như một lựa chọn, nhưng với 8/10 nơi thì nó
-  phóng to đúng đoạn văn thừa.
-- ⚠️ **Không drop cap**: bản cũ có, nhưng chữ thả nổi `float-left` ngay dưới một thanh tab dính
-  mép thì rối, và cỡ chữ câu mở đầu đã đủ nói "bắt đầu đọc ở đây".
-- ⚠️ **Cột dữ kiện *Trước khi đi* ĐÃ GỠ (5/10/2026, biên tập yêu cầu) — đừng tự dựng lại.**
-  `place-decision.tsx` xoá hẳn; `hasPlaceDecision()` và truy vấn `spotFacts` gỡ theo; `quickInfo`
-  **không còn chỗ nào công khai đọc** (CMS vẫn nhập được). Dựng lại thì lấy trong git: ở đó có
-  sẵn các ngưỡng đã chốt (cảnh báo khi **≥ 3** địa điểm có `notice`, "khách nói" cần **≥ 3** lượt)
-  và luật `quickInfo` **chỉ đọc hai nhãn** *mùa/thời điểm* với *nên đi* — mỗi nơi tự đặt một bộ
-  nhãn khác nhau (Phan Thiết 4 ô, Tà Xùa 7 ô, không trùng nhãn nào), nhất là **"Phương tiện" thì
-  BỎ** vì `Transport` mới là nguồn chân lý và hai chỗ đã từng nói ngược nhau.
-- **Không thêm ảnh vào khối này.** Nó nằm kẹp giữa dải ảnh hero và lưới mosaic; thứ giữ người
-  đọc lại đây là thông tin họ chưa biết, còn chính việc "không có ảnh" mới tạo nhịp cho trang.
 - ⚠️ **VIDEO TIKTOK Ở TRANG ĐIỂM ĐẾN ĐÃ GỠ — đừng dựng lại.** Và gỡ luôn **cả cột media bên
   phải** (`AboutMedia` cũng đã xoá). Bỏ mỗi video thì cột phải rơi về ảnh, mà ảnh đó lấy cùng
   kho `heroImages` với lưới mosaic ngay dưới ⇒ lặp đúng tấm vừa hiện, lại cao hơn cột trái
@@ -309,6 +296,15 @@ dải tab ngay trên đã nói có những gì).
   · **`SpotVideo` ở trang `/dia-diem/[slug]` thì VẪN chạy** — đây không phải quyết định bỏ
     TikTok toàn site.
 
+- ⚠️ **Nền xám/trắng của tab tổng quan đổi theo NHÓM NGHĨA, không theo từng mục** (`groups` +
+  `tintOf()` trong `page.tsx`): *xem & chơi* (điểm đến con · địa điểm · trải nghiệm) · *ăn & ở* ·
+  *lên kế hoạch* (đi lại · lịch trình) · *khách nói* (đánh giá) · *đọc thêm* (blog). Các mục cùng
+  nhóm nằm CHUNG một `Band`. Màu xen kẽ tính trên các nhóm CÓ MẶT ⇒ hai mảng cùng màu không bao giờ
+  dính nhau. Bản cũ xen kẽ theo từng mục ra 8 vạch ngựa vằn và tách Ẩm thực với Lưu trú ra hai màu
+  — **thêm mục mới thì xếp vào một nhóm, đừng cho nó một `Band` riêng.**
+  · **Màu dải xám là token `--band`** (`bg-band`, sáng `#f7f6f2`), KHÔNG phải `bg-muted/60`: bản
+    cũ ra ≈ `#f4f2ef`, xám ngả vàng nâu, cạnh ảnh màu tươi đọc ra như phủ bụi. Đã so trên trang
+    thật với `#f2f6f1` (ánh xanh — đọc ra "mảng màu") và `#f3f5f7` (lạnh, lạc tông site ấm).
 - ⚠️ **`ListingView` đã XOÁ — đừng dựng lại component "danh sách chung chung"**: mỗi loại có bộ
   trường và bộ câu hỏi khác nhau; cái chung duy nhất là khung lọc, và nó đã tách ra rồi.
   Cũng đừng dựng thẻ riêng cho từng mục xem trước — đó là thứ vừa phải dọn.
@@ -327,9 +323,25 @@ dải tab ngay trên đã nói có những gì).
     minh = …"* và huy hiệu trên từng thẻ vẫn còn, nên thông điệp không mất.
   · **Thẻ địa điểm CHỈ CÒN TÊN** (ô lớn thêm một câu mô tả) — `bestTime`, loại địa điểm, huy
     hiệu giá và huy hiệu "Lưu ý" đều đã gỡ. Lưới này giờ là ẢNH THUẦN, đừng dán gì lên nữa.
-- ⚠️ **KHÔNG in số sao lên thẻ.** `Review` là **`stance`** (love/worthOnce/meh/bad), không phải
-  thang điểm. Bản cũ quy về sao: Bàu Trắng có ĐÚNG MỘT đánh giá "meh" nên thẻ hiện **"0,0"**.
-  Nay hiện "3/4 khách thấy đáng đi" và **chỉ khi ≥ 3 lượt** (`MIN_REVIEWS`).
+- **`Review.stance` = 5 CÂU CẢM NHẬN, mỗi câu = đúng một số sao** (`REVIEW_STANCES` trong
+  `lib/review-meta.ts`): love 5★ *Tuyệt vời, muốn quay lại* · worth 4★ *Đáng đi* · okay 3★ *Bình
+  thường* · letdown 2★ *Hơi thất vọng* · bad 1★ *Không nên đi*. Người viết chọn CÂU, điểm tổng hợp
+  là **trung bình số sao**. "Đáng đi" = love + worth (`isWorthGoing`). Migration
+  `review_stance_5` đổi dữ liệu cũ theo nghĩa: worthOnce → worth, meh → okay.
+  · ⚠️ Bản 4 mức cũ quy về sao bằng tỉ lệ cộng/trừ nên Bàu Trắng có đúng một đánh giá "meh" mà
+    thẻ hiện **"0,0"** — lý do **thẻ KHÔNG in số sao**, chỉ "3/4 khách thấy đáng đi" và **chỉ khi
+    ≥ 3 lượt** (`MIN_REVIEWS`). Luật này giữ nguyên.
+- **Mục đánh giá — `place-reviews.tsx` (dùng chung trang điểm đến và `/dia-diem/[slug]`)**: hai cột
+  (tổng hợp bên trái dính khi cuộn · danh sách bên phải) ngăn bằng **MỘT vạch dọc, không đóng hộp**.
+  Nền trang khác nhau (xám ở điểm đến, trắng ở địa điểm) nên tấm nền riêng chìm ở một trong hai
+  nơi; viền thì sai quy ước vì không phần nào là khối bấm được. Cột trái: điểm lớn (`--font-display`)
+  · sao · số đánh giá + **% thấy đáng đi** · nút **Viết đánh giá** (ở đây, không ở góc tiêu đề) ·
+  phân bố 5 mức (bấm để lọc) · *Điểm cộng* / *Cần lưu ý* (`warm-ink`) thành hai nhóm có nhãn.
+  · Đã thử và BỎ (biên tập chọn quay lại khung hai cột): dải tổng hợp ngang ba cột + lưới đánh giá
+    hai cột.
+  · **Mỗi thứ nói MỘT lần**: nhãn điểm cộng / lưu ý CHỈ ở cột tổng hợp (3 + 2 nổi nhất), **không
+    lặp dưới từng đánh giá**; dòng phân bố chỉ in SỐ LƯỢT, không in thêm % (thanh màu đã cho tỉ lệ);
+    mở sẵn **5** đánh giá.
 - **Giá chỉ nói khi CÓ BÁN VÉ** — 6/8 địa điểm Phan Thiết vào tự do nên "Miễn phí" lặp sáu lần
   không phân biệt được gì. Huy hiệu dựng từ `ticketTiers`, cố ý **không rơi về `ticketInfo`**
   (trường đó là câu văn, nhét vào huy hiệu góc ảnh thì vỡ). *Luật này còn hiệu lực cho các mục
@@ -413,6 +425,27 @@ dải tab ngay trên đã nói có những gì).
     chỉ trả lời *từ đâu · bằng gì · bao lâu · bao nhiêu*.
   · ⚠️ **"Phổ biến" để XÁM, không mượn màu cam**: nó là ghi chú trung tính, không phải cảnh báo
     (bản cũ dùng `text-warm-ink`, lệch quy ước màu §3).
+- **Lịch trình mẫu ở tab tổng quan — `trip-template-preview.tsx`, HÀNH TRÌNH BẰNG ẢNH**: mỗi mẫu
+  một hàng (hairline), trái là tên + số điểm dừng, phải là chuỗi NGÀY nối bằng một vạch — mỗi
+  ngày một **xấp ảnh 44px** (≤3 ảnh THẬT của điểm dừng trong ngày, `kind: "gallery"`, bỏ chỗ ở)
+  + "Ngày N" + tiêu đề ngày. Ngày không ảnh ⇒ ô vuông in SỐ NGÀY (và bỏ nhãn "Ngày N" lặp lại);
+  nhờ vậy Tà Xùa (0 ảnh) vẫn cùng một hình.
+  · ⚠️ **Cột ngày RỘNG CỐ ĐỊNH** (`--day-w` 9.5rem / 12rem), không chia đều bề ngang — để "Ngày 2"
+    của mọi mẫu dóng cùng một cột. Danh sách phải **`w-max`**: giãn theo cột thì phép `calc(%)`
+    điểm cuối vạch nối sai, vạch chạy quá xấp cuối.
+  · **Không in số NGÀY** ở đầu hàng — tiêu đề mẫu ("3 ngày 2 đêm") đã nói.
+  · Đã thử và BỎ: thẻ viền kèm trục ngày + 3 điểm dừng/ngày (cao ~1.000px) · lưới thẻ chữ đánh số
+    ngày (mục duy nhất không hình) · thẻ ảnh 16:10 + tên + mô tả (đọc ra như danh sách BLOG).
+- **Bài viết cuối trang — `related-posts.tsx` (dùng chung cho điểm đến · địa điểm · hoạt động · lưu
+  trú), KIỂU TẠP CHÍ — BÀI NÀO CŨNG CÓ ẢNH** (biên tập yêu cầu; không có bìa thì `coverUrl`):
+  bài dẫn bên trái (từ `lg` ảnh tự kéo cao theo cột phải — `lg:aspect-auto lg:flex-1`; `sm`–`lg`
+  thì nằm ngang ảnh trái chữ phải) + các bài còn lại bên phải, mỗi dòng **ảnh 4:3 ở mép PHẢI**
+  (chỉ mục Trải nghiệm phía trên đã để ảnh bên trái). Chỉ 1 bài ⇒ bài dẫn trải ngang.
+  · Đã thử và BỎ: bài dẫn + hàng cột CHỮ không ảnh bên dưới.
+  · Ở trang điểm đến: lấy cả bài gắn vào **listing của nơi đó** (bài "Bãi biển Mũi Né" gắn Spot,
+    không gắn Phan Thiết), và **loại bài Di chuyển** khi `Transport` tắt — nó đã có mục riêng.
+  · Không còn lượt thích/bình luận trên thẻ, không `rounded-full`/`rounded-2xl`, không nhấc thẻ khi
+    hover — tên đổi màu là đủ.
 - **Lưu trú Ở TAB CON** lấy **trạng thái xác minh làm xương sống**: TÁCH HAI NHÓM theo `isVerified`, mỗi
   nhóm một câu nói rõ trạng thái đó nghĩa là gì (nên **không có** nút lọc "chỉ chỗ đã xác
   minh"). Thẻ giữ tối thiểu; kênh liên hệ/tag/chính sách cọc **chỉ ở popup / trang chi tiết**.

@@ -7,10 +7,6 @@ import {
   Loader2,
   PenLine,
   Trash2,
-  Heart,
-  CircleCheck,
-  Meh,
-  Frown,
   ThumbsUp,
   TriangleAlert,
   MapPinCheckInside,
@@ -55,21 +51,11 @@ import {
   REVIEW_CAVEATS,
   stanceMeta,
   STANCE_TEXT,
-  labelsFor,
   MAX_CONTENT,
-  SCORE_POS,
-  SCORE_NEG,
   type ReviewStance,
   type ReviewSummary,
   type StanceTone,
 } from "@/lib/review-meta";
-
-const STANCE_ICON: Record<ReviewStance, LucideIcon> = {
-  love: Heart,
-  worthOnce: CircleCheck,
-  meh: Meh,
-  bad: Frown,
-};
 
 export type ReviewListItem = {
   id: string;
@@ -92,18 +78,14 @@ export type MyReview = {
 const BAR_TONE: Record<StanceTone, string> = {
   positive: "bg-primary",
   posSoft: "bg-primary/45",
-  negSoft: "bg-foreground/20",
+  neutral: "bg-foreground/15",
+  negSoft: "bg-foreground/25",
   negative: "bg-foreground/40",
-};
-const PILL_TONE: Record<StanceTone, string> = {
-  positive: "bg-primary/10 text-primary",
-  posSoft: "bg-primary/10 text-primary",
-  negSoft: "bg-warm/10 text-warm",
-  negative: "bg-destructive/10 text-destructive",
 };
 const STANCE_SELECTED: Record<StanceTone, string> = {
   positive: "border-primary/40 bg-primary/10 text-primary",
   posSoft: "border-primary/30 bg-primary/10 text-primary",
+  neutral: "border-foreground/30 bg-muted text-foreground",
   negSoft: "border-warm/40 bg-warm/10 text-warm",
   negative: "border-destructive/40 bg-destructive/10 text-destructive",
 };
@@ -193,7 +175,10 @@ export function ReviewsSection({
     <button
       type="button"
       onClick={onWrite}
-      className="inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-primary transition-colors hover:text-primary/80"
+      className={cn(
+        R_CTRL,
+        "inline-flex w-full items-center justify-center gap-1.5 border border-border bg-background px-4 py-2.5 text-sm font-semibold transition-colors hover:border-primary/50 hover:text-primary",
+      )}
     >
       <PenLine className="size-4" aria-hidden />
       {myReview ? "Sửa đánh giá của bạn" : "Viết đánh giá"}
@@ -205,27 +190,26 @@ export function ReviewsSection({
       <SectionHeading
         serif={serif}
         title={`Vivu-er nói gì về ${target.name}`}
-        count={hasReviews ? summary.total : undefined}
-        unit="đánh giá"
-        actions={writeBtn}
         size={hasReviews ? "lead" : "minor"}
       />
 
       {hasReviews ? (
-        <div className="mt-6 grid grid-cols-1 gap-8 md:grid-cols-[2fr_3fr] md:gap-10 lg:gap-12">
-          <div className="lg:sticky lg:top-28 lg:self-start">
-            <div className={cn(R_CARD, "border border-border bg-card p-5 sm:p-6")}>
-              <Summary
-                summary={summary}
-                activeStance={stanceFilter}
-                onSelectStance={(s) =>
-                  setStanceFilter((cur) => (cur === s ? null : s))
-                }
-              />
-            </div>
+        // Hai cột ngăn bằng MỘT vạch dọc, không đóng hộp: không phần nào ở đây là
+        // một khối bấm được, và nền trang (xám ở điểm đến, trắng ở địa điểm) khác
+        // nhau nên tấm nền riêng sẽ chìm ở một trong hai nơi.
+        <div className="mt-7 grid grid-cols-1 gap-10 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] md:gap-0">
+          <div className="md:sticky md:top-28 md:self-start md:pr-10 lg:pr-14">
+            <Summary
+              summary={summary}
+              action={writeBtn}
+              activeStance={stanceFilter}
+              onSelectStance={(s) =>
+                setStanceFilter((cur) => (cur === s ? null : s))
+              }
+            />
           </div>
 
-          <div className={cn(R_CARD, "border border-border bg-card p-5 sm:p-6")}>
+          <div className="border-t border-border pt-6 md:border-l md:border-t-0 md:pl-10 md:pt-0 lg:pl-14">
             <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-2">
               {stanceFilter && (
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
@@ -340,7 +324,7 @@ function ScoreInfo() {
       <PopoverTrigger asChild>
         <button
           type="button"
-          aria-label="Cách tính điểm đáng đi"
+          aria-label="Cách tính điểm"
           className="relative text-muted-foreground transition-colors before:absolute before:-inset-3 before:content-[''] hover:text-foreground"
         >
           <Info className="size-4" aria-hidden />
@@ -349,35 +333,17 @@ function ScoreInfo() {
       <PopoverContent align="start" className="w-72">
         <p className="text-sm font-semibold">Sao tổng hợp từ cảm nhận</p>
         <p className="mt-1 text-xs text-muted-foreground">
-          Không phải sao khách tự chấm — sao suy từ cảm nhận của Vivu-er theo
-          trọng số (mỗi đánh giá luôn đẩy một hướng cố định):
+          Mỗi Vivu-er chọn một câu cảm nhận, mỗi câu ứng với một số sao. Điểm là
+          trung bình số sao:
         </p>
         <ul className="mt-2 space-y-1 text-sm">
-          {REVIEW_STANCES.map((s) => {
-            const pos = SCORE_POS[s.value];
-            const neg = SCORE_NEG[s.value];
-            return (
-              <li
-                key={s.value}
-                className="flex items-center justify-between gap-3"
-              >
-                <span className="text-muted-foreground">{s.label}</span>
-                <span className="shrink-0 tabular-nums font-medium">
-                  {pos > 0 ? (
-                    <span className="text-primary">+{pos} điểm</span>
-                  ) : neg > 0 ? (
-                    <span className="text-warm">−{neg} điểm</span>
-                  ) : (
-                    <span className="text-muted-foreground">trung tính</span>
-                  )}
-                </span>
-              </li>
-            );
-          })}
+          {REVIEW_STANCES.map((s) => (
+            <li key={s.value} className="flex items-center justify-between gap-3">
+              <span className="text-muted-foreground">{s.label}</span>
+              <StarRating value={s.stars} size="size-3" />
+            </li>
+          ))}
         </ul>
-        <p className="mt-2.5 border-t border-border/50 pt-2 text-xs text-muted-foreground">
-          Sao = phần cộng ÷ (cộng + trừ) × 5.
-        </p>
       </PopoverContent>
     </Popover>
   );
@@ -412,6 +378,9 @@ function StanceRows({
             )}
           >
             <div className="flex items-baseline gap-2 text-sm">
+              <span className="w-3 shrink-0 tabular-nums text-muted-foreground">
+                {s.stars}
+              </span>
               <span
                 className={cn(
                   "truncate",
@@ -426,9 +395,6 @@ function StanceRows({
               </span>
               <span className="ml-auto shrink-0 tabular-nums text-muted-foreground">
                 {s.count}
-              </span>
-              <span className="w-9 shrink-0 text-right tabular-nums text-muted-foreground">
-                {s.pct}%
               </span>
             </div>
             <div className="mt-1.5 h-1 w-full overflow-hidden bg-muted">
@@ -447,53 +413,72 @@ function StanceRows({
 function AspectGroup({
   title,
   items,
+  tone,
 }: {
   title: string;
   items: { value: string; label: string; count: number }[];
+  tone?: "warn";
 }) {
   return (
-    <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm">
-      <span className="text-muted-foreground">{title}</span>
-      {items.map((it) => (
-        <span key={it.value} className="text-foreground/90">
-          {it.label}
-          {it.count > 1 && (
-            <span className="tabular-nums text-muted-foreground"> {it.count}</span>
-          )}
-        </span>
-      ))}
+    <div>
+      <p
+        className={cn(
+          "text-[0.65rem] font-semibold uppercase tracking-[0.14em]",
+          tone === "warn" ? "text-warm-ink" : "text-muted-foreground",
+        )}
+      >
+        {title}
+      </p>
+      <ul className="mt-2 flex flex-wrap gap-x-5 gap-y-1.5 text-sm">
+        {items.map((it) => (
+          <li key={it.value} className="text-foreground/90">
+            {it.label}
+            {it.count > 1 && (
+              <b className="ps-1.5 font-semibold tabular-nums text-foreground">{it.count}</b>
+            )}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
 
 function Summary({
   summary,
+  action,
   activeStance,
   onSelectStance,
 }: {
   summary: ReviewSummary;
+  action: React.ReactNode;
   activeStance: ReviewStance | null;
   onSelectStance: (s: ReviewStance) => void;
 }) {
-  const topHl = summary.highlights.slice(0, 4);
-  const topCv = summary.caveats.slice(0, 3);
+  const topHl = summary.highlights.slice(0, 3);
+  const topCv = summary.caveats.slice(0, 2);
   return (
     <div>
-      <div className="flex items-baseline gap-2">
-        <span className="text-3xl font-bold tabular-nums leading-none">
+      <div className="flex items-baseline gap-1.5">
+        <span className="font-[family-name:var(--font-display)] text-6xl font-semibold leading-none tracking-tight tabular-nums">
           {summary.stars.toFixed(1).replace(".", ",")}
         </span>
         <span className="text-sm text-muted-foreground">/ 5</span>
         <ScoreInfo />
       </div>
-      <div className="mt-2 flex items-center gap-2">
-        <StarRating value={summary.stars} size="size-4" />
-        <span className="text-sm tabular-nums text-muted-foreground">
-          {summary.total} đánh giá
+      <StarRating value={summary.stars} size="size-4" className="mt-3" />
+      <p className="mt-1.5 flex flex-wrap gap-x-4 text-sm text-muted-foreground">
+        <span>
+          <b className="font-semibold tabular-nums text-foreground">{summary.total}</b> đánh giá
         </span>
-      </div>
+        <span>
+          <b className="font-semibold tabular-nums text-foreground">{summary.worthGoingPct}%</b>{" "}
+          thấy đáng đi
+        </span>
+      </p>
 
-      <div className="mt-5 border-t border-border/60 pt-3">
+      <div className="mt-5">{action}</div>
+
+      <div className="mt-6 border-t border-border pt-3">
         <StanceRows
           summary={summary}
           active={activeStance}
@@ -502,9 +487,9 @@ function Summary({
       </div>
 
       {(topHl.length > 0 || topCv.length > 0) && (
-        <div className="mt-4 space-y-1.5 border-t border-border/60 pt-4">
+        <div className="mt-4 space-y-4 border-t border-border pt-5">
           {topHl.length > 0 && <AspectGroup title="Điểm cộng" items={topHl} />}
-          {topCv.length > 0 && <AspectGroup title="Cần lưu ý" items={topCv} />}
+          {topCv.length > 0 && <AspectGroup title="Cần lưu ý" items={topCv} tone="warn" />}
         </div>
       )}
     </div>
@@ -537,9 +522,8 @@ function ReviewCard({
     });
   }
 
-  const hlLabels = labelsFor("highlights", review.highlights).map((o) => o.label);
-  const cvLabels = labelsFor("caveats", review.caveats).map((o) => o.label);
-
+  // Nhãn điểm cộng / lưu ý KHÔNG lặp lại ở từng đánh giá — cột tổng hợp đã gom
+  // chúng; in thêm dưới mỗi bài làm mục này nói mọi thứ hai lần.
   return (
     <li className="flex gap-3 py-5 first:pt-0">
       <Avatar className="mt-0.5 size-9 shrink-0">
@@ -594,8 +578,11 @@ function ReviewCard({
           )}
         </div>
 
-        <p className={cn("mt-1 text-sm font-medium", STANCE_TEXT[meta.tone])}>
-          {meta.label}
+        <p className="mt-1 flex items-center gap-2">
+          <StarRating value={meta.stars} size="size-3.5" />
+          <span className={cn("text-sm font-medium", STANCE_TEXT[meta.tone])}>
+            {meta.label}
+          </span>
         </p>
 
         {review.content && (
@@ -604,23 +591,6 @@ function ReviewCard({
           </p>
         )}
 
-        {hlLabels.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-            {hlLabels.map((l) => (
-              <span key={l}>{l}</span>
-            ))}
-          </div>
-        )}
-        {cvLabels.length > 0 && (
-          <div className="mt-1 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm text-muted-foreground">
-            <span>Lưu ý</span>
-            {cvLabels.map((l) => (
-              <span key={l} className="text-foreground/80">
-                {l}
-              </span>
-            ))}
-          </div>
-        )}
       </div>
     </li>
   );
@@ -745,7 +715,6 @@ export function ReviewForm({
             </legend>
             <div className="mt-2 space-y-1.5">
               {REVIEW_STANCES.map((s) => {
-                const Icon = STANCE_ICON[s.value];
                 const on = stance === s.value;
                 return (
                   <button
@@ -761,15 +730,7 @@ export function ReviewForm({
                         : "border-border/60 hover:bg-muted/60",
                     )}
                   >
-                    <span
-                      className={cn(
-                        R_BADGE,
-                        "flex size-8 shrink-0 items-center justify-center",
-                        on ? "bg-background/70" : PILL_TONE[s.tone],
-                      )}
-                    >
-                      <Icon className="size-4" aria-hidden />
-                    </span>
+                    <StarRating value={s.stars} size="size-3.5" className="shrink-0" />
                     <span className="min-w-0 text-sm font-semibold">
                       {s.label}
                     </span>

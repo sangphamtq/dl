@@ -4,33 +4,28 @@ export type { ReviewStance };
 
 export type AspectOption = { value: string; label: string };
 export type AspectCount = AspectOption & { count: number };
-export type StanceTone = "positive" | "posSoft" | "negSoft" | "negative";
+export type StanceTone = "positive" | "posSoft" | "neutral" | "negSoft" | "negative";
 
+// 5 câu cảm nhận, mỗi câu ứng với ĐÚNG một số sao. Người viết chọn CÂU (khỏi đoán
+// "3 sao nghĩa là gì"), còn điểm tổng hợp là trung bình số sao.
 export const REVIEW_STANCES = [
-  { value: "love", label: "Tuyệt vời, muốn quay lại", tone: "positive" },
-  { value: "worthOnce", label: "Đáng đi một lần", tone: "posSoft" },
-  { value: "meh", label: "Không có gì đặc biệt", tone: "negSoft" },
-  { value: "bad", label: "Thất vọng, không nên đi", tone: "negative" },
+  { value: "love", label: "Tuyệt vời, muốn quay lại", stars: 5, tone: "positive" },
+  { value: "worth", label: "Đáng đi", stars: 4, tone: "posSoft" },
+  { value: "okay", label: "Bình thường", stars: 3, tone: "neutral" },
+  { value: "letdown", label: "Hơi thất vọng", stars: 2, tone: "negSoft" },
+  { value: "bad", label: "Không nên đi", stars: 1, tone: "negative" },
 ] as const satisfies ReadonlyArray<{
   value: ReviewStance;
   label: string;
+  stars: number;
   tone: StanceTone;
 }>;
 
-const WORTH_GOING: ReviewStance[] = ["love", "worthOnce"];
+const STANCE_VALUES: Set<string> = new Set(REVIEW_STANCES.map((s) => s.value));
 
-export const SCORE_POS: Record<ReviewStance, number> = {
-  love: 2,
-  worthOnce: 1,
-  meh: 0,
-  bad: 0,
-};
-export const SCORE_NEG: Record<ReviewStance, number> = {
-  love: 0,
-  worthOnce: 0,
-  meh: 1,
-  bad: 2,
-};
+export function isWorthGoing(stance: ReviewStance | null | undefined): boolean {
+  return stance === "love" || stance === "worth";
+}
 
 export const REVIEW_HIGHLIGHTS = [
   { value: "scenery", label: "Cảnh đẹp" },
@@ -68,7 +63,7 @@ const MAX_ASPECTS = 8;
 export const MAX_CONTENT = 2000;
 
 export function isStance(v: unknown): v is ReviewStance {
-  return v === "love" || v === "worthOnce" || v === "meh" || v === "bad";
+  return typeof v === "string" && STANCE_VALUES.has(v);
 }
 
 /* Tông cảm nhận → màu CHỮ. Để ở `lib/` vì hai nơi dùng chung (mục Đánh giá và
@@ -80,6 +75,7 @@ export function isStance(v: unknown): v is ReviewStance {
 export const STANCE_TEXT: Record<StanceTone, string> = {
   positive: "text-primary-ink",
   posSoft: "text-primary-ink",
+  neutral: "text-muted-foreground",
   negSoft: "text-warm-ink",
   negative: "text-destructive",
 };
@@ -113,10 +109,15 @@ type ReviewRow = {
 export type ReviewSummary = {
   total: number;
   worthGoingPct: number;
-  lovePct: number;
-  score: number;
   stars: number;
-  stance: { value: ReviewStance; label: string; tone: StanceTone; count: number; pct: number }[];
+  stance: {
+    value: ReviewStance;
+    label: string;
+    stars: number;
+    tone: StanceTone;
+    count: number;
+    pct: number;
+  }[];
   highlights: AspectCount[];
   caveats: AspectCount[];
 };
@@ -139,26 +140,20 @@ export function summarizeReviews(rows: ReviewRow[]): ReviewSummary {
       .filter((c) => c.count > 0)
       .sort((a, b) => b.count - a.count);
 
-  const worthGoingCount = WORTH_GOING.reduce(
-    (n, v) => n + stanceCount[v],
-    0,
-  );
-  let pos = 0;
-  let neg = 0;
+  let worthGoingCount = 0;
+  let starSum = 0;
   for (const s of REVIEW_STANCES) {
-    pos += SCORE_POS[s.value] * stanceCount[s.value];
-    neg += SCORE_NEG[s.value] * stanceCount[s.value];
+    starSum += s.stars * stanceCount[s.value];
+    if (isWorthGoing(s.value)) worthGoingCount += stanceCount[s.value];
   }
-  const ratio = pos + neg > 0 ? pos / (pos + neg) : 0;
   return {
     total,
     worthGoingPct: total ? Math.round((worthGoingCount / total) * 100) : 0,
-    lovePct: total ? Math.round((stanceCount.love / total) * 100) : 0,
-    score: Math.round(ratio * 100),
-    stars: Math.round(ratio * 5 * 10) / 10,
+    stars: total ? Math.round((starSum / total) * 10) / 10 : 0,
     stance: REVIEW_STANCES.map((s) => ({
       value: s.value,
       label: s.label,
+      stars: s.stars,
       tone: s.tone,
       count: stanceCount[s.value],
       pct: total ? Math.round((stanceCount[s.value] / total) * 100) : 0,

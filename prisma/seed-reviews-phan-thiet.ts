@@ -36,7 +36,7 @@ const REVIEWS: Seed[] = [
   {
     name: "Thu Trang",
     email: "seed.thutrang@halivivu.demo",
-    stance: ReviewStance.worthOnce,
+    stance: ReviewStance.worth,
     highlights: ["food", "photogenic"],
     caveats: ["overpriced"],
     content:
@@ -46,7 +46,7 @@ const REVIEWS: Seed[] = [
   {
     name: "Bảo Nam",
     email: "seed.baonam@halivivu.demo",
-    stance: ReviewStance.worthOnce,
+    stance: ReviewStance.worth,
     highlights: ["scenery", "affordable"],
     caveats: ["far", "weather"],
     content:
@@ -65,7 +65,7 @@ const REVIEWS: Seed[] = [
   {
     name: "Lan Phương",
     email: "seed.lanphuong@halivivu.demo",
-    stance: ReviewStance.meh,
+    stance: ReviewStance.okay,
     highlights: [],
     caveats: ["crowded", "few-services"],
     content:

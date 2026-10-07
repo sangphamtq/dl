@@ -25,6 +25,7 @@
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
   --color-muted: var(--muted);
+  --color-band: var(--band);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
@@ -71,6 +72,9 @@
   --secondary: #edeae4;
   --secondary-foreground: #1f2226;
   --muted: #edeae4;
+  /* Nền dải xen kẽ của trang điểm đến. KHÔNG dùng `muted/60` (≈ #f4f2ef): xám
+     ngả vàng nâu, cạnh ảnh màu tươi đọc ra như phủ bụi. */
+  --band: #f7f6f2;
   --muted-foreground: #6f6e69;
   --accent: #ecf7ea;
   --accent-foreground: #1f4f13;
@@ -113,6 +117,7 @@
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
+  --band: oklch(0.22 0 0);
   --muted-foreground: oklch(0.708 0 0);
   --accent: oklch(0.32 0.06 145);
   --accent-foreground: oklch(0.985 0 0);

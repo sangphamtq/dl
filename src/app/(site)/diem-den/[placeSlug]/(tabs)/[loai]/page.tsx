@@ -12,7 +12,13 @@ import {
   TransportSection,
   type TransportItem,
 } from "@/components/site/transport-section";
-import { getPlaceHero, getSpotReviewSummaries } from "@/lib/place-meta";
+import {
+  getPlaceHero,
+  getSpotReviewSummaries,
+  getTransportArticle,
+  TRANSPORT_ENABLED,
+} from "@/lib/place-meta";
+import { TransportArticle } from "@/components/site/transport-article";
 import {
   SPOT_CATEGORY_LABELS,
   ACTIVITY_CATEGORY_LABELS,
@@ -379,9 +385,19 @@ export async function generateMetadata({
   if (!title) return notFoundMetadata;
   const place = await prisma.place.findUnique({
     where: { slug: placeSlug },
-    select: { name: true },
+    select: { id: true, name: true },
   });
   if (!place) return notFoundMetadata;
+  if (loai === DI_CHUYEN && !TRANSPORT_ENABLED) {
+    const post = await getTransportArticle(place.id);
+    if (!post) return notFoundMetadata;
+    // Bài sống ở `/blog/[slug]`; tab chỉ hiện lại nó.
+    return {
+      title: `${title} ở ${place.name}`,
+      description: post.excerpt ?? undefined,
+      alternates: { canonical: `/blog/${post.slug}` },
+    };
+  }
   return { title: `${title} ở ${place.name}` };
 }
 
@@ -404,6 +420,10 @@ export default async function PlaceListingPage({
   if (!heroData || heroData.place.status !== "published") notFound();
   const place = heroData.place;
 
+  const transportPost =
+    isTransport && !TRANSPORT_ENABLED ? await getTransportArticle(place.id) : null;
+  if (isTransport && !TRANSPORT_ENABLED && !transportPost) notFound();
+
   const food = isFood
     ? {
         eateries: await fetchEateryDetails(place.id),
@@ -414,7 +434,8 @@ export default async function PlaceListingPage({
   const stays = isStay ? await fetchAccommodationDetails(place.id) : null;
   const openSlug = isStay ? (await searchParams).open : undefined;
 
-  const transports = isTransport ? await fetchTransports(place.id) : null;
+  const transports =
+    isTransport && TRANSPORT_ENABLED ? await fetchTransports(place.id) : null;
 
   const groups =
     !isFood && !isStay && !isTransport && cfg
@@ -516,6 +537,8 @@ export default async function PlaceListingPage({
                 openSlug={openSlug}
               />
             )
+          ) : transportPost ? (
+            <TransportArticle post={transportPost} />
           ) : transports ? (
             transports.length === 0 ? (
               <p className="text-muted-foreground">Chưa có thông tin di chuyển.</p>

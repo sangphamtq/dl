@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -14,6 +13,8 @@ import { ExperiencePreview } from "@/components/site/experience-preview";
 import { FoodMenu } from "@/components/site/food-menu";
 import { StayDirectory } from "@/components/site/stay-directory";
 import { TransportBrief } from "@/components/site/transport-brief";
+import { TransportPreview } from "@/components/site/transport-preview";
+import { TripTemplatePreview } from "@/components/site/trip-template-preview";
 import { CommunityPreview } from "@/components/site/community-preview";
 import { getPlaceCommunityDigest } from "@/lib/community-feed";
 import { getSettings } from "@/lib/settings";
@@ -24,7 +25,6 @@ import { PlaceTabs } from "@/components/site/place-tabs";
 import { ReviewsSection, type ReviewListItem } from "@/components/site/place-reviews";
 import { summarizeReviews } from "@/lib/review-meta";
 import { PeerBar } from "@/components/site/peer-bar";
-import { PlaceIntro } from "@/components/site/place-intro";
 import { Glyph } from "@/components/site/glyphs";
 import { R_CARD } from "@/lib/radius";
 
@@ -36,6 +36,9 @@ import {
   buildPlaceStats,
   buildHeroImages,
   getVisitors,
+  getTransportArticle,
+  TRANSPORT_ENABLED,
+  TRANSPORT_POST_CATEGORY,
 } from "@/lib/place-meta";
 import { notFoundMetadata } from "@/lib/metadata";
 
@@ -43,21 +46,14 @@ const pub = { status: "published" as const };
 
 function Band({
   tint,
-  minor,
   children,
 }: {
   tint?: boolean;
-  minor?: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <div className={tint ? "bg-muted/60" : undefined}>
-      <div
-        className={cn(
-          "mx-auto max-w-7xl space-y-16 px-4 sm:space-y-20 sm:px-6",
-          minor ? "py-10 sm:py-12" : "py-14 sm:py-20",
-        )}
-      >
+    <div className={tint ? "bg-band" : undefined}>
+      <div className="mx-auto max-w-7xl space-y-16 px-4 py-14 sm:space-y-20 sm:px-6 sm:py-20">
         {children}
       </div>
     </div>
@@ -204,6 +200,7 @@ export default async function PlaceDetailPage({
       transports: {
         where: pub,
         orderBy: [{ order: "asc" }, { name: "asc" }],
+        take: TRANSPORT_ENABLED ? undefined : 0,
         select: {
           id: true,
           name: true,
@@ -242,11 +239,20 @@ export default async function PlaceDetailPage({
         id: true,
         slug: true,
         title: true,
-        summary: true,
-        _count: {
+        _count: { select: { items: { where: { dayId: { not: null } } } } },
+        days: {
+          orderBy: { index: "asc" },
           select: {
-            days: true,
-            items: { where: { dayId: { not: null } } },
+            title: true,
+            items: {
+              where: { accommodationId: null },
+              orderBy: { order: "asc" },
+              select: {
+                spot: { select: { images: galleryCover } },
+                eatery: { select: { images: galleryCover } },
+                activity: { select: { images: galleryCover } },
+              },
+            },
           },
         },
       },
@@ -413,15 +419,7 @@ export default async function PlaceDetailPage({
 
   const peerGroups = await getDestinationPeerGroups();
 
-  const introPost = await prisma.post.findFirst({
-    where: { status: "published", refs: { some: { placeId: place.id } } },
-    orderBy: [{ isFeatured: "desc" }, { publishedAt: "desc" }],
-    select: {
-      slug: true,
-      title: true,
-      images: { where: { isCover: true }, take: 1, select: { url: true, isCover: true } },
-    },
-  });
+  const transportPost = TRANSPORT_ENABLED ? null : await getTransportArticle(place.id);
 
   const isProvince = place.kind === "province";
   const heroImages = buildHeroImages(
@@ -441,12 +439,24 @@ export default async function PlaceDetailPage({
     place.eateries.length > 0 ||
     drinkVenues.length > 0 ||
     place.accommodations.length > 0 ||
-    counts.transport > 0;
+    counts.transport > 0 ||
+    counts.transportPost;
 
-  const [lede, descBody] = splitLede(place.description);
-
-  let bandIndex = 0;
-  const tinted = () => bandIndex++ % 2 === 0;
+  // Nền đổi theo NHÓM NGHĨA, không theo từng mục: xen kẽ mỗi mục ra 8 vạch
+  // ngựa vằn, Ẩm thực và Lưu trú (cùng chuyện sinh hoạt) bị tách hai màu. Màu
+  // xen kẽ tính trên các nhóm CÓ MẶT nên hai mảng cùng màu không bao giờ dính.
+  const groups = {
+    see: showChildren || place.spots.length > 0 || place.activities.length > 0,
+    needs:
+      place.eateries.length > 0 || drinkVenues.length > 0 || place.accommodations.length > 0,
+    plan: !!transportPost || place.transports.length > 0 || tripTemplates.length > 0,
+    empty: !hasAnyContent,
+    voice: (COMMUNITY_ENABLED && community.total > 0) || isDestination,
+    read: true,
+  };
+  type BandGroup = keyof typeof groups;
+  const present = (Object.keys(groups) as BandGroup[]).filter((k) => groups[k]);
+  const tintOf = (k: BandGroup) => present.indexOf(k) % 2 === 1;
 
   return (
     <div className="flex flex-1 flex-col">
@@ -481,31 +491,9 @@ export default async function PlaceDetailPage({
 
         <PlaceTabs items={tabs} />
 
-        {(place.description || showChildren) && (
-        <Band>
-          {place.description && (
-            // Khối này CỐ Ý không có ảnh: hero ngay trên là dải ảnh lớn và lưới
-            // mosaic ngay dưới là 5 ảnh nữa (cùng kho `heroImages`) — chính việc
-            // ở giữa chỉ có chữ mới tạo nhịp cho trang.
-            <section id="doi-net" className="scroll-mt-32">
-              <PlaceIntro
-                lede={lede}
-                body={descBody}
-                post={
-                  introPost
-                    ? {
-                        slug: introPost.slug,
-                        title: introPost.title,
-                        image: coverUrl(introPost.images, introPost.slug, 160, 160),
-                      }
-                    : null
-                }
-              />
-            </section>
-          )}
-
-
-          {showChildren && (
+        {groups.see && (
+          <Band tint={tintOf("see")}>
+        {showChildren && (
             <section id="diem-den-con" className="scroll-mt-32">
               <SectionHeading serif title={`Điểm đến ở ${place.name}`} />
               <div
@@ -525,12 +513,9 @@ export default async function PlaceDetailPage({
                 ))}
               </div>
             </section>
-          )}
-        </Band>
         )}
 
         {place.spots.length > 0 && (
-          <Band tint={tinted()}>
           <section id="tham-quan" className="scroll-mt-32">
             <SpotPreview
               title="Địa điểm đáng ghé"
@@ -546,11 +531,9 @@ export default async function PlaceDetailPage({
               }))}
             />
           </section>
-          </Band>
         )}
 
         {place.activities.length > 0 && (
-          <Band tint={tinted()}>
             <section id="trai-nghiem" className="scroll-mt-32">
               <ExperiencePreview
                 title="Trải nghiệm nổi bật"
@@ -573,11 +556,13 @@ export default async function PlaceDetailPage({
                 }))}
               />
             </section>
+        )}
           </Band>
         )}
 
+        {groups.needs && (
+          <Band tint={tintOf("needs")}>
         {(place.eateries.length > 0 || drinkVenues.length > 0) && (
-          <Band tint={tinted()}>
             <section id="am-thuc" className="scroll-mt-32">
               <FoodMenu
                 placeName={place.name}
@@ -588,11 +573,9 @@ export default async function PlaceDetailPage({
                 moreImages={moreEateryCovers}
               />
             </section>
-          </Band>
         )}
 
         {place.accommodations.length > 0 && (
-          <Band tint={tinted()}>
             <section id="luu-tru" className="scroll-mt-32">
               <StayDirectory
                 placeName={place.name}
@@ -605,11 +588,28 @@ export default async function PlaceDetailPage({
                 }))}
               />
             </section>
+        )}
           </Band>
         )}
 
+        {groups.plan && (
+          <Band tint={tintOf("plan")}>
+        {transportPost && (
+            <section id="di-chuyen" className="scroll-mt-32">
+              <SectionHeading serif title={`Đi lại ở ${place.name}`} />
+              <div className="mt-7">
+                <TransportPreview
+                  href={`/diem-den/${place.slug}/di-chuyen`}
+                  title={transportPost.title}
+                  excerpt={transportPost.excerpt}
+                  content={transportPost.content}
+                  cover={transportPost.images[0]?.url ?? null}
+                />
+              </div>
+            </section>
+        )}
+
         {place.transports.length > 0 && (
-          <Band tint={tinted()}>
             <section id="di-chuyen" className="scroll-mt-32">
               <SectionHeading
                 serif
@@ -621,11 +621,9 @@ export default async function PlaceDetailPage({
                 <TransportBrief items={place.transports} placeName={place.name} />
               </div>
             </section>
-          </Band>
         )}
 
         {tripTemplates.length > 0 && (
-          <Band tint={tinted()} minor>
             <section id="lich-trinh" className="scroll-mt-32">
               <SectionHeading
                 serif
@@ -633,58 +631,35 @@ export default async function PlaceDetailPage({
                 href="/lich-trinh"
                 size="minor"
               />
-              <ul
-                className={cn(
-                  "mt-5 grid grid-cols-1 gap-4",
-                  tripTemplates.length === 1
-                    ? "max-w-xl"
-                    : tripTemplates.length === 2
-                      ? "sm:grid-cols-2 lg:max-w-4xl"
-                      : "sm:grid-cols-2 lg:grid-cols-3",
-                )}
-              >
-                {tripTemplates.map((t) => (
-                  <li key={t.id}>
-                    <Link
-                      href={`/lich-trinh/${t.slug}`}
-                      className={cn(
-                        R_CARD,
-                        "group flex h-full flex-col border border-border bg-card p-5 transition-colors hover:border-foreground",
-                      )}
-                    >
-                      <span className="flex items-center gap-x-2 text-xs text-muted-foreground">
-                        <Glyph name="route" className="size-4 shrink-0" />
-                        <span>
-                          <b className="font-semibold tabular-nums text-foreground">
-                            {t._count.days}
-                          </b>{" "}
-                          ngày
-                        </span>
-                        <span className="ps-3">
-                          <b className="font-semibold tabular-nums text-foreground">
-                            {t._count.items}
-                          </b>{" "}
-                          điểm dừng
-                        </span>
-                      </span>
-                      <span className="mt-2 font-[family-name:var(--font-display)] font-semibold leading-snug tracking-tight">
-                        {t.title}
-                      </span>
-                      {t.summary && (
-                        <span className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
-                          {t.summary}
-                        </span>
-                      )}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+              <div className="mt-6">
+                <TripTemplatePreview
+                  trips={tripTemplates.map((t) => ({
+                    slug: t.slug!,
+                    title: t.title,
+                    stopCount: t._count.items,
+                    days: t.days.map((d) => ({
+                      title: d.title,
+                      images: [
+                        ...new Set(
+                          d.items.flatMap(
+                            (it) =>
+                              (it.spot ?? it.activity ?? it.eatery)?.images.map((im) => im.url) ??
+                              [],
+                          ),
+                        ),
+                      ],
+                    })),
+                  }))}
+                />
+              </div>
             </section>
+        )}
           </Band>
         )}
 
+        {groups.empty && (
+          <Band tint={tintOf("empty")}>
         {!hasAnyContent && (
-          <Band tint={tinted()}>
             <div className={cn(R_CARD, "border border-dashed border-border px-6 py-16 text-center")}>
               <Glyph
                 name="navigation"
@@ -696,11 +671,13 @@ export default async function PlaceDetailPage({
                 lại sau nhé.
               </p>
             </div>
+        )}
           </Band>
         )}
 
+        {groups.voice && (
+          <Band tint={tintOf("voice")}>
         {COMMUNITY_ENABLED && community.total > 0 && (
-          <Band tint={tinted()}>
             <section id="hoi-dap" className="scroll-mt-32">
               <SectionHeading
                 serif
@@ -715,11 +692,9 @@ export default async function PlaceDetailPage({
                 placeName={place.name}
               />
             </section>
-          </Band>
         )}
 
         {isDestination && (
-          <Band tint={tinted()}>
             <ReviewsSection
               serif
               target={{
@@ -734,10 +709,19 @@ export default async function PlaceDetailPage({
               myReview={myReviewRow}
               isAuthed={checkIn.isAuthed}
             />
+        )}
           </Band>
         )}
 
-        <RelatedPosts serif type="place" id={place.id} />
+        <div className={tintOf("read") ? "bg-band" : undefined}>
+        <RelatedPosts
+          serif
+          type="place"
+          id={place.id}
+          title={`Đọc thêm về ${place.name}`}
+          excludeCategory={TRANSPORT_ENABLED ? undefined : TRANSPORT_POST_CATEGORY}
+        />
+        </div>
       </main>
 
       <PeerBar
@@ -766,11 +750,4 @@ function shortFact(text: string | null): string | null {
   return head || null;
 }
 
-function splitLede(text: string | null): [string | null, string | null] {
-  if (!text) return [null, null];
-  const m = text.match(/^([\s\S]+?[.!?…])\s+(?=[\p{Lu}"'"“„])/u);
-  const first = m?.[1];
-  if (!first || first.length < 40 || first.length > 320) return [null, text];
-  return [first, text.slice(m[0].length) || null];
-}
 

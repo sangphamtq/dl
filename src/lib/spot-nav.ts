@@ -32,7 +32,7 @@ export function buildSpotNavItems(
     {
       id: "ban-do",
       label: "Bản đồ",
-      href: `/diem-den/${placeSlug}/di-chuyen`,
+      href: `/diem-den/${placeSlug}/ban-do`,
       icon: "map",
     },
   ];

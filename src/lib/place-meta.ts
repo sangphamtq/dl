@@ -114,12 +114,58 @@ export const getPlaceHero = cache(async function getPlaceHero(
   return { place, heroImages };
 });
 
+// Bảng `Transport` + CMS giữ nguyên, chỉ tắt hiển thị công khai: dữ liệu tuyến
+// khó thu thập cho đủ. Khi tắt, mục "Di chuyển" của điểm đến là MỘT BÀI BLOG
+// (category `di-chuyen`, gắn PostRef tới Place). Khai `boolean` để TS không
+// coi nhánh bật là không chạm tới được.
+export const TRANSPORT_ENABLED: boolean = false;
+export const TRANSPORT_POST_CATEGORY = "di-chuyen";
+
+export const getTransportPost = cache(async function getTransportPost(placeId: string) {
+  return prisma.post.findFirst({
+    where: {
+      ...pub,
+      category: TRANSPORT_POST_CATEGORY,
+      refs: { some: { placeId } },
+    },
+    orderBy: [{ isFeatured: "desc" }, { publishedAt: "desc" }],
+    select: {
+      slug: true,
+      title: true,
+      excerpt: true,
+      images: { where: { isCover: true }, take: 1, select: { url: true, isCover: true } },
+    },
+  });
+});
+
+// Bản đầy đủ (kèm thân bài) cho tab Di chuyển và mục xem trước ở tab tổng quan.
+// Tách khỏi `getTransportPost` vì hàm đó chạy trong layout ở MỌI tab.
+export const getTransportArticle = cache(async function getTransportArticle(placeId: string) {
+  return prisma.post.findFirst({
+    where: {
+      ...pub,
+      category: TRANSPORT_POST_CATEGORY,
+      refs: { some: { placeId } },
+    },
+    orderBy: [{ isFeatured: "desc" }, { publishedAt: "desc" }],
+    select: {
+      slug: true,
+      title: true,
+      excerpt: true,
+      content: true,
+      updatedAt: true,
+      images: { where: { isCover: true }, take: 1, select: { url: true } },
+    },
+  });
+});
+
 export type PlaceCounts = {
   activity: number;
   spot: number;
   eatery: number;
   accommodation: number;
   transport: number;
+  transportPost: boolean;
 };
 
 
@@ -146,15 +192,16 @@ export async function getPlaceHeader(placeSlug: string) {
 }
 
 export const getPlaceCounts = cache(async function getPlaceCounts(placeId: string): Promise<PlaceCounts> {
-  const [activity, spot, eatery, accommodation, transport] =
+  const [activity, spot, eatery, accommodation, transport, post] =
     await Promise.all([
       prisma.activity.count({ where: { placeId, ...pub } }),
       prisma.spot.count({ where: { placeId, ...pub } }),
       prisma.eatery.count({ where: { placeId, ...pub } }),
       prisma.accommodation.count({ where: { placeId, ...pub } }),
-      prisma.transport.count({ where: { placeId, ...pub } }),
+      TRANSPORT_ENABLED ? prisma.transport.count({ where: { placeId, ...pub } }) : 0,
+      TRANSPORT_ENABLED ? null : getTransportPost(placeId),
     ]);
-  return { activity, spot, eatery, accommodation, transport };
+  return { activity, spot, eatery, accommodation, transport, transportPost: !!post };
 });
 
 export type PlaceTab = {
@@ -176,7 +223,9 @@ export function buildPlaceTabs(placeSlug: string, counts: PlaceCounts): PlaceTab
   if (counts.activity > 0) add("hoat-dong", "Trải nghiệm");
   if (counts.eatery > 0) add("am-thuc", "Ẩm thực");
   if (counts.accommodation > 0) add("luu-tru", "Nơi lưu trú");
-  if (counts.transport > 0) add("di-chuyen", "Di chuyển");
+  // Khi tắt Transport, tab vẫn trỏ `/di-chuyen` — route đó chuyển tiếp sang bài
+  // blog, nhờ vậy link đã chia sẻ không chết khi bật lại.
+  if (counts.transport > 0 || counts.transportPost) add("di-chuyen", "Di chuyển");
 
   if (counts.spot + counts.eatery + counts.accommodation > 0)
     tabs.push({ href: `${base}/ban-do`, label: "Bản đồ", icon: "map" });
