@@ -11,6 +11,7 @@ import { MICRO } from "@/components/trip/trip-rail";
 import { TripShare } from "@/components/trip/trip-share";
 import { TripSectionSheet } from "@/components/trip/trip-side-nav";
 import { Switch } from "@/components/ui/switch";
+import { TripRefreshButton, type TripSync } from "@/components/trip/trip-refresh-button";
 import type { TripPerson } from "@/lib/trip";
 
 export type TripChrome = {
@@ -28,9 +29,11 @@ export type TripChrome = {
 export function TripTopbar({
   trip,
   facts,
+  sync,
 }: {
   trip: TripChrome;
   facts?: string[];
+  sync?: TripSync;
 }) {
   const [pending, start] = useTransition();
   // Bật/tắt phản hồi NGAY, không chờ server dựng lại cả lịch (có thể vài giây vì OSRM).
@@ -64,6 +67,7 @@ export function TripTopbar({
 
           <div className="flex items-center gap-2.5">
             <TripSectionSheet tripId={trip.id} />
+            {sync && <TripRefreshButton sync={sync} />}
             <TripShare
               tripId={trip.id}
               title={trip.title}
@@ -76,7 +80,10 @@ export function TripTopbar({
       </div>
 
         <div className="mt-2.5 max-w-3xl">
+          {/* key theo GIÁ TRỊ: các ô dưới đây chỉ đọc giá trị lúc dựng, người khác đổi
+              rồi bấm "Cập nhật" mà không dựng lại thì vẫn hiện chữ cũ. */}
           <TitleField
+            key={trip.title}
             value={trip.title}
             onSave={(title) => run(() => updateTrip(trip.id, { title }))}
           />
@@ -88,6 +95,7 @@ export function TripTopbar({
           <label className="flex items-center gap-1.5">
             <Glyph name="calendar" className="size-4 shrink-0" />
             <input
+              key={trip.startDate ?? ""}
               type="date"
               defaultValue={trip.startDate ?? ""}
               onChange={(e) =>
@@ -103,6 +111,7 @@ export function TripTopbar({
           <label className="flex items-center gap-1.5">
             <Glyph name="people" className="size-4 shrink-0" />
             <input
+              key={trip.partySize ?? ""}
               type="number"
               min={1}
               max={99}

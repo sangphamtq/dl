@@ -26,6 +26,34 @@ export function isTask(i: { kind: TripItemKind; lat?: number | null; lng?: numbe
   return i.kind === "custom" && (i.lat == null || i.lng == null);
 }
 
+/**
+ * Hoạt động là một VIỆC làm tại một NƠI. Đứng sau đúng nơi của nó (cho phép xen việc /
+ * hoạt động khác cũng đang ở nơi đó) thì nó "ở trong" nơi ấy: trả về chỉ số của Spot đó.
+ * Không thì null — nó tự là một điểm dừng (mượn toạ độ nơi đầu tiên của nó).
+ */
+export function anchorsOf(
+  items: {
+    kind: TripItemKind;
+    spotId?: string | null;
+    atSpots?: { id: string }[];
+    lat?: number | null;
+    lng?: number | null;
+  }[],
+): (number | null)[] {
+  const out: (number | null)[] = [];
+  items.forEach((item, i) => {
+    out[i] = null;
+    if (item.kind !== "activity" || !item.atSpots?.length) return;
+    for (let j = i - 1; j >= 0; j--) {
+      const prev = items[j];
+      if (isTask(prev) || out[j] != null) continue;
+      if (prev.kind === "spot" && item.atSpots.some((s) => s.id === prev.spotId)) out[i] = j;
+      return;
+    }
+  });
+  return out;
+}
+
 const LONG_DRIVE_MIN = 90;
 const DAY_LATE_END = 22 * 60;
 const DAY_MAX_LENGTH = 12 * 60; // tổng ngày quá 12 tiếng
@@ -69,6 +97,8 @@ export type ScheduleItemInput = {
   openingHours?: string | null;
   lat?: number | null;
   lng?: number | null;
+  /** Diễn ra TẠI nơi phía trước (hoạt động đang lồng) — không có chặng tới nó. */
+  inPlace?: boolean;
 };
 
 export type TripWarning = {
@@ -161,15 +191,15 @@ export function scheduleDay(
     }
 
     t = arriveMin + stay;
-    if (hasCoords(item)) lastPlace = item;
+    if (hasCoords(item) && !item.inPlace) lastPlace = item;
 
     const next = items[i + 1];
     let driveToNextMin: number | null = null;
     let key: string | null = null;
     let legHidden = false;
-    if (next && (!travel || isTask(next))) {
+    if (next && (!travel || isTask(next) || next.inPlace)) {
       legHidden = true;
-    } else if (next && !lastPlace && isTask(item)) {
+    } else if (next && !lastPlace && (isTask(item) || item.inPlace)) {
       legHidden = true;
     } else if (next) {
       key = lastPlace && hasCoords(next) ? legKey(lastPlace.id, next.id) : null;

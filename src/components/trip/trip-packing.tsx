@@ -188,7 +188,7 @@ function Section({
               </div>
               <ul className="mt-1 divide-y divide-border/60">
                 {list.map((item) => (
-                  <PackRow key={item.id} {...{ item, people, pending, run }} />
+                  <PackRow key={`${item.id}:${item.name}`} {...{ item, people, pending, run }} />
                 ))}
               </ul>
             </div>
@@ -200,7 +200,7 @@ function Section({
       ) : (
         <ul className="mt-3 divide-y divide-border/60">
           {items.map((item) => (
-            <PackRow key={item.id} {...{ item, people, pending, run }} />
+            <PackRow key={`${item.id}:${item.name}`} {...{ item, people, pending, run }} />
           ))}
           <AddRow scope={scope} tripId={tripId} draft={draft} setDraft={setDraft} run={run} />
         </ul>

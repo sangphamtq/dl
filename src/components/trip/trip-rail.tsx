@@ -72,7 +72,13 @@ export function RailItem({
       style={style}
       className={cn("group flex gap-2.5 sm:gap-3", dragging && "opacity-40")}
     >
-      <span className={cn(TIME, (stale || noTime) && "text-muted-foreground/50")}>
+      <span
+        className={cn(
+          TIME,
+          item.nested && "font-medium text-muted-foreground",
+          (stale || noTime) && "text-muted-foreground/50",
+        )}
+      >
         {noTime ? "···" : formatMinutes(item.arriveMin)}
       </span>
 
@@ -82,37 +88,54 @@ export function RailItem({
             {...handleProps}
             data-rail-dot
             className={cn(
-              "relative mt-0.5 grid size-[1.375rem] shrink-0 place-items-center rounded-full bg-primary text-[0.7rem] font-semibold tabular-nums text-primary-foreground ring-4 ring-background",
+              "relative shrink-0 rounded-full ring-4 ring-background",
+              // Mục con (hoạt động TẠI nơi phía trên): chấm nhỏ, không số — số chỉ đếm điểm dừng.
+              item.nested
+                ? "mt-[0.4rem] size-2.5 bg-primary/60"
+                : "mt-0.5 grid size-[1.375rem] place-items-center bg-primary text-[0.7rem] font-semibold tabular-nums text-primary-foreground",
               draggable &&
                 "cursor-grab touch-none before:absolute before:-inset-2 before:content-[''] active:cursor-grabbing",
             )}
             aria-hidden={draggable ? true : undefined}
           >
-            {index + 1}
+            {item.nested ? null : (item.stopNo ?? index + 1)}
           </span>
         }
       />
 
-      <div className={cn("min-w-0 flex-1", bare ? "pb-3" : "pb-5")}>
+      <div className={cn("min-w-0 flex-1", bare ? "pb-3" : "pb-5", item.nested && "pl-5")}>
         <div className="flex items-start gap-3">
-          {fields.image && <Thumb item={item} />}
+          {fields.image && <Thumb item={item} size={item.nested ? "sm" : "md"} />}
 
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-1">
-              <p className="flex min-w-0 items-start gap-1.5 font-medium leading-snug">
+              <p
+                className={cn(
+                  "flex min-w-0 items-start gap-1.5 font-medium leading-snug",
+                  item.nested && "text-sm",
+                )}
+              >
                 {!fields.image && (
                   <span className="mt-[0.2rem] shrink-0 text-muted-foreground">
                     <Glyph name={glyphOf(item)} className="size-3.5" />
                     <span className="sr-only">{item.typeLabel}</span>
                   </span>
                 )}
-                {item.href ? (
-                  <Link href={item.href} draggable={false} className="hover:text-primary">
-                    {item.name}
-                  </Link>
-                ) : (
-                  item.name
-                )}
+                <span className="min-w-0">
+                  {item.href ? (
+                    <Link href={item.href} draggable={false} className="hover:text-primary">
+                      {item.name}
+                    </Link>
+                  ) : (
+                    item.name
+                  )}
+                  {/* Hoạt động đứng riêng thì phải nói nó ở ĐÂU; mục con thì chỗ đã nằm ngay trên. */}
+                  {!item.nested && item.atName && (
+                    <span className="ml-2 text-xs font-normal text-muted-foreground">
+                      tại {item.atName}
+                    </span>
+                  )}
+                </span>
               </p>
               <div className="flex shrink-0 items-center gap-0.5">
                 {grip}

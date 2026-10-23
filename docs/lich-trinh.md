@@ -1014,6 +1014,21 @@ hàng ngày khởi hành / số người của trang soạn.
   tắt ảnh gần như không gọn đi chút nào). Mục không còn dòng phụ nào (`bare` trong `RailItem`)
   thì đệm dưới `pb-3` thay vì `pb-5` ⇒ ẩn tất cả ra một danh sách một-dòng-một-mục.
 
+## 12e. Hoạt động lồng dưới địa điểm (2026-10-24, biên tập chọn)
+
+Đúng §1 CLAUDE.md: `Spot` là một CHỖ, `Activity` là một VIỆC làm tại chỗ. Bản cũ cho hoạt động
+mượn toạ độ của Spot đầu tiên rồi đứng ngang hàng như một điểm dừng — có số riêng, có chặng
+"di chuyển 0 phút" từ chính chỗ của nó.
+
+- `anchorsOf()` (`lib/trip-time.ts`): hoạt động đứng sau ĐÚNG một Spot của nó (`atSpots`, cho
+  phép xen việc / hoạt động khác cũng đang lồng ở đó) ⇒ **lồng** vào Spot đó. Không thì nó vẫn là
+  điểm dừng, ghi "tại {Spot đầu tiên}".
+- Mục lồng: `inPlace` khi tính giờ (như một việc — không chặng tới nó, chặng đi tiếp tính từ
+  Spot) · không vào `getLegs` · `RailItem` vẽ chấm nhỏ không số, ảnh nhỏ, thụt `pl-5`.
+- **Số thứ tự chỉ đếm điểm dừng** (`ItemView.stopNo`). Bàn kéo–thả cục bộ chưa tính lại lồng
+  cho tới khi server trả về — chấp nhận được, chỉ lệch trong lúc chờ.
+- Đã thử và BỎ: giữ ngang hàng chỉ thêm "tại …" · gộp hẳn hoạt động vào dòng của địa điểm.
+
 ## 13. Còn thiếu / cố ý chưa làm
 
 | Việc | Ghi chú |

@@ -8,7 +8,7 @@ import {
   ACTIVITY_CATEGORY_LABELS,
   label,
 } from "@/lib/listing-labels";
-import { scheduleDay, type ScheduleItemInput, type TripItemKind, type TripWarning } from "@/lib/trip-time";
+import { anchorsOf, scheduleDay, type ScheduleItemInput, type TripItemKind, type TripWarning } from "@/lib/trip-time";
 import { getLegs, legMinutes } from "@/lib/trip-route";
 
 export type ResolvedItem = {
@@ -32,6 +32,10 @@ export type ResolvedItem = {
   durationText: string | null;
   bestTime: string | null;
   notice: string | null;
+  /** Chỉ mục kind=spot: id của Spot — để biết một hoạt động có đang ở ĐÚNG chỗ của nó không. */
+  spotId: string | null;
+  /** Chỉ mục kind=activity: các nơi diễn ra hoạt động này (thứ tự biên tập). */
+  atSpots: { id: string; name: string }[];
 };
 
 export type TripDayData = {
@@ -124,8 +128,7 @@ const tripInclude = {
           images: imgSelect, place: { select: { name: true } },
           spotLinks: {
             orderBy: { order: "asc" },
-            take: 1,
-            select: { spot: { select: { lat: true, lng: true, address: true } } },
+            select: { spot: { select: { id: true, name: true, lat: true, lng: true, address: true } } },
           },
         },
       },
@@ -160,6 +163,8 @@ function resolveItem(item: RawItem): ResolvedItem {
     durationText: null as string | null,
     bestTime: null as string | null,
     notice: null as string | null,
+    spotId: item.spotId,
+    atSpots: [] as { id: string; name: string }[],
   };
 
   if (item.spot) {
@@ -210,6 +215,7 @@ function resolveItem(item: RawItem): ResolvedItem {
       lat: borrowed?.lat ?? null, lng: borrowed?.lng ?? null,
       openingHours: null, durationText: ac.durationText,
       bestTime: ac.seasonText, notice: null,
+      atSpots: ac.spotLinks.map((l) => ({ id: l.spot.id, name: l.spot.name })),
     };
   }
   return {
@@ -287,6 +293,12 @@ export type ItemView = ResolvedItem & {
   driveApprox: boolean;
   driveKm: number | null;
   legHidden: boolean;
+  /** Hoạt động đang ở TRONG nơi phía trên nó — vẽ thành mục con, không số. */
+  nested: boolean;
+  /** Số thứ tự chỉ đếm ĐIỂM DỪNG (mục con không lấy số). */
+  stopNo: number | null;
+  /** "tại …" — nơi diễn ra một hoạt động. */
+  atName: string | null;
   warnings: TripWarning[];
 };
 
@@ -308,22 +320,37 @@ export async function buildDayViews(trip: TripData): Promise<DayView[]> {
     trip.days.map(async (day) => {
       // Chỉ những mục CÓ toạ độ mới là điểm trên tuyến — việc (đặt xe, chờ người…)
       // nằm giữa hai nơi không được cắt đôi chặng.
+      // Hoạt động đang lồng dưới nơi của nó cũng vậy: nó diễn ra TẠI nơi đó.
       // Tắt tự tính thì KHÔNG gọi OSRM luôn — đỡ một lượt mạng cho mỗi chặng.
+      const anchors = anchorsOf(day.items);
       const legs = trip.autoTravel
         ? await getLegs(
             day.items
-              .filter((i) => i.lat != null && i.lng != null)
+              .filter((i, k) => i.lat != null && i.lng != null && anchors[k] == null)
               .map((i) => ({ id: i.id, lat: i.lat, lng: i.lng })),
           )
         : {};
-      const sched = scheduleDay(day.startMin, day.items.map(toScheduleInput), legMinutes(legs), {
-        travel: trip.autoTravel,
-      });
+      const sched = scheduleDay(
+        day.startMin,
+        day.items.map((item, k) => ({ ...toScheduleInput(item), inPlace: anchors[k] != null })),
+        legMinutes(legs),
+        { travel: trip.autoTravel },
+      );
 
+      let stop = 0;
       const items: ItemView[] = day.items.map((item, i) => {
         const s = sched.items[i];
+        const anchor = anchors[i];
         return {
           ...item,
+          nested: anchor != null,
+          stopNo: anchor != null ? null : ++stop,
+          atName:
+            anchor != null
+              ? day.items[anchor].name
+              : item.kind === "activity"
+                ? (item.atSpots[0]?.name ?? null)
+                : null,
           arriveMin: s.arriveMin,
           leaveMin: s.leaveMin,
           effectiveStayMin: s.stayMin,

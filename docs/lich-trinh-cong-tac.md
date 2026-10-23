@@ -122,6 +122,13 @@ nhật tại chỗ, không tải lại trang) + toast nhẹ. Ba lý do cũ khi�
   mới, nên lượt hỏi kế thấy bằng nhau.
 - ⚠️ **Route GET, KHÔNG phải server action** — Next chạy server action nối tiếp theo từng
   client, lượt hỏi định kỳ sẽ bắt thao tác thật đứng chờ.
+- **Nút "Cập nhật"** (`trip-refresh-button.tsx`, thanh đầu trang soạn, chỉ khi chuyến có ≥2
+  người): `router.refresh()` tại chỗ. Lượt hỏi thấy bản mới mà đang phải hoãn (đang gõ, mở
+  menu…) thì nút đổi thành **"Có thay đổi mới"** (dưới `sm` chỉ còn icon + chấm) — hook trả
+  `behind`/`refreshing`/`refreshNow`.
+  · ⚠️ **Ô nhập chỉ đọc giá trị lúc dựng phải có `key` theo GIÁ TRỊ** (tên chuyến, ngày khởi
+    hành, số người, giờ bắt đầu ngày, tên đồ mang theo): không có thì người khác đổi rồi
+    refresh xong vẫn hiện chữ cũ. An toàn vì refresh không chạy khi đang gõ.
 - Vẫn **không** dùng Ably: một số nguyên mỗi 15 giây là đủ cho nhóm bạn lên kế hoạch nhiều
   ngày, khỏi phải lo khoá/kết nối.
 

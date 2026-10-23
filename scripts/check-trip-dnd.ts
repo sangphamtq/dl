@@ -1,6 +1,6 @@
 import { applyMove } from "@/components/trip/trip-dnd";
 import { dropAt, insertAt, placeAt, type DropAt } from "@/lib/trip-drop";
-import { scheduleDay, legKey } from "@/lib/trip-time";
+import { anchorsOf, scheduleDay, legKey } from "@/lib/trip-time";
 
 
 let pass = 0, fail = 0;
@@ -102,6 +102,28 @@ check("việc đầu ngày: giữ thời lượng đã đặt", sd2.items[1].arr
   check("tắt tự tính: không vẽ chặng", off.items[0].legHidden, true);
   check("tắt tự tính: không cảnh báo chặng dài",
     off.items.flatMap((i) => i.warnings.map((w) => w.code)).includes("longDrive"), false);
+}
+
+// Hoạt động lồng dưới đúng nơi của nó.
+{
+  const doi = { kind: "spot" as const, spotId: "doi", lat: 10, lng: 106 };
+  const bau = { kind: "spot" as const, spotId: "bau", lat: 11, lng: 107 };
+  const truot = { kind: "activity" as const, atSpots: [{ id: "doi" }, { id: "bau" }], lat: 10, lng: 106 };
+  const luot = { kind: "activity" as const, atSpots: [{ id: "biennn" }], lat: 12, lng: 108 };
+  const wait2 = { kind: "custom" as const, lat: null, lng: null };
+  check("hoạt động ngay sau nơi của nó → lồng", anchorsOf([doi, truot, bau]), [null, 0, null]);
+  check("xen một việc ở giữa vẫn lồng", anchorsOf([doi, wait2, truot]), [null, null, 0]);
+  check("hai hoạt động liền nhau cùng nơi → cả hai lồng", anchorsOf([doi, truot, { ...truot }]), [null, 0, 0]);
+  check("sau một nơi KHÁC → không lồng", anchorsOf([bau, luot]), [null, null]);
+  check("đứng đầu ngày → không lồng", anchorsOf([truot, doi]), [null, null]);
+
+  const A2 = { id: "A", kind: "spot" as const, name: "Đồi", stayMin: 60, lat: 10, lng: 106 };
+  const T2 = { id: "T", kind: "activity" as const, name: "Trượt", stayMin: 45, lat: 10, lng: 106, inPlace: true };
+  const B2 = { id: "B", kind: "spot" as const, name: "Bàu", stayMin: 60, lat: 11, lng: 107 };
+  const sd3 = scheduleDay(8 * 60, [A2, T2, B2], { [legKey("A", "B")]: 20 });
+  check("lồng: không vẽ chặng nơi → hoạt động", sd3.items[0].legHidden, true);
+  check("lồng: chặng đi tiếp tính từ NƠI (A→B)", sd3.items[1].legKey, "A->B");
+  check("lồng: giờ tới B = 8:00 + 60 + 45 + 20", sd3.items[2].arriveMin, 8 * 60 + 60 + 45 + 20);
 }
 
 console.log(`\n${pass} qua · ${fail} hỏng`);

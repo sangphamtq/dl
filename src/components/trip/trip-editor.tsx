@@ -159,7 +159,7 @@ export function TripEditor({
 
   const dnd = useTripBoard(days, backlog);
 
-  useTripLiveSync({
+  const sync = useTripLiveSync({
     tripId: trip.id,
     version: trip.version,
     enabled: trip.people.length > 1,
@@ -222,6 +222,8 @@ export function TripEditor({
       header={
         <TripTopbar
           trip={trip}
+          // Đi một mình thì không ai đổi gì sau lưng — nút chỉ là thêm một thứ để bấm.
+          sync={trip.people.length > 1 ? sync : undefined}
           facts={[
             `${days.length} ngày`,
             `${days.reduce((s, d) => s + d.items.length, 0) + backlog.length} mục`,
@@ -613,6 +615,7 @@ function DayBlock({
             <label className="flex items-center gap-1.5 text-sm text-muted-foreground">
               <Glyph name="sunrise" className="size-4 shrink-0" />
               <input
+                key={day.startMin}
                 type="time"
                 defaultValue={toTimeValue(day.startMin)}
                 onChange={(e) => {

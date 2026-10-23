@@ -24,6 +24,9 @@ function toItemView(x: ItemView | ResolvedItem): ItemView {
     driveApprox: false,
     legHidden: false,
     driveKm: null,
+    nested: false,
+    stopNo: null,
+    atName: null,
     warnings: [],
   };
 }

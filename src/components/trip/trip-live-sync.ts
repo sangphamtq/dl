@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 const EVERY_MS = 15_000;
 
-// Đang gõ / đang mở menu, popover thì KHÔNG làm mới: dữ liệu mới đổ vào giữa lúc
-// đó là giật mất thứ người dùng đang cầm. Lần hỏi sau sẽ bắt lại.
+// Đang gõ / đang mở menu, popover thì KHÔNG tự làm mới: dữ liệu mới đổ vào giữa lúc
+// đó là giật mất thứ người dùng đang cầm. Khi đó chỉ báo "có thay đổi mới" trên nút.
 function userIsBusy(): boolean {
   const el = document.activeElement as HTMLElement | null;
   if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return true;
@@ -23,6 +23,8 @@ function userIsBusy(): boolean {
 /**
  * Chuyến có người cùng sửa: hỏi `version` (một số) rồi `router.refresh()` khi nó
  * tăng — cập nhật tại chỗ, không tải lại trang. Chỉ hỏi khi tab đang hiện.
+ * Trả về `behind` (server đã có bản mới hơn thứ đang hiện) và `refreshNow` cho nút
+ * "Cập nhật" — lối chủ động khi việc tự làm mới đang phải hoãn.
  */
 export function useTripLiveSync({
   tripId,
@@ -36,6 +38,8 @@ export function useTripLiveSync({
   busy: boolean;
 }) {
   const router = useRouter();
+  const [refreshing, startRefresh] = useTransition();
+  const [latest, setLatest] = useState(version);
   const seen = useRef(version);
   const busyRef = useRef(busy);
   const requested = useRef(version);
@@ -51,16 +55,17 @@ export function useTripLiveSync({
     let inFlight = false;
 
     async function check() {
-      if (inFlight || document.hidden || busyRef.current || userIsBusy()) return;
+      if (inFlight || document.hidden) return;
       inFlight = true;
       try {
         const res = await fetch(`/api/trips/${tripId}/version`, { cache: "no-store" });
         if (!res.ok || !alive) return;
-        const { version: latest } = (await res.json()) as { version: number };
-        // Kiểm lại `busy` SAU khi chờ mạng: người dùng có thể vừa bắt đầu kéo.
-        if (latest > seen.current && latest > requested.current && !busyRef.current) {
-          requested.current = latest;
-          router.refresh();
+        const { version: v } = (await res.json()) as { version: number };
+        setLatest(v);
+        // Kiểm `busy` SAU khi chờ mạng: người dùng có thể vừa bắt đầu kéo.
+        if (v > seen.current && v > requested.current && !busyRef.current && !userIsBusy()) {
+          requested.current = v;
+          startRefresh(() => router.refresh());
           toast("Lịch trình vừa có thay đổi mới, đã cập nhật.", { id: `trip-sync-${tripId}` });
         }
       } catch {
@@ -85,4 +90,11 @@ export function useTripLiveSync({
       window.removeEventListener("online", onVisible);
     };
   }, [enabled, tripId, router]);
+
+  function refreshNow() {
+    requested.current = Math.max(requested.current, latest);
+    startRefresh(() => router.refresh());
+  }
+
+  return { behind: latest > version, refreshing, refreshNow };
 }

@@ -13,6 +13,7 @@ export type GlyphName =
   | "sparkle"
   | "route"
   | "clock"
+  | "refresh"
   | "calendar"
   | "eye"
   | "bowl"
@@ -121,6 +122,12 @@ const SHAPES: Record<GlyphName, React.ReactNode> = {
       <circle cx="6.4" cy="6.5" r="2.3" />
       <circle cx="17.6" cy="17.5" r="2.3" />
       <path d="M8.7 6.5h3.1a2.75 2.75 0 0 1 0 5.5h-1.7a2.75 2.75 0 0 0 0 5.5h5.2" />
+    </>
+  ),
+  refresh: (
+    <>
+      <path d="M19.6 12a7.6 7.6 0 1 1-2.2-5.4" />
+      <path d="M17.8 3v3.8H14" />
     </>
   ),
   clock: (
