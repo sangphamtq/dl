@@ -1246,6 +1246,10 @@ model Trip {
   summary   String? // 1 câu — card + SEO (chủ yếu cho lịch trình mẫu)
   startDate DateTime? @db.Date // null = chuyến chưa định ngày
   partySize Int? // số người — CHỈ hiển thị, không dùng để tính tiền
+  // Tự tính chặng lái giữa các nơi (OSRM, rơi về đường chim bay) và cộng vào giờ.
+  // Tắt ⇒ giờ đến = giờ rời mục trước, không chặng, không cảnh báo chặng dài.
+  // Theo CHUYẾN, không theo người xem: nó đổi giờ của cả lịch trình.
+  autoTravel Boolean @default(true)
 
   // Chia sẻ: shareId sinh khi bật chia sẻ (null = chưa từng bật).
   shareId    String?        @unique

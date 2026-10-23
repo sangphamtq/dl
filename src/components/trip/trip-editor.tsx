@@ -1,10 +1,16 @@
 "use client";
 
-import { Fragment, useEffect, useState, useTransition, type ReactNode } from "react";
+import {
+  Fragment,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+  type ReactNode,
+} from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Loader2 } from "@/components/icons";
 import { Glyph } from "@/components/site/glyphs";
 import { R_CARD } from "@/lib/radius";
 import { cn } from "@/lib/utils";
@@ -35,7 +41,6 @@ import { TripMoney } from "@/components/trip/trip-money";
 import { formatMinutes, fmtDuration, DEFAULT_STAY_MIN } from "@/lib/trip-time";
 import {
   addDay,
-  addItem,
   moveItem,
   removeDay,
   removeItem,
@@ -54,10 +59,14 @@ import {
   Warning,
 } from "@/components/trip/trip-rail";
 import { TripTopbar } from "@/components/trip/trip-topbar";
+import { useTripLiveSync } from "@/components/trip/trip-live-sync";
+import { TripAddSearch, type AddTarget } from "@/components/trip/trip-add-search";
+import { insertAt, type DropAt } from "@/lib/trip-drop";
 import {
   DndContext,
   DragOverlay,
   KeyboardSensor,
+  useDndContext,
   PointerSensor,
   TouchSensor,
   closestCorners,
@@ -88,6 +97,7 @@ type TripHeader = {
   title: string;
   startDate: string | null;
   partySize: number | null;
+  autoTravel: boolean;
   shareId: string | null;
   visibility: "private" | "unlisted";
   place: { slug: string; name: string } | null;
@@ -125,6 +135,7 @@ export function TripEditor({
   const [activeDayId, setActiveDayId] = useState(days[0]?.id ?? "");
 
   const [staleDays, setStaleDays] = useState<string[]>([]);
+  const [addTarget, setAddTarget] = useState<AddTarget | null>(null);
   const slow = useDelayedFlag(pending, 350);
   const fields = useTripFields();
 
@@ -147,6 +158,13 @@ export function TripEditor({
   }
 
   const dnd = useTripBoard(days, backlog);
+
+  useTripLiveSync({
+    tripId: trip.id,
+    version: trip.version,
+    enabled: trip.people.length > 1,
+    busy: pending || dnd.activeId !== null,
+  });
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -175,12 +193,10 @@ export function TripEditor({
     setStaleDays([fromDayId, at?.dayId ?? null].filter((x): x is string => !!x));
     if (at)
       run(async () => {
-        const res = await moveItem(id, at.dayId, at.index, trip.version);
-        if (!res.ok && res.stale) {
+        const res = await moveItem(id, at.dayId, at.at);
+        if (!res.ok) {
           dnd.resetFromProps();
           router.refresh();
-          toast(res.error);
-          return { ok: true };
         }
         return res;
       });
@@ -260,12 +276,14 @@ export function TripEditor({
               />
             )}
 
-            <CustomItemForm
-              onAdd={(title) =>
-                run(() => addItem({ kind: "custom", title }, trip.id), "Đã thêm vào danh sách chưa xếp")
-              }
-              pending={pending}
-            />
+            <button
+              type="button"
+              onClick={() => setAddTarget({ dayId: null, label: "danh sách chưa xếp" })}
+              className="mt-3 flex h-9 w-full items-center gap-2 rounded-[4px] border border-border bg-background px-3 text-sm text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+            >
+              <Glyph name="search" className="size-4 shrink-0" />
+              Tìm hoặc tự thêm mục…
+            </button>
           </>
             ),
           })}
@@ -280,7 +298,8 @@ export function TripEditor({
                 <TripDayStrip days={days} activeId={activeDay?.id ?? null} onPick={pickDay} />
               </div>
               <div className="shrink-0 pb-2">
-                <TripFieldsMenu />
+                {/* Tắt tự tính thì không có chặng nào để hiện/ẩn. */}
+                <TripFieldsMenu omit={trip.autoTravel ? [] : ["leg"]} />
               </div>
             </div>
 
@@ -298,6 +317,7 @@ export function TripEditor({
                   allDays={days}
                   active={day.id === activeDay?.id}
                   onFocus={() => setActiveDayId(day.id)}
+                  onAdd={(pos) => setAddTarget({ dayId: day.id, label: `Ngày ${day.index + 1}`, ...pos })}
                   run={run}
                 />
               ))}
@@ -397,6 +417,13 @@ export function TripEditor({
           </div>
         ) : null}
       </DragOverlay>
+
+      <TripAddSearch
+        tripId={trip.id}
+        placeName={trip.place?.name ?? null}
+        target={addTarget}
+        onClose={() => setAddTarget(null)}
+      />
     </DndContext>
   );
 }
@@ -491,7 +518,7 @@ function BacklogRow({
               key={d.id}
               onSelect={() =>
                 run(
-                  () => moveItem(item.id, d.id, d.items.length),
+                  () => moveItem(item.id, d.id, "end"),
                   `Đã xếp vào Ngày ${d.index + 1}`,
                 )
               }
@@ -527,6 +554,7 @@ function DayBlock({
   allDays,
   active,
   onFocus,
+  onAdd,
   run,
 }: {
   day: DayView;
@@ -539,9 +567,13 @@ function DayBlock({
   allDays: DayView[];
   active: boolean;
   onFocus: () => void;
+  onAdd: (pos?: { at: DropAt; where?: string }) => void;
   run: (fn: () => Promise<{ ok: boolean; error?: string }>, done?: string) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: dayKey(day.id) });
+  const listRef = useRef<HTMLOListElement | null>(null);
+  const insert = (index: number) =>
+    onAdd(insertAt(itemIds, index, (id) => byId.get(id)?.name ?? "mục này"));
 
   return (
     <section
@@ -550,11 +582,10 @@ function DayBlock({
       onMouseDown={onFocus}
       className={cn(
         "group/day relative scroll-mt-28 border-t border-border/60 py-9 first:border-t-0 first:pt-5 lg:scroll-mt-24",
-        active &&
-          "before:absolute before:-left-3 before:top-9 before:h-7 before:w-[3px] before:rounded-[2px] before:bg-warm first:before:top-2",
       )}
     >
       <DayHeading
+        active={active}
         index={day.index}
         title={day.title}
         // Tên ngày & ghi chú ngày CHỈ có ở lịch trình mẫu: đó là giọng biên tập
@@ -626,7 +657,7 @@ function DayBlock({
         }
       />
 
-      {isTemplate && (
+      {isTemplate && fields.note && (
         <div className="mt-2 max-w-prose">
           <InlineEdit
             value={day.note}
@@ -639,21 +670,32 @@ function DayBlock({
         </div>
       )}
 
-      {day.warnings.map((w) => (
-        <Warning key={w.code} warning={w} />
-      ))}
+      {fields.warn &&
+        day.warnings.map((w) => <Warning key={w.code} warning={w} />)}
 
       <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
         <ol
-          ref={setNodeRef}
+          ref={(node) => {
+            setNodeRef(node);
+            listRef.current = node;
+          }}
           className={cn(
-            "-mx-2 mt-6 min-h-[4rem] rounded-[6px] px-2 transition-colors",
+            "relative -mx-2 mt-6 min-h-[4rem] rounded-[6px] px-2 transition-colors",
             isOver && "bg-primary/5 ring-1 ring-primary/20",
           )}
         >
           {itemIds.length === 0 ? (
-            <li className="py-4 text-sm text-muted-foreground">
-              Kéo một mục từ cột Chưa xếp ngày sang đây.
+            <li className="flex flex-wrap items-center gap-x-2 gap-y-1 py-4 text-sm text-muted-foreground">
+              {/* Ngày trống chưa có trục nên chưa có dấu + nào — lối thêm duy nhất là đây. */}
+              <button
+                type="button"
+                onClick={() => onAdd()}
+                className="inline-flex h-8 items-center gap-1.5 rounded-[4px] border border-border px-2.5 font-medium text-foreground transition-colors hover:border-primary/50 hover:text-primary-ink"
+              >
+                <Glyph name="plus" className="size-4" />
+                Thêm vào ngày {day.index + 1}
+              </button>
+              hoặc kéo một mục từ cột Chưa xếp ngày sang đây.
             </li>
           ) : (
             itemIds.map((id, i) => {
@@ -678,7 +720,14 @@ function DayBlock({
                       />
                     }
                     actions={
-                      <ItemActions item={item} day={day} allDays={allDays} run={run} />
+                      <ItemActions
+                        item={item}
+                        day={day}
+                        allDays={allDays}
+                        run={run}
+                        onInsertBefore={() => insert(i)}
+                        onInsertAfter={() => insert(i + 1)}
+                      />
                     }
                   />
                   {fields.leg && i < itemIds.length - 1 && <RailLeg item={item} />}
@@ -686,9 +735,115 @@ function DayBlock({
               );
             })
           )}
+          {itemIds.length > 0 && (
+            <InsertMarks listRef={listRef} itemIds={itemIds} onInsert={insert} />
+          )}
         </ol>
       </SortableContext>
     </section>
+  );
+}
+
+/**
+ * Dấu + để chèn, đặt ĐÚNG GIỮA hai chấm số liền nhau trên trục. Khoảng cách giữa hai
+ * chấm đổi theo nội dung từng mục (ghi chú, dòng di chuyển…) nên phải ĐO, CSS không
+ * tính được. Rê vào một mục (bất kỳ chỗ nào trên nó) thì hiện dấu + ngay dưới nó.
+ */
+function InsertMarks({
+  listRef,
+  itemIds,
+  onInsert,
+}: {
+  listRef: React.RefObject<HTMLOListElement | null>;
+  itemIds: string[];
+  onInsert: (index: number) => void;
+}) {
+  const [dots, setDots] = useState<{ x: number; y: number }[]>([]);
+  // Đáy trục — chỗ đặt dấu + "thêm sau mục cuối".
+  const [endY, setEndY] = useState(0);
+  const [hovered, setHovered] = useState<number | null>(null);
+  const { active } = useDndContext();
+  const ids = itemIds.join(",");
+
+  // useEffect, KHÔNG useLayoutEffect: effect bố cục của con chạy TRƯỚC khi React gắn
+  // ref cho `<ol>` cha, nên lúc đó `listRef.current` còn null và không đo lại nữa.
+  useEffect(() => {
+    const list = listRef.current;
+    if (!list) return;
+    const measure = () => {
+      const box = list.getBoundingClientRect();
+      const next = [...list.querySelectorAll<HTMLElement>("[data-rail-dot]")].map((el) => {
+        const r = el.getBoundingClientRect();
+        return { x: r.left + r.width / 2 - box.left, y: r.top + r.height / 2 - box.top };
+      });
+      setEndY(box.height);
+      setDots((prev) =>
+        prev.length === next.length && prev.every((p, i) => p.x === next[i].x && p.y === next[i].y)
+          ? prev
+          : next,
+      );
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(list);
+
+    // Mục k chiếm từ giữa khe phía trên tới giữa khe phía dưới — trọn cả mục lẫn dòng
+    // "di chuyển" của nó, không chỉ khoảng trắng.
+    const onMove = (e: MouseEvent) => {
+      const y = e.clientY - list.getBoundingClientRect().top;
+      const centers = [...list.querySelectorAll<HTMLElement>("[data-rail-dot]")].map((el) => {
+        const r = el.getBoundingClientRect();
+        return r.top + r.height / 2 - list.getBoundingClientRect().top;
+      });
+      let k = 0;
+      while (k < centers.length - 1 && y > (centers[k] + centers[k + 1]) / 2) k++;
+      setHovered(k);
+    };
+    const onLeave = () => setHovered(null);
+    list.addEventListener("mousemove", onMove);
+    list.addEventListener("mouseleave", onLeave);
+    return () => {
+      ro.disconnect();
+      list.removeEventListener("mousemove", onMove);
+      list.removeEventListener("mouseleave", onLeave);
+    };
+  }, [listRef, ids]);
+
+  if (dots.length === 0 || active) return null;
+
+  // Khe i nằm giữa mục i và i + 1; khe cuối nằm ở đáy trục, sau mục cuối.
+  const slots = dots.map((a, i) => ({
+    x: a.x,
+    y: i < dots.length - 1 ? (a.y + dots[i + 1].y) / 2 : endY - 12,
+  }));
+
+  return (
+    <div aria-hidden={false} className="pointer-events-none absolute inset-0">
+      {slots.map((slot, i) => {
+        // Chỉ hiện ở khe NGAY DƯỚI mục đang rê.
+        const shown = hovered === i;
+        return (
+          <button
+            key={i}
+            type="button"
+            onClick={() => onInsert(i + 1)}
+            title="Chèn vào đây"
+            aria-label={
+              i < dots.length - 1
+                ? `Chèn một mục vào giữa mục ${i + 1} và ${i + 2}`
+                : `Thêm một mục sau mục ${i + 1}`
+            }
+            style={{ left: slot.x, top: slot.y }}
+            className={cn(
+              "pointer-events-auto absolute z-10 grid size-6 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-[3px] border border-border bg-background text-muted-foreground shadow-sm transition-opacity hover:border-primary/50 hover:text-primary-ink focus-visible:opacity-100",
+              shown ? "opacity-100" : "opacity-0",
+            )}
+          >
+            <Glyph name="plus" className="size-4" />
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -764,11 +919,15 @@ function ItemActions({
   day,
   allDays,
   run,
+  onInsertBefore,
+  onInsertAfter,
 }: {
   item: ItemView;
   day: DayView;
   allDays: DayView[];
   run: (fn: () => Promise<{ ok: boolean; error?: string }>, done?: string) => void;
+  onInsertBefore: () => void;
+  onInsertAfter: () => void;
 }) {
   return (
     <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 [@media(pointer:coarse)]:opacity-100">
@@ -783,6 +942,15 @@ function ItemActions({
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuItem onSelect={onInsertBefore}>
+            <Glyph name="plus" className="size-4" />
+            Thêm phía trước
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={onInsertAfter}>
+            <Glyph name="plus" className="size-4" />
+            Thêm phía sau
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
           <DropdownMenuLabel>Chuyển sang</DropdownMenuLabel>
           {allDays
             .filter((d) => d.id !== day.id)
@@ -791,7 +959,7 @@ function ItemActions({
                 key={d.id}
                 onSelect={() =>
                   run(
-                    () => moveItem(item.id, d.id, d.items.length),
+                    () => moveItem(item.id, d.id, "end"),
                     `Đã chuyển sang Ngày ${d.index + 1}`,
                   )
                 }
@@ -800,7 +968,7 @@ function ItemActions({
               </DropdownMenuItem>
             ))}
           <DropdownMenuItem
-            onSelect={() => run(() => moveItem(item.id, null, 0), "Đã đưa về mục Chưa xếp ngày")}
+            onSelect={() => run(() => moveItem(item.id, null, "start"), "Đã đưa về mục Chưa xếp ngày")}
           >
             Chưa xếp ngày
           </DropdownMenuItem>
@@ -974,47 +1142,6 @@ function InlineEdit({
   );
 }
 
-
-function CustomItemForm({
-  onAdd,
-  pending,
-}: {
-  onAdd: (title: string) => void;
-  pending: boolean;
-}) {
-  const [title, setTitle] = useState("");
-  return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        const t = title.trim();
-        if (!t) return;
-        onAdd(t);
-        setTitle("");
-      }}
-      className="mt-3 grid gap-2"
-    >
-      <Input
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder="Tự thêm mục…"
-        aria-label="Tên mục tự thêm"
-        className="h-9 rounded-[4px] bg-background"
-      />
-      {/* KHÔNG dùng size="sm": nút đó cao h-8 còn Input là h-9, đứng cạnh nhau
-          là lệch 4px. Ép cùng h-9 và cùng bo góc rounded-[4px]. */}
-      <Button
-        type="submit"
-        variant="outline"
-        disabled={pending || !title.trim()}
-        className="h-9 rounded-[4px] bg-background px-3"
-      >
-        {pending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Glyph name="plus" className="size-4" />}
-        Thêm
-      </Button>
-    </form>
-  );
-}
 
 function toTimeValue(min: number): string {
   return `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;

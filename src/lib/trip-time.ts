@@ -19,6 +19,13 @@ export const DEFAULT_STAY_MIN: Record<TripItemKind, number> = {
   custom: 60,
 };
 
+/** Mục tự thêm KHÔNG có toạ độ là một VIỆC (đặt xe, chờ người…), không phải một nơi. */
+export const TASK_STAY_MIN = 30;
+
+export function isTask(i: { kind: TripItemKind; lat?: number | null; lng?: number | null }): boolean {
+  return i.kind === "custom" && (i.lat == null || i.lng == null);
+}
+
 const LONG_DRIVE_MIN = 90;
 const DAY_LATE_END = 22 * 60;
 const DAY_MAX_LENGTH = 12 * 60; // tổng ngày quá 12 tiếng
@@ -83,6 +90,10 @@ export type ScheduledItem = {
   leaveMin: number;
   stayMin: number;
   driveToNextMin: number | null;
+  /** Chặng tính cho đoạn tới mục kế — có thể xuất phát từ một nơi TRƯỚC đó (bỏ qua việc). */
+  legKey: string | null;
+  /** Không vẽ vạch "di chuyển" tới mục kế: mục kế là việc, hoặc chưa có nơi nào để đi từ đó. */
+  legHidden: boolean;
   warnings: TripWarning[];
 };
 
@@ -104,6 +115,7 @@ function stayMinOf(item: ScheduleItemInput): number {
     const parsed = parseDurationMin(item.durationText);
     if (parsed != null) return parsed;
   }
+  if (isTask(item)) return TASK_STAY_MIN;
   return DEFAULT_STAY_MIN[item.kind];
 }
 
@@ -111,10 +123,13 @@ export function scheduleDay(
   startMin: number,
   items: ScheduleItemInput[],
   drive: Record<string, number>,
+  { travel = true }: { travel?: boolean } = {},
 ): ScheduledDay {
   const out: ScheduledItem[] = [];
   let t = startMin;
   let driveTotal = 0;
+  // Việc diễn ra tại NƠI gần nhất phía trước, nên chặng đi tiếp xuất phát từ nơi đó.
+  let lastPlace: ScheduleItemInput | null = null;
 
   items.forEach((item, i) => {
     const warnings: TripWarning[] = [];
@@ -146,11 +161,19 @@ export function scheduleDay(
     }
 
     t = arriveMin + stay;
+    if (hasCoords(item)) lastPlace = item;
 
     const next = items[i + 1];
     let driveToNextMin: number | null = null;
-    if (next) {
-      const known = drive[legKey(item.id, next.id)];
+    let key: string | null = null;
+    let legHidden = false;
+    if (next && (!travel || isTask(next))) {
+      legHidden = true;
+    } else if (next && !lastPlace && isTask(item)) {
+      legHidden = true;
+    } else if (next) {
+      key = lastPlace && hasCoords(next) ? legKey(lastPlace.id, next.id) : null;
+      const known = key ? drive[key] : undefined;
       if (known != null) {
         driveToNextMin = Math.round(known);
         driveTotal += driveToNextMin;
@@ -171,7 +194,16 @@ export function scheduleDay(
       }
     }
 
-    out.push({ id: item.id, arriveMin, leaveMin: arriveMin + stay, stayMin: stay, driveToNextMin, warnings });
+    out.push({
+      id: item.id,
+      arriveMin,
+      leaveMin: arriveMin + stay,
+      stayMin: stay,
+      driveToNextMin,
+      legKey: key,
+      legHidden,
+      warnings,
+    });
   });
 
   const endMin = out.length ? out[out.length - 1].leaveMin : startMin;

@@ -10,6 +10,7 @@ import { updateTrip } from "@/app/(site)/lich-trinh/actions";
 import { MICRO } from "@/components/trip/trip-rail";
 import { TripShare } from "@/components/trip/trip-share";
 import { TripSectionSheet } from "@/components/trip/trip-side-nav";
+import { Switch } from "@/components/ui/switch";
 import type { TripPerson } from "@/lib/trip";
 
 export type TripChrome = {
@@ -17,6 +18,7 @@ export type TripChrome = {
   title: string;
   startDate: string | null;
   partySize: number | null;
+  autoTravel?: boolean;
   shareId: string | null;
   visibility: "private" | "unlisted";
   isOwner: boolean;
@@ -31,6 +33,13 @@ export function TripTopbar({
   facts?: string[];
 }) {
   const [pending, start] = useTransition();
+  // Bật/tắt phản hồi NGAY, không chờ server dựng lại cả lịch (có thể vài giây vì OSRM).
+  const [travel, setTravel] = useState(trip.autoTravel ?? true);
+  const [travelFor, setTravelFor] = useState(trip.autoTravel);
+  if (trip.autoTravel !== travelFor) {
+    setTravelFor(trip.autoTravel);
+    setTravel(trip.autoTravel ?? true);
+  }
 
   function run(fn: () => Promise<{ ok: boolean; error?: string }>) {
     start(async () => {
@@ -113,6 +122,33 @@ export function TripTopbar({
               )}
             />
           </label>
+          {trip.autoTravel !== undefined && (
+            <label
+              className="flex cursor-pointer items-center gap-2"
+              title="Tự ước tính thời gian và quãng đường lái giữa các điểm, rồi cộng vào giờ. Áp dụng cho cả chuyến."
+            >
+              <Glyph name="car" className="size-4 shrink-0" />
+              <span className="text-foreground">Tự tính đường đi</span>
+              <Switch
+                checked={travel}
+                onCheckedChange={(on) => {
+                  setTravel(on);
+                  run(async () => {
+                    const res = await updateTrip(trip.id, { autoTravel: on });
+                    if (!res.ok) setTravel(!on);
+                    else
+                      toast(
+                        on
+                          ? "Đã bật: giờ đến đã cộng thời gian di chuyển."
+                          : "Đã tắt: giờ đến nối thẳng giờ rời điểm trước.",
+                      );
+                    return res;
+                  });
+                }}
+                aria-label="Tự tính thời gian và quãng đường giữa các điểm"
+              />
+            </label>
+          )}
           {facts?.map((f) => (
             <span key={f} className={cn(MICRO, "text-muted-foreground")}>
               <span className="tabular-nums text-foreground">{f.split(" ")[0]}</span>{" "}

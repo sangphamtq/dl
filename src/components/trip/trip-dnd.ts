@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { DayView, ItemView, ResolvedItem } from "@/lib/trip";
+import { dropAt, type DropAt } from "@/lib/trip-drop";
 
 export const BACKLOG = "backlog";
 
@@ -21,6 +22,8 @@ function toItemView(x: ItemView | ResolvedItem): ItemView {
     effectiveStayMin: x.stayMin ?? 0,
     driveToNextMin: null,
     driveApprox: false,
+    legHidden: false,
+    driveKm: null,
     warnings: [],
   };
 }
@@ -101,7 +104,7 @@ export function useTripBoard(days: DayView[], backlog: ResolvedItem[]) {
   function commitMove(
     activeId: string,
     overId: string | null,
-  ): { dayId: string | null; index: number } | null {
+  ): { dayId: string | null; at: DropAt } | null {
     const next = overId ? applyMove(board, activeId, overId) : board;
     if (overId) setBoard(next);
 
@@ -109,7 +112,7 @@ export function useTripBoard(days: DayView[], backlog: ResolvedItem[]) {
     if (!container) return null;
     return {
       dayId: container === BACKLOG ? null : dayIdOf(container),
-      index: next[container].indexOf(activeId),
+      at: dropAt(next[container], activeId),
     };
   }
 

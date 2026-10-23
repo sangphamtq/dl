@@ -167,7 +167,7 @@ export function TripView({
                       </p>
                     </div>
                   </div>
-                  {item.note && (
+                  {fields.note && item.note && (
                     <p className="mt-1.5 text-xs italic leading-relaxed text-muted-foreground">
                       {item.note}
                     </p>
@@ -208,15 +208,14 @@ export function TripView({
                   }
                 />
 
-                {day.note && (
+                {fields.note && day.note && (
                   <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted-foreground">
                     {day.note}
                   </p>
                 )}
 
-                {day.warnings.map((w) => (
-                  <Warning key={w.code} warning={w} />
-                ))}
+                {fields.warn &&
+                  day.warnings.map((w) => <Warning key={w.code} warning={w} />)}
 
                 {day.items.length === 0 ? (
                   <p className="mt-4 text-sm text-muted-foreground">Ngày trống.</p>

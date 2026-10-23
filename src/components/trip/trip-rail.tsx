@@ -8,7 +8,7 @@ import { R_CTRL } from "@/lib/radius";
 import { cn } from "@/lib/utils";
 import { formatMinutes, fmtDuration, type TripWarning } from "@/lib/trip-time";
 import type { ItemView, ResolvedItem } from "@/lib/trip";
-import type { TripItemKind } from "@/lib/trip-time";
+import { isTask, type TripItemKind } from "@/lib/trip-time";
 import { ALL_ON, type TripFields } from "@/components/trip/trip-fields";
 
 const TYPE_GLYPH: Record<TripItemKind, GlyphName> = {
@@ -62,6 +62,9 @@ export function RailItem({
 }) {
   const draggable = handleProps != null;
   const noTime = item.arriveMin < 0;
+  // Tắt hết dòng phụ ⇒ mục chỉ còn một dòng tên, đệm 20px là quá thưa cho một danh sách.
+  const warnings = fields.warn ? item.warnings : [];
+  const bare = !fields.image && !fields.stay && !fields.hours && !fields.note && warnings.length === 0;
 
   return (
     <li
@@ -77,6 +80,7 @@ export function RailItem({
         node={
           <span
             {...handleProps}
+            data-rail-dot
             className={cn(
               "relative mt-0.5 grid size-[1.375rem] shrink-0 place-items-center rounded-full bg-primary text-[0.7rem] font-semibold tabular-nums text-primary-foreground ring-4 ring-background",
               draggable &&
@@ -89,13 +93,19 @@ export function RailItem({
         }
       />
 
-      <div className="min-w-0 flex-1 pb-5">
+      <div className={cn("min-w-0 flex-1", bare ? "pb-3" : "pb-5")}>
         <div className="flex items-start gap-3">
-          <Thumb item={item} hideImage={!fields.image} />
+          {fields.image && <Thumb item={item} />}
 
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-1">
-              <p className="min-w-0 font-medium leading-snug">
+              <p className="flex min-w-0 items-start gap-1.5 font-medium leading-snug">
+                {!fields.image && (
+                  <span className="mt-[0.2rem] shrink-0 text-muted-foreground">
+                    <Glyph name={glyphOf(item)} className="size-3.5" />
+                    <span className="sr-only">{item.typeLabel}</span>
+                  </span>
+                )}
                 {item.href ? (
                   <Link href={item.href} draggable={false} className="hover:text-primary">
                     {item.name}
@@ -131,7 +141,7 @@ export function RailItem({
                   </p>
                 )))}
 
-            {item.warnings.map((w, i) => (
+            {warnings.map((w, i) => (
               <Warning key={`${w.code}-${i}`} warning={w} />
             ))}
           </div>
@@ -141,7 +151,12 @@ export function RailItem({
   );
 }
 
+function fmtKm(km: number): string {
+  return `${km < 10 ? km.toLocaleString("vi-VN", { maximumFractionDigits: 1 }) : Math.round(km)} km`;
+}
+
 export function RailLeg({ item }: { item: ItemView }) {
+  if (item.legHidden) return null;
   return (
     <li className="flex gap-2.5 sm:gap-3" aria-hidden={false}>
       <span className={cn(TIME, "invisible")}>—</span>
@@ -152,6 +167,9 @@ export function RailLeg({ item }: { item: ItemView }) {
             <Glyph name="car" className="size-3.5 shrink-0" />
             {item.driveApprox ? "~" : ""}
             {fmtDuration(item.driveToNextMin)} di chuyển
+            {item.driveKm != null && (
+              <span className="ml-3 tabular-nums">{fmtKm(item.driveKm)}</span>
+            )}
           </>
         ) : (
           <span className="italic">chưa ước tính được đường đi</span>
@@ -159,6 +177,10 @@ export function RailLeg({ item }: { item: ItemView }) {
       </p>
     </li>
   );
+}
+
+function glyphOf(item: ResolvedItem): GlyphName {
+  return isTask(item) ? "note" : TYPE_GLYPH[item.kind];
 }
 
 export function Thumb({
@@ -170,7 +192,7 @@ export function Thumb({
   size?: "sm" | "md";
   hideImage?: boolean;
 }) {
-  const glyph = TYPE_GLYPH[item.kind];
+  const glyph = glyphOf(item);
   const box = size === "sm" ? "size-10" : "size-12";
 
   if (!item.image || hideImage) {
@@ -241,6 +263,7 @@ export function DayHeading({
   dateLabel,
   span,
   right,
+  active = false,
 }: {
   index: number;
   title: string | null;
@@ -248,6 +271,7 @@ export function DayHeading({
   dateLabel: string | null;
   span: string | null;
   right?: ReactNode;
+  active?: boolean;
 }) {
   const named = titleNode !== undefined || Boolean(title);
   const DISPLAY =
@@ -255,7 +279,15 @@ export function DayHeading({
 
   return (
     <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
-      <div className="min-w-0">
+      {/* Vạch "ngày đang mở" nằm trên khối tên chứ không trên section: cao tiêu đề
+          đổi theo khổ chữ và theo có/không tên ngày, đặt số cứng là lệch. */}
+      <div
+        className={cn(
+          "relative min-w-0",
+          active &&
+            "before:absolute before:inset-y-0 before:-left-3 before:w-[3px] before:rounded-[2px] before:bg-warm",
+        )}
+      >
         {named ? (
           <>
             <span className={cn(MICRO, "flex items-center gap-x-4 text-warm")}>

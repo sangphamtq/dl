@@ -9,6 +9,7 @@ import { coverUrl } from "@/lib/place-image";
 import type { TripPackScope } from "@/generated/prisma/enums";
 import { Prisma } from "@/generated/prisma/client";
 import type { ActionResult } from "@/app/(site)/blog/actions";
+import { placeAt, type DropAt } from "@/lib/trip-drop";
 
 /**
  * Như `ActionResult` nhưng có thêm `stale`: thao tác bị từ chối vì lịch trình đã
@@ -32,7 +33,7 @@ const MAX_DAYS = 30;
 // điểm đến dùng nút "Lên lịch trình đi X" (startTripForPlace) thay cho nút này.
 export type ItemTarget =
   | { kind: "spot" | "eatery" | "accommodation" | "activity"; id: string }
-  | { kind: "custom"; title: string };
+  | { kind: "custom"; title: string; stayMin?: number };
 
 async function requireUserId(): Promise<string> {
   const session = await auth();
@@ -214,6 +215,7 @@ export async function updateTrip(
     summary?: string | null;
     startDate?: string | null;
     partySize?: number | null;
+    autoTravel?: boolean;
   },
 ): Promise<ActionResult> {
   let slug: string | null | undefined;
@@ -242,11 +244,18 @@ export async function updateTrip(
   if (patch.partySize !== undefined)
     data.partySize =
       patch.partySize == null ? null : Math.min(99, Math.max(1, Math.round(patch.partySize)));
+  if (patch.autoTravel !== undefined) data.autoTravel = Boolean(patch.autoTravel);
 
-  await prisma.trip.update({
-    where: { id: tripId },
-    data: { ...data, version: { increment: 1 } },
-  });
+  // Lỗi ghi ném ra từ server action là sập CẢ TRANG sang màn lỗi — trả về để client báo nhẹ.
+  try {
+    await prisma.trip.update({
+      where: { id: tripId },
+      data: { ...data, version: { increment: 1 } },
+    });
+  } catch (e) {
+    console.error("updateTrip", e);
+    return { ok: false, error: "Chưa lưu được, thử lại sau ít phút." };
+  }
   refresh(tripId, slug);
   return { ok: true };
 }
@@ -345,13 +354,21 @@ function targetData(target: ItemTarget): Record<string, unknown> {
     case "eatery": return { eateryId: target.id };
     case "accommodation": return { accommodationId: target.id };
     case "activity": return { activityId: target.id };
-    case "custom": return { customTitle: clip(target.title, MAX_TITLE) };
+    case "custom":
+      return {
+        customTitle: clip(target.title, MAX_TITLE),
+        ...(target.stayMin != null
+          ? { stayMin: Math.min(24 * 60, Math.max(0, Math.round(target.stayMin))) }
+          : {}),
+      };
   }
 }
 
 export async function addItem(
   target: ItemTarget,
   tripId?: string,
+  dayId?: string | null,
+  at: DropAt = "end",
 ): Promise<
   ActionResult<{
     tripId: string;
@@ -405,20 +422,36 @@ export async function addItem(
     }
   }
 
+  // `dayId` chỉ có nghĩa khi chỉ rõ `tripId` (thêm từ trang soạn): chuyến tự chọn
+  // theo cookie thì client không biết ngày nào thuộc nó.
+  const intoDay = tripId && dayId ? dayId : null;
+  if (intoDay) {
+    const day = await prisma.tripDay.findFirst({
+      where: { id: intoDay, tripId: targetTripId },
+      select: { id: true },
+    });
+    if (!day) return { ok: false, error: "Ngày này vừa bị người khác xoá." };
+  }
+
   const last = await prisma.tripItem.findFirst({
-    where: { tripId: targetTripId, dayId: null },
+    where: { tripId: targetTripId, dayId: intoDay },
     orderBy: { order: "desc" },
     select: { order: true },
   });
 
   const [item, trip, tripCount] = await Promise.all([
-    prisma.tripItem.create({
-      data: { tripId: targetTripId, order: (last?.order ?? -1) + 1, ...data },
-      select: { id: true },
+    prisma.$transaction(async (tx) => {
+      const created = await tx.tripItem.create({
+        data: { tripId: targetTripId, dayId: intoDay, order: (last?.order ?? -1) + 1, ...data },
+        select: { id: true },
+      });
+      // Tạo ở cuối rồi mới dời: `placeAt` cần thấy danh sách hiện có trên server.
+      if (at !== "end") await placeItem(tx, targetTripId, intoDay, created.id, at);
+      return created;
     }),
     prisma.trip.update({
       where: { id: targetTripId },
-      data: { updatedAt: new Date() },
+      data: { updatedAt: new Date(), version: { increment: 1 } },
       select: { title: true },
     }),
     prisma.trip.count({ where: myTripsWhere(userId) }),
@@ -433,6 +466,108 @@ export async function addItem(
       itemId: item.id,
       duplicate: false,
       tripCount,
+    },
+  };
+}
+
+export type TripCandidate = {
+  kind: "spot" | "eatery" | "activity" | "accommodation";
+  id: string;
+  name: string;
+  context: string;
+  image: string | null;
+  inTrip: boolean;
+  local: boolean;
+};
+
+const CANDIDATE_TABLES = [
+  { kind: "spot", table: "Spot", fk: "spotId" },
+  { kind: "eatery", table: "Eatery", fk: "eateryId" },
+  { kind: "activity", table: "Activity", fk: "activityId" },
+  { kind: "accommodation", table: "Accommodation", fk: "accommodationId" },
+] as const;
+
+/**
+ * Tìm thứ thêm được vào lịch trình ngay trong trang soạn. Ô trống ⇒ gợi ý ở điểm
+ * đến của chuyến (cả điểm đến con). Có chữ ⇒ tìm toàn site nhưng nơi thuộc điểm
+ * đến của chuyến đứng trước.
+ */
+export async function searchTripCandidates(
+  tripId: string,
+  rawQ: string,
+): Promise<TripActionResult<{ items: TripCandidate[] }>> {
+  let placeId: string | null;
+  try {
+    await editableTrip(tripId);
+    placeId =
+      (await prisma.trip.findUnique({ where: { id: tripId }, select: { placeId: true } }))
+        ?.placeId ?? null;
+  } catch (e) {
+    return fail(e);
+  }
+
+  const q = rawQ.trim().slice(0, 80);
+  if (!q && !placeId) return { ok: true, data: { items: [] } };
+  const like = `%${q}%`;
+  const perKind = q ? 6 : 4;
+
+  const parts = CANDIDATE_TABLES.map(
+    ({ kind, table, fk }) => Prisma.sql`
+    SELECT ${kind}::text AS kind, x.id, x.name, pl.name AS "placeName",
+           prov.name AS "provName", pl.kind::text AS "placeKind",
+           (pl.id = ${placeId} OR pl."parentId" = ${placeId}) IS TRUE AS local,
+           x."isFeatured" AS featured, x.popularity,
+           (SELECT i.url FROM "Image" i
+             WHERE i.${Prisma.raw(`"${fk}"`)} = x.id AND i.kind::text = 'gallery'
+             ORDER BY i."isCover" DESC, i."order" ASC LIMIT 1) AS image,
+           EXISTS (SELECT 1 FROM "TripItem" ti
+             WHERE ti."tripId" = ${tripId} AND ti.${Prisma.raw(`"${fk}"`)} = x.id) AS "inTrip"
+    FROM ${Prisma.raw(`"${table}"`)} x
+    JOIN "Place" pl ON x."placeId" = pl.id
+    LEFT JOIN "Place" prov ON pl."parentId" = prov.id
+    WHERE x.status::text = 'published'
+      AND ${
+        q
+          ? Prisma.sql`unaccent(x.name) ILIKE unaccent(${like})`
+          : Prisma.sql`(pl.id = ${placeId} OR pl."parentId" = ${placeId})`
+      }`,
+  );
+
+  const rows = await prisma.$queryRaw<
+    {
+      kind: TripCandidate["kind"];
+      id: string;
+      name: string;
+      placeName: string;
+      provName: string | null;
+      placeKind: string;
+      local: boolean;
+      image: string | null;
+      inTrip: boolean;
+    }[]
+  >`
+    SELECT * FROM (
+      SELECT u.*, ROW_NUMBER() OVER (
+        PARTITION BY u.kind ORDER BY u.local DESC, u.featured DESC, u.popularity DESC, u.name ASC
+      ) AS rn
+      FROM (${Prisma.join(parts, " UNION ALL ")}) u
+    ) r
+    WHERE r.rn <= ${perKind}
+    ORDER BY r.local DESC, r.rn ASC`;
+
+  return {
+    ok: true,
+    data: {
+      items: rows.map((r) => ({
+        kind: r.kind,
+        id: r.id,
+        name: r.name,
+        context:
+          r.placeKind === "destination" && r.provName ? `${r.placeName}, ${r.provName}` : r.placeName,
+        image: r.image,
+        inTrip: r.inTrip,
+        local: r.local,
+      })),
     },
   };
 }
@@ -520,19 +655,44 @@ export async function updateItem(
   return { ok: true };
 }
 
+/** Đặt `itemId` vào vùng (`dayId`, null = chưa xếp) theo ý định `at`, đánh số lại cả vùng. */
+async function placeItem(
+  tx: Prisma.TransactionClient,
+  tripId: string,
+  dayId: string | null,
+  itemId: string,
+  at: DropAt,
+) {
+  const siblings = await tx.tripItem.findMany({
+    where: { tripId, dayId },
+    orderBy: { order: "asc" },
+    select: { id: true },
+  });
+
+  const ids = siblings.map((s) => s.id).filter((id) => id !== itemId);
+  ids.splice(placeAt(ids, at), 0, itemId);
+
+  await tx.$executeRaw`
+    UPDATE "TripItem" AS t
+    SET "order" = v.ord, "dayId" = ${dayId}::text
+    FROM (VALUES ${Prisma.join(
+      ids.map((id, i) => Prisma.sql`(${id}::text, ${i}::int)`),
+    )}) AS v(id, ord)
+    WHERE t.id = v.id`;
+}
+
 export async function moveItem(
   itemId: string,
   dayId: string | null,
-  toIndex: number,
-  expectedVersion?: number,
+  at: DropAt,
 ): Promise<TripActionResult> {
   const item = await prisma.tripItem.findUnique({
     where: { id: itemId },
     select: { id: true, tripId: true, dayId: true },
   });
-  if (!item) return { ok: false, error: "Không tìm thấy mục." };
+  if (!item) return { ok: false, error: "Mục này vừa bị người khác bỏ khỏi lịch trình." };
   try {
-    await editableTrip(item.tripId, expectedVersion);
+    await editableTrip(item.tripId);
   } catch (e) {
     return fail(e);
   }
@@ -542,27 +702,11 @@ export async function moveItem(
       where: { id: dayId, tripId: item.tripId },
       select: { id: true },
     });
-    if (!day) return { ok: false, error: "Ngày không thuộc lịch trình này." };
+    if (!day) return { ok: false, error: "Ngày này vừa bị người khác xoá." };
   }
 
   await prisma.$transaction(async (tx) => {
-    const siblings = await tx.tripItem.findMany({
-      where: { tripId: item.tripId, dayId },
-      orderBy: { order: "asc" },
-      select: { id: true },
-    });
-
-    const ids = siblings.map((s) => s.id).filter((id) => id !== itemId);
-    const at = Math.min(Math.max(0, Math.round(toIndex)), ids.length);
-    ids.splice(at, 0, itemId);
-
-    await tx.$executeRaw`
-      UPDATE "TripItem" AS t
-      SET "order" = v.ord, "dayId" = ${dayId}::text
-      FROM (VALUES ${Prisma.join(
-        ids.map((id, i) => Prisma.sql`(${id}::text, ${i}::int)`),
-      )}) AS v(id, ord)
-      WHERE t.id = v.id`;
+    await placeItem(tx, item.tripId, dayId, itemId, at);
 
     if (item.dayId !== dayId) {
       const source = await tx.tripItem.findMany({
@@ -727,7 +871,8 @@ export async function cloneTrip(
   return { ok: true, data: { id: created } };
 }
 
-function refreshNotes(tripId: string) {
+async function refreshNotes(tripId: string) {
+  await bump(tripId);
   refreshTripPaths(tripId);
 }
 
@@ -753,7 +898,7 @@ export async function addNote(
       data: { tripId, body, authorId: userId },
       select: { id: true },
     });
-    refreshNotes(tripId);
+    await refreshNotes(tripId);
     return { ok: true, data: { id: note.id } };
   } catch (e) {
     return fail(e);
@@ -766,7 +911,7 @@ export async function updateNote(noteId: string, rawBody: string): Promise<Actio
   try {
     const note = await editableNote(noteId);
     await prisma.tripNote.update({ where: { id: noteId }, data: { body } });
-    refreshNotes(note.tripId);
+    await refreshNotes(note.tripId);
     return { ok: true };
   } catch (e) {
     return fail(e);
@@ -777,7 +922,7 @@ export async function deleteNote(noteId: string): Promise<ActionResult> {
   try {
     const note = await editableNote(noteId);
     await prisma.tripNote.delete({ where: { id: noteId } });
-    refreshNotes(note.tripId);
+    await refreshNotes(note.tripId);
     return { ok: true };
   } catch (e) {
     return fail(e);
@@ -788,14 +933,17 @@ export async function setNotePinned(noteId: string, pinned: boolean): Promise<Ac
   try {
     const note = await editableNote(noteId);
     await prisma.tripNote.update({ where: { id: noteId }, data: { isPinned: pinned } });
-    refreshNotes(note.tripId);
+    await refreshNotes(note.tripId);
     return { ok: true };
   } catch (e) {
     return fail(e);
   }
 }
 
-function refreshPacking(tripId: string) {
+async function refreshPacking(tripId: string, { silent = false } = {}) {
+  // Tick đồ CÁ NHÂN không đổi gì trên màn hình người khác — tăng version là bắt
+  // cả nhóm làm mới vô cớ.
+  if (!silent) await bump(tripId);
   refreshTripPaths(tripId);
 }
 
@@ -822,7 +970,7 @@ export async function addPackItem(
       data: { tripId, name, scope },
       select: { id: true },
     });
-    refreshPacking(tripId);
+    await refreshPacking(tripId);
     return { ok: true, data: { id: item.id } };
   } catch (e) {
     return fail(e);
@@ -873,7 +1021,7 @@ export async function updatePackItem(
     }
 
     await prisma.tripPackItem.update({ where: { id: itemId }, data });
-    refreshPacking(item.tripId);
+    await refreshPacking(item.tripId);
     return { ok: true };
   } catch (e) {
     return fail(e);
@@ -899,7 +1047,7 @@ export async function setMyPackCheck(
       create: { itemId, userId, ...patch },
       update: patch,
     });
-    refreshPacking(item.tripId);
+    await refreshPacking(item.tripId, { silent: true });
     return { ok: true };
   } catch (e) {
     return fail(e);
@@ -910,7 +1058,7 @@ export async function deletePackItem(itemId: string): Promise<ActionResult> {
   try {
     const item = await editablePackItem(itemId);
     await prisma.tripPackItem.delete({ where: { id: itemId } });
-    refreshPacking(item.tripId);
+    await refreshPacking(item.tripId);
     return { ok: true };
   } catch (e) {
     return fail(e);
@@ -919,7 +1067,8 @@ export async function deletePackItem(itemId: string): Promise<ActionResult> {
 
 const MAX_AMOUNT = 2_000_000_000;
 
-function refreshMoney(tripId: string) {
+async function refreshMoney(tripId: string) {
+  await bump(tripId);
   refreshTripPaths(tripId);
 }
 
@@ -961,7 +1110,7 @@ export async function addExpense(
       },
       select: { id: true },
     });
-    refreshMoney(tripId);
+    await refreshMoney(tripId);
     return { ok: true, data: { id: expense.id } };
   } catch (e) {
     return fail(e);
@@ -981,7 +1130,7 @@ export async function deleteExpense(expenseId: string): Promise<ActionResult> {
       where: { id: expenseId },
       data: { deletedAt: new Date(), deletedById: userId },
     });
-    refreshMoney(ex.tripId);
+    await refreshMoney(ex.tripId);
     return { ok: true };
   } catch (e) {
     return fail(e);
@@ -1001,7 +1150,7 @@ export async function restoreExpense(expenseId: string): Promise<ActionResult> {
       where: { id: expenseId },
       data: { deletedAt: null, deletedById: null },
     });
-    refreshMoney(ex.tripId);
+    await refreshMoney(ex.tripId);
     return { ok: true };
   } catch (e) {
     return fail(e);
@@ -1335,7 +1484,7 @@ export type TripBagDay = {
 
 export type TripBag = {
   authed: boolean;
-  trip: { id: string; title: string; version: number } | null;
+  trip: { id: string; title: string; version: number; placeName: string | null } | null;
   days: TripBagDay[];
   unscheduled: TripBagItem[];
   scheduledCount: number;
@@ -1401,7 +1550,7 @@ export async function getTripBag(): Promise<TripBag> {
 
   return {
     authed: true,
-    trip: { id: trip.id, title: trip.title, version: trip.version },
+    trip: { id: trip.id, title: trip.title, version: trip.version, placeName: trip.place?.name ?? null },
     days,
     unscheduled,
     scheduledCount: trip.items.length - unscheduled.length,
@@ -1413,6 +1562,7 @@ const bagSelect = {
   id: true,
   title: true,
   version: true,
+  place: { select: { name: true } },
   days: {
     orderBy: { index: "asc" },
     select: { id: true, index: true, title: true },

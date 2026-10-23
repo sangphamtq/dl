@@ -8,7 +8,7 @@ import {
   ACTIVITY_CATEGORY_LABELS,
   label,
 } from "@/lib/listing-labels";
-import { scheduleDay, legKey, type ScheduleItemInput, type TripItemKind, type TripWarning } from "@/lib/trip-time";
+import { scheduleDay, type ScheduleItemInput, type TripItemKind, type TripWarning } from "@/lib/trip-time";
 import { getLegs, legMinutes } from "@/lib/trip-route";
 
 export type ResolvedItem = {
@@ -57,6 +57,7 @@ export type TripData = {
   summary: string | null;
   startDate: Date | null;
   partySize: number | null;
+  autoTravel: boolean;
   shareId: string | null;
   visibility: "private" | "unlisted";
   isTemplate: boolean;
@@ -228,6 +229,9 @@ function shape(trip: RawTrip): TripData {
     summary: trip.summary,
     startDate: trip.startDate,
     partySize: trip.partySize,
+    // `?? true`: server dev chưa khởi động lại sau migration giữ Prisma client cũ, đọc ra
+    // undefined — đừng để nó lặng lẽ tắt việc tính đường của mọi chuyến.
+    autoTravel: trip.autoTravel ?? true,
     shareId: trip.shareId,
     visibility: trip.visibility,
     isTemplate: trip.isTemplate,
@@ -281,6 +285,8 @@ export type ItemView = ResolvedItem & {
   effectiveStayMin: number;
   driveToNextMin: number | null;
   driveApprox: boolean;
+  driveKm: number | null;
+  legHidden: boolean;
   warnings: TripWarning[];
 };
 
@@ -300,21 +306,31 @@ export type DayView = {
 export async function buildDayViews(trip: TripData): Promise<DayView[]> {
   return Promise.all(
     trip.days.map(async (day) => {
-      const legs = await getLegs(
-        day.items.map((i) => ({ id: i.id, lat: i.lat, lng: i.lng })),
-      );
-      const sched = scheduleDay(day.startMin, day.items.map(toScheduleInput), legMinutes(legs));
+      // Chỉ những mục CÓ toạ độ mới là điểm trên tuyến — việc (đặt xe, chờ người…)
+      // nằm giữa hai nơi không được cắt đôi chặng.
+      // Tắt tự tính thì KHÔNG gọi OSRM luôn — đỡ một lượt mạng cho mỗi chặng.
+      const legs = trip.autoTravel
+        ? await getLegs(
+            day.items
+              .filter((i) => i.lat != null && i.lng != null)
+              .map((i) => ({ id: i.id, lat: i.lat, lng: i.lng })),
+          )
+        : {};
+      const sched = scheduleDay(day.startMin, day.items.map(toScheduleInput), legMinutes(legs), {
+        travel: trip.autoTravel,
+      });
 
       const items: ItemView[] = day.items.map((item, i) => {
         const s = sched.items[i];
-        const next = day.items[i + 1];
         return {
           ...item,
           arriveMin: s.arriveMin,
           leaveMin: s.leaveMin,
           effectiveStayMin: s.stayMin,
           driveToNextMin: s.driveToNextMin,
-          driveApprox: next ? (legs[legKey(item.id, next.id)]?.approx ?? false) : false,
+          driveApprox: s.legKey ? (legs[s.legKey]?.approx ?? false) : false,
+          driveKm: s.legKey ? (legs[s.legKey]?.km ?? null) : null,
+          legHidden: s.legHidden,
           warnings: s.warnings,
         };
       });

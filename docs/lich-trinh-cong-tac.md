@@ -67,18 +67,18 @@ người cùng kéo trong một ngày:
 Im lặng, không lỗi, và **bàn cục bộ của B tiếp tục sai** cho mọi thao tác sau. Đây là hệ quả
 trực tiếp của việc giữ bàn kéo–thả cục bộ (`trip-dnd.ts`) để tránh giật.
 
-**Cách làm.**
-- `Trip.version Int @default(0)` — mọi mutation tăng 1.
-- Client gửi kèm `expectedVersion` nó đang thấy.
-- Lệch ⇒ **từ chối**, trả `{ ok: false, stale: true }`, client `router.refresh()` rồi báo
-  nhẹ "Có người vừa sửa, đã cập nhật lại".
-- ⚠️ **Phải làm ở BƯỚC 1**, không để sau: nó đổi chữ ký của cả 14 action.
-
-**Ghi chú cho lúc làm** — có một cách bổ trợ đáng cân nhắc cho *riêng phần sắp xếp*: thay
-`moveItem(itemId, dayId, toIndex)` bằng **`moveItem(itemId, dayId, afterItemId | null)`**.
-"Đặt sau mục X" giữ nguyên ý định kể cả khi người khác vừa chèn thêm, còn "chỉ số 2" thì
-không. Version bắt được xung đột; "đặt sau X" thì tránh được phần lớn xung đột ngay từ đầu.
-Hai thứ bổ sung nhau, không thay thế nhau.
+**Cách làm (sửa 2026-10-23 — bản đầu từ chối thao tác, người dùng phải kéo lại).**
+- **Kéo–thả gửi Ý ĐỊNH, không gửi chỉ số**: `moveItem(itemId, dayId, at)` với
+  `at = "start" | "end" | { afterId, beforeId }` — hai mục lân cận người kéo đang thấy
+  (`lib/trip-drop.ts`). Server đặt lại trên danh sách MỚI NHẤT: `beforeId = null` ⇒ cuối ·
+  `afterId = null` ⇒ đầu · còn lại ngay sau `afterId`, mất thì ngay trước `beforeId`, mất cả
+  hai thì xuống cuối. Ví dụ trên ra đúng `[c, a, b]` như B muốn. **Không còn từ chối vì lệch
+  version** — lỗi duy nhất còn lại là mục/ngày vừa bị người khác xoá (báo đúng câu đó).
+  Kiểm: `pnpm check:trip-dnd`.
+- `Trip.version` vẫn giữ, nhưng giờ là **tín hiệu "có gì đổi chưa"** cho §5: MỌI thao tác ghi
+  đều tăng nó (kể cả ghi chú · đồ mang theo · chi phí · thêm mục), **trừ tick đồ CÁ NHÂN**
+  (`setMyPackCheck`) — không đổi gì trên màn hình người khác.
+- `editableTrip(tripId, expectedVersion)` vẫn nhận tham số nhưng hiện không action nào truyền.
 
 ## 4. Chỗ vỡ trong mã hiện tại — đã đếm, không phải ước lượng
 
@@ -107,29 +107,23 @@ membership.
 **g) Lịch trình mẫu dùng hệ quyền KHÁC.** Template gate theo `User.role` (staff), chuyến cá
 nhân theo `TripMember`. Hai hệ song song — chỗ nào dùng cái nào phải ghi rõ, đừng để lẫn.
 
-## 5. ❌ Realtime — CỐ Ý KHÔNG LÀM
+## 5. ✅ Tự cập nhật — hỏi `version`, KHÔNG dùng Ably
 
-> **Đừng thêm lại.** Ably có sẵn trong dự án (`lib/ably.ts` + `RealtimeRefresher`, đang phục
-> vụ phần Cộng đồng) nên nối vào trang soạn chỉ tốn ~30 dòng — và đúng vì rẻ nên dễ thêm mà
-> không hỏi xem có cần không. Đã thêm một lần rồi gỡ bỏ hoàn toàn.
+> Bản đầu cố ý không làm gì (người B chỉ thấy bản mới sau khi chính B thao tác hoặc F5).
+> Thực tế dùng ra: B kéo trên bản cũ ⇒ bị từ chối ⇒ phải tải lại. Đổi lại 2026-10-23.
 
-Lý do gỡ nằm ngay ở §3: hai lựa chọn chống đụng độ được đưa ra là **(a) `Trip.version`**
-hoặc **(b) chấp nhận "ai ghi sau thắng" + đẩy realtime cho cửa sổ lệch ngắn lại**. Chốt là
-(a). Realtime là cơ chế của **phương án bị loại** — thêm nó vào cạnh `version` không phải
-"bổ sung", mà là làm cả hai phương án cùng lúc.
-
-Cụ thể nó thừa ở chỗ:
-- **`version` đã bắt được đụng độ ở đúng nơi cần** — lúc GHI, tại server, chắc chắn. Realtime
-  chỉ rút ngắn thời gian người ta *nhìn thấy* bản cũ, không thêm một bảo đảm nào.
-- **Phần lớn chuyến là đi một mình** → mở kết nối (hoặc tệ hơn: polling 25 giây khi thiếu
-  key) chỉ để nghe chính mình.
-- **Nó kéo theo cả một chuỗi phụ tùng**: `refresh()` phải thành `async` (15 chỗ `await`),
-  `RealtimeRefresher` phải mọc thêm prop `canRefresh` để chặn lúc đang kéo — `router.refresh()`
-  giữa cú kéo là giật bàn khỏi tay người dùng — rồi lại phải thêm mốc `lastLocalEdit` để
-  client bỏ qua tín hiệu do chính nó phát. Ba miếng vá cho một thứ không được yêu cầu.
-
-Cái nhóm bạn thực sự cần là **thấy được bản mới**, và điều đó xảy ra ở mỗi lần thao tác:
-server action `revalidatePath` rồi, còn khi đụng độ thì §3 đã lo (dưới đây).
+`useTripLiveSync` (`components/trip/trip-live-sync.ts`) gọi `GET /api/trips/[id]/version` mỗi
+**15 giây** + ngay khi quay lại tab / có mạng lại; `version` tăng ⇒ `router.refresh()` (cập
+nhật tại chỗ, không tải lại trang) + toast nhẹ. Ba lý do cũ khiến realtime bị gỡ đều đã chặn:
+- **Đi một mình thì không hỏi gì** — chỉ bật khi `people.length > 1`; tab ẩn cũng không hỏi.
+- **Không giật bàn khỏi tay**: bỏ qua lượt hỏi khi đang có action chờ, đang kéo, đang gõ
+  (focus trong input/textarea) hoặc đang mở menu/popover/dialog. Lần hỏi sau bắt lại.
+- **Không dội lại thao tác của chính mình**: action thành công đã trả về props với `version`
+  mới, nên lượt hỏi kế thấy bằng nhau.
+- ⚠️ **Route GET, KHÔNG phải server action** — Next chạy server action nối tiếp theo từng
+  client, lượt hỏi định kỳ sẽ bắt thao tác thật đứng chờ.
+- Vẫn **không** dùng Ably: một số nguyên mỗi 15 giây là đủ cho nhóm bạn lên kế hoạch nhiều
+  ngày, khỏi phải lo khoá/kết nối.
 
 ## 6. Giao diện cần thêm
 
@@ -172,7 +166,7 @@ server action `revalidatePath` rồi, còn khi đụng độ thì §3 đã lo (d
    - `inviteToTrip` — khi email đã có tài khoản (thành member ngay).
    - `claimTripInvites` — khi lời mời treo được nhận lúc **đăng nhập lần đầu**. Lúc đó người
      dùng đang ở một trang khác hẳn, không có gì trên màn hình nói cho họ biết.
-5. ❌ Realtime — **cố ý không làm**, xem §5.
+5. ✅ Tự cập nhật bằng hỏi `version` (không Ably) — xem §5.
 
 ## 9. Kiểm
 

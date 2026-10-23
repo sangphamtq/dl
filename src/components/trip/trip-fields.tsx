@@ -5,7 +5,7 @@ import { Glyph } from "@/components/site/glyphs";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
-export type TripField = "image" | "stay" | "hours" | "note" | "leg";
+export type TripField = "image" | "stay" | "hours" | "note" | "leg" | "warn";
 
 export type TripFields = Record<TripField, boolean>;
 
@@ -15,14 +15,16 @@ export const ALL_ON: TripFields = {
   hours: true,
   note: true,
   leg: true,
+  warn: true,
 };
 
 const LABELS: { id: TripField; label: string; hint: string }[] = [
-  { id: "image", label: "Ảnh", hint: "Tắt thì còn ô icon theo loại" },
+  { id: "image", label: "Ảnh", hint: "Tắt thì còn ký hiệu loại nhỏ cạnh tên" },
   { id: "stay", label: "Thời gian ở lại", hint: "" },
   { id: "hours", label: "Giờ mở cửa", hint: "" },
-  { id: "note", label: "Ghi chú", hint: "" },
+  { id: "note", label: "Ghi chú", hint: "Của từng mục và của ngày" },
   { id: "leg", label: "Chặng di chuyển", hint: "Thời gian giữa hai điểm" },
+  { id: "warn", label: "Cảnh báo", hint: "Chưa mở cửa, chặng dài, về muộn…" },
 ];
 
 const KEY = "halivivu:trip-fields";
@@ -73,9 +75,10 @@ export function useTripFields(): TripFields {
   return useSyncExternalStore(subscribe, read, () => ALL_ON);
 }
 
-export function TripFieldsMenu() {
+export function TripFieldsMenu({ omit = [] }: { omit?: TripField[] }) {
   const fields = useTripFields();
-  const hidden = LABELS.filter((f) => !fields[f.id]).length;
+  const options = LABELS.filter((f) => !omit.includes(f.id));
+  const hidden = options.filter((f) => !fields[f.id]).length;
 
   return (
     <Popover>
@@ -96,11 +99,11 @@ export function TripFieldsMenu() {
       <PopoverContent align="end" className="w-64">
         <p className="text-sm font-semibold tracking-tight">Hiện gì trên mỗi mục</p>
         <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
-          Giờ đến, tên và cảnh báo luôn hiện.
+          Giờ đến và tên luôn hiện.
         </p>
 
         <ul className="mt-3 -mx-1">
-          {LABELS.map((f) => (
+          {options.map((f) => (
             <li key={f.id}>
               <label className="flex cursor-pointer items-start gap-2.5 rounded-[4px] px-1 py-1.5 transition-colors hover:bg-muted">
                 <input
@@ -120,15 +123,28 @@ export function TripFieldsMenu() {
           ))}
         </ul>
 
-        {hidden > 0 && (
-          <button
-            type="button"
-            onClick={() => write(ALL_ON)}
-            className="mt-2 text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-          >
-            Hiện lại tất cả
-          </button>
-        )}
+        <div className="mt-2 flex items-center gap-4 text-xs">
+          {hidden < options.length && (
+            <button
+              type="button"
+              onClick={() =>
+                write({ ...fields, ...Object.fromEntries(options.map((f) => [f.id, false])) })
+              }
+              className="text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+            >
+              Ẩn tất cả
+            </button>
+          )}
+          {hidden > 0 && (
+            <button
+              type="button"
+              onClick={() => write(ALL_ON)}
+              className="text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+            >
+              Hiện lại tất cả
+            </button>
+          )}
+        </div>
       </PopoverContent>
     </Popover>
   );

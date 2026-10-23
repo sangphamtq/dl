@@ -604,6 +604,9 @@ pnpm set-role <email> [role] · pnpm seed:*
   reference* — gọi vào sẽ ném "is not a function" **lúc chạy**, trong khi `tsc` và `lint` đều
   xanh. Không có gì bắt được lỗi này ngoài việc mở trang lên xem.
 - **Prisma**: luôn import từ `@/lib/prisma` (singleton). **Schema là nguồn chân lý.**
+  · ⚠️ Singleton dev nằm trên `globalThis` nên sống qua tải nóng — `lib/prisma.ts` **so lớp
+    `PrismaClient`** để tạo lại client sau `prisma generate`. Gỡ đoạn đó là quay lại cảnh cột mới
+    báo `Unknown argument` cho tới khi khởi động lại server.
 - **Vai trò** `user`/`editor`/`admin` nhét vào JWT khi đăng nhập; `/cms` chặn ở `proxy.ts`
   **và** kiểm lại trong page. Đặt admin: đăng nhập 1 lần → `pnpm set-role <email> admin` →
   đăng xuất/đăng nhập lại.
@@ -663,7 +666,7 @@ pnpm set-role <email> [role] · pnpm seed:*
 |---|---|
 | [`docs/lich-trinh.md`](docs/lich-trinh.md) — schema `Trip`/`TripDay`/`TripItem`, máy tính giờ + cảnh báo giờ mở cửa, lịch trình mẫu, chia sẻ | **ĐÃ DỰNG v1** — bản đồ mã nguồn §12, còn thiếu §13 |
 | [`docs/lich-trinh-cong-cu-nhom.md`](docs/lich-trinh-cong-cu-nhom.md) — ghi chú · đồ mang theo · chi phí | **ĐÃ DỰNG XONG**; mục *Phân công* bỏ hẳn |
-| [`docs/lich-trinh-cong-tac.md`](docs/lich-trinh-cong-tac.md) — nhiều người cùng sửa, `TripMember`, `Trip.version` | Phân tích xong, **chưa code** (còn 3 câu phải chốt §7) |
+| [`docs/lich-trinh-cong-tac.md`](docs/lich-trinh-cong-tac.md) — nhiều người cùng sửa, `TripMember`, `Trip.version`, tự cập nhật | **ĐÃ DỰNG** — kéo–thả gửi ý định, hỏi `version` 15s (§3, §5) |
 
 **Đã chạy:** trang chủ · cây điểm đến · bản đồ (`/ban-do`, `/diem-den/[slug]/ban-do`) · trang
 chi tiết `/dia-diem` `/hoat-dong` `/luu-tru` · blog · tìm kiếm · cộng đồng *(lối vào tạm ẩn)* ·

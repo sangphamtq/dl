@@ -56,7 +56,10 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { LoginDrawer } from "@/components/site/login-drawer";
+import { Glyph } from "@/components/site/glyphs";
+import { TripAddSearch, type AddTarget } from "@/components/trip/trip-add-search";
 import { applyMove, BACKLOG, dayIdOf, dayKey, type Board } from "@/components/trip/trip-dnd";
+import { dropAt, insertAt, type DropAt } from "@/lib/trip-drop";
 import { onTripBagChanged, tripBagChanged } from "@/components/trip/trip-bag-events";
 import {
   addDay,
@@ -113,6 +116,7 @@ export function TripDock({ initial }: { initial: TripBag }) {
   const prevCount = useRef(initial.unscheduled.length);
   const fabRef = useRef<HTMLButtonElement>(null);
   const [bump, setBump] = useState(false);
+  const [addTarget, setAddTarget] = useState<AddTarget | null>(null);
 
   const hidden = HIDDEN_ON.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
@@ -194,7 +198,7 @@ export function TripDock({ initial }: { initial: TripBag }) {
     start(async () => {
       const res = await run();
       if (!res.ok) {
-        toast.error(res.stale ? "Lịch trình vừa thay đổi, thử lại nhé." : res.error);
+        toast.error(res.error);
         syncBoard(await refresh());
         return;
       }
@@ -213,9 +217,9 @@ export function TripDock({ initial }: { initial: TripBag }) {
   const backlogIds = board[BACKLOG] ?? [];
   const activeItem = activeId ? (byId.get(activeId) ?? null) : null;
 
-  function moveTo(it: TripBagItem, dayId: string | null, at: number, label: string) {
+  function moveTo(it: TripBagItem, dayId: string | null, at: DropAt, label: string) {
     act(async () => {
-      const res = await moveItem(it.id, dayId, at, bag.trip!.version);
+      const res = await moveItem(it.id, dayId, at);
       if (res.ok)
         toast.success(dayId ? `Đã xếp ${it.name} vào ${label}` : `Đã bỏ ${it.name} khỏi ngày`);
       return res;
@@ -262,13 +266,12 @@ export function TripDock({ initial }: { initial: TripBag }) {
     const container = Object.keys(next).find((k) => next[k].includes(id));
     if (!container) return;
     const dayId = container === BACKLOG ? null : dayIdOf(container);
-    const index = next[container].indexOf(id);
 
     const item = byId.get(id);
     start(async () => {
-      const res = await moveItem(id, dayId, index, bag.trip!.version);
+      const res = await moveItem(id, dayId, dropAt(next[container], id));
       if (!res.ok) {
-        toast(res.stale ? "Lịch trình vừa thay đổi, thử lại nhé." : res.error);
+        toast(res.error);
         syncBoard(await refresh());
         return;
       }
@@ -401,6 +404,19 @@ export function TripDock({ initial }: { initial: TripBag }) {
               )}
             </div>
 
+            {hasTrip && (
+              <div className="px-4 pb-2">
+                <button
+                  type="button"
+                  onClick={() => setAddTarget({ dayId: null, label: "danh sách chưa xếp" })}
+                  className="flex h-9 w-full items-center gap-2 rounded-[4px] border border-border bg-background px-3 text-sm text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+                >
+                  <Glyph name="search" className="size-4 shrink-0" />
+                  Tìm hoặc tự thêm mục…
+                </button>
+              </div>
+            )}
+
             <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-2">
               {!bag.authed ? (
                 <Empty
@@ -437,20 +453,22 @@ export function TripDock({ initial }: { initial: TripBag }) {
                     </Button>
                   }
                 />
-              ) : total === 0 ? (
-                <Empty
-                  title="Lịch trình đang trống"
-                  body="Lướt Địa điểm · Ẩm thực · Nơi lưu trú của một điểm đến, bấm “Thêm vào lịch trình” là nó rơi vào đây."
-                  action={
-                    <Button variant="outline" asChild onClick={() => setOpen(false)}>
-                      <Link href="/diem-den">Khám phá điểm đến</Link>
-                    </Button>
-                  }
-                />
               ) : (
                 <div className="pb-1" data-vaul-no-drag>
+                  {total === 0 && (
+                    <p className="pt-2 text-sm leading-relaxed text-muted-foreground">
+                      Chưa có mục nào. Tìm ở ô phía trên, bấm <strong className="font-semibold text-foreground">+</strong>{" "}
+                      cạnh một ngày để thêm thẳng vào ngày đó, hoặc bấm “Thêm vào lịch trình” ở
+                      trang một địa điểm.
+                    </p>
+                  )}
                   <section>
-                    <GroupHeading label="Chưa xếp ngày" count={backlogIds.length} highlight />
+                    <GroupHeading
+                      label="Chưa xếp ngày"
+                      count={backlogIds.length}
+                      highlight
+                      onAdd={() => setAddTarget({ dayId: null, label: "danh sách chưa xếp" })}
+                    />
                     <SortableContext items={backlogIds} strategy={verticalListSortingStrategy}>
                       {backlogIds.length === 0 ? (
                         <DropZone id={BACKLOG} label="Kéo vào đây để bỏ khỏi ngày" />
@@ -481,13 +499,17 @@ export function TripDock({ initial }: { initial: TripBag }) {
                     const ids = board[dayKey(d.id)] ?? [];
                     return (
                       <section key={d.id}>
-                        <GroupHeading label={dayLabel(d)} count={ids.length} />
+                        <GroupHeading
+                          label={dayLabel(d)}
+                          count={ids.length}
+                          onAdd={() => setAddTarget({ dayId: d.id, label: dayNo(d) })}
+                        />
                         <SortableContext items={ids} strategy={verticalListSortingStrategy}>
                           {ids.length === 0 ? (
                             <DropZone id={dayKey(d.id)} label="Kéo một mục vào ngày này" />
                           ) : (
                             <ul className="divide-y divide-border/60">
-                              {ids.map((id: string) => {
+                              {ids.map((id: string, idx: number) => {
                                 const it = byId.get(id);
                                 return it ? (
                                   <ItemRow
@@ -497,6 +519,13 @@ export function TripDock({ initial }: { initial: TripBag }) {
                                     days={bag.days}
                                     pending={pending}
                                     onNavigate={() => setOpen(false)}
+                                    onInsert={(offset) =>
+                                      setAddTarget({
+                                        dayId: d.id,
+                                        label: dayNo(d),
+                                        ...insertAt(ids, idx + offset, (x) => byId.get(x)?.name ?? "mục này"),
+                                      })
+                                    }
                                     onMove={(dayId, at, label) => moveTo(it, dayId, at, label)}
                                     onAddDay={addDayNow}
                                     onRemove={() => removeNow(it)}
@@ -562,6 +591,16 @@ export function TripDock({ initial }: { initial: TripBag }) {
       </DragOverlay>
       </DndContext>
 
+      {bag.trip && (
+        <TripAddSearch
+          tripId={bag.trip.id}
+          placeName={bag.trip.placeName}
+          target={addTarget}
+          onClose={() => setAddTarget(null)}
+          onAdded={tripBagChanged}
+        />
+      )}
+
       <LoginDrawer
         open={loginOpen}
         onOpenChange={setLoginOpen}
@@ -594,17 +633,30 @@ function GroupHeading({
   label,
   count,
   highlight,
+  onAdd,
 }: {
   label: string;
   count: number;
   highlight?: boolean;
+  onAdd?: () => void;
 }) {
   return (
-    <h3 className="sticky top-0 z-10 -mx-4 flex items-baseline gap-2 bg-background/95 px-4 pb-1.5 pt-3 text-xs font-semibold uppercase tracking-wide backdrop-blur">
-      <span className={highlight ? "text-primary" : "text-muted-foreground"}>{label}</span>
+    <h3 className="sticky top-0 z-10 -mx-4 flex items-center gap-2 bg-background/95 px-4 pb-1 pt-2.5 text-xs font-semibold uppercase tracking-wide backdrop-blur">
+      <span className={highlight ? "text-primary-ink" : "text-muted-foreground"}>{label}</span>
       <span className="font-normal normal-case tracking-normal text-muted-foreground">
         {count} mục
       </span>
+      {onAdd && (
+        <button
+          type="button"
+          onClick={onAdd}
+          aria-label={`Thêm vào ${label}`}
+          title={`Thêm vào ${label}`}
+          className="-mr-1.5 ml-auto grid size-7 place-items-center rounded-[3px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <Plus className="size-4" aria-hidden />
+        </button>
+      )}
     </h3>
   );
 }
@@ -618,15 +670,18 @@ function ItemRow({
   onAddDay,
   onRemove,
   onNavigate,
+  onInsert,
 }: {
   item: TripBagItem;
   currentDayId: string | null;
   days: TripBagDay[];
   pending: boolean;
-  onMove: (dayId: string | null, at: number, label: string) => void;
+  onMove: (dayId: string | null, at: DropAt, label: string) => void;
   onAddDay: () => void;
   onRemove: () => void;
   onNavigate: () => void;
+  /** 0 = phía trước, 1 = phía sau. Chỉ có ở mục đã xếp ngày — trong danh sách chưa xếp thứ tự không mang nghĩa gì. */
+  onInsert?: (offset: 0 | 1) => void;
 }) {
   const current = currentDayId ? days.find((d) => d.id === currentDayId) : null;
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -702,11 +757,25 @@ function ItemRow({
           )}
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
+          {onInsert && (
+            <>
+              <DropdownMenuItem onSelect={() => onInsert(0)}>
+                <Plus className="size-4" aria-hidden />
+                Thêm phía trước
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => onInsert(1)}>
+                <Plus className="size-4" aria-hidden />
+                Thêm phía sau
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>Chuyển sang</DropdownMenuLabel>
+            </>
+          )}
           {days.map((d) => (
             <DropdownMenuItem
               key={d.id}
               disabled={d.id === currentDayId}
-              onSelect={() => onMove(d.id, d.items.length, dayLabel(d))}
+              onSelect={() => onMove(d.id, "end", dayLabel(d))}
             >
               <span className="min-w-0 flex-1 truncate">{dayLabel(d)}</span>
               {d.id === currentDayId ? (
@@ -718,7 +787,7 @@ function ItemRow({
           ))}
           <DropdownMenuSeparator />
           {currentDayId && (
-            <DropdownMenuItem onSelect={() => onMove(null, 0, "chưa xếp ngày")}>
+            <DropdownMenuItem onSelect={() => onMove(null, "start", "chưa xếp ngày")}>
               <Undo2 className="size-4" aria-hidden />
               Bỏ khỏi ngày
             </DropdownMenuItem>

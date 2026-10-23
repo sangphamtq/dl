@@ -938,6 +938,82 @@ cho cái túi (§6f).**
 > code**: `getLegs()` bắt lỗi và rơi về ước lượng chim bay. Muốn chạy thì stub
 > `server-only` qua `NODE_PATH` và chấp nhận mọi chặng đều `approx`.
 
+## 12b. Tìm & thêm ngay trong trang soạn (2026-10-23)
+
+Trước đây muốn thêm một nơi phải rời trang soạn, vào trang địa điểm rồi bấm "Thêm vào lịch
+trình". Giờ có hộp tìm `trip-add-search.tsx`, mở từ **hai lối**: nút *Thêm địa điểm vào ngày N*
+ở cuối mỗi ngày (thêm THẲNG vào ngày đó, xuống cuối) và ô *Tìm địa điểm, quán ăn…* ở cột Chưa
+xếp ngày (thêm vào danh sách chưa xếp).
+
+**Ngăn lịch trình nổi (`trip-dock.tsx`) dùng CHÍNH hộp đó**: ô tìm ngay dưới tên chuyến + nút
+**+** ở đầu từng nhóm (Chưa xếp ngày / Ngày N). Ngăn giữ dữ liệu ở client (`getTripBag`),
+`revalidatePath` không chạm tới ⇒ hộp nhận `onAdded` và ngăn truyền `tripBagChanged`. Màn
+"Lịch trình đang trống" đã bỏ: chuyến chưa có mục nào vẫn hiện đủ các ngày, nếu không thì không
+có nút **+** nào để thêm thẳng vào ngày. Hộp tìm (Radix Dialog) lồng trên ngăn (vaul) — Esc chỉ
+đóng hộp, ngăn vẫn mở.
+
+- `searchTripCandidates(tripId, q)`: bốn loại thêm được (spot · eatery · activity ·
+  accommodation), tối đa 4/loại khi ô trống, 6/loại khi có chữ. **Ô trống ⇒ gợi ý ở điểm đến
+  của chuyến** (cả điểm đến con); có chữ ⇒ tìm toàn site nhưng nơi thuộc điểm đến của chuyến
+  đứng trước. Ảnh chỉ lấy `kind: "gallery"`, không có ảnh thật thì ô xám có ký hiệu.
+- `addItem(target, tripId, dayId)` — `dayId` chỉ được nhận khi có `tripId` rõ ràng.
+- **Ô tìm cũng là ô TỰ THÊM** (đã gộp, cột Chưa xếp ngày không còn form riêng): có chữ là
+  luôn có dòng *Thêm "…"* — kể cả khi tìm ra kết quả, vì kết quả gần đúng ("Chợ đêm Phan
+  Thiết") chưa chắc là thứ người ta muốn.
+- ⚠️ **Mục tự thêm KHÔNG toạ độ là một VIỆC, không phải một NƠI** (`isTask()` ở
+  `lib/trip-time.ts`): "Đặt xe", "Chờ người" diễn ra tại nơi gần nhất phía trước. Nên:
+  `getLegs` chỉ nhận mục CÓ toạ độ · chặng đi tiếp xuất phát từ nơi cuối cùng phía trước
+  (`ScheduledItem.legKey`) · không vạch "di chuyển" tới một việc (`legHidden`) · không cảnh báo
+  "chưa có toạ độ" · mặc định **30 phút** (`TASK_STAY_MIN`), không phải 60 của mục tự thêm có
+  toạ độ. Trước đây một "Chờ người" nằm giữa hai nơi làm mất cả chặng lái A → B.
+- Ô trống có sẵn 4 việc (`TASKS` trong `trip-add-search.tsx`) kèm thời lượng riêng. Có chữ mà
+  không tên nào chứa trọn cụm đã gõ ⇒ dòng *Thêm "…"* lên ĐẦU và được chọn sẵn ("đặt xe" ra
+  "Thuê xe máy" là có kết quả mà không đúng).
+- **Chèn ở BẤT KỲ vị trí nào**: nút **+** ĐÚNG GIỮA hai chấm số liền nhau trên trục
+  (`InsertMarks` trong `trip-editor.tsx`) — rê vào BẤT KỲ đâu trên một mục là hiện MỘT dấu +,
+  ở khe ngay dưới nó — với mục cuối là ở ĐÁY trục (chèn trước mục đầu thì dùng menu). **Không
+  còn nút "Thêm vào ngày N" ở cuối ngày** (trùng với dấu + đáy trục); chỉ NGÀY TRỐNG mới có nút
+  đó, nằm trong dòng "…hoặc kéo một mục…" vì chưa có trục nào để gắn dấu +; + *Thêm phía trước / phía sau* trong menu từng mục (lối cho màn cảm ứng, có
+  cả ở ngăn nổi).
+  · Vị trí dấu + phải **ĐO** (`[data-rail-dot]` + `ResizeObserver`): khoảng cách hai chấm đổi
+    theo ghi chú, dòng di chuyển, ô ghi chú trống ẩn bằng `opacity` mà vẫn chiếm chỗ — bản canh
+    bằng CSS từng lệch xuống. Đo trong `useEffect`, **không** `useLayoutEffect`: effect bố cục
+    của con chạy trước khi React gắn ref cho `<ol>` cha ⇒ đo ra rỗng và không đo lại. Vị trí tính bằng `insertAt()`
+  (`lib/trip-drop.ts`) rồi gửi qua `addItem(..., at)` — cùng kiểu `DropAt` với kéo–thả.
+  · ⚠️ **Mốc chèn TRÔI sau mỗi lần thêm** (`afterId` = mục vừa thêm): giữ nguyên mốc cũ thì
+    thêm A rồi B vào cùng khe sẽ ra B, A — ngược thứ tự bấm.
+- Hộp **không tự đóng sau mỗi lần thêm**: người ta thường thêm vài nơi một lượt. Nơi đã có
+  trong chuyến hiện *Đã có*, không bấm được.
+- Hộp đang mở là `role="dialog"` + `data-state="open"` ⇒ `useTripLiveSync` tạm dừng.
+
+## 12c. Bật/tắt tự tính đường đi (2026-10-23)
+
+`Trip.autoTravel` (mặc định bật, migration `trip_auto_travel`) — công tắc *Tự tính đường đi* ở
+hàng ngày khởi hành / số người của trang soạn.
+
+- **Theo CHUYẾN, không theo người xem** — khác hẳn menu *Hiển thị* (`trip-fields.tsx`, lưu
+  `localStorage`). Mục "Chặng di chuyển" trong *Hiển thị* chỉ ẨN DÒNG CHỮ, giờ vẫn cộng chặng;
+  còn công tắc này đổi GIỜ của cả lịch nên mọi người cùng sửa phải thấy như nhau. Tắt thì mục
+  "Chặng di chuyển" biến khỏi *Hiển thị* (không còn gì để ẩn).
+- Tắt ⇒ `buildDayViews` **không gọi OSRM**, `scheduleDay(..., { travel: false })`: giờ đến =
+  giờ rời mục trước, `legHidden` hết, không cảnh báo chặng dài / thiếu toạ độ. Trang xem chia sẻ
+  và lịch trình mẫu đi cùng đường nên cũng theo cờ này.
+- Dòng di chuyển hiện thêm **km** (`ItemView.driveKm`, lấy từ cùng `Leg` của OSRM).
+- ⚠️ `shape()` đọc `trip.autoTravel ?? true`: tiến trình nào còn giữ Prisma client cũ sẽ đọc ra
+  `undefined` — không có `?? true` là mọi chuyến lặng lẽ mất chặng. (Lỗi "bấm tắt là sập trang"
+  lúc đầu là đúng chuyện đó; gốc đã sửa ở `lib/prisma.ts` — xem CLAUDE.md §4.)
+
+## 12d. Menu *Hiển thị* — "Ẩn tất cả" (2026-10-24)
+
+- Hai nút cuối menu: **Ẩn tất cả** / **Hiện lại tất cả** (lưu `localStorage`, theo người xem).
+  Chỉ **giờ đến + tên** luôn hiện. **Cảnh báo cũng là một tuỳ chọn** (`warn`, mặc định bật —
+  biên tập yêu cầu "ẩn tất cả là ẩn thật"); "Ghi chú" ẩn cả ghi chú của NGÀY.
+  · ⚠️ Menu dùng ở HAI trang — `trip-editor.tsx` và `trip-view.tsx` (lịch mẫu, link chia sẻ).
+    Thêm trường mới thì gắn cờ ở cả hai; trang xem từng in ghi chú bỏ qua menu.
+- Tắt **Ảnh** thì **bỏ hẳn ô 48px**, chỉ còn ký hiệu loại 14px TRƯỚC TÊN (bản cũ giữ ô icon nên
+  tắt ảnh gần như không gọn đi chút nào). Mục không còn dòng phụ nào (`bare` trong `RailItem`)
+  thì đệm dưới `pb-3` thay vì `pb-5` ⇒ ẩn tất cả ra một danh sách một-dòng-một-mục.
+
 ## 13. Còn thiếu / cố ý chưa làm
 
 | Việc | Ghi chú |
