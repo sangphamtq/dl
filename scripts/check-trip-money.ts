@@ -1,4 +1,4 @@
-import { balances, ceilTo, settlements, splitEven, splitShares } from "@/lib/trip-money";
+import { balances, ceilTo, fundSummary, personSummary, settlements, splitEven, splitShares } from "@/lib/trip-money";
 
 let pass = 0, fail = 0;
 function ok(name: string, cond: boolean, got?: unknown) {
@@ -65,6 +65,47 @@ ok("một chủ nợ, hai con nợ → 2 lượt", st.length === 2, st);
 ok("… đều trả về A", st.every((s) => s.toId === A), st);
 ok("… tổng trả đúng bằng phần A ứng thêm", sum(st.map((s) => s.amount)) === 600_000, st);
 ok("hoà nhau thì không có lượt nào", settlements(new Map([[A, 0], [B, 0]])).length === 0);
+
+// --- Quỹ chung: A giữ quỹ, cả ba góp 500k, quỹ chi 900k chia ba ---
+const fundEx = [
+  { amount: 500_000, paidById: A, shareIds: [], kind: "contribution" as const },
+  { amount: 500_000, paidById: B, shareIds: [], kind: "contribution" as const },
+  { amount: 500_000, paidById: C, shareIds: [], kind: "contribution" as const },
+  { amount: 900_000, paidById: null, shareIds: [A, B, C], fromFund: true },
+];
+const fb = balances(fundEx, [A, B, C], A);
+ok("quỹ: tổng số dư vẫn bằng 0", sum([...fb.values()]) === 0, [...fb]);
+ok("quỹ dư 600k → B và C mỗi người được nhận lại 200k", fb.get(B) === 200_000 && fb.get(C) === 200_000, [...fb]);
+const fst = settlements(fb);
+ok("… người GIỮ quỹ trả lại, đúng 2 lượt", fst.length === 2 && fst.every((t) => t.fromId === A), fst);
+const fs = fundSummary(fundEx);
+ok("tóm tắt quỹ: góp 1,5tr, chi 900k, còn 600k", fs.contributed === 1_500_000 && fs.spent === 900_000 && fs.left === 600_000, fs);
+const pB = personSummary(fundEx, B);
+ok("từng người: B tiêu 300k, trả hộ 0, góp 500k", pB.spent === 300_000 && pB.paid === 0 && pB.contributed === 500_000, pB);
+
+// Quỹ hụt: góp 300k, quỹ chi 900k ⇒ người dùng quỹ phải góp thêm cho người giữ.
+const short = balances(
+  [
+    { amount: 300_000, paidById: A, shareIds: [], kind: "contribution" as const },
+    { amount: 900_000, paidById: null, shareIds: [A, B, C], fromFund: true },
+  ],
+  [A, B, C],
+  A,
+);
+ok("quỹ hụt: tổng vẫn bằng 0", sum([...short.values()]) === 0, [...short]);
+ok("… B và C mỗi người góp thêm 300k cho người giữ", short.get(B) === -300_000 && short.get(C) === -300_000, [...short]);
+
+// Trộn: quỹ + một người ứng riêng.
+const mix = balances(
+  [
+    { amount: 600_000, paidById: B, shareIds: [], kind: "contribution" as const },
+    { amount: 300_000, paidById: null, shareIds: [A, B, C], fromFund: true },
+    { amount: 90_000, paidById: C, shareIds: [A, B, C] },
+  ],
+  [A, B, C],
+  A,
+);
+ok("trộn quỹ + ứng riêng: tổng vẫn bằng 0", sum([...mix.values()]) === 0, [...mix]);
 
 console.log(`\n${pass} qua · ${fail} hỏng`);
 if (fail) process.exit(1);

@@ -284,6 +284,7 @@ model User {
   tripPackItems   TripPackItem[] @relation("TripPackAssignee")
   tripPackChecks  TripPackCheck[] @relation("TripPackChecker")
   tripExpensesPaid TripExpense[] @relation("TripExpensePayer")
+  tripFundsKept    Trip[]        @relation("TripFundKeeper")
   tripExpensesDeleted TripExpense[] @relation("TripExpenseDeleter")
   tripExpenseShares TripExpenseShare[] @relation("TripExpenseSharer")
 
@@ -1273,6 +1274,10 @@ model Trip {
   notes    TripNote[]
   packing  TripPackItem[]
   expenses TripExpense[]
+  // Người GIỮ quỹ chung (tiền mặt nằm ở người này). null ⇒ chủ chuyến. Số dư của quỹ được gộp vào
+  // người giữ khi tính "ai trả ai" — xem `balances()` ở lib/trip-money.ts.
+  fundKeeperId String?
+  fundKeeper   User?   @relation("TripFundKeeper", fields: [fundKeeperId], references: [id], onDelete: SetNull)
 
   // Khoá lạc quan cho THAO TÁC THEO VỊ TRÍ. `moveItem` đánh số lại cả một vùng
   // chứa, nên hai người cùng kéo trong một ngày sẽ ghi đè nhau LẶNG LẼ: người
@@ -1424,6 +1429,11 @@ model TripExpense {
   title  String
   amount Int
 
+  // `contribution` = một lần GÓP QUỸ chung: `paidById` là người góp, không có `shares`.
+  kind TripExpenseKind @default(expense)
+  // Khoản chi TRẢ BẰNG QUỸ chung (không ai ứng tiền riêng) — `paidById` bỏ trống.
+  fromFund Boolean @default(false)
+
   // Ai ứng tiền. SetNull: gỡ người khỏi chuyến thì khoản chi vẫn còn (nó đã xảy
   // ra rồi), chỉ mất tên người trả.
   paidById String?
@@ -1447,6 +1457,11 @@ model TripExpense {
   updatedAt DateTime @updatedAt
 
   @@index([tripId, createdAt])
+}
+
+enum TripExpenseKind {
+  expense
+  contribution
 }
 
 model TripExpenseShare {

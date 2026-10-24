@@ -797,6 +797,61 @@ nào cũng ít lượt nhất về mặt toán học, nhưng với nhóm 3–6 n
 - **Chuyến đi một mình tự thoái hoá thành sổ chi tiêu**: không hỏi ai trả, không hỏi chia cho
   ai, không có khối "ai trả ai". Cùng một màn hình, ít câu hỏi hơn.
 
+### 13.3a Bố cục bản 2026-10-25 (biên tập: "thiết kế lại theo ý bạn")
+
+- Đầu tab: tiêu đề + một câu + **chỉ MỘT con số: Tổng đã chi** (biên tập bỏ "Mỗi người" và "Số khoản").
+- Từ `lg` hai cột: trái là **ô ghi + danh sách**, phải là tấm **"Sổ của nhóm"** (nền `band`, dính khi cuộn):
+  *Mỗi người* (đã trả bao nhiêu, rồi **được nhận / cần trả** bằng CHỮ — tiền không mang màu, và chữ đọc
+  ngay còn dấu ± phải dịch) rồi *Ai trả ai*. Dưới `lg` thứ tự là **ô ghi → sổ → danh sách**: đang đi thì việc
+  hay làm nhất trên điện thoại là GHI.
+- Mỗi khoản hiện thêm **phần mỗi người** dưới số tiền (phần của người không ứng tiền — luôn tròn nghìn).
+- Xoá vào menu ⋯ kèm một dòng nói rõ "vẫn nằm ở mục Đã xoá, khôi phục được"; nút khôi phục có chữ.
+- ⚠️ Hàng trong `ul.grid` cần `min-w-0` — ô lưới mặc định rộng theo nội dung nên tên không cắt được và
+  số tiền tràn ra khỏi tấm.
+
+### 13.3c ✅ Quỹ chung + chi tiết từng khoản + chi phí từng người (2026-10-25)
+
+**Mô hình — quỹ là "một người nữa", nhưng tiền nằm ở NGƯỜI GIỮ QUỸ.** Không có bảng mới:
+
+| | Ghi thế nào |
+|---|---|
+| Góp quỹ | một dòng `TripExpense` `kind: contribution`, `paidById` = người góp, không có `shares` |
+| Chi từ quỹ | `TripExpense` thường, `fromFund: true`, `paidById` null, `shares` như mọi khoản |
+| Người giữ quỹ | `Trip.fundKeeperId` (null ⇒ chủ chuyến) |
+
+`balances(…, fundKeeperId)` cộng phần của quỹ **thẳng vào người giữ quỹ** — vì tiền mặt của quỹ nằm ở
+người đó thật. Nhờ vậy "Ai trả ai" vẫn chỉ là chuyển khoản NGƯỜI ↔ NGƯỜI: quỹ dư thì người giữ trả lại cho
+người đã góp; quỹ hụt thì người dùng quỹ góp thêm cho người giữ. Không cần bước "chia lại quỹ" riêng.
+Ca kiểm: `pnpm check:trip-money` (quỹ dư, quỹ hụt, trộn quỹ + ứng riêng — tổng số dư luôn bằng 0).
+
+**Giao diện:**
+- Cột phải có tấm **Quỹ chung**: số còn lại (to), đã góp / đã chi, người giữ quỹ (đổi được), danh sách đã
+  góp gộp THEO NGƯỜI. Nút "Lập quỹ / Góp quỹ" mặc định **"Mỗi người góp X"** (cách nhóm lập quỹ thật) —
+  hoặc một người góp. Quỹ hụt thì câu cảnh báo dùng `warm-ink`.
+- Ô ghi: người trả có thêm lựa chọn **Quỹ chung**.
+- **Theo khoản / Theo người** (hai nút trên danh sách):
+  · *Theo khoản*: hàng GẬP có **tên khoản · ai trả · xấp avatar người được chi · số tiền**. Bấm vào mới
+    bung **chi cho ai** (tên) + **mỗi người bao nhiêu** — một lần, không lặp lại thứ hàng gập đã nói.
+  · *Theo người*: mỗi người **tiêu** (tổng phần của mình) · **trả hộ** · **góp quỹ** · được nhận / cần trả;
+    bấm vào là bung các khoản người đó có phần.
+- Xoá lần góp: menu ⋯ ở dòng người góp (xoá MỀM như mọi khoản, nằm ở "Đã xoá").
+
+### 13.3d Ô ghi khoản chi — bản to, dễ bấm (2026-10-25)
+
+Thứ tự theo lúc đang cầm điện thoại thanh toán: **SỐ TIỀN** (ô cao 64px, chữ `--font-display` ~30px,
+tự chèn dấu chấm ngăn nghìn, đuôi `.000đ` in chết, nút ✕ xoá số NẰM TRONG ô) → **đủ chín tờ +1k … +500k**
+MỘT hàng ngay dưới → **tên khoản** + chip gợi ý → **Ai trả** (Quỹ chung + từng người) → **Chia đều cho**
+(bật/tắt từng người, "Cả nhóm / Chỉ mình tôi") → nút chính trải hết bề ngang **"Ghi khoản 1.250.000đ (3 người)"**.
+
+- Ô số tiền **trải hết bề ngang** (đã thử bản hẹp `w-60` — biên tập thấy ngắn quá, bỏ).
+- **20 gợi ý tên khoản** xếp theo tần suất (ăn · đi lại · ở & chơi · mua sắm); hiện sẵn 8, "+N gợi ý khác"
+  mở phần còn lại. Chỉ là CHỮ điền vào ô, không phải danh mục — không lưu trường loại nào (§13.2).
+- Ai trả / chia cho là **NÚT HIỆN SẴN** (avatar + tên, cao 40px), KHÔNG còn popover: nhóm 3–6 người thì
+  một hàng nút vừa đủ, mỗi lựa chọn một chạm, và nhìn là thấy đang chọn gì.
+- ⚠️ `form` là `grid` ⇒ BẮT BUỘC `grid-cols-1`: không khai cột thì cột co theo max-content của ô số tiền
+  (chữ 30px) và cả trang cuộn ngang trên điện thoại.
+- Đã thử và bỏ: tờ tiền nằm BÊN PHẢI ô số (gãy thành ba hàng lởm chởm); bỏ tờ +1k/+2k (biên tập cần đủ chín).
+
 ### 13.3b Xoá là XOÁ MỀM — sổ tiền chung không được phép quên
 
 Ai trong chuyến cũng xoá được khoản chi (luật chung của mọi mục), nhưng với TIỀN thì xoá lặng
@@ -813,7 +868,7 @@ Tức là "xoá" ở đây nghĩa là *gạch khỏi sổ một cách công khai
 
 ### 13.4 Còn treo
 
-1. **Chưa đánh dấu "đã trả"** — khối "ai trả ai" là một phép tính, chưa xoá nợ được. Hướng đã
+1. **Chưa đánh dấu "đã trả"** (quỹ chung đã dựng — §13.3c — theo đúng hướng "khoản đặc biệt" dưới đây) — khối "ai trả ai" là một phép tính, chưa xoá nợ được. Hướng đã
    nghĩ sẵn: coi một lần trả nợ là **một khoản chi đặc biệt** (`kind: transfer`, người trả ứng
    tiền, chia cho đúng một người) — số dư tự triệt tiêu, không cần bảng thứ ba.
 2. **Chưa sửa được khoản đã ghi**, chỉ xoá rồi thêm lại.

@@ -66,6 +66,8 @@ export type TripData = {
   startDate: Date | null;
   partySize: number | null;
   autoTravel: boolean;
+  /** Người giữ quỹ chung — chưa chọn thì là chủ chuyến. */
+  fundKeeperId: string;
   shareId: string | null;
   visibility: "private" | "unlisted";
   isTemplate: boolean;
@@ -273,6 +275,7 @@ function shape(trip: RawTrip): TripData {
     // `?? true`: server dev chưa khởi động lại sau migration giữ Prisma client cũ, đọc ra
     // undefined — đừng để nó lặng lẽ tắt việc tính đường của mọi chuyến.
     autoTravel: trip.autoTravel ?? true,
+    fundKeeperId: trip.fundKeeperId ?? trip.ownerId,
     shareId: trip.shareId,
     visibility: trip.visibility,
     isTemplate: trip.isTemplate,
@@ -514,6 +517,10 @@ export type TripExpenseRow = {
   amount: number;
   paidBy: { id: string; name: string | null; image: string | null } | null;
   shareIds: string[];
+  /** `contribution` = một lần góp quỹ (không có phần chia). */
+  kind: "expense" | "contribution";
+  /** Khoản chi trả bằng quỹ chung. */
+  fromFund: boolean;
   /** Khác null = đã xoá mềm — nằm ở mục "Đã xoá", KHÔNG tính vào sổ. */
   deletedAt: Date | null;
   deletedBy: { name: string | null } | null;
@@ -524,7 +531,7 @@ export async function getTripExpenses(tripId: string): Promise<TripExpenseRow[]>
     where: { tripId },
     orderBy: { createdAt: "desc" },
     select: {
-      id: true, title: true, amount: true, deletedAt: true,
+      id: true, title: true, amount: true, deletedAt: true, kind: true, fromFund: true,
       paidBy: { select: { id: true, name: true, image: true } },
       deletedBy: { select: { name: true } },
       shares: { select: { userId: true } },
@@ -536,6 +543,8 @@ export async function getTripExpenses(tripId: string): Promise<TripExpenseRow[]>
     amount: r.amount,
     paidBy: r.paidBy,
     shareIds: r.shares.map((s) => s.userId),
+    kind: r.kind,
+    fromFund: r.fromFund,
     deletedAt: r.deletedAt,
     deletedBy: r.deletedBy,
   }));

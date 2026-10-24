@@ -108,6 +108,7 @@ type TripHeader = {
   startDate: string | null;
   partySize: number | null;
   autoTravel: boolean;
+  fundKeeperId: string;
   shareId: string | null;
   visibility: "private" | "unlisted";
   place: { slug: string; name: string } | null;
@@ -488,6 +489,7 @@ export function TripEditor({
           <div className={cn(tab === "chi-phi" ? undefined : "hidden")}>
             <TripMoney
               tripId={trip.id}
+              fundKeeperId={trip.fundKeeperId}
               expenses={expenses}
               people={trip.people}
               viewerId={viewerId}

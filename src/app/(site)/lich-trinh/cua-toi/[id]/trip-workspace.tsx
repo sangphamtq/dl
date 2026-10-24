@@ -45,6 +45,7 @@ export async function TripWorkspace({
           startDate: trip.startDate ? trip.startDate.toISOString().slice(0, 10) : null,
           partySize: trip.partySize,
           autoTravel: trip.autoTravel,
+          fundKeeperId: trip.fundKeeperId,
           shareId: trip.shareId,
           visibility: trip.visibility,
           place: trip.place,

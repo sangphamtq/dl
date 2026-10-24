@@ -1293,7 +1293,7 @@ async function peopleInTrip(tripId: string, ids: string[]): Promise<string[]> {
 
 export async function addExpense(
   tripId: string,
-  input: { title: string; amount: number; paidById: string | null; shareIds: string[] },
+  input: { title: string; amount: number; paidById: string | null; shareIds: string[]; fromFund?: boolean },
 ): Promise<ActionResult<{ id: string }>> {
   const title = clip(input.title.trim(), MAX_TITLE);
   if (!title) return { ok: false, error: "Chưa nhập tên khoản chi." };
@@ -1313,13 +1313,54 @@ export async function addExpense(
         tripId,
         title,
         amount,
-        paidById: payer ?? null,
+        // Quỹ trả thì không ai ứng tiền riêng.
+        paidById: input.fromFund ? null : (payer ?? null),
+        fromFund: !!input.fromFund,
         shares: { create: shareIds.map((userId) => ({ userId })) },
       },
       select: { id: true },
     });
     await refreshMoney(tripId);
     return { ok: true, data: { id: expense.id } };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+/** Góp quỹ chung — một hoặc nhiều người một lượt ("mỗi người góp 500k"). Mỗi người một dòng sổ. */
+export async function addFundContributions(
+  tripId: string,
+  entries: { userId: string; amount: number }[],
+): Promise<ActionResult> {
+  const clean = entries
+    .map((e) => ({ userId: e.userId, amount: Math.round(e.amount) }))
+    .filter((e) => Number.isFinite(e.amount) && e.amount > 0);
+  if (clean.length === 0) return { ok: false, error: "Chưa nhập số tiền góp." };
+  if (clean.some((e) => e.amount > MAX_AMOUNT)) return { ok: false, error: "Số tiền lớn bất thường." };
+  try {
+    await editableTrip(tripId);
+    const inTrip = new Set(await peopleInTrip(tripId, clean.map((e) => e.userId)));
+    const rows = clean.filter((e) => inTrip.has(e.userId));
+    if (rows.length === 0) return { ok: false, error: "Người góp không còn trong chuyến." };
+    await prisma.tripExpense.createMany({
+      data: rows.map((e) => ({ tripId, title: "Góp quỹ", amount: e.amount, kind: "contribution", paidById: e.userId })),
+    });
+    await refreshMoney(tripId);
+    return { ok: true };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+/** Đổi người giữ quỹ — người đó phải đang ở trong chuyến. */
+export async function setFundKeeper(tripId: string, userId: string): Promise<ActionResult> {
+  try {
+    await editableTrip(tripId);
+    const [keeper] = await peopleInTrip(tripId, [userId]);
+    if (!keeper) return { ok: false, error: "Người này không còn trong chuyến." };
+    await prisma.trip.update({ where: { id: tripId }, data: { fundKeeperId: keeper } });
+    await refreshMoney(tripId);
+    return { ok: true };
   } catch (e) {
     return fail(e);
   }
