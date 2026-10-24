@@ -286,6 +286,21 @@ trước**: cái gì đọng lại trong sọt chính là bằng chứng ba mụ
 do phải giữ nó **cố tình vô cấu trúc** — đừng thêm trường `category` cho ghi chú, vì phân
 loại ở đây là việc của bốn mục, không phải của một cái nhãn.
 
+### 11.1b Giao diện (2026-10-25, dựng lại theo yêu cầu biên tập)
+
+- Đầu tab: tiêu đề "Ghi chú" (cùng cỡ với "Ngày 1") + số mẩu, và **một câu** phân biệt ghi chú chuyến với
+  ghi chú của từng điểm (§11.2 — quy ước "cần viết vào UI").
+- **Ô viết LUÔN mở**, một dòng lúc nghỉ, giãn theo chữ (`field-sizing: content`); nút + gợi ý
+  "Ctrl/⌘ + Enter" chỉ hiện khi đang gõ. Nút dùng `onMouseDown preventDefault` để ô không blur trước cú bấm.
+- Mẩu ghi chú là **thẻ** trên lưới 1/2/3 cột (`items-start` — thẻ cao theo nội dung). Thẻ CÓ VIỀN vì
+  bấm được: **bấm vào chữ là sửa** (nút phủ cả thẻ; link trong ghi chú vẫn bấm được nhờ
+  `pointer-events-auto` riêng cho `<a>`). Ghim / sửa / xoá nằm trong menu ⋯ — xoá không còn là một icon
+  trần cạnh icon ghim.
+- Mẩu đã ghim: nền `band`, nhóm "Đã ghim" dùng glyph **`pushpin`** — KHÔNG dùng `pin` (đó là chấm bản đồ,
+  nghĩa là một NƠI).
+- Đã bỏ: ô viết viền đứt ("trông như chỗ trống"), cột chữ 44rem căn giữa tờ trắng, nhãn "Đã ghim" màu cam
+  (cam = cảnh báo, §3 CLAUDE.md).
+
 ### 11.2 Không đụng ba chỗ ghi chú đã có
 
 | Đã có | Ở đâu | Nói về cái gì |
@@ -516,6 +531,33 @@ trong đó 2 đã xếp vào túi"* luôn đúng, và không sinh ra trạng th�
 > `20260820140000_trip_packing_scope` **đổi tên** (`RENAME COLUMN`) thay vì drop-rồi-add —
 > `prisma migrate dev` mặc định sinh drop+add và sẽ xoá sạch tick người dùng đã đánh.
 
+### 12.2c Giao diện bản 2026-10-25
+
+- **Ô ba trạng thái của §12.2b GIỮ NGUYÊN** — đã thử "hai cột tick Có sẵn | Trong túi" và biên tập chọn quay
+  lại ô bấm-chuyển. Đừng tách lại thành hai cột. Ô đổi NGAY (`useOptimistic` từng hàng), vùng bấm 36px.
+- Đầu tab: tiêu đề + dòng chú giải vẽ ba nấc + hai con số **Đã có sẵn N/T** và **Đã xếp vào túi N/T**.
+- "Chưa ai nhận" là nút viền đứt cam "Ai mang?" (chữ `warm-ink`). Chuyển chung/riêng + xoá ở menu ⋯.
+
+### 12.2d ⚠️ SỬA §12.3: đồ riêng CÓ trường nhóm (`TripPackItem.groupName`)
+
+Biên tập cần hai việc mà "suy nhóm từ tên" không làm được:
+
+1. **Thêm món tự gõ vào ĐÚNG một nhóm đã có** (gợi ý bên phải chưa có món đó) — mỗi nhóm có ô
+   "Thêm vào <nhóm>…" riêng; ô cuối mục ("Thêm đồ khác…") vẫn suy theo tên, không khớp thì vào "Khác".
+2. **Đổi tên nhóm "Khác"** (và nhóm tự đặt) — bấm vào tên nhóm là sửa. Đổi xong, mọi món trong đó mang
+   tên nhóm mới; món tự gõ sau đó lại rơi vào một "Khác" mới.
+
+**Cả hai thao tác nằm trong MENU ⋯ của tiêu đề nhóm** (hiện khi rê vào) — "Thêm món vào nhóm" mở một ô
+gõ dưới nhóm (gõ liền nhiều món được; Esc hoặc rời ô khi trống thì đóng), "Đổi tên nhóm" chỉ có ở nhóm
+đổi được. **Tên từng món cũng KHÔNG còn là ô nhập sẵn**: sửa qua menu ⋯ của hàng → "Sửa tên". Biên tập
+yêu cầu: mở sẵn ô gõ ở mọi nhóm thì danh sách rà soát thành một chồng ô nhập. Ô gõ mở trong
+`onCloseAutoFocus` của menu (mở sớm hơn là menu đang đóng dở cướp mất focus).
+
+Nhóm hiển thị = `groupName` → danh mục gợi ý theo tên → "Khác" (`packGroupOf()`). `groupName` null cho mọi
+món cũ ⇒ migration `trip_pack_group` chỉ THÊM cột, không đụng dữ liệu. Nhóm danh mục **không đổi tên
+được** (cả UI lẫn `renamePackGroup` chặn). Thứ tự: nhóm danh mục → nhóm tự đặt → "Khác" cuối.
+Vẫn **không** có `category` cho đồ chung — đồ chung để phẳng như cũ. `cloneTrip` chép `groupName` và `scope`.
+
 ### 12.3 Ba trường cố ý KHÔNG có
 
 | Bỏ | Vì sao |
@@ -625,6 +667,15 @@ trên một màn, nhưng trong một cột hẹp thì chúng gãy dòng lung tun
 phải `max-height` phỏng chừng: nội suy được nên mượt, mà khỏi đoán trước chiều cao (đoán hụt
 thì cắt nội dung, đoán thừa thì giật một quãng trống). Cùng kỹ thuật với chiều ngang sidebar.
 Nhóm gấp lại vẫn hiện **số món đã tick** để biết mình chọn gì ở đâu.
+
+**MỘT nhóm mở một lúc** (accordion, 2026-10-25): mở nhiều nhóm thì cột dài ~45 hàng, tràn xa khỏi tầm
+mắt. Mở nhóm mới là gập nhóm cũ, rồi kéo tiêu đề nhóm vừa mở lên đầu **vùng cuộn của cột**
+(`[data-pack-scroll]`) — KHÔNG `scrollIntoView`, vì nó cuộn luôn cả trang.
+
+> ⚠️ **Dấu tick của bảng gợi ý tính THEO PHẠM VI đang chọn** (khoá `scope:packKey(tên)`): "Sạc dự phòng"
+> đã có ở đồ riêng KHÔNG làm nó hiện tick khi đang xem "Đồ chung" — bản cũ khoá theo tên trần nên hai phạm
+> vi dùng chung dấu tick, và bấm bỏ ở "Đồ chung" xoá nhầm món đồ riêng. Trên trang soạn, cột này là tờ
+> trắng + bóng mềm (như cột lịch); nhãn nhóm là chữ thường đậm vừa, không dùng `MICRO` xám.
 
 ### 12.8b Ba thanh cuộn và cái nút bị khuất — bốn thuộc tính CSS phải đi cùng nhau
 

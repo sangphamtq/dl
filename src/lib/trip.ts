@@ -473,6 +473,8 @@ export type TripPackRow = {
   id: string;
   name: string;
   scope: "group" | "personal";
+  /** Nhóm người dùng đặt (chỉ đồ riêng); null ⇒ suy theo tên — xem `packGroupOf()`. */
+  groupName: string | null;
   isReady: boolean;
   isPacked: boolean;
   assignee: { id: string; name: string | null; image: string | null } | null;
@@ -486,7 +488,7 @@ export async function getTripPackItems(
     where: { tripId },
     orderBy: { createdAt: "asc" },
     select: {
-      id: true, name: true, scope: true, isReady: true, isPacked: true,
+      id: true, name: true, scope: true, groupName: true, isReady: true, isPacked: true,
       assignee: { select: { id: true, name: true, image: true } },
       checks: { where: { userId: viewerId }, select: { isReady: true, isPacked: true } },
     },
@@ -498,6 +500,7 @@ export async function getTripPackItems(
       id: r.id,
       name: r.name,
       scope: r.scope,
+      groupName: r.groupName,
       assignee: r.scope === "group" ? r.assignee : null,
       isReady: r.scope === "group" ? r.isReady : (mine?.isReady ?? false),
       isPacked: r.scope === "group" ? r.isPacked : (mine?.isPacked ?? false),

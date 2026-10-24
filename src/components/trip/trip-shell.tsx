@@ -57,7 +57,7 @@ function CollapseButton({ onClick }: { onClick: () => void }) {
       aria-label="Thu gọn cột trái"
       className={cn(ICON_BTN, "hidden size-6 lg:grid")}
     >
-      <Glyph name="back" className="size-4" />
+      <Glyph name="panel-left" className="size-4" />
     </button>
   );
 }
@@ -125,12 +125,12 @@ export function TripShell({
   const cols = COLS[`${asideOpen ? "open" : "shut"}-${rightKey}`];
 
   return (
-    <div className="flex flex-1 flex-col">
+    // Trang soạn: cả trang nền `band`, riêng cột lịch là TỜ TRẮNG — chỗ làm việc nổi lên, phần còn
+    // lại (đầu trang, cột trái, cột phải) lùi về sau.
+    <div className={cn("flex flex-1 flex-col", banner && "bg-band")}>
       {banner ? (
         // lg:pt chừa 4rem cho header site nằm đè lên dải này (`underlay` ở lib/site-chrome).
-        <div className="border-b border-border/60">
-          <div className={cn(SHELL, "pb-5 pt-5 sm:pb-7 sm:pt-8 lg:pt-[5.5rem]")}>{header}</div>
-        </div>
+        <div className={cn(SHELL, "pb-2 pt-5 sm:pb-4 sm:pt-8 lg:pt-[5.5rem]")}>{header}</div>
       ) : (
         <div className={cn(SHELL, "pt-5 sm:pt-8")}>{header}</div>
       )}
@@ -140,7 +140,7 @@ export function TripShell({
           PlaceTabs làm, và vì đúng lý do đã ghi ở đó (viên nền biến thanh thành
           "bộ lọc app thương mại điện tử"). */}
       {panes.length > 1 && (
-        <div className="sticky top-0 z-30 mt-4 bg-background/90 backdrop-blur lg:hidden">
+        <div className={cn("sticky top-0 z-30 mt-4 backdrop-blur lg:hidden", banner ? "bg-band/90" : "bg-background/90")}>
           <div className={cn(SHELL, "flex")}>
             {panes.map(({ id, label, glyph, badge }) => {
               const on = pane === id;
@@ -198,7 +198,7 @@ export function TripShell({
                 aria-label="Mở rộng cột trái"
                 className={cn(ICON_BTN, "size-8")}
               >
-                <Glyph name="forward" className="size-4" />
+                <Glyph name="panel-left" className="size-4" />
               </button>
 
               {navTripId && <TripSideNav tripId={navTripId} collapsed />}
@@ -219,38 +219,47 @@ export function TripShell({
           )}
 
           <div className={cn(!asideOpen && "lg:hidden")}>
-            {/* Nút thu gọn đi cùng TIÊU ĐỀ khối dưới, không nổi lên góc cột:
-                đặt ở góc thì nó rơi đúng vào hàng nav đầu tiên và đè lên nền
-                của mục đang mở. */}
-            {/* Dưới `lg` dải mục đã nằm ở viên chọn mục trên header — hiện lại
-                ở đây là hai lối đi giống hệt nhau trong một màn hình. */}
+            {/* Dưới `lg` dải mục đã nằm ở viên chọn mục trên header — hiện lại ở đây là hai lối
+                đi giống hệt nhau trong một màn hình. Nút thu gọn nằm ở hàng tiêu đề đầu cột. */}
             {navTripId && (
               <div className="hidden lg:block">
+                <div className="mb-1.5 flex h-6 items-center justify-between pl-2.5">
+                  <span className={cn(MICRO, "text-foreground/60")}>Chuyến đi</span>
+                  <CollapseButton onClick={() => setAsideOpen(false)} />
+                </div>
                 <TripSideNav tripId={navTripId} />
               </div>
             )}
 
             {(hasAside || !navTripId) && (
-              <div className={navTripId ? "lg:mt-8" : undefined}>
-                <div className="flex items-center gap-1">
-                  <h2 className={cn(MICRO, "min-w-0 flex-1 truncate text-muted-foreground")}>
-                    {asideTitle}
-                    {asideCount != null && (
-                      <span className="ml-1.5 tabular-nums text-muted-foreground/60">
-                        {asideCount}
-                      </span>
-                    )}
-                  </h2>
-                  <CollapseButton onClick={() => setAsideOpen(false)} />
+              <section className={navTripId ? "lg:mt-7 lg:border-t lg:border-border/60 lg:pt-5" : undefined}>
+                <div className="flex h-6 items-center gap-2 lg:pl-2.5">
+                  <h2 className={cn(MICRO, "min-w-0 truncate text-foreground/60")}>{asideTitle}</h2>
+                  {asideCount != null && asideCount > 0 && (
+                    <span className="rounded-[3px] bg-muted px-1.5 text-[0.6875rem] font-semibold leading-5 tabular-nums text-muted-foreground">
+                      {asideCount}
+                    </span>
+                  )}
+                  {!navTripId && (
+                    <span className="ml-auto">
+                      <CollapseButton onClick={() => setAsideOpen(false)} />
+                    </span>
+                  )}
                 </div>
-                {hasAside && <div className="mt-3">{aside}</div>}
-              </div>
-            )}
-
-            {navTripId && !hasAside && (
-              <div className="mt-6 hidden justify-start lg:flex">
-                <CollapseButton onClick={() => setAsideOpen(false)} />
-              </div>
+                {/* Khay "chưa xếp" là chỗ KÉO ĐI — đặt trong một tấm trắng để nó có trọng lượng của một
+                    vùng làm việc, không lẫn vào nền `band` như chữ chú thích. */}
+                {hasAside && (
+                  <div
+                    className={cn(
+                      "mt-2.5",
+                      banner &&
+                        "rounded-[6px] bg-background p-2 shadow-[0_1px_2px_rgb(0_0_0/0.04),0_4px_16px_-4px_rgb(0_0_0/0.06)]",
+                    )}
+                  >
+                    {aside}
+                  </div>
+                )}
+              </section>
             )}
           </div>
         </aside>
@@ -259,8 +268,10 @@ export function TripShell({
           className={cn(
             "min-w-0",
             pane !== "days" && "hidden lg:block",
-            // Đường mảnh ngăn cột trái — cột giữa kéo hết chiều cao lưới nên vạch chạy suốt.
-            banner && "lg:border-l lg:border-border/60 lg:pl-8",
+            // Tờ trắng: dưới lg tràn hết bề ngang (lề âm = lề khung), từ lg là tấm bo góc + bóng mềm.
+            // Chỉ BÓNG, không viền — mỗi khối khai độ nổi một lần.
+            banner &&
+              "-mx-4 bg-background px-4 pb-10 sm:-mx-6 sm:px-6 lg:mx-0 lg:rounded-[6px] lg:px-8 lg:pt-2 lg:shadow-[0_1px_2px_rgb(0_0_0/0.04),0_4px_16px_-4px_rgb(0_0_0/0.06)]",
           )}
         >
           {main}
@@ -284,31 +295,32 @@ export function TripShell({
                   "hidden h-full w-full flex-col items-center gap-3 bg-muted/50 py-4 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:flex",
                 )}
               >
-                <Glyph name="back" className="size-4 shrink-0" />
+                <Glyph name="panel-right" className="size-4 shrink-0" />
                 <Glyph name={rightGlyph} className="size-4 shrink-0" />
                 <span className="text-xs [writing-mode:vertical-rl]">{rightTitle}</span>
               </button>
             )}
 
-            {/* Bảng công cụ là TIN PHỤ ⇒ khai bằng NỀN, không khai bằng viền. */}
+            {/* Bảng công cụ là TIN PHỤ ⇒ khai bằng NỀN, không khai bằng viền. Trang soạn (nền `band`):
+                tờ trắng + bóng mềm như cột lịch — nền xám mờ trên nền `band` đọc ra nhạt nhoà. */}
             <div
               className={cn(
                 "flex min-h-0 flex-auto flex-col rounded-[6px]",
-                "bg-muted/40",
+                banner
+                  ? "bg-background lg:shadow-[0_1px_2px_rgb(0_0_0/0.04),0_4px_16px_-4px_rgb(0_0_0/0.06)]"
+                  : "bg-muted/40",
                 !rightOpen && "lg:hidden",
               )}
             >
-              <div className="hidden shrink-0 items-center justify-between gap-2 px-3 pb-1 pt-2 lg:flex">
-                <h2 className={cn(MICRO, "min-w-0 truncate text-muted-foreground")}>
-                  {rightTitle}
-                </h2>
+              <div className="hidden shrink-0 items-center justify-between gap-2 px-4 pb-1 pt-3 lg:flex">
+                <h2 className="min-w-0 truncate text-sm font-semibold">{rightTitle}</h2>
                 <button
                   type="button"
                   onClick={() => setRightOpen(false)}
                   aria-label="Thu gọn"
                   className={cn(ICON_BTN, "size-6")}
                 >
-                  <Glyph name="forward" className="size-4" />
+                  <Glyph name="panel-right" className="size-4" />
                 </button>
               </div>
               <div className="min-h-0 flex-auto">{right}</div>

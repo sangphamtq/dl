@@ -330,6 +330,15 @@ export function TripEditor({
             asideCount: backlog.length,
             aside: (
           <>
+            {/* Ô tìm ĐẦU khay — nền xám trong tấm trắng của khay. */}
+            <button
+              type="button"
+              onClick={() => setAddTarget({ dayId: null, label: "danh sách chưa xếp" })}
+              className="mb-1.5 flex h-9 w-full items-center gap-2.5 rounded-[4px] bg-muted/70 px-2.5 text-sm text-foreground/60 transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <Glyph name="search" className="size-4 shrink-0" />
+              Tìm hoặc tự thêm mục…
+            </button>
             {backlog.length === 0 ? (
               <div className="rounded-[6px] border border-dashed px-3 py-6 text-center">
                 <p className="text-sm leading-relaxed text-muted-foreground">
@@ -363,23 +372,15 @@ export function TripEditor({
               />
             )}
 
-            <button
-              type="button"
-              onClick={() => setAddTarget({ dayId: null, label: "danh sách chưa xếp" })}
-              className="mt-3 flex h-9 w-full items-center gap-2 rounded-[4px] border border-border bg-background px-3 text-sm text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
-            >
-              <Glyph name="search" className="size-4 shrink-0" />
-              Tìm hoặc tự thêm mục…
-            </button>
+            {backlog.length > 0 && (
+              <p className="mt-1.5 px-1.5 pb-0.5 text-xs text-muted-foreground">Kéo vào một ngày để xếp lịch.</p>
+            )}
           </>
             ),
           })}
         main={
           <>
-          {/* Dòng thời gian là CỘT ĐỌC, không phải bảng: bỏ cột bản đồ ra rồi
-              mà để tự do thì tên mục nằm mép trái còn giờ kết thúc ngày văng
-              sang mép phải cách đó cả 700px. */}
-          <div className={cn("lg:max-w-3xl", tab === null ? undefined : "hidden")}>
+          <div className={cn(tab === null ? undefined : "hidden")}>
             <div className="sticky top-0 z-20 flex items-center gap-3 border-b border-border/60 bg-background pb-1 pt-1">
               <div className="min-w-0 flex-1">
                 <TripDayStrip days={days} activeId={activeDay?.id ?? null} onPick={pickDay} />
@@ -478,15 +479,13 @@ export function TripEditor({
             </div>
           )}
 
-          {/* Mục chỉ có CHỮ: bó bề ngang cho dễ đọc — không có cột phải nào
-              chặn nên để tự do là dòng dài cả nghìn pixel. */}
-          <div className={cn("lg:max-w-3xl", tab === "ghi-chu" ? undefined : "hidden")}>
+          <div className={cn(tab === "ghi-chu" ? undefined : "hidden")}>
             <TripNotes tripId={trip.id} notes={notes} />
           </div>
           <div className={tab === "do-mang-theo" ? undefined : "hidden"}>
             <TripPacking tripId={trip.id} items={packing} people={trip.people} />
           </div>
-          <div className={cn("lg:max-w-3xl", tab === "chi-phi" ? undefined : "hidden")}>
+          <div className={cn(tab === "chi-phi" ? undefined : "hidden")}>
             <TripMoney
               tripId={trip.id}
               expenses={expenses}
@@ -537,8 +536,8 @@ function BacklogList({
       <ul
         ref={setNodeRef}
         className={cn(
-          "-mx-1.5 min-h-[3rem] divide-y divide-border/50 rounded-[4px] px-1.5 transition-colors",
-          isOver && "bg-primary/10",
+          "grid min-h-[3rem] gap-0.5 rounded-[4px] transition-colors",
+          isOver && "bg-primary/5 ring-1 ring-primary/20",
         )}
       >
         {ids.map((id) => {
@@ -569,7 +568,7 @@ function BacklogRow({
       ref={setNodeRef}
       style={{ transform: CSS.Translate.toString(transform), transition }}
       className={cn(
-        "group flex min-w-0 items-center gap-2.5 py-2",
+        "group relative flex min-w-0 items-center gap-2.5 rounded-[4px] px-1.5 py-1.5 transition-colors focus-within:bg-muted hover:bg-muted",
         isDragging && "opacity-40",
       )}
     >
@@ -581,11 +580,13 @@ function BacklogRow({
       </span>
 
       <div className="min-w-0 flex-1">
-        <p className="line-clamp-2 text-[0.8125rem] font-medium leading-snug">
-          {item.name}
-        </p>
+        <p className="truncate text-[0.8125rem] font-medium leading-snug">{item.name}</p>
+        <p className="mt-0.5 truncate text-xs text-muted-foreground">{item.typeLabel}</p>
       </div>
 
+      {/* Tay kéo & nút xếp NỔI ĐÈ mép phải khi rê vào — ẩn bằng opacity mà vẫn chiếm chỗ thì tên bị
+          cắt cụt cả lúc không rê. Màn cảm ứng không rê được ⇒ để trong dòng, luôn hiện. */}
+      <div className="absolute inset-y-0 right-1 flex items-center bg-muted pl-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100 [@media(pointer:coarse)]:static [@media(pointer:coarse)]:bg-transparent [@media(pointer:coarse)]:opacity-100">
       <DragGrip
         label={`Kéo ${item.name} vào một ngày`}
         attributes={attributes}
@@ -630,6 +631,7 @@ function BacklogRow({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      </div>
     </li>
   );
 }
@@ -819,6 +821,15 @@ function DayBlock({
                   stale,
                   fields,
                   stay: <StayPicker item={item} run={run} />,
+                  name:
+                    item.kind === "custom" ? (
+                      <NameEdit
+                        key={item.name}
+                        itemId={item.id}
+                        value={item.name}
+                        onSave={(customTitle) => run(() => updateItem(item.id, { customTitle }))}
+                      />
+                    ) : undefined,
                   // Mục chưa có ghi chú KHÔNG giữ sẵn một dòng ẩn (bản cũ: ~22px trắng dưới MỌI mục);
                   // mở từ menu "Thêm ghi chú" thì ô gõ hiện ngay tại chỗ.
                   note:
@@ -1165,6 +1176,7 @@ function SortableDoing({
   actions,
   note,
   stay,
+  name,
   fields,
 }: {
   item: ItemView;
@@ -1172,6 +1184,7 @@ function SortableDoing({
   actions: ReactNode;
   note: ReactNode;
   stay: ReactNode;
+  name?: ReactNode;
   fields: TripFields;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
@@ -1183,6 +1196,7 @@ function SortableDoing({
       actions={actions}
       note={note}
       stay={stay}
+      name={name}
       stale={stale}
       dragging={isDragging}
       innerRef={setNodeRef}
@@ -1216,7 +1230,8 @@ function ItemActions({
   /** Chỉ khi mục CHƯA có ghi chú (có rồi thì bấm thẳng vào chữ để sửa). */
   onAddNote?: () => void;
 }) {
-  const noteAfterClose = useRef(false);
+  // Việc cần làm SAU KHI menu đóng hẳn (xem chú thích ở `onCloseAutoFocus`).
+  const afterClose = useRef<"note" | "rename" | null>(null);
   return (
     <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 [@media(pointer:coarse)]:opacity-100">
       <DropdownMenu>
@@ -1235,10 +1250,15 @@ function ItemActions({
           align="end"
           className="w-48"
           onCloseAutoFocus={(e) => {
-            if (!noteAfterClose.current) return;
-            noteAfterClose.current = false;
+            const next = afterClose.current;
+            if (!next) return;
+            afterClose.current = null;
             e.preventDefault();
-            onAddNote?.();
+            if (next === "note") onAddNote?.();
+            else
+              document
+                .querySelector<HTMLInputElement>(`[data-rename="${item.id}"]`)
+                ?.select();
           }}
         >
           <DropdownMenuItem onSelect={onInsertBefore}>
@@ -1249,8 +1269,14 @@ function ItemActions({
             <Glyph name="plus" className="size-4" />
             Thêm phía sau
           </DropdownMenuItem>
+          {item.kind === "custom" && (
+            <DropdownMenuItem onSelect={() => (afterClose.current = "rename")}>
+              <Glyph name="pencil" className="size-4" />
+              Đổi tên
+            </DropdownMenuItem>
+          )}
           {onAddNote && (
-            <DropdownMenuItem onSelect={() => (noteAfterClose.current = true)}>
+            <DropdownMenuItem onSelect={() => (afterClose.current = "note")}>
               <Glyph name="note" className="size-4" />
               Thêm ghi chú
             </DropdownMenuItem>
@@ -1469,6 +1495,66 @@ function StayPicker({
         )}
       </PopoverContent>
     </Popover>
+  );
+}
+
+/**
+ * Tên mục TỰ THÊM, sửa tại chỗ: trông như chữ thường, rê vào có nền, bấm là gõ (cùng kiểu ô tên
+ * chuyến ở `TripTopbar`). Ô CO THEO CHỮ để nền ôm sát tên; `size={1}` vì `<input>` mặc định rộng
+ * ~20 ký tự. Tên dài thì xuống dòng không được — ô cuộn ngang khi đang gõ, lúc thường vẫn cắt gọn.
+ */
+function NameEdit({
+  itemId,
+  value,
+  onSave,
+}: {
+  itemId: string;
+  value: string;
+  onSave: (next: string) => void;
+}) {
+  const [draft, setDraft] = useState(value);
+  // Esc rồi blur() chạy NGAY trong cùng lượt: onBlur vẫn thấy `draft` cũ ⇒ sẽ lưu nhầm.
+  const cancelled = useRef(false);
+  return (
+    <span className="-mx-1.5 inline-grid min-w-0 max-w-[calc(100%+0.75rem)] align-top">
+      <span aria-hidden className="invisible col-start-1 row-start-1 truncate whitespace-pre px-1.5">
+        {draft || " "}
+      </span>
+      <input
+        data-rename={itemId}
+        value={draft}
+        size={1}
+        spellCheck={false}
+        draggable={false}
+        aria-label={`Tên mục: ${value}`}
+        title="Bấm để đổi tên"
+        onChange={(e) => setDraft(e.target.value)}
+        // Trong hàng kéo–thả: đừng để cú nhấn vào ô gõ bắt đầu một lượt kéo.
+        onPointerDown={(e) => e.stopPropagation()}
+        onBlur={() => {
+          if (cancelled.current) {
+            cancelled.current = false;
+            setDraft(value);
+            return;
+          }
+          const next = draft.trim();
+          if (next && next !== value) onSave(next);
+          else setDraft(value);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") e.currentTarget.blur();
+          if (e.key === "Escape") {
+            cancelled.current = true;
+            e.currentTarget.blur();
+          }
+        }}
+        className={cn(
+          "col-start-1 row-start-1 w-full min-w-0 cursor-text truncate rounded-[4px] bg-transparent px-1.5 caret-primary outline-none transition-[background-color,box-shadow] duration-150",
+          "selection:bg-primary/20 hover:bg-muted/70",
+          "focus:bg-background focus:shadow-[0_0_0_1.5px_color-mix(in_oklab,var(--color-primary)_70%,transparent),0_0_0_4px_color-mix(in_oklab,var(--color-primary)_16%,transparent)] focus:hover:bg-background",
+        )}
+      />
+    </span>
   );
 }
 

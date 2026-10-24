@@ -95,3 +95,10 @@ export const groupOfItem = (name: string): string | null =>
 export const OTHER_GROUP = "Khác";
 
 export const GROUP_ORDER = [...PACK_SUGGESTIONS.map((g) => g.label), OTHER_GROUP];
+
+/** Nhóm hiển thị của một món đồ riêng: nhóm người dùng đặt, rồi mới tới danh mục gợi ý, cuối cùng "Khác". */
+export const packGroupOf = (item: { name: string; groupName: string | null }): string =>
+  item.groupName?.trim() || groupOfItem(item.name) || OTHER_GROUP;
+
+/** Nhóm có trong danh mục gợi ý — tên của nó cố định, không đổi được. */
+export const isCatalogGroup = (label: string) => PACK_SUGGESTIONS.some((g) => g.label === label);

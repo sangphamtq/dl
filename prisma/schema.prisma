@@ -1367,6 +1367,10 @@ model TripPackItem {
   name  String
   scope TripPackScope @default(group)
 
+  // Nhóm của món ĐỒ RIÊNG do người dùng chọn: thêm từ ô của một nhóm, hoặc đổi tên nhóm "Khác".
+  // null ⇒ suy từ danh mục gợi ý theo tên (`groupOfItem`), không khớp thì vào "Khác".
+  groupName String?
+
   // Ai mang — CHỈ có nghĩa với `group`. SetNull: gỡ một người khỏi chuyến thì
   // món đồ quay về "chưa ai nhận" chứ không biến mất.
   assigneeId String?

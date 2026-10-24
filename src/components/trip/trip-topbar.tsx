@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Glyph } from "@/components/site/glyphs";
 import { cn } from "@/lib/utils";
@@ -405,6 +405,8 @@ function TitleField({
   onSave: (title: string) => void;
 }) {
   const [draft, setDraft] = useState(value);
+  // Esc rồi blur() chạy NGAY trong cùng lượt: onBlur vẫn thấy `draft` cũ ⇒ sẽ lưu nhầm.
+  const cancelled = useRef(false);
   const text = cn(
     "font-[family-name:var(--font-display)] text-[clamp(1.75rem,4vw,2.75rem)] font-semibold leading-[1.1] tracking-tight",
   );
@@ -419,6 +421,11 @@ function TitleField({
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={() => {
+          if (cancelled.current) {
+            cancelled.current = false;
+            setDraft(value);
+            return;
+          }
           const next = draft.trim();
           if (next && next !== value) onSave(next);
           else setDraft(value);
@@ -426,7 +433,7 @@ function TitleField({
         onKeyDown={(e) => {
           if (e.key === "Enter") e.currentTarget.blur();
           if (e.key === "Escape") {
-            setDraft(value);
+            cancelled.current = true;
             e.currentTarget.blur();
           }
         }}
@@ -439,7 +446,7 @@ function TitleField({
           text,
           "col-start-1 row-start-1 w-full min-w-0 cursor-text bg-transparent px-2 py-1 caret-primary outline-none transition-[background-color,box-shadow] duration-150",
           "selection:bg-primary/20 hover:bg-muted/70",
-          "focus:bg-background focus:shadow-[0_0_0_1px_var(--color-border),0_0_0_4px_color-mix(in_oklab,var(--color-primary)_14%,transparent),0_1px_2px_rgb(0_0_0/0.06)] focus:hover:bg-background",
+          "focus:bg-background focus:shadow-[0_0_0_1.5px_color-mix(in_oklab,var(--color-primary)_70%,transparent),0_0_0_5px_color-mix(in_oklab,var(--color-primary)_16%,transparent),0_1px_2px_rgb(0_0_0/0.06)] focus:hover:bg-background",
         )}
       />
     </span>

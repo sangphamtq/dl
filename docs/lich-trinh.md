@@ -1218,8 +1218,27 @@ giãn chữ lẫn vào hàng ô nhập).
   cùng ô lưới; ⚠️ phải giữ `size={1}` — `<input>` mặc định rộng ~20 ký tự nên nền thừa ra bên phải.
 - **Đầu trang = TỐI GIẢN KIỂU NOTION, KHÔNG ẢNH** (biên tập chọn): nền trắng, tên chuyến chữ to,
   dưới là hàng **thuộc tính** (ngày · số người · tự tính đường đi) — nút **không viền**, rê vào / đang mở
-  mới có nền (`PROP` trong `trip-topbar.tsx`), hàng lùi `-ml-2` để chữ dóng mép tên. Một hairline
-  `border-b` ngăn với phần lịch. Header `underlay` ở tông sáng, không nền, không vạch ⇒ chìm vào nền trắng.
+  mới có nền (`PROP` trong `trip-topbar.tsx`), hàng lùi `-ml-2` để chữ dóng mép tên. Header `underlay`
+  ở tông sáng, không nền, không vạch ⇒ chìm vào nền trang.
+- **Nền: cả trang `bg-band`, riêng cột lịch là TỜ TRẮNG** (biên tập yêu cầu): từ `lg` là tấm bo `R_CARD` +
+  bóng mềm (chỉ bóng, không viền); dưới `lg` tờ trắng tràn hết bề ngang. Không còn vạch ngăn đầu trang /
+  cột trái — đổi nền đã đủ tách. Nội dung các tab (lịch · ghi chú · chi phí) **trải hết tờ trắng** — đã bỏ
+  `lg:max-w-3xl` (bản cũ chừa ~180px trắng trống bên phải tờ). Ô tìm ở cột trái là ô TRẮNG có viền (bấm được) trên nền `band`.
   · Đã thử và BỎ (biên tập), **đừng dựng lại**: nền `band` xám · nền "canvas" · ảnh điểm đến trải hết bề
     ngang (ảnh chỉ ~800px ⇒ nhoè, phủ đen ~78% ⇒ tối) · ảnh nửa phải trên nền tối · nền xanh rừng + đường
     đồng mức · khảm ảnh các điểm dừng bên phải tên.
+- **Mục TỰ THÊM đổi tên được tại chỗ** (`NameEdit` trong `trip-editor.tsx`, slot `name` của `ItemBody`):
+  bấm vào tên là gõ, cùng kiểu ô tên chuyến; menu ⋯ có thêm "Đổi tên". Mục của site KHÔNG đổi tên được —
+  tên đó là tên của địa điểm (`updateItem` từ chối nếu `customTitle` null).
+  · ⚠️ **Esc phải đi qua cờ `cancelled`** (cả `NameEdit` lẫn `TitleField`): Esc gọi `blur()` ngay trong cùng
+    lượt nên `onBlur` vẫn thấy `draft` cũ — đặt lại `draft` rồi blur là LƯU NHẦM thứ vừa định huỷ.
+- **Cột trái (2026-10-25, biên tập yêu cầu "hiện đại hơn")**: nhãn nhỏ "Chuyến đi" + nút thu gọn ở CÙNG hàng
+  đầu cột; mục nav cao 36px, icon 18px. **Mục đang mở = viên TRẮNG + bóng mảnh** + chữ đậm + icon `warm`
+  (nền `muted` trên nền `band` gần như không thấy — biên tập chê "nhạt"); mục khác chữ `foreground/75`, icon
+  `foreground/55`. Khay "Chưa xếp ngày" nằm trong **tấm trắng** riêng (vùng kéo đi), ô tìm nền xám trong khay. Khối "Chưa xếp ngày" ngăn bằng
+  hairline, số đếm là huy hiệu nền xám; ô tìm nằm ĐẦU danh sách (nền xám, không viền); mỗi mục: ảnh · tên ·
+  loại, không vạch ngăn, rê vào có nền.
+  · Nút thu gọn / mở rộng hai cột bên dùng glyph **`panel-left` / `panel-right`** (khung + vạch ngăn phía cột
+    đó, như VS Code / Notion), cùng MỘT icon cho cả hai chiều. Đã bỏ mũi tên ←/→: nó đọc ra "quay lại / đi tới".
+  · ⚠️ Tay kéo + nút "+" **nổi đè mép phải** khi rê (`absolute` + `bg-muted`), KHÔNG ẩn bằng `opacity` tại
+    chỗ — ẩn mà vẫn chiếm chỗ thì tên bị cắt cụt cả lúc không rê. Màn cảm ứng: để trong dòng, luôn hiện.

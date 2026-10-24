@@ -10,6 +10,7 @@ import type { TripPackScope } from "@/generated/prisma/enums";
 import { Prisma } from "@/generated/prisma/client";
 import type { ActionResult } from "@/app/(site)/blog/actions";
 import { placeAt, type DropAt } from "@/lib/trip-drop";
+import { isCatalogGroup, packGroupOf } from "@/lib/packing-suggestions";
 
 /**
  * Như `ActionResult` nhưng có thêm `stale`: thao tác bị từ chối vì lịch trình đã
@@ -748,11 +749,11 @@ export async function removeItem(itemId: string): Promise<ActionResult> {
 
 export async function updateItem(
   itemId: string,
-  patch: { stayMin?: number | null; note?: string | null },
+  patch: { stayMin?: number | null; note?: string | null; customTitle?: string },
 ): Promise<ActionResult> {
   const item = await prisma.tripItem.findUnique({
     where: { id: itemId },
-    select: { tripId: true },
+    select: { tripId: true, customTitle: true },
   });
   if (!item) return { ok: false, error: "Không tìm thấy mục." };
   try {
@@ -766,6 +767,13 @@ export async function updateItem(
     data.stayMin =
       patch.stayMin == null ? null : Math.min(24 * 60, Math.max(0, Math.round(patch.stayMin)));
   if (patch.note !== undefined) data.note = patch.note ? clip(patch.note, MAX_NOTE) : null;
+  if (patch.customTitle !== undefined) {
+    // Chỉ mục TỰ NHẬP mới đổi tên được — tên của mục site là tên của địa điểm đó.
+    if (item.customTitle == null) return { ok: false, error: "Chỉ đổi tên được mục tự thêm." };
+    const title = clip(patch.customTitle, MAX_TITLE);
+    if (!title) return { ok: false, error: "Tên không được để trống." };
+    data.customTitle = title;
+  }
 
   await prisma.tripItem.update({ where: { id: itemId }, data });
   await bump(item.tripId);
@@ -950,7 +958,7 @@ export async function cloneTrip(
       members: { where: { userId }, select: { id: true } },
       days: { orderBy: { index: "asc" }, select: { id: true, index: true, startMin: true, title: true, note: true } },
       notes: { orderBy: { createdAt: "asc" }, select: { body: true, isPinned: true } },
-      packing: { orderBy: { createdAt: "asc" }, select: { name: true } },
+      packing: { orderBy: { createdAt: "asc" }, select: { name: true, scope: true, groupName: true } },
       items: {
         orderBy: { order: "asc" },
         select: {
@@ -1028,7 +1036,9 @@ export async function cloneTrip(
     // địa, đúng thứ đáng thừa kế. Nhưng KHÔNG chép `assigneeId` (người trong
     // chuyến mới khác hẳn) và KHÔNG chép `isDone` (chuyến mới thì chưa xếp gì).
     for (const it of source.packing) {
-      await tx.tripPackItem.create({ data: { tripId: trip.id, name: it.name } });
+      await tx.tripPackItem.create({
+        data: { tripId: trip.id, name: it.name, scope: it.scope, groupName: it.groupName },
+      });
     }
     return trip.id;
   });
@@ -1128,17 +1138,48 @@ export async function addPackItem(
   tripId: string,
   rawName: string,
   scope: TripPackScope = "group",
+  /** Thêm từ ô của một nhóm đồ riêng. null/bỏ trống ⇒ suy theo tên (không khớp thì vào "Khác"). */
+  rawGroup: string | null = null,
 ): Promise<ActionResult<{ id: string }>> {
   const name = clip(rawName.trim(), MAX_TITLE);
   if (!name) return { ok: false, error: "Chưa nhập tên món đồ." };
+  const groupName = scope === "personal" && rawGroup ? clip(rawGroup, MAX_TITLE) || null : null;
   try {
     await editableTrip(tripId);
     const item = await prisma.tripPackItem.create({
-      data: { tripId, name, scope },
+      data: { tripId, name, scope, groupName },
       select: { id: true },
     });
     await refreshPacking(tripId);
     return { ok: true, data: { id: item.id } };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+/**
+ * Đổi tên một nhóm ĐỒ RIÊNG: mọi món đang hiện trong nhóm `from` mang tên mới. Nhóm "Khác" là nơi
+ * rơi của món không khớp danh mục — đổi tên xong thì nó trống, món tự gõ sau đó lại tạo "Khác" mới.
+ */
+export async function renamePackGroup(
+  tripId: string,
+  from: string,
+  rawTo: string,
+): Promise<ActionResult> {
+  const to = clip(rawTo, MAX_TITLE);
+  if (!to) return { ok: false, error: "Tên nhóm không được để trống." };
+  if (isCatalogGroup(from)) return { ok: false, error: "Nhóm có sẵn không đổi tên được." };
+  try {
+    await editableTrip(tripId);
+    const rows = await prisma.tripPackItem.findMany({
+      where: { tripId, scope: "personal" },
+      select: { id: true, name: true, groupName: true },
+    });
+    const ids = rows.filter((r) => packGroupOf(r) === from).map((r) => r.id);
+    if (ids.length === 0) return { ok: false, error: "Nhóm này vừa trống — có người đã sửa trước." };
+    await prisma.tripPackItem.updateMany({ where: { id: { in: ids } }, data: { groupName: to } });
+    await refreshPacking(tripId);
+    return { ok: true };
   } catch (e) {
     return fail(e);
   }

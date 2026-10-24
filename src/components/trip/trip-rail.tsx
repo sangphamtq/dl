@@ -48,6 +48,7 @@ function ItemBody({
   actions,
   note,
   stay,
+  name,
   compact,
 }: {
   item: ItemView;
@@ -56,6 +57,8 @@ function ItemBody({
   actions?: ReactNode;
   note?: ReactNode;
   stay?: ReactNode;
+  /** Thay chỗ tên (trang soạn: ô sửa tên cho mục tự thêm). */
+  name?: ReactNode;
   /** Ô "Làm gì": ảnh nhỏ, chữ nhỏ. */
   compact?: boolean;
 }) {
@@ -83,7 +86,7 @@ function ItemBody({
             <span className="min-w-0">
               {/* Mục của site có trang ⇒ tên là liên kết, gạch chân chấm để thấy ngay đó là một ĐỐI
                   TƯỢNG của dự án chứ không phải chữ tự gõ (mục tự gõ không bao giờ có href). */}
-              {item.href ? (
+              {name ?? (item.href ? (
                 <Link
                   href={item.href}
                   draggable={false}
@@ -93,7 +96,7 @@ function ItemBody({
                 </Link>
               ) : (
                 item.name
-              )}
+              ))}
             </span>
           </p>
           <div className="flex shrink-0 items-center gap-0.5">
@@ -180,6 +183,7 @@ export function RailItem({
   grip,
   note,
   stay,
+  name,
   innerRef,
   style,
   handleProps,
@@ -197,6 +201,7 @@ export function RailItem({
   grip?: ReactNode;
   note?: ReactNode;
   stay?: ReactNode;
+  name?: ReactNode;
   innerRef?: (node: HTMLElement | null) => void;
   style?: CSSProperties;
   handleProps?: Record<string, unknown>;
@@ -227,7 +232,7 @@ export function RailItem({
 
       {/* Tắt hết dòng phụ ⇒ mục chỉ còn một dòng tên, đệm 20px là quá thưa cho một danh sách. */}
       <div className={cn("min-w-0 flex-1", isBare(item, fields) ? "pb-3" : "pb-5")}>
-        <ItemBody {...{ item, fields, grip, actions, note, stay }} />
+        <ItemBody {...{ item, fields, grip, actions, note, stay, name }} />
       </div>
     </Tag>
   );
@@ -312,6 +317,7 @@ export function DoingRow({
   actions,
   note,
   stay,
+  name,
   innerRef,
   style,
   dragging,
@@ -323,6 +329,7 @@ export function DoingRow({
   actions?: ReactNode;
   note?: ReactNode;
   stay?: ReactNode;
+  name?: ReactNode;
   innerRef?: (node: HTMLElement | null) => void;
   style?: CSSProperties;
   dragging?: boolean;
@@ -354,7 +361,7 @@ export function DoingRow({
         {item.arriveMin < 0 ? "···" : formatMinutes(item.arriveMin)}
       </span>
       <div className="min-w-0 flex-1">
-        <ItemBody {...{ item, fields, grip, actions, note, stay }} compact />
+        <ItemBody {...{ item, fields, grip, actions, note, stay, name }} compact />
       </div>
     </li>
   );

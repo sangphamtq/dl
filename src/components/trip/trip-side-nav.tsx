@@ -29,7 +29,7 @@ function navClick(e: React.MouseEvent<HTMLAnchorElement>, href: string) {
 }
 
 const rowBase =
-  "flex items-center gap-2.5 rounded-[4px] px-2.5 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+  "flex h-9 items-center gap-3 rounded-[4px] px-2.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 function Row({
   section,
@@ -54,14 +54,16 @@ function Row({
       aria-current={active ? "page" : undefined}
       className={cn(
         rowBase,
+        // Mục đang mở: viên TRẮNG nổi trên nền `band` của cột trái — một mảng xám đậm hơn nền
+        // một chút thì gần như không thấy.
         active
-          ? "bg-muted font-semibold text-foreground"
-          : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+          ? "bg-background font-semibold text-foreground shadow-[0_1px_2px_rgb(0_0_0/0.06),0_0_0_1px_rgb(0_0_0/0.03)]"
+          : "font-medium text-foreground/75 hover:bg-foreground/[0.05] hover:text-foreground",
       )}
     >
       <Glyph
         name={section.glyph}
-        className={cn("size-4 shrink-0", active && "text-warm")}
+        className={cn("size-[1.125rem] shrink-0", active ? "text-warm" : "text-foreground/55")}
       />
       <span className="truncate">{section.label}</span>
     </Link>
@@ -86,13 +88,13 @@ export function TripSideNav({ tripId, collapsed }: { tripId: string; collapsed?:
               aria-current={active ? "page" : undefined}
               className={cn(
                 R_CTRL,
-                "relative grid size-8 place-items-center justify-self-center transition-colors",
+                "relative grid size-9 place-items-center justify-self-center transition-colors",
                 active
-                  ? "bg-muted text-warm"
-                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                  ? "bg-background text-warm shadow-[0_1px_2px_rgb(0_0_0/0.06),0_0_0_1px_rgb(0_0_0/0.03)]"
+                  : "text-foreground/55 hover:bg-foreground/[0.05] hover:text-foreground",
               )}
             >
-              <Glyph name={s.glyph} className="size-4" />
+              <Glyph name={s.glyph} className="size-[1.125rem]" />
               <span className="sr-only">{s.label}</span>
             </Link>
           );

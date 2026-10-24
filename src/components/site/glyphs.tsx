@@ -15,6 +15,9 @@ export type GlyphName =
   | "clock"
   | "refresh"
   | "pencil"
+  | "pushpin"
+  | "panel-left"
+  | "panel-right"
   | "calendar"
   | "eye"
   | "bowl"
@@ -45,6 +48,7 @@ export type GlyphName =
   | "note"
   | "bag"
   | "people"
+  | "person"
   | "mountain"
   | "compass"
   | "more"
@@ -129,6 +133,14 @@ const SHAPES: Record<GlyphName, React.ReactNode> = {
     <>
       <path d="M5 19l.9-3.8 9.6-9.6a1.9 1.9 0 0 1 2.7 0l.2.2a1.9 1.9 0 0 1 0 2.7l-9.6 9.6L5 19Z" />
       <path d="M13.8 7.3l2.9 2.9" />
+    </>
+  ),
+  // Ghim (đinh ghim), KHÁC `pin` — `pin` là chấm bản đồ, nghĩa là một NƠI.
+  pushpin: (
+    <>
+      <path d="M9 4h6" />
+      <path d="M10 4v5.5L7 13h10l-3-3.5V4" />
+      <path d="M12 13v7" />
     </>
   ),
   refresh: (
@@ -303,6 +315,20 @@ const SHAPES: Record<GlyphName, React.ReactNode> = {
       <path d="m12.2 9.6 3.4 1.9" />
     </>
   ),
+  // Thu gọn / mở rộng một CỘT: khung + vạch ngăn ở phía cột đó (cùng quy ước VS Code, Notion, macOS).
+  // Mũi tên trần đọc ra "đi tới / quay lại", không phải "ẩn / hiện cột".
+  "panel-left": (
+    <>
+      <rect x="3.6" y="4.6" width="16.8" height="14.8" rx="2.2" />
+      <path d="M9.4 4.6v14.8" />
+    </>
+  ),
+  "panel-right": (
+    <>
+      <rect x="3.6" y="4.6" width="16.8" height="14.8" rx="2.2" />
+      <path d="M14.6 4.6v14.8" />
+    </>
+  ),
   rows: (
     <>
       <rect x="3.4" y="4.6" width="5" height="5" rx="1.4" />
@@ -326,6 +352,12 @@ const SHAPES: Record<GlyphName, React.ReactNode> = {
       <path d="M7.4 8.2h9.2a2.6 2.6 0 0 1 2.6 2.6v6.6a2.6 2.6 0 0 1-2.6 2.6H7.4a2.6 2.6 0 0 1-2.6-2.6v-6.6a2.6 2.6 0 0 1 2.6-2.6Z" />
       <path d="M9.2 8.2V6.6a2.8 2.8 0 0 1 5.6 0v1.6" />
       <path d="M9.4 13.4h5.2" />
+    </>
+  ),
+  person: (
+    <>
+      <circle cx="12" cy="8.2" r="3.3" />
+      <path d="M5.8 19.6a6.2 6.2 0 0 1 12.4 0" />
     </>
   ),
   people: (
