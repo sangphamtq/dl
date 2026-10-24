@@ -49,7 +49,7 @@ const SAFE_RULES: string[] = [
   "Ưu tiên chỗ ở có huy hiệu “Đã xác minh chính chủ”.",
   "Chuyển khoản đúng tên chủ đã xác minh; nghi ngờ thì gọi video trước.",
   "Đặt cọc ít nhất có thể; giữ lại toàn bộ tin nhắn và biên lai.",
-  "Gặp dấu hiệu lừa đảo → báo cáo để cảnh báo người đi sau.",
+  "Gặp dấu hiệu lừa đảo? Báo cáo để cảnh báo người đi sau.",
 ];
 
 const dateFmt = new Intl.DateTimeFormat("vi-VN", {

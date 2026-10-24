@@ -158,7 +158,7 @@ export function TransportForm({
               onChange={(e) => set("name", e.target.value)}
               placeholder={
                 isGetTo
-                  ? "vd: Xe khách TP.HCM → Phan Thiết"
+                  ? "vd: Xe khách TP.HCM – Phan Thiết"
                   : "vd: Thuê xe máy tại Mũi Né"
               }
               required
@@ -293,7 +293,7 @@ export function TransportForm({
                 type="number"
                 value={values.order}
                 onChange={(e) => set("order", e.target.value)}
-                placeholder="nhỏ → đứng trước"
+                placeholder="số nhỏ đứng trước"
               />
             </div>
           </div>

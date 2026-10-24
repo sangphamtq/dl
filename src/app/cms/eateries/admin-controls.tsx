@@ -78,7 +78,7 @@ export function EateryAdminControls({
             <Label htmlFor="adm-order" className="cursor-pointer text-sm">
               Thứ tự
             </Label>
-            <p className="text-xs text-muted-foreground">Nhỏ → đứng trước.</p>
+            <p className="text-xs text-muted-foreground">Số nhỏ đứng trước.</p>
           </div>
           <Input
             id="adm-order"

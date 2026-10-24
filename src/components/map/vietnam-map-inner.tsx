@@ -102,7 +102,7 @@ function placePopupHtml(p: MapPlacePoint): string {
       </span>
     </span>
     ${factsHtml}
-    <span class="dl-pop-cta">Xem điểm đến <span aria-hidden="true">→</span></span>
+    <span class="dl-pop-cta">Xem điểm đến <svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-0.15em"><path d="M9.2 5.2 16 12l-6.8 6.8"/></svg></span>
   </a>`;
 }
 

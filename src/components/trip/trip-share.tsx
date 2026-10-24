@@ -159,11 +159,14 @@ export function TripShare({
           <button
             type="button"
             aria-label={`Chia sẻ ${title}`}
-            className="inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[4px] border border-border/60 bg-background/70 px-4 text-sm font-medium backdrop-blur-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring max-[359px]:px-2.5"
+            className={cn(
+              "inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[4px] border px-4 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 max-[359px]:px-2.5",
+              "border-border/60 bg-background/70 backdrop-blur-sm hover:bg-muted focus-visible:ring-ring",
+            )}
           >
             <Share2 className="size-4" aria-hidden />
-            {/* Dưới 360px hàng nút (mục · cập nhật · avatar · chia sẻ) không vừa — chỉ còn icon. */}
-            <span className="max-[359px]:sr-only">Chia sẻ</span>
+            {/* Dưới 400px hàng nút (mục · cập nhật · avatar · chia sẻ) không vừa — chỉ còn icon. */}
+            <span className="max-[399px]:sr-only">Chia sẻ</span>
           </button>
         </PopoverTrigger>
       </div>

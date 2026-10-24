@@ -73,15 +73,14 @@ export function TripShell({
   right,
   rightTitle,
   rightIcon,
-  canvas = false,
+  banner,
 }: {
   header: ReactNode;
   /**
-   * Trang soạn: cả khu nằm trên MỘT nền `canvas` ("bàn"), cột trái đặt thẳng trên nền, lịch trình
-   * là một TỜ trắng nổi lên. Bản trước (dải `band` sau phần đầu + khối `muted` riêng cho cột trái
-   * + cột giữa trắng) ra ba mảng màu vá víu.
+   * Trang soạn: phần đầu là DẢI ẢNH điểm đến trải hết bề ngang (chữ trắng trên lớp tối), phần
+   * dưới trắng, cột trái ngăn bằng một đường mảnh. Không có ảnh THẬT ⇒ nền trắng + đường ngăn.
    */
-  canvas?: boolean;
+  banner?: boolean;
   navTripId?: string;
   asideTitle?: string;
   asideCount?: number;
@@ -126,20 +125,22 @@ export function TripShell({
   const cols = COLS[`${asideOpen ? "open" : "shut"}-${rightKey}`];
 
   return (
-    <div className={cn("flex flex-1 flex-col", canvas && "bg-canvas")}>
-      <div className={cn(SHELL, "pt-5 sm:pt-8")}>{header}</div>
+    <div className="flex flex-1 flex-col">
+      {banner ? (
+        // lg:pt chừa 4rem cho header site nằm đè lên dải này (`underlay` ở lib/site-chrome).
+        <div className="border-b border-border/60">
+          <div className={cn(SHELL, "pb-5 pt-5 sm:pb-7 sm:pt-8 lg:pt-[5.5rem]")}>{header}</div>
+        </div>
+      ) : (
+        <div className={cn(SHELL, "pt-5 sm:pt-8")}>{header}</div>
+      )}
 
       {/* Chọn khung nhìn — chỉ dưới lg, và chỉ khi có nhiều hơn một khung.
           Đánh dấu bằng ICON TÔ CAM + chữ đậm, KHÔNG phải viên nền: cùng cách
           PlaceTabs làm, và vì đúng lý do đã ghi ở đó (viên nền biến thanh thành
           "bộ lọc app thương mại điện tử"). */}
       {panes.length > 1 && (
-        <div
-          className={cn(
-            "sticky top-0 z-30 mt-4 backdrop-blur lg:hidden",
-            canvas ? "bg-canvas/90" : "bg-background/90",
-          )}
-        >
+        <div className="sticky top-0 z-30 mt-4 bg-background/90 backdrop-blur lg:hidden">
           <div className={cn(SHELL, "flex")}>
             {panes.map(({ id, label, glyph, badge }) => {
               const on = pane === id;
@@ -182,8 +183,8 @@ export function TripShell({
           className={cn(
             "min-w-0 lg:overflow-y-auto lg:overflow-x-hidden",
             PANEL,
-            // Trên nền canvas cột trái KHÔNG có khối nền riêng — đứng thẳng trên "bàn".
-            canvas ? "bg-transparent lg:pl-0" : "bg-muted/40",
+            // Trang soạn: cột trái KHÔNG có khối nền riêng — ngăn với lịch trình bằng đường mảnh.
+            banner ? "bg-transparent lg:pl-0" : "bg-muted/40",
             asideOpen ? "p-3" : "p-1.5",
             hasAside ? pane !== "aside" && "hidden lg:block" : "hidden lg:block",
           )}
@@ -258,10 +259,8 @@ export function TripShell({
           className={cn(
             "min-w-0",
             pane !== "days" && "hidden lg:block",
-            // TỜ trắng nổi trên nền: bóng rất nhẹ, không viền (mỗi khối khai độ nổi MỘT lần).
-            // Dưới sm tờ tràn hết bề ngang — chừa lề hai bên trên màn hẹp là phí chỗ.
-            canvas &&
-              "-mx-4 bg-background px-4 py-5 shadow-[0_1px_2px_rgb(0_0_0/0.04),0_6px_24px_-12px_rgb(0_0_0/0.12)] sm:mx-0 sm:rounded-[6px] sm:px-6 sm:py-6",
+            // Đường mảnh ngăn cột trái — cột giữa kéo hết chiều cao lưới nên vạch chạy suốt.
+            banner && "lg:border-l lg:border-border/60 lg:pl-8",
           )}
         >
           {main}
@@ -295,9 +294,7 @@ export function TripShell({
             <div
               className={cn(
                 "flex min-h-0 flex-auto flex-col rounded-[6px]",
-                canvas
-                  ? "bg-background shadow-[0_1px_2px_rgb(0_0_0/0.04),0_6px_24px_-12px_rgb(0_0_0/0.12)]"
-                  : "bg-muted/40",
+                "bg-muted/40",
                 !rightOpen && "lg:hidden",
               )}
             >

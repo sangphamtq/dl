@@ -78,6 +78,10 @@ export type TripData = {
   people: TripPerson[];
   place: { slug: string; name: string } | null;
   coverImage: string | null;
+  /**
+   * Ảnh THẬT cho dải ảnh đầu trang soạn: ảnh điểm đến, không có thì ảnh BÌA của điểm dừng đầu
+   * tiên (chuyến nhân bản không mang `placeId` theo). Chỉ ảnh bìa — ảnh menu không bao giờ là bìa.
+   */
   days: TripDayData[];
   backlog: ResolvedItem[];
   updatedAt: Date;
@@ -94,7 +98,12 @@ const TYPE_LABELS: Record<TripItemKind, string> = {
 const imgSelect = { select: { url: true, isCover: true } } as const;
 
 const tripInclude = {
-  place: { select: { slug: true, name: true } },
+  place: {
+    select: {
+      slug: true,
+      name: true,
+    },
+  },
   owner: { select: { id: true, name: true, image: true } },
   members: {
     orderBy: { createdAt: "asc" },
@@ -281,7 +290,9 @@ function shape(trip: RawTrip): TripData {
         isOwner: false,
       })),
     ],
-    place: trip.place,
+    place: trip.place
+      ? { slug: trip.place.slug, name: trip.place.name }
+      : null,
     coverImage: trip.images[0]?.url ?? null,
     days: trip.days.map((d) => ({
       id: d.id,

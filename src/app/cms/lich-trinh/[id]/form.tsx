@@ -142,7 +142,7 @@ export function TemplateForm({
             id="order"
             value={form.order}
             onChange={(e) => set("order", e.target.value)}
-            placeholder="Nhỏ → đứng trước"
+            placeholder="Số nhỏ đứng trước"
             inputMode="numeric"
           />
         </div>

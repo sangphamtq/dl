@@ -260,7 +260,7 @@ export function PlaceForm({
           description={
             isProvince
               ? "Đơn vị hành chính — tỉnh chỉ chọn cấp tỉnh. Tùy chọn."
-              : "Đơn vị hành chính (tỉnh → xã/phường/đặc khu). Tùy chọn."
+              : "Đơn vị hành chính (tỉnh, rồi xã/phường/đặc khu). Tùy chọn."
           }
         >
           <div

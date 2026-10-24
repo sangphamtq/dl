@@ -10,6 +10,7 @@ import { NewTripButton, TripCardMenu } from "@/components/trip/trip-list-actions
 import { RiseInView } from "@/components/site/reveal";
 import { cn } from "@/lib/utils";
 import { R_BADGE, R_CARD, R_CTRL } from "@/lib/radius";
+import { Glyph } from "@/components/site/glyphs";
 
 const MICRO = "text-[0.6rem] font-semibold uppercase tracking-[0.14em]";
 
@@ -187,7 +188,7 @@ export default async function LichTrinhPage() {
                     "text-muted-foreground transition-colors hover:text-foreground",
                   )}
                 >
-                  Xem tất cả →
+                  Xem tất cả <Glyph name="forward" className="ml-0.5 inline size-3.5 align-[-0.15em]" />
                 </Link>
               </div>
               <p className="mt-3 text-sm text-muted-foreground">

@@ -73,7 +73,7 @@ type SortKey = "featured" | "popular" | "az";
 const SORTS: { key: SortKey; label: string }[] = [
   { key: "featured", label: "Nổi bật" },
   { key: "popular", label: "Phổ biến" },
-  { key: "az", label: "A → Z" },
+  { key: "az", label: "A–Z" },
 ];
 
 const MICRO = "text-[0.6rem] font-semibold uppercase tracking-[0.14em]";

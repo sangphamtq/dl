@@ -84,7 +84,7 @@ export function TripPacking({
         <span>Bấm ô để chuyển:</span>
         {(["none", "ready", "packed"] as const).map((st, i) => (
           <span key={st} className="flex items-center gap-1.5">
-            {i > 0 && <span aria-hidden className="text-muted-foreground/50">→</span>}
+            {i > 0 && <Glyph name="forward" className="size-3 text-muted-foreground/50" />}
             <StateMark state={st} />
             {STATE_LABEL[st]}
           </span>

@@ -1187,12 +1187,16 @@ giãn chữ lẫn vào hàng ô nhập).
 - **Số người** (`PartyChip`): nút − / +, đóng bảng là lưu — nhưng ⚠️ CHỈ khi người dùng đã bấm
   −/+ (`touched`): chưa có số người mà mở rồi đóng thì không được tự ghi số khởi điểm 2.
 - **Tự tính đường đi**: giữ công tắc, gói vào cùng kiểu chip.
-- **Nền — "bàn + tờ"** (`TripShell canvas`, chỉ trang soạn): cả khu nằm trên MỘT nền `--canvas`
-  (`#f4f4f2`, tối: tối hơn `--background`), phần đầu và cột trái đứng thẳng trên nền đó (cột trái
-  KHÔNG có khối nền riêng; mục nav đang mở là một mảnh trắng), lịch trình là **tờ trắng** nổi lên
-  bằng bóng rất nhẹ (không viền). Dưới `sm` tờ tràn hết bề ngang.
-  · Đã thử và BỎ: dải `band` chỉ sau phần đầu + khối `muted/40` cho cột trái + cột giữa trắng —
-    ba mảng màu (hai tông kem khác nhau) ra vá víu. Chip để NỀN TRẮNG để nổi trên nền.
+- **Phần đầu là DẢI ẢNH điểm đến** (`TripShell banner`, chỉ trang soạn; biên tập chọn): ảnh trải
+  hết bề ngang, phủ lớp tối dần xuống dưới, tên chữ trắng, chip + nút **kính mờ** (`CHIP_PHOTO`,
+  `GLASS_BTN`; màu CỨNG như hero trang chủ — ảnh tối ở cả hai theme). Phần dưới trắng, cột trái
+  ngăn với lịch trình bằng MỘT đường mảnh (`border-l` của cột giữa — cột giữa kéo hết chiều cao
+  lưới nên vạch chạy suốt), cột trái không có khối nền riêng.
+  · Ảnh = `TripData.heroImage`: ảnh THẬT của điểm đến, không có thì ảnh **bìa** của điểm dừng đầu
+    tiên — chuyến NHÂN BẢN không mang `placeId` theo nên gần như luôn rơi vào nhánh này. Không
+    bao giờ `coverUrl()` (ảnh stock). Không có ảnh nào ⇒ phần đầu nền trắng + đường ngăn, chữ thường.
+  · Đã thử và BỎ: dải `band` kem chỉ sau phần đầu (vá víu với khối `muted` của cột trái) · nền
+    `canvas` xám + lịch trình là tờ trắng nổi bóng.
 
 ## 13. Còn thiếu / cố ý chưa làm
 
@@ -1202,3 +1206,20 @@ giãn chữ lẫn vào hàng ô nhập).
 | `PostRef.tripId` | Chưa thêm — blog chưa trỏ thẳng vào lịch trình mẫu được. |
 | Toạ độ **tỉnh** | 62/63 tỉnh chưa có `lat/lng`. Mục kiểu "Tỉnh" trong lịch trình sẽ hiện cảnh báo ⚪. Nhập tay trong CMS hoặc bổ sung bảng tra. |
 | Ước tính chi phí | **Cố ý bỏ** (§9.3) — đừng thêm lại nếu chưa có dữ liệu giá thật. |
+
+## 12n. Đầu trang soạn & header chìm vào nó (2026-10-25, biên tập yêu cầu)
+
+- Ở `/lich-trinh/cua-toi/[id]` (và `/[muc]`) header site ở chế độ **`underlay`** (`chromeFor` trong
+  `lib/site-chrome.ts`): `absolute`, chữ trắng, cuộn đi cùng trang — KHÔNG `fixed` như hero trang chủ,
+  vì đây là trang làm việc, thanh dính chỉ chiếm chỗ.
+- Dải đầu trang chừa `lg:pt-[6.5rem]` cho header (header chỉ hiện từ `lg`; dưới đó là `BottomNav`).
+- **Tên chuyến sửa tại chỗ, KHÔNG có nút bút chì** (đã thử và bỏ): rê vào ⇒ nền `muted` ôm sát chữ; đang sửa
+  ⇒ nền trắng + viền 1px + quầng `primary` 14%, con trỏ `caret-primary`. Ô nhập CO THEO CHỮ nhờ lớp chữ ẩn
+  cùng ô lưới; ⚠️ phải giữ `size={1}` — `<input>` mặc định rộng ~20 ký tự nên nền thừa ra bên phải.
+- **Đầu trang = TỐI GIẢN KIỂU NOTION, KHÔNG ẢNH** (biên tập chọn): nền trắng, tên chuyến chữ to,
+  dưới là hàng **thuộc tính** (ngày · số người · tự tính đường đi) — nút **không viền**, rê vào / đang mở
+  mới có nền (`PROP` trong `trip-topbar.tsx`), hàng lùi `-ml-2` để chữ dóng mép tên. Một hairline
+  `border-b` ngăn với phần lịch. Header `underlay` ở tông sáng, không nền, không vạch ⇒ chìm vào nền trắng.
+  · Đã thử và BỎ (biên tập), **đừng dựng lại**: nền `band` xám · nền "canvas" · ảnh điểm đến trải hết bề
+    ngang (ảnh chỉ ~800px ⇒ nhoè, phủ đen ~78% ⇒ tối) · ảnh nửa phải trên nền tối · nền xanh rừng + đường
+    đồng mức · khảm ảnh các điểm dừng bên phải tên.

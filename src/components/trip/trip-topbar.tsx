@@ -5,7 +5,7 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Glyph } from "@/components/site/glyphs";
 import { cn } from "@/lib/utils";
-import { R_CTRL } from "@/lib/radius";
+import { R_CARD } from "@/lib/radius";
 import { updateTrip } from "@/app/(site)/lich-trinh/actions";
 import { MICRO } from "@/components/trip/trip-rail";
 import { TripShare } from "@/components/trip/trip-share";
@@ -55,15 +55,11 @@ export function TripTopbar({
   const dayCount = Number.parseInt(facts?.[0] ?? "", 10) || 1;
 
   return (
-    // Nền + đường ngăn do `TripShell headerBand` vẽ (trải hết bề ngang, không bị lề khung cắt).
     <header>
       <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
         <Link
           href="/lich-trinh/cua-toi"
-          className={cn(
-            MICRO,
-            "inline-flex items-center gap-1 text-muted-foreground transition-colors hover:text-foreground",
-          )}
+          className={cn(MICRO, "inline-flex items-center gap-1 text-muted-foreground transition-colors hover:text-foreground")}
         >
           <Glyph name="back" className="size-3.5" />
           Lịch trình của tôi
@@ -83,7 +79,7 @@ export function TripTopbar({
         </div>
       </div>
 
-      <div className="mt-3 max-w-3xl">
+      <div className="mt-5 max-w-4xl sm:mt-7">
         {/* key theo GIÁ TRỊ: ô chỉ đọc giá trị lúc dựng, người khác đổi rồi bấm "Cập nhật"
             mà không dựng lại thì vẫn hiện chữ cũ. */}
         <TitleField
@@ -93,7 +89,9 @@ export function TripTopbar({
         />
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-2">
+      {/* Hàng "thuộc tính" kiểu Notion: nút KHÔNG viền, rê vào mới có nền. `-ml-2` để chữ của
+          thuộc tính đầu dóng thẳng mép tên chuyến chứ không phải mép nền hover. */}
+      <div className="-ml-2 mt-3 flex flex-wrap items-center gap-x-1 gap-y-1">
         <DateChip
           value={trip.startDate}
           dayCount={dayCount}
@@ -105,10 +103,10 @@ export function TripTopbar({
         />
         {trip.autoTravel !== undefined && (
           <label
-            className={cn(CHIP, "cursor-pointer gap-2 pr-2")}
+            className={cn(PROP, "cursor-pointer gap-2")}
             title="Tự ước tính thời gian và quãng đường lái giữa các điểm, rồi cộng vào giờ. Áp dụng cho cả chuyến."
           >
-            <Glyph name="car" className="size-4 shrink-0 text-muted-foreground" />
+            <Glyph name="car" className={PROP_ICON} />
             Tự tính đường đi
             <Switch
               checked={travel}
@@ -132,7 +130,7 @@ export function TripTopbar({
         )}
 
         {facts && facts.length > 0 && (
-          <p className="flex items-baseline gap-x-5 text-sm text-muted-foreground sm:ml-auto">
+          <p className="ml-2 flex items-baseline gap-x-4 text-sm text-muted-foreground">
             {facts.map((f) => (
               <span key={f}>
                 <strong className="font-semibold tabular-nums text-foreground">{f.split(" ")[0]}</strong>{" "}
@@ -149,9 +147,10 @@ export function TripTopbar({
   );
 }
 
-/** Một "chip" bấm được của hàng thông số chuyến: icon + giá trị, mở bảng chỉnh. */
-const CHIP =
-  "inline-flex h-9 items-center gap-1.5 rounded-[4px] border border-border bg-background px-3 text-sm text-foreground transition-colors hover:border-primary/40 hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring data-[state=open]:border-primary/50 data-[state=open]:bg-muted/40";
+/** Một "thuộc tính" của chuyến: icon + giá trị, bấm để chỉnh. Không viền — rê vào / đang mở mới có nền. */
+const PROP =
+  "inline-flex h-8 items-center gap-1.5 rounded-[4px] px-2 text-sm text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring data-[state=open]:bg-muted";
+const PROP_ICON = "size-4 shrink-0 text-muted-foreground";
 
 const WEEKDAY = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
 
@@ -192,14 +191,14 @@ function DateChip({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <button type="button" className={CHIP} aria-label="Ngày khởi hành">
-          <Glyph name="calendar" className="size-4 shrink-0 text-muted-foreground" />
+        <button type="button" className={PROP} aria-label="Ngày khởi hành">
+          <Glyph name="calendar" className={PROP_ICON} />
           {start && end ? (
             <span className="tabular-nums">
               {shortDay(start)}
               {dayCount > 1 && (
                 <>
-                  <span className="mx-1.5 text-muted-foreground">→</span>
+                  <span className="mx-1.5 text-muted-foreground">–</span>
                   {shortDay(end, true)}
                 </>
               )}
@@ -349,8 +348,8 @@ function PartyChip({
       }}
     >
       <PopoverTrigger asChild>
-        <button type="button" className={CHIP} aria-label="Số người">
-          <Glyph name="people" className="size-4 shrink-0 text-muted-foreground" />
+        <button type="button" className={PROP} aria-label="Số người">
+          <Glyph name="people" className={PROP_ICON} />
           {value ? (
             <span className="tabular-nums">{value} người</span>
           ) : (
@@ -406,21 +405,43 @@ function TitleField({
   onSave: (title: string) => void;
 }) {
   const [draft, setDraft] = useState(value);
+  const text = cn(
+    "font-[family-name:var(--font-display)] text-[clamp(1.75rem,4vw,2.75rem)] font-semibold leading-[1.1] tracking-tight",
+  );
   return (
-    <input
-      value={draft}
-      onChange={(e) => setDraft(e.target.value)}
-      onBlur={() => {
-        const next = draft.trim();
-        if (next && next !== value) onSave(next);
-        else setDraft(value);
-      }}
-      aria-label="Tên lịch trình"
-      className={cn(
-        R_CTRL,
-        // Rê chuột hiện nền nhẹ: nói được "tên này sửa được" mà không cần viền thường trực.
-        "-mx-2 w-[calc(100%+1rem)] bg-transparent px-2 py-0.5 font-[family-name:var(--font-display)] text-[clamp(1.5rem,3.4vw,2.25rem)] font-semibold leading-[1.15] tracking-tight outline-none transition-colors hover:bg-muted/60 focus-visible:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring",
-      )}
-    />
+    // Ô nhập CO THEO CHỮ (lớp chữ ẩn cùng ô lưới đặt cỡ) để nền rê/nền sửa ôm sát tên. `-mx-2`
+    // bù phần đệm: chữ vẫn dóng mép trái như khi không có nền.
+    <span className="-mx-2 inline-grid min-w-0 max-w-[calc(100%+1rem)] align-top">
+      <span aria-hidden className={cn(text, "invisible col-start-1 row-start-1 whitespace-pre px-2 py-1")}>
+        {draft || " "}
+      </span>
+      <input
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={() => {
+          const next = draft.trim();
+          if (next && next !== value) onSave(next);
+          else setDraft(value);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") e.currentTarget.blur();
+          if (e.key === "Escape") {
+            setDraft(value);
+            e.currentTarget.blur();
+          }
+        }}
+        aria-label="Tên lịch trình"
+        title="Bấm để đổi tên"
+        spellCheck={false}
+        size={1}
+        className={cn(
+          R_CARD,
+          text,
+          "col-start-1 row-start-1 w-full min-w-0 cursor-text bg-transparent px-2 py-1 caret-primary outline-none transition-[background-color,box-shadow] duration-150",
+          "selection:bg-primary/20 hover:bg-muted/70",
+          "focus:bg-background focus:shadow-[0_0_0_1px_var(--color-border),0_0_0_4px_color-mix(in_oklab,var(--color-primary)_14%,transparent),0_1px_2px_rgb(0_0_0/0.06)] focus:hover:bg-background",
+        )}
+      />
+    </span>
   );
 }

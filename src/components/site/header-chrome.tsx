@@ -42,11 +42,13 @@ export function HeaderChrome({
     getPageLoading,
     getServerPageLoading,
   );
-  const { overlay, pinned } = chromeFor(usePathname(), heroLayout);
+  const { overlay, pinned, underlay } = chromeFor(usePathname(), heroLayout);
   // Header KHÔNG dính thì luôn đục: nó không đè lên gì cả, mà kính trong đặt
   // trên nền trang thì thành một vệt bệt, không ra thanh cũng không ra nền.
   // `loading` cùng một lý do: trong lúc chờ tải, hero chưa tồn tại.
-  const deep = loading || !overlay || scrolled || !pinned;
+  // `underlay`: header nằm trên nền TRẮNG của chính trang — tông sáng, không nền, không vạch,
+  // nên chìm hẳn vào phần đầu trang.
+  const deep = underlay || loading || !overlay || scrolled || !pinned;
 
   return (
     <header
@@ -55,7 +57,7 @@ export function HeaderChrome({
       className={cn(
         "group/header relative top-0 z-50 hidden w-full lg:block",
         !deep && "dark",
-        overlay ? "fixed" : pinned ? "sticky" : null,
+        underlay ? "absolute" : overlay ? "fixed" : pinned ? "sticky" : null,
       )}
     >
       {overlay && (
@@ -79,7 +81,7 @@ export function HeaderChrome({
         aria-hidden
         className={cn(
           "pointer-events-none absolute inset-0 -z-10 border-b border-border bg-background/80 backdrop-blur-lg backdrop-saturate-150 transition-opacity duration-300 ease-out",
-          deep ? "opacity-100" : "opacity-0",
+          deep && !underlay ? "opacity-100" : "opacity-0",
         )}
       />
       {children}

@@ -26,7 +26,6 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-muted: var(--muted);
   --color-band: var(--band);
-  --color-canvas: var(--canvas);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
@@ -76,9 +75,6 @@
   /* Nền dải xen kẽ của trang điểm đến. KHÔNG dùng `muted/60` (≈ #f4f2ef): xám
      ngả vàng nâu, cạnh ảnh màu tươi đọc ra như phủ bụi. */
   --band: #f7f6f2;
-  /* Nền của khu SOẠN lịch trình — "bàn làm việc" để tờ trắng nổi lên. Xám trung tính, ngả ấm
-     rất nhẹ: `--band` (#f7f6f2) đặt cạnh nền `muted` của cột trái ra hai tông kem vá víu. */
-  --canvas: #f4f4f2;
   --muted-foreground: #6f6e69;
   --accent: #ecf7ea;
   --accent-foreground: #1f4f13;
@@ -122,8 +118,6 @@
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
   --band: oklch(0.22 0 0);
-  /* Tối HƠN --background: tờ (bg-background) phải sáng hơn bàn thì mới nổi. */
-  --canvas: oklch(0.1 0 0);
   --muted-foreground: oklch(0.708 0 0);
   --accent: oklch(0.32 0.06 145);
   --accent-foreground: oklch(0.985 0 0);

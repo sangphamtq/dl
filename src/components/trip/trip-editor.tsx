@@ -303,7 +303,7 @@ export function TripEditor({
       }}
     >
     <TripShell
-      canvas
+      banner
       header={
         <TripTopbar
           trip={trip}
@@ -343,13 +343,13 @@ export function TripEditor({
                       href={`/diem-den/${trip.place.slug}/dia-diem`}
                       className="text-sm font-medium text-primary hover:underline"
                     >
-                      Xem địa điểm ở {trip.place.name} →
+                      Xem địa điểm ở {trip.place.name} <Glyph name="forward" className="ml-0.5 inline size-3.5 align-[-0.15em]" />
                     </Link>
                     <Link
                       href={`/diem-den/${trip.place.slug}/am-thuc`}
                       className="text-sm font-medium text-primary hover:underline"
                     >
-                      Xem quán ăn ở {trip.place.name} →
+                      Xem quán ăn ở {trip.place.name} <Glyph name="forward" className="ml-0.5 inline size-3.5 align-[-0.15em]" />
                     </Link>
                   </div>
                 )}
@@ -732,7 +732,7 @@ function DayBlock({
               />
               {itemIds.length > 0 && (
                 <span className="whitespace-nowrap tabular-nums">
-                  → {formatMinutes(day.endMin)}
+                  – {formatMinutes(day.endMin)}
                 </span>
               )}
             </div>

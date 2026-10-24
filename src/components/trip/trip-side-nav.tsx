@@ -54,10 +54,9 @@ function Row({
       aria-current={active ? "page" : undefined}
       className={cn(
         rowBase,
-        // Mục đang mở = một mảnh "tờ" trắng trên nền canvas, cùng ngôn ngữ với tờ lịch trình.
         active
-          ? "bg-background font-semibold text-foreground shadow-[0_1px_2px_rgb(0_0_0/0.06)]"
-          : "text-muted-foreground hover:bg-background/60 hover:text-foreground",
+          ? "bg-muted font-semibold text-foreground"
+          : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
       )}
     >
       <Glyph
@@ -89,8 +88,8 @@ export function TripSideNav({ tripId, collapsed }: { tripId: string; collapsed?:
                 R_CTRL,
                 "relative grid size-8 place-items-center justify-self-center transition-colors",
                 active
-                  ? "bg-background text-warm shadow-[0_1px_2px_rgb(0_0_0/0.06)]"
-                  : "text-muted-foreground hover:bg-background/60 hover:text-foreground",
+                  ? "bg-muted text-warm"
+                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
               )}
             >
               <Glyph name={s.glyph} className="size-4" />
@@ -123,12 +122,16 @@ export function TripSectionSheet({ tripId }: { tripId: string }) {
           type="button"
           className={cn(
             R_CTRL,
-            "inline-flex h-9 items-center gap-1.5 bg-muted px-3 text-sm font-medium transition-colors hover:bg-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:hidden",
+            "inline-flex h-9 items-center gap-1.5 px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 lg:hidden",
+            "bg-muted hover:bg-muted/70 focus-visible:ring-ring",
           )}
         >
           <Glyph name={current.glyph} className="size-4 shrink-0 text-warm" />
           <span className="max-w-[8rem] truncate">{current.label}</span>
-          <Glyph name="chevron-down" className="size-4 shrink-0 text-muted-foreground" />
+          <Glyph
+            name="chevron-down"
+            className="size-4 shrink-0 text-muted-foreground"
+          />
         </button>
       </SheetTrigger>
 

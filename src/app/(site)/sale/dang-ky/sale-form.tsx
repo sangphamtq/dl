@@ -22,6 +22,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { submitSaleProfile, type SaleFormInput } from "../actions";
+import { Glyph } from "@/components/site/glyphs";
 
 type Status = "pending" | "approved" | "rejected" | null;
 
@@ -123,7 +124,7 @@ export function SaleRegisterForm({
               Bạn đã là CTV đã xác minh.{" "}
               {slug && (
                 <Link href={`/sale/${slug}`} className="font-medium underline">
-                  Xem trang cá nhân →
+                  Xem trang cá nhân <Glyph name="forward" className="ml-0.5 inline size-3.5 align-[-0.15em]" />
                 </Link>
               )}
             </>

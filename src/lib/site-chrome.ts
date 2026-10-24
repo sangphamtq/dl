@@ -7,6 +7,9 @@ const PLACE_DETAIL = /^\/diem-den\/[^/]+$/;
 
 const TRIP_DETAIL = /^\/lich-trinh\/(?!cua-toi$)(?:cua-toi\/)?[^/]+/;
 
+/** Trình sửa lịch trình: header nằm ĐÈ lên dải ảnh của chuyến, cuộn đi cùng trang. */
+const TRIP_EDITOR = /^\/lich-trinh\/cua-toi\/[^/]+(?:\/[^/]+)?$/;
+
 export function isMapRoute(pathname: string): boolean {
   return MAP_ROUTES.test(pathname);
 }
@@ -14,7 +17,7 @@ export function isMapRoute(pathname: string): boolean {
 export function chromeFor(
   pathname: string,
   heroLayout: HeroLayout,
-): { overlay: boolean; pinned: boolean } {
+): { overlay: boolean; pinned: boolean; underlay: boolean } {
   const pinned = !TRIP_DETAIL.test(pathname);
 
   const overlay =
@@ -25,5 +28,5 @@ export function chromeFor(
       pathname === "/lich-trinh" ||
       (PLACE_DETAIL.test(pathname) && heroLayout === "center"));
 
-  return { overlay, pinned };
+  return { overlay, pinned, underlay: TRIP_EDITOR.test(pathname) };
 }
