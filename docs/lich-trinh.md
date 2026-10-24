@@ -1029,6 +1029,171 @@ mượn toạ độ của Spot đầu tiên rồi đứng ngang hàng như một
   cho tới khi server trả về — chấp nhận được, chỉ lệch trong lúc chờ.
 - Đã thử và BỎ: giữ ngang hàng chỉ thêm "tại …" · gộp hẳn hoạt động vào dòng của địa điểm.
 
+## 12f. Hai cột "Ở đâu | Làm gì" (2026-10-24, biên tập chọn)
+
+Mỗi ngày là các hàng `StopRow` (`trip-rail.tsx`), gom bằng `groupStops()` (`lib/trip-stops.ts`):
+
+- **Ở đâu** (trái, có trục + số): mục là một NƠI — địa điểm, quán, chỗ ở, mục tự thêm có toạ độ.
+  Hoạt động đứng riêng ⇒ cột trái là `PlaceStub` ghi nơi của nó (Spot đầu tiên), cột phải là
+  chính hoạt động. Việc đứng đầu ngày trước mọi nơi ⇒ `PlaceStub` "Chưa rõ ở đâu", chấm không số.
+- **Làm gì** (phải, `DoingRow`): hoạt động đang lồng (§12e) + việc tự thêm, mỗi dòng có giờ
+  riêng. Không có gì ⇒ "—" (chỉ từ `sm`). Nút **+ Thêm việc** chèn vào cuối hàng, đặt `absolute`
+  trong phần đệm đáy để lúc ẩn không chiếm chỗ.
+- Chặng di chuyển nằm GIỮA các hàng (`RailLeg` của mục cuối hàng). Số thứ tự đếm HÀNG.
+- Dưới `sm` hai cột xếp chồng; cột phải thụt theo nội dung và tự vẽ tiếp đoạn trục
+  (`STACKED_RAIL`) cho đường không đứt.
+- ⚠️ `SortableContext` của ngày dùng **`rectSortingStrategy`**: mục nằm ở hai cột, chiến lược dọc
+  chỉ dời theo y nên kéo giữa hai cột sẽ chồng lên nhau.
+- Dấu + ở trục (`InsertMarks`) giờ là giữa các HÀNG — `slotIndexes` đổi chấm thứ k thành chỉ số
+  chèn sau hàng k.
+- Dùng chung ở trang soạn và `trip-view.tsx` (lịch mẫu, link chia sẻ).
+
+## 12g. Dòng tự gõ: nơi · việc · bao lâu (2026-10-24)
+
+`TripItem.customPlace` (migration `trip_item_custom_place`) — mục tự thêm là một **NƠI** dù không
+có toạ độ ("Nhà bạn Minh"). `isTask()` = custom + **không** `customPlace` + không toạ độ.
+
+- Hộp thêm có chữ ⇒ hai dòng: **Việc: …** (vào cột "Làm gì" của nơi đang đứng) và **Nơi: …**
+  (hàng mới ở "Ở đâu"), cộng **Tự gõ đủ: ở đâu, làm gì, bao lâu…** mở form ba ô — phần nào cũng
+  bỏ trống được, không cả hai. Mọi lối đều qua `addCustomStop()` (một transaction): có "ở đâu"
+  ⇒ tạo nơi rồi việc NGAY SAU nó (thời lượng thuộc việc, nơi `stayMin = 0`); chỉ "làm gì" ⇒ việc.
+  `"Bao lâu"`: *Tự động* = `null` (nơi 1 giờ, việc 30 phút) · *Không tính* = 0.
+- ⚠️ **Nơi không toạ độ CẮT chuỗi toạ độ** (`scheduleDay`): `lastPlace` về null ⇒ chặng kế tiếp
+  "chưa ước tính" thay vì mượn chặng từ nơi CÓ toạ độ trước đó (bản đầu ghi "Chợ → Bàu Trắng 57
+  phút", thực ra là chặng Đồi cát bay → Bàu Trắng). `seenPlace` tách "chưa tới đâu" (ẩn chặng)
+  khỏi "đang ở chỗ không rõ toạ độ" (vẫn hiện dòng chặng).
+- Cảnh báo "chưa có toạ độ" chỉ cho NƠI CỦA SITE thiếu toạ độ (lỗi dữ liệu); xét ở **nơi đang
+  đứng** (`here`), không ở việc. Nơi tự gõ thì chỉ dòng "chưa ước tính" xám.
+- `cloneTrip` chép cả `customPlace`.
+
+## 12h. Rà trải nghiệm tab Lịch trình (2026-10-24)
+
+Soát trên chuyến thật 33 mục / 4 ngày; trang ngắn đi ~10–12% mà không bớt thông tin.
+
+- ⚠️ **Mục chưa có ghi chú KHÔNG giữ dòng ẩn nữa** — bản cũ để ô "Thêm ghi chú…" `opacity-0`
+  dưới MỌI mục (~22px trắng mỗi mục, cột "Làm gì" cách nhau gần 90px). Giờ thêm qua **⋯ → Thêm
+  ghi chú**; ô gõ mở ngay tại chỗ (`InlineEdit startEditing`).
+  · ⚠️ Mở ô gõ trong **`onCloseAutoFocus`** của menu, KHÔNG trong `onSelect`: lúc menu còn chạy
+    hiệu ứng đóng nó vẫn giữ focus, mở sớm là ô gõ (trống) mất focus và tự đóng. Headless KHÔNG
+    thấy lỗi này nếu không bật `Emulation.setFocusEmulationEnabled` (cửa sổ nền không phát blur).
+- **Giờ bắt đầu ngày luôn 24h** (`StartTimePicker`): bỏ `<input type="time">` — trình duyệt vẽ
+  theo ngôn ngữ máy nên ra "02:00 PM" cạnh mọi giờ khác viết "14:00".
+- **"0 phút" ⇒ "Ghé qua"** (chỗ ở: "Nhận phòng") — `stayLabel()`.
+- **Trục không đứt**: ô "Ở đâu" của `StopRow` là `grid` để kéo hết chiều cao hàng.
+- Bỏ "—" ở cột "Làm gì" trống (gần như mọi hàng đều trống — chỉ là nhiễu).
+- Cảnh báo của ngày và tiêu đề cột có khoảng thở (`StopHeader` `mt-6`).
+- ~~Còn treo: ô ngày khởi hành~~ — đã thay ở §12m.
+
+## 12i. Việc THUỘC nơi — `TripItem.parentId` (2026-10-25, biên tập chọn)
+
+Thay cho §12e/§12f chỗ "gom suy ra từ thứ tự": quan hệ "nơi → việc" giờ **lưu thật**. Kéo một nơi
+là kéo cả hàng, việc của nó đi theo. Migration `trip_item_parent`.
+
+- **Đúng 2 mức.** Mục gốc (`parentId = null`) = một HÀNG; việc (`parentId` = id mục gốc) nằm ở cột
+  "Làm gì" của hàng đó. `order` của mục gốc đếm trong NGÀY, của việc đếm trong CHA (`Scope` +
+  `scopeWhere()` trong `actions.ts`). `dayId` của việc luôn = của cha — `moveItem` dời cha sang
+  ngày khác thì `updateMany` các con theo.
+- **Đọc ra luôn PHẲNG** (`flatten()` trong `lib/trip.ts`): gốc rồi ngay sau là con. Nhờ vậy tính
+  giờ / bản đồ / trang xem không phải biết gì về cây. Mục con mà cha không cùng vùng ⇒ coi như gốc.
+- Mục gốc là việc / hoạt động (không có nơi) ⇒ hàng `PlaceStub`, chính nó đứng đầu cột "Làm gì"
+  và cầm tay kéo của cả hàng. `anchorsOf()` không còn dùng lúc hiển thị (chỉ còn cho script chuyển).
+- **Kéo–thả** (`trip-dnd.ts`): vùng gốc `backlog` / `day:X` chỉ chứa mục gốc; việc nằm ở
+  `in:<id>` (luôn có, kể cả rỗng). `canBeDoing()` = hoạt động hoặc việc tự thêm — **nơi không chui
+  vào nơi khác**, mục đang có việc cũng không; kéo chúng qua cột "Làm gì" thì `resolveOver()` đổi
+  thành vị trí của CẢ HÀNG đó.
+  · ⚠️ `collide` (trang soạn): chuột nằm trong cột / việc nào thì lấy đúng nó trước,
+    `closestCorners` sau — cột "Làm gì" nằm trong một hàng lớn hơn nó nhiều, dò theo góc thì cả
+    hàng luôn thắng và việc thả vào cột trống của nơi khác rơi thành hàng riêng.
+- **Thêm** (`AddPos` = `at` cho NƠI mới + `parent` cho VIỆC): "+ Thêm việc" và dấu + trên trục sau
+  hàng k ⇒ việc vào hàng k, nơi thành hàng mới. Thêm một nơi xong thì `parent` chuyển sang CHÍNH nơi
+  đó — gõ "Chợ" rồi "Mua hải sản" là ra đúng một hàng. Hoạt động của site là việc khi có `parent`.
+- **Bỏ một nơi KHÔNG bỏ việc của nó**: việc đứng ra thành mục gốc ngay chỗ nơi đó (`removeItem`).
+  `moveItemToTrip` mang việc theo; `cloneTrip` nối lại cha bằng id mới; ngăn nổi chỉ xếp mục gốc,
+  ghi "kèm N việc".
+- ⚠️ **DEPLOY: chạy `scripts/backfill-trip-item-parents.ts` MỘT LẦN** sau migration (chạy `--dry`
+  trước). Nó gom như cách lịch đang hiển thị. Phải đọc dữ liệu **đúng kiểu trang đọc** (items của
+  cả chuyến, `orderBy: order`) — bản đầu hỏi riêng từng ngày và xáo một ngày có `order` TRÙNG trên
+  dữ liệu dev (đã khôi phục tay theo ảnh chụp). Script in cảnh báo cho mọi ngày có `order` trùng —
+  xem lại các ngày đó bằng mắt.
+
+## 12j. "Làm gì" xếp DƯỚI nơi, không còn cột ngang (2026-10-25, biên tập chọn)
+
+Thay bố cục hai cột của §12f: mỗi hàng là **nơi, rồi ngay dưới là các việc**, thụt thẳng theo nội
+dung của nơi, trục vẽ tiếp xuyên qua (`STACKED_RAIL`, `DOINGS_INDENT` trong `trip-rail.tsx`) —
+ở MỌI khổ, như bản điện thoại cũ. Bỏ tiêu đề cột "Ở đâu / Làm gì" (`StopHeader` đã xoá).
+
+- Nơi chưa có việc ⇒ phần dưới **cao 0** (`hasDoings=false`). Chỉ khi **đang kéo một VIỆC**
+  (`draggingDoing`: hoạt động / việc tự thêm, không có việc con) phần đó mới có chiều cao thật và
+  khung thả nét đứt nở ra (`DoingsColumn armed`) — cao 0 thì khung bị hàng kế tiếp đè. Kéo một
+  NƠI thì KHÔNG mở (nó không bao giờ vào được nơi khác; bản đầu mở cho mọi cú kéo nên kéo địa điểm
+  cũng hiện khung "việc" dưới mọi nơi). `MeasuringStrategy.Always` vì bố cục đổi khi bắt đầu kéo.
+- **Kéo CẢ HÀNG ⇒ mọi hàng thu gọn** (`collapsed`): việc ẩn, thay bằng dòng "kèm N việc". Nơi
+  nhiều việc kéo đi là một khối rất dài, cả ngày dài gấp mấy lần — thu lại thì chỉ còn xếp các
+  nơi. Kéo một VIỆC thì giữ nguyên (cần thấy chỗ để thả).
+  · Thu gọn **ngay lúc NHẤN** tay kéo của hàng (`pressRow`, `onPointerDown` bọc quanh listener của
+    dnd-kit), không đợi chuột dịch đủ ngưỡng kích hoạt. ⚠️ Hàng phía trên thu lại làm hàng đang
+    nhấn NHẢY LÊN khỏi con trỏ ⇒ `useLayoutEffect` cuộn bù đúng khoảng đó (`[data-stop-row=id]`).
+- **Mục của site vs mục tự gõ**: mục của site có trang ⇒ tên là liên kết **gạch chân chấm**; ô
+  ký hiệu khi chưa có ảnh **nền đặc**. Mục tự gõ ⇒ ô ký hiệu **viền nét đứt, không nền** (cùng kiểu
+  dòng "tự thêm" trong hộp thêm). Quán ăn không có trang riêng nên tên không gạch chân, nhưng ô
+  vẫn nền đặc.
+- ⚠️ `collide` theo CHUỘT, ba tầng: ① việc / cột "Làm gì" dưới chuột ② đang kéo một VIỆC mà chuột
+  ở trên một hàng ⇒ vào việc của hàng đó (thả đâu trên hàng cũng được; không thì việc bị đổi thành
+  hàng riêng mỗi lần lướt qua một hàng) ③ kéo cả hàng ⇒ hàng dưới chuột. Hàng giờ cao nên
+  `closestCorners` (theo góc) làm hàng to luôn "gần chính nó nhất" và không chịu đổi chỗ — chỉ còn
+  là phương án cuối.
+
+## 12k. Nút ở đâu thì thêm đúng thứ ở đó (2026-10-25, biên tập yêu cầu)
+
+`AddPos.mode` quyết định hộp thêm cho thêm GÌ:
+
+| Lối vào | `mode` | Cho thêm |
+|---|---|---|
+| Dấu + trên trục giữa hai hàng · ⋯ "Thêm phía trước/sau" của một HÀNG · nút ngày trống | `place` | địa điểm / quán / chỗ ở của site, **Nơi: …**, form "nơi kèm việc" (bắt buộc có ở đâu) |
+| Nút **+ Việc** của một hàng · ⋯ trước/sau của một VIỆC | `doing` | hoạt động, việc mẫu, **Việc: …**, form chỉ "làm gì + bao lâu" — vào ĐÚNG nơi đó |
+| Ô tìm ở cột Chưa xếp ngày · ngăn nổi | `any` | mọi thứ (như cũ) |
+
+- Bản trước: dấu + và nút "Thêm việc" mở CÙNG một hộp nên bấm "Thêm việc" vẫn thêm được một nơi
+  mới ở chỗ khác — sai với vị trí người ta vừa bấm.
+- **"+ Việc" nằm trong cụm nút của nơi** (cạnh tay kéo và ⋯, hiện khi rê / luôn hiện trên màn
+  cảm ứng; dưới `sm` chỉ còn dấu +). Bản `absolute` ở đáy hàng đã bỏ.
+- Dấu + trên trục nằm **GIỮA HAI CHẤM SỐ** (① ↔ ②; hàng cuối: giữa chấm và đáy trục) — biên tập
+  chọn: nó thuộc về ĐƯỜNG TRỤC, không thuộc khoảng trắng giữa hai hàng. Nơi có nhiều việc thì dấu +
+  rơi ngang tầm các việc, nhưng bấm vẫn chèn nơi mới SAU cả hàng trên (sau mọi việc của nó).
+  Đã thử và BỎ: canh giữa khoảng trắng giữa hai hàng.
+
+## 12l. Trục dọc (2026-10-25, biên tập yêu cầu "hiện đại hơn")
+
+- **Mốc số VUÔNG bo 5px, viền `primary`, nền trắng, số `primary-ink` đậm** — thay chấm tròn
+  xanh đặc (vừa nặng, vừa trái luật "không `rounded-full`" của §3). Hàng chưa rõ nơi: ô vuông rỗng
+  nhỏ viền xám.
+- **Trục 2px.** Nét LIỀN = đang ở một chỗ; **nét ĐỨT = đoạn đi** (`RailLeg`, `Rail dashed`) —
+  nhìn trục là thấy ngày chia thành ở / đi.
+- **Mỗi việc một mốc vuông 7px trên trục**, ngang dòng giờ của nó (đặt trong ô giờ của
+  `DoingRow`, lùi về đúng toạ độ trục = `DOINGS_INDENT` − tâm trục). ⚠️ Ô giờ phải `self-start`:
+  để kéo giãn theo cả dòng thì `top-1/2` rơi xuống giữa dòng, mốc lệch khỏi chữ giờ.
+
+## 12m. Thanh đầu trang soạn — `TripTopbar` (2026-10-25)
+
+Tên chuyến (rê thì có nền nhẹ = sửa được) + **một hàng CHIP** (`CHIP`: viền, cao 36px, icon +
+giá trị; bấm mở bảng chỉnh) + số liệu "3 ngày  33 mục" dạt mép phải, chữ thường (bản cũ in hoa
+giãn chữ lẫn vào hàng ô nhập).
+
+- **Ngày đi** (`DateChip` + `MonthGrid` tự dựng — dự án chưa có component lịch, không thêm gói):
+  chip hiện cả KHOẢNG "T5 12/11 → T7 14/11/2026" (theo số ngày), lịch tuần bắt đầu **thứ Hai**,
+  tô cả khoảng ngày của chuyến. Bỏ `<input type="date">` vì ra "mm/dd/yyyy" theo ngôn ngữ máy.
+  ⚠️ Ngày đi/ra là NGÀY LỊCH: đọc/ghi bằng `Date.UTC` (`parseDay`/`isoDay`), đừng để múi giờ máy
+  lệch một ngày. "Hôm nay" lấy theo `Asia/Ho_Chi_Minh`.
+- **Số người** (`PartyChip`): nút − / +, đóng bảng là lưu — nhưng ⚠️ CHỈ khi người dùng đã bấm
+  −/+ (`touched`): chưa có số người mà mở rồi đóng thì không được tự ghi số khởi điểm 2.
+- **Tự tính đường đi**: giữ công tắc, gói vào cùng kiểu chip.
+- **Nền — "bàn + tờ"** (`TripShell canvas`, chỉ trang soạn): cả khu nằm trên MỘT nền `--canvas`
+  (`#f4f4f2`, tối: tối hơn `--background`), phần đầu và cột trái đứng thẳng trên nền đó (cột trái
+  KHÔNG có khối nền riêng; mục nav đang mở là một mảnh trắng), lịch trình là **tờ trắng** nổi lên
+  bằng bóng rất nhẹ (không viền). Dưới `sm` tờ tràn hết bề ngang.
+  · Đã thử và BỎ: dải `band` chỉ sau phần đầu + khối `muted/40` cho cột trái + cột giữa trắng —
+    ba mảng màu (hai tông kem khác nhau) ra vá víu. Chip để NỀN TRẮNG để nổi trên nền.
+
 ## 13. Còn thiếu / cố ý chưa làm
 
 | Việc | Ghi chú |

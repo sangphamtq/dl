@@ -1517,6 +1517,13 @@ model TripItem {
   dayId String?
   day   TripDay? @relation(fields: [dayId], references: [id], onDelete: SetNull)
 
+  // Việc / hoạt động THUỘC một nơi (hàng "Ở đâu | Làm gì") — kéo nơi thì việc đi theo.
+  // Đúng 2 mức: mục có parentId không bao giờ là cha. `order` của mục con đếm TRONG cha,
+  // của mục gốc đếm trong ngày. dayId của con luôn = dayId của cha (giữ ở tầng app).
+  parentId String?
+  parent   TripItem?  @relation("TripItemDoings", fields: [parentId], references: [id], onDelete: SetNull)
+  doings   TripItem[] @relation("TripItemDoings")
+
   order   Int
   stayMin Int? // null → mặc định theo loại (xem lib/trip-time.ts)
   note    String?
@@ -1543,9 +1550,13 @@ model TripItem {
   customTitle String?
   customLat   Float?
   customLng   Float?
+  // Mục tự thêm là một NƠI (hàng "Ở đâu") dù không có toạ độ — "Nhà bạn Minh". false + không
+  // toạ độ = một VIỆC tại nơi phía trước ("Chờ người"). Xem isTask() ở lib/trip-time.ts.
+  customPlace Boolean @default(false)
 
   createdAt DateTime @default(now())
 
   @@index([tripId])
   @@index([dayId])
+  @@index([parentId])
 }

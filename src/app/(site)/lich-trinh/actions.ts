@@ -369,6 +369,8 @@ export async function addItem(
   tripId?: string,
   dayId?: string | null,
   at: DropAt = "end",
+  /** Thêm thành VIỆC của nơi này (chỉ khi có `tripId`); `at` khi đó bị bỏ qua, dùng `parent.at`. */
+  parent: { id: string; at?: DropAt } | null = null,
 ): Promise<
   ActionResult<{
     tripId: string;
@@ -433,20 +435,29 @@ export async function addItem(
     if (!day) return { ok: false, error: "Ngày này vừa bị người khác xoá." };
   }
 
-  const last = await prisma.tripItem.findFirst({
-    where: { tripId: targetTripId, dayId: intoDay },
-    orderBy: { order: "desc" },
-    select: { order: true },
-  });
+  let scope: Scope = { dayId: intoDay, parentId: null };
+  let pos = at;
+  if (tripId && parent) {
+    const ps = await parentScope(targetTripId, parent.id);
+    if (typeof ps === "string") return { ok: false, error: ps };
+    scope = ps;
+    pos = parent.at ?? "end";
+  }
 
   const [item, trip, tripCount] = await Promise.all([
     prisma.$transaction(async (tx) => {
       const created = await tx.tripItem.create({
-        data: { tripId: targetTripId, dayId: intoDay, order: (last?.order ?? -1) + 1, ...data },
+        data: {
+          tripId: targetTripId,
+          dayId: scope.dayId,
+          parentId: scope.parentId,
+          order: await nextOrder(tx, targetTripId, scope),
+          ...data,
+        },
         select: { id: true },
       });
       // Tạo ở cuối rồi mới dời: `placeAt` cần thấy danh sách hiện có trên server.
-      if (at !== "end") await placeItem(tx, targetTripId, intoDay, created.id, at);
+      if (pos !== "end") await placeItem(tx, targetTripId, scope, created.id, pos);
       return created;
     }),
     prisma.trip.update({
@@ -572,6 +583,89 @@ export async function searchTripCandidates(
   };
 }
 
+/**
+ * Một dòng TỰ GÕ "ở đâu / làm gì / bao lâu" — phần nào cũng có thể trống (nhưng không cả hai).
+ * Có "ở đâu" ⇒ một NƠI tự gõ (`customPlace`), "làm gì" thành việc ngay sau nó, nên cả hai
+ * nằm chung một hàng. Chỉ "làm gì" ⇒ một việc tại nơi phía trước.
+ * Trả về id mục CUỐI để lần thêm kế tiếp chèn ngay sau.
+ */
+export async function addCustomStop(
+  tripId: string,
+  dayId: string | null,
+  at: DropAt,
+  input: { where?: string; what?: string; stayMin?: number | null },
+  /** Chỉ có "làm gì" thì gắn vào nơi này (vị trí `parent.at` trong nơi đó). */
+  parent: { id: string; at?: DropAt } | null = null,
+): Promise<TripActionResult<{ itemId: string; placeId: string | null }>> {
+  const where = clip(input.where ?? "", MAX_TITLE);
+  const what = clip(input.what ?? "", MAX_TITLE);
+  if (!where && !what) return { ok: false, error: "Gõ ít nhất ở đâu hoặc làm gì." };
+  const stay =
+    input.stayMin == null ? null : Math.min(24 * 60, Math.max(0, Math.round(input.stayMin)));
+
+  try {
+    await editableTrip(tripId);
+    if (dayId) {
+      const day = await prisma.tripDay.findFirst({ where: { id: dayId, tripId }, select: { id: true } });
+      if (!day) return { ok: false, error: "Ngày này vừa bị người khác xoá." };
+    }
+  } catch (e) {
+    return fail(e);
+  }
+
+  let taskScope: Scope | null = null;
+  if (!where && parent) {
+    const ps = await parentScope(tripId, parent.id);
+    if (typeof ps === "string") return { ok: false, error: ps };
+    taskScope = ps;
+  }
+
+  const result = await prisma.$transaction(async (tx) => {
+    const top: Scope = { dayId, parentId: null };
+    let placeId: string | null = null;
+    let last: string | null = null;
+    if (where) {
+      const place = await tx.tripItem.create({
+        data: {
+          tripId,
+          dayId,
+          order: await nextOrder(tx, tripId, top),
+          customTitle: where,
+          customPlace: true,
+          // Có việc thì thời lượng thuộc về VIỆC; nơi chỉ là chỗ đến.
+          stayMin: what ? 0 : stay,
+        },
+        select: { id: true },
+      });
+      if (at !== "end") await placeItem(tx, tripId, top, place.id, at);
+      placeId = last = place.id;
+    }
+    if (what) {
+      // Có "ở đâu" thì việc là của CHÍNH nơi vừa tạo; không thì của `parent`, hoặc là mục gốc.
+      const scope: Scope = placeId ? { dayId, parentId: placeId } : (taskScope ?? top);
+      const pos: DropAt = placeId ? "end" : taskScope ? (parent?.at ?? "end") : at;
+      const task = await tx.tripItem.create({
+        data: {
+          tripId,
+          dayId: scope.dayId,
+          parentId: scope.parentId,
+          order: await nextOrder(tx, tripId, scope),
+          customTitle: what,
+          stayMin: stay,
+        },
+        select: { id: true },
+      });
+      if (pos !== "end") await placeItem(tx, tripId, scope, task.id, pos);
+      last = task.id;
+    }
+    await tx.trip.update({ where: { id: tripId }, data: { version: { increment: 1 } } });
+    return { itemId: last!, placeId };
+  });
+
+  refresh(tripId);
+  return { ok: true, data: result };
+}
+
 export async function moveItemToTrip(
   itemId: string,
   tripId: string,
@@ -593,15 +687,19 @@ export async function moveItemToTrip(
   }
 
   const last = await prisma.tripItem.findFirst({
-    where: { tripId, dayId: null },
+    where: { tripId, dayId: null, parentId: null },
     orderBy: { order: "desc" },
     select: { order: true },
   });
 
-  await prisma.tripItem.update({
-    where: { id: itemId },
-    data: { tripId, dayId: null, order: (last?.order ?? -1) + 1 },
-  });
+  await prisma.$transaction([
+    prisma.tripItem.update({
+      where: { id: itemId },
+      data: { tripId, dayId: null, parentId: null, order: (last?.order ?? -1) + 1 },
+    }),
+    // Việc của nơi này sang chuyến mới cùng nó.
+    prisma.tripItem.updateMany({ where: { parentId: itemId }, data: { tripId, dayId: null } }),
+  ]);
 
   await Promise.all([bump(item.tripId), bump(tripId)]);
   await rememberPlanning(tripId);
@@ -622,7 +720,27 @@ export async function removeItem(itemId: string): Promise<ActionResult> {
     return { ok: false, error: (e as Error).message };
   }
 
-  await prisma.tripItem.delete({ where: { id: itemId } });
+  await prisma.$transaction(async (tx) => {
+    const full = await tx.tripItem.findUnique({
+      where: { id: itemId },
+      select: { dayId: true, parentId: true, doings: { orderBy: { order: "asc" }, select: { id: true } } },
+    });
+    if (!full) return;
+    // Bỏ một nơi KHÔNG bỏ theo việc của nó: các việc đứng ra thành mục gốc ngay chỗ nơi đó
+    // vừa đứng — mất dữ liệu người ta tự gõ chỉ vì bỏ một địa điểm là quá tay.
+    if (full.doings.length > 0) {
+      const scope: Scope = { dayId: full.dayId, parentId: null };
+      const tops = (
+        await tx.tripItem.findMany({ where: scopeWhere(item.tripId, scope), orderBy: { order: "asc" }, select: { id: true } })
+      ).map((r) => r.id);
+      const at = tops.indexOf(itemId);
+      tops.splice(at < 0 ? tops.length : at, 1, ...full.doings.map((d) => d.id));
+      await tx.tripItem.delete({ where: { id: itemId } });
+      await writeOrder(tx, tops, scope);
+    } else {
+      await tx.tripItem.delete({ where: { id: itemId } });
+    }
+  });
   await bump(item.tripId);
   refresh(item.tripId);
   return { ok: true };
@@ -655,40 +773,77 @@ export async function updateItem(
   return { ok: true };
 }
 
-/** Đặt `itemId` vào vùng (`dayId`, null = chưa xếp) theo ý định `at`, đánh số lại cả vùng. */
-async function placeItem(
-  tx: Prisma.TransactionClient,
-  tripId: string,
-  dayId: string | null,
-  itemId: string,
-  at: DropAt,
-) {
-  const siblings = await tx.tripItem.findMany({
-    where: { tripId, dayId },
-    orderBy: { order: "asc" },
-    select: { id: true },
-  });
+/**
+ * Vùng xếp chỗ: các mục GỐC của một ngày (`dayId`, null = chưa xếp), hoặc các VIỆC của một nơi
+ * (`parentId`). `order` đếm riêng trong từng vùng.
+ */
+type Scope = { dayId: string | null; parentId: string | null };
 
-  const ids = siblings.map((s) => s.id).filter((id) => id !== itemId);
-  ids.splice(placeAt(ids, at), 0, itemId);
+function scopeWhere(tripId: string, scope: Scope): Prisma.TripItemWhereInput {
+  return scope.parentId
+    ? { tripId, parentId: scope.parentId }
+    : { tripId, dayId: scope.dayId, parentId: null };
+}
 
+async function writeOrder(tx: Prisma.TransactionClient, ids: string[], scope: Scope) {
+  if (ids.length === 0) return;
   await tx.$executeRaw`
     UPDATE "TripItem" AS t
-    SET "order" = v.ord, "dayId" = ${dayId}::text
+    SET "order" = v.ord, "dayId" = ${scope.dayId}::text, "parentId" = ${scope.parentId}::text
     FROM (VALUES ${Prisma.join(
       ids.map((id, i) => Prisma.sql`(${id}::text, ${i}::int)`),
     )}) AS v(id, ord)
     WHERE t.id = v.id`;
 }
 
+/** Đặt `itemId` vào `scope` theo ý định `at`, đánh số lại cả vùng. */
+async function placeItem(
+  tx: Prisma.TransactionClient,
+  tripId: string,
+  scope: Scope,
+  itemId: string,
+  at: DropAt,
+) {
+  const siblings = await tx.tripItem.findMany({
+    where: scopeWhere(tripId, scope),
+    orderBy: { order: "asc" },
+    select: { id: true },
+  });
+  const ids = siblings.map((s) => s.id).filter((id) => id !== itemId);
+  ids.splice(placeAt(ids, at), 0, itemId);
+  await writeOrder(tx, ids, scope);
+}
+
+async function nextOrder(tx: Prisma.TransactionClient, tripId: string, scope: Scope) {
+  const last = await tx.tripItem.findFirst({
+    where: scopeWhere(tripId, scope),
+    orderBy: { order: "desc" },
+    select: { order: true },
+  });
+  return (last?.order ?? -1) + 1;
+}
+
+/** Nơi để gắn việc vào: phải cùng chuyến và là mục GỐC (đúng 2 mức). Trả về ngày của nó. */
+async function parentScope(tripId: string, parentId: string): Promise<Scope | string> {
+  const p = await prisma.tripItem.findFirst({
+    where: { id: parentId, tripId },
+    select: { dayId: true, parentId: true },
+  });
+  if (!p) return "Nơi này vừa bị người khác bỏ khỏi lịch trình.";
+  if (p.parentId) return "Không đặt việc vào trong một việc khác được.";
+  return { dayId: p.dayId, parentId };
+}
+
 export async function moveItem(
   itemId: string,
   dayId: string | null,
   at: DropAt,
+  /** Đặt thành VIỆC của nơi này (dayId bị bỏ qua — lấy theo nơi). null = mục gốc của ngày. */
+  parentId: string | null = null,
 ): Promise<TripActionResult> {
   const item = await prisma.tripItem.findUnique({
     where: { id: itemId },
-    select: { id: true, tripId: true, dayId: true },
+    select: { id: true, tripId: true, dayId: true, parentId: true, _count: { select: { doings: true } } },
   });
   if (!item) return { ok: false, error: "Mục này vừa bị người khác bỏ khỏi lịch trình." };
   try {
@@ -697,32 +852,36 @@ export async function moveItem(
     return fail(e);
   }
 
-  if (dayId) {
+  let to: Scope = { dayId, parentId: null };
+  if (parentId) {
+    if (parentId === itemId) return { ok: false, error: "Không đặt một mục vào chính nó được." };
+    if (item._count.doings > 0)
+      return { ok: false, error: "Nơi này đang có việc riêng — không đặt vào trong nơi khác được." };
+    const scope = await parentScope(item.tripId, parentId);
+    if (typeof scope === "string") return { ok: false, error: scope };
+    to = scope;
+  } else if (dayId) {
     const day = await prisma.tripDay.findFirst({
       where: { id: dayId, tripId: item.tripId },
       select: { id: true },
     });
     if (!day) return { ok: false, error: "Ngày này vừa bị người khác xoá." };
   }
+  const from: Scope = { dayId: item.dayId, parentId: item.parentId };
 
   await prisma.$transaction(async (tx) => {
-    await placeItem(tx, item.tripId, dayId, itemId, at);
+    await placeItem(tx, item.tripId, to, itemId, at);
+    // Việc của nơi này đi theo nơi sang ngày mới.
+    if (item._count.doings > 0 && to.dayId !== item.dayId)
+      await tx.tripItem.updateMany({ where: { parentId: itemId }, data: { dayId: to.dayId } });
 
-    if (item.dayId !== dayId) {
-      const source = await tx.tripItem.findMany({
-        where: { tripId: item.tripId, dayId: item.dayId },
+    if (from.dayId !== to.dayId || from.parentId !== to.parentId) {
+      const rest = await tx.tripItem.findMany({
+        where: scopeWhere(item.tripId, from),
         orderBy: { order: "asc" },
         select: { id: true },
       });
-      if (source.length > 0) {
-        await tx.$executeRaw`
-          UPDATE "TripItem" AS t
-          SET "order" = v.ord
-          FROM (VALUES ${Prisma.join(
-            source.map((row, i) => Prisma.sql`(${row.id}::text, ${i}::int)`),
-          )}) AS v(id, ord)
-          WHERE t.id = v.id`;
-      }
+      await writeOrder(tx, rest.map((r) => r.id), from);
     }
 
     await tx.trip.update({
@@ -795,9 +954,10 @@ export async function cloneTrip(
       items: {
         orderBy: { order: "asc" },
         select: {
+          id: true, parentId: true,
           dayId: true, order: true, stayMin: true, note: true,
           spotId: true, eateryId: true, accommodationId: true, activityId: true,
-          customTitle: true, customLat: true, customLng: true,
+          customTitle: true, customLat: true, customLng: true, customPlace: true,
         },
       },
     },
@@ -840,17 +1000,24 @@ export async function cloneTrip(
       dayIdMap.set(d.id, day.id);
     }
 
-    for (const it of source.items) {
-      await tx.tripItem.create({
+    // Mục gốc trước, việc sau — việc cần id MỚI của nơi nó thuộc về.
+    const itemIdMap = new Map<string, string>();
+    const ordered = [...source.items].sort((a, b) => Number(!!a.parentId) - Number(!!b.parentId));
+    for (const it of ordered) {
+      const copy = await tx.tripItem.create({
+        select: { id: true },
         data: {
           tripId: trip.id,
+          parentId: it.parentId ? (itemIdMap.get(it.parentId) ?? null) : null,
           dayId: it.dayId ? (dayIdMap.get(it.dayId) ?? null) : null,
           order: it.order, stayMin: it.stayMin, note: it.note,
           spotId: it.spotId, eateryId: it.eateryId,
           accommodationId: it.accommodationId, activityId: it.activityId,
           customTitle: it.customTitle, customLat: it.customLat, customLng: it.customLng,
+          customPlace: it.customPlace,
         },
       });
+      itemIdMap.set(it.id, copy.id);
     }
     for (const n of source.notes) {
       await tx.tripNote.create({
@@ -1530,8 +1697,15 @@ export async function getTripBag(): Promise<TripBag> {
 
   const byDay = new Map<string, TripBagItem[]>();
   const unscheduled: TripBagItem[] = [];
+  // Ngăn nổi chỉ xếp MỤC GỐC: việc đi theo nơi của nó (kéo nơi là việc theo), nên chỉ ghi số.
+  const doingCount = new Map<string, number>();
+  for (const row of trip.items)
+    if (row.parentId) doingCount.set(row.parentId, (doingCount.get(row.parentId) ?? 0) + 1);
   for (const row of trip.items) {
+    if (row.parentId) continue;
     const item = bagItem(row);
+    const n = doingCount.get(row.id);
+    if (n) item.typeLabel = `${item.typeLabel}, kèm ${n} việc`;
     if (!row.dayId) {
       unscheduled.push(item);
       continue;
@@ -1553,7 +1727,7 @@ export async function getTripBag(): Promise<TripBag> {
     trip: { id: trip.id, title: trip.title, version: trip.version, placeName: trip.place?.name ?? null },
     days,
     unscheduled,
-    scheduledCount: trip.items.length - unscheduled.length,
+    scheduledCount: trip.items.filter((r) => r.dayId).length,
     tripCount,
   };
 }
@@ -1573,6 +1747,7 @@ const bagSelect = {
     select: {
       id: true,
       dayId: true,
+      parentId: true,
       customTitle: true,
       spot: { select: { slug: true, name: true, images: bagImages } },
       eatery: { select: { slug: true, name: true, images: bagImages } },

@@ -3,11 +3,20 @@
 import { useEffect, useRef, useState } from "react";
 import type { DayView, ItemView, ResolvedItem } from "@/lib/trip";
 import { dropAt, type DropAt } from "@/lib/trip-drop";
+import { isTask } from "@/lib/trip-time";
 
 export const BACKLOG = "backlog";
 
 export const dayKey = (dayId: string) => `day:${dayId}`;
 export const dayIdOf = (key: string) => (key.startsWith("day:") ? key.slice(4) : null);
+/** Vùng "Làm gì" của một mục gốc — các việc thuộc nơi đó. */
+export const doingsKey = (parentId: string) => `in:${parentId}`;
+export const parentIdOf = (key: string) => (key.startsWith("in:") ? key.slice(3) : null);
+
+/** Nơi (hàng "Ở đâu") không chui vào trong nơi khác — chỉ việc và hoạt động mới làm "việc" được. */
+export function canBeDoing(item: { kind: ItemView["kind"]; lat?: number | null; lng?: number | null; customPlace?: boolean }) {
+  return item.kind === "activity" || isTask(item);
+}
 
 export type Board = Record<string, string[]>;
 
@@ -31,9 +40,23 @@ function toItemView(x: ItemView | ResolvedItem): ItemView {
   };
 }
 
+/**
+ * Vùng gốc (`backlog`, `day:X`) chỉ chứa MỤC GỐC; việc của mỗi mục gốc nằm ở `in:<id>` (luôn
+ * có, kể cả rỗng, để thả được vào cột "Làm gì" còn trống). Danh sách vào đã phẳng: gốc rồi con.
+ */
 function buildBoard(days: DayView[], backlog: ResolvedItem[]): Board {
-  const board: Board = { [BACKLOG]: backlog.map((i) => i.id) };
-  for (const d of days) board[dayKey(d.id)] = d.items.map((i) => i.id);
+  const board: Board = {};
+  const fill = (key: string, list: { id: string; parentId: string | null }[]) => {
+    board[key] = [];
+    for (const i of list)
+      if (!i.parentId) {
+        board[key].push(i.id);
+        board[doingsKey(i.id)] = [];
+      }
+    for (const i of list) if (i.parentId) board[doingsKey(i.parentId)]?.push(i.id);
+  };
+  fill(BACKLOG, backlog);
+  for (const d of days) fill(dayKey(d.id), d.items);
   return board;
 }
 
@@ -95,26 +118,46 @@ export function useTripBoard(days: DayView[], backlog: ResolvedItem[]) {
   for (const d of days) for (const i of d.items) byId.set(i.id, i);
   for (const i of backlog) byId.set(i.id, toItemView(i));
 
-  function containerOf(id: string): string | null {
-    if (id in board) return id;
-    return Object.keys(board).find((k) => board[k].includes(id)) ?? null;
+  function containerOf(id: string, b: Board = board): string | null {
+    if (id in b) return id;
+    return Object.keys(b).find((k) => b[k].includes(id)) ?? null;
+  }
+
+  /**
+   * Thả `activeId` lên `overId` thì thực ra rơi vào đâu. Một NƠI (hoặc mục đang có việc) bị kéo
+   * qua cột "Làm gì" của hàng khác thì rơi vào VỊ TRÍ CỦA HÀNG đó, không chui vào trong nó.
+   */
+  function resolveOver(activeId: string, overId: string): string {
+    const to = containerOf(overId);
+    const parent = to ? parentIdOf(to) : null;
+    if (!parent) return overId;
+    const item = byId.get(activeId);
+    const hasDoings = (board[doingsKey(activeId)]?.length ?? 0) > 0;
+    if (parent === activeId || !item || !canBeDoing(item) || hasDoings) return parent;
+    return overId;
   }
 
   function moveLocal(activeId: string, overId: string) {
-    setBoard((prev) => applyMove(prev, activeId, overId));
+    const target = resolveOver(activeId, overId);
+    if (target === activeId) return;
+    setBoard((prev) => applyMove(prev, activeId, target));
   }
 
   function commitMove(
     activeId: string,
     overId: string | null,
-  ): { dayId: string | null; at: DropAt } | null {
-    const next = overId ? applyMove(board, activeId, overId) : board;
-    if (overId) setBoard(next);
+  ): { dayId: string | null; parentId: string | null; at: DropAt } | null {
+    const target = overId ? resolveOver(activeId, overId) : null;
+    const next = target && target !== activeId ? applyMove(board, activeId, target) : board;
+    if (next !== board) setBoard(next);
 
-    const container = Object.keys(next).find((k) => next[k].includes(activeId));
-    if (!container) return null;
+    const container = containerOf(activeId, next);
+    if (!container || container === activeId) return null;
+    const parentId = parentIdOf(container);
+    const home = parentId ? containerOf(parentId, next) : container;
     return {
-      dayId: container === BACKLOG ? null : dayIdOf(container),
+      dayId: !home || home === BACKLOG ? null : dayIdOf(home),
+      parentId,
       at: dropAt(next[container], activeId),
     };
   }

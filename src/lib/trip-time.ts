@@ -19,11 +19,16 @@ export const DEFAULT_STAY_MIN: Record<TripItemKind, number> = {
   custom: 60,
 };
 
-/** Mục tự thêm KHÔNG có toạ độ là một VIỆC (đặt xe, chờ người…), không phải một nơi. */
+/** Mục tự thêm KHÔNG có toạ độ là một VIỆC (đặt xe, chờ người…) — trừ khi đánh dấu là NƠI. */
 export const TASK_STAY_MIN = 30;
 
-export function isTask(i: { kind: TripItemKind; lat?: number | null; lng?: number | null }): boolean {
-  return i.kind === "custom" && (i.lat == null || i.lng == null);
+export function isTask(i: {
+  kind: TripItemKind;
+  lat?: number | null;
+  lng?: number | null;
+  customPlace?: boolean;
+}): boolean {
+  return i.kind === "custom" && !i.customPlace && (i.lat == null || i.lng == null);
 }
 
 /**
@@ -99,6 +104,8 @@ export type ScheduleItemInput = {
   lng?: number | null;
   /** Diễn ra TẠI nơi phía trước (hoạt động đang lồng) — không có chặng tới nó. */
   inPlace?: boolean;
+  /** Mục tự thêm là một NƠI dù không có toạ độ. */
+  customPlace?: boolean;
 };
 
 export type TripWarning = {
@@ -135,6 +142,12 @@ export type ScheduledDay = {
   warnings: TripWarning[];
 };
 
+/** "0 phút" đọc như lỗi: ở lại 0 phút là GHÉ QUA (chỗ ở thì là mốc nhận phòng). */
+export function stayLabel(item: { kind: TripItemKind; effectiveStayMin: number }): string {
+  if (item.effectiveStayMin > 0) return fmtDuration(item.effectiveStayMin);
+  return item.kind === "accommodation" ? "Nhận phòng" : "Ghé qua";
+}
+
 export function legKey(fromId: string, toId: string): string {
   return `${fromId}->${toId}`;
 }
@@ -160,6 +173,11 @@ export function scheduleDay(
   let driveTotal = 0;
   // Việc diễn ra tại NƠI gần nhất phía trước, nên chặng đi tiếp xuất phát từ nơi đó.
   let lastPlace: ScheduleItemInput | null = null;
+  // Đã tới ít nhất một NƠI chưa (có toạ độ hay không). Khác `lastPlace`: nơi tự gõ đặt
+  // `lastPlace` về null nhưng vẫn là "đang ở đâu đó", nên chặng đi tiếp vẫn phải hiện.
+  let seenPlace = false;
+  // Nơi đang đứng (kể cả không toạ độ) — chặng đi tiếp xuất phát từ ĐÂY, không phải từ việc.
+  let here: ScheduleItemInput | null = null;
 
   items.forEach((item, i) => {
     const warnings: TripWarning[] = [];
@@ -191,7 +209,13 @@ export function scheduleDay(
     }
 
     t = arriveMin + stay;
-    if (hasCoords(item) && !item.inPlace) lastPlace = item;
+    if (!item.inPlace && !isTask(item)) {
+      // Tới một NƠI không có toạ độ (nơi tự gõ) là không còn biết mình đứng đâu: giữ nơi có
+      // toạ độ cũ thì chặng kế tiếp bị tính từ chỗ đã rời đi từ lâu.
+      lastPlace = hasCoords(item) ? item : null;
+      seenPlace = true;
+      here = item;
+    }
 
     const next = items[i + 1];
     let driveToNextMin: number | null = null;
@@ -199,7 +223,7 @@ export function scheduleDay(
     let legHidden = false;
     if (next && (!travel || isTask(next) || next.inPlace)) {
       legHidden = true;
-    } else if (next && !lastPlace && (isTask(item) || item.inPlace)) {
+    } else if (next && !seenPlace && (isTask(item) || item.inPlace)) {
       legHidden = true;
     } else if (next) {
       key = lastPlace && hasCoords(next) ? legKey(lastPlace.id, next.id) : null;
@@ -215,7 +239,12 @@ export function scheduleDay(
             text: `Chặng dài ${fmtDuration(driveToNextMin)} tới ${next.name}`,
           });
         }
-      } else if (!hasCoords(item) || !hasCoords(next)) {
+      } else if (
+        // Chỉ cảnh báo khi một NƠI CỦA SITE thiếu toạ độ (lỗi dữ liệu). Nơi tự gõ thì không có
+        // toạ độ là đương nhiên — dòng "chưa ước tính" đã đủ.
+        (here && !hasCoords(here) && here.kind !== "custom") ||
+        (!hasCoords(next) && next.kind !== "custom")
+      ) {
         warnings.push({
           level: "info",
           code: "noCoords",

@@ -3,6 +3,7 @@
 import {
   Fragment,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   useTransition,
@@ -48,31 +49,38 @@ import {
   updateItem,
 } from "@/app/(site)/lich-trinh/actions";
 import { TripMap } from "@/components/trip/trip-map";
+import { stayLabel } from "@/lib/trip-time";
 import { TripShell } from "@/components/trip/trip-shell";
 import { TripDayStrip } from "@/components/trip/trip-day-strip";
 import { TripFieldsMenu, useTripFields, type TripFields } from "@/components/trip/trip-fields";
 import {
   DayHeading,
   RailItem,
+  DoingRow,
+  PlaceStub,
   RailLeg,
+  StopRow,
   Thumb,
   Warning,
 } from "@/components/trip/trip-rail";
 import { TripTopbar } from "@/components/trip/trip-topbar";
 import { useTripLiveSync } from "@/components/trip/trip-live-sync";
-import { TripAddSearch, type AddTarget } from "@/components/trip/trip-add-search";
-import { insertAt, type DropAt } from "@/lib/trip-drop";
+import { TripAddSearch, type AddPos, type AddTarget } from "@/components/trip/trip-add-search";
+import { insertAt } from "@/lib/trip-drop";
 import {
   DndContext,
   DragOverlay,
   KeyboardSensor,
+  MeasuringStrategy,
   useDndContext,
   PointerSensor,
   TouchSensor,
   closestCorners,
+  pointerWithin,
   useDroppable,
   useSensor,
   useSensors,
+  type CollisionDetection,
   type DragEndEvent,
   type DragOverEvent,
   type DragStartEvent,
@@ -88,7 +96,9 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import {
   BACKLOG,
+  canBeDoing,
   dayKey,
+  doingsKey,
   useTripBoard,
 } from "@/components/trip/trip-dnd";
 
@@ -172,6 +182,40 @@ export function TripEditor({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
+  // Cột "Làm gì" nằm TRONG một hàng lớn hơn nó nhiều: dò theo góc gần nhất thì cả hàng luôn
+  // thắng, việc thả vào cột trống của nơi khác lại rơi thành hàng riêng. Chuột đang ở trong
+  // cột / một việc nào thì lấy đúng cái đó trước.
+  const collide: CollisionDetection = (args) => {
+    const within = pointerWithin(args);
+    const inside = within.filter((c) => {
+      const box = dnd.containerOf(String(c.id));
+      return box?.startsWith("in:") || String(c.id).startsWith("in:");
+    });
+    const doing = inside.find((c) => !String(c.id).startsWith("in:"));
+    if (doing) return [doing];
+    if (inside.length) return [inside[0]];
+    // Đang kéo một VIỆC (của một nơi) qua một hàng ⇒ vào việc của hàng đó, thả đâu trên hàng
+    // cũng được. Không thì trên đường kéo nó bị đổi thành hàng riêng mỗi lần lướt qua một
+    // hàng, bố cục xô đi và lúc thả rơi sai chỗ.
+    const active = String(args.active.id);
+    const isDoing = !!dnd.byId.get(active)?.parentId || !!dnd.containerOf(active)?.startsWith("in:");
+    if (isDoing) {
+      const row = within.find((c) => {
+        const box = dnd.containerOf(String(c.id));
+        return String(c.id) !== active && (box?.startsWith("day:") || box === BACKLOG);
+      });
+      if (row) return [{ id: doingsKey(String(row.id)) }];
+    }
+    // Kéo CẢ HÀNG: hàng giờ cao (việc nằm ngay dưới nơi) nên dò theo GÓC gần nhất thì hàng to
+    // luôn thấy gần chính nó nhất và không chịu đổi chỗ — lấy hàng đang nằm dưới chuột.
+    const row = within.find((c) => {
+      const box = dnd.containerOf(String(c.id));
+      return box?.startsWith("day:") || box === BACKLOG;
+    });
+    if (row) return [row];
+    return closestCorners(args);
+  };
+
   function onDragStart(e: DragStartEvent) {
     dnd.beginDrag(String(e.active.id));
   }
@@ -193,7 +237,7 @@ export function TripEditor({
     setStaleDays([fromDayId, at?.dayId ?? null].filter((x): x is string => !!x));
     if (at)
       run(async () => {
-        const res = await moveItem(id, at.dayId, at.at);
+        const res = await moveItem(id, at.dayId, at.at, at.parentId);
         if (!res.ok) {
           dnd.resetFromProps();
           router.refresh();
@@ -203,13 +247,53 @@ export function TripEditor({
   }
 
   const activeItem = dnd.activeId ? dnd.byId.get(dnd.activeId) : null;
+  // Chỉ khi đang kéo một VIỆC (thả vào nơi khác được) mới mở chỗ thả trong các nơi chưa có việc.
+  // Kéo một NƠI thì không — nó không bao giờ chui vào nơi khác, mở ra chỉ làm cả ngày xô đi.
+  const draggingDoing =
+    !!activeItem && canBeDoing(activeItem) && (dnd.board[doingsKey(activeItem.id)]?.length ?? 0) === 0;
+  // Đang kéo CẢ HÀNG (một mục gốc) ⇒ mọi hàng thu gọn còn "kèm N việc": nơi nhiều việc kéo đi
+  // là một khối rất dài, cả ngày thì dài gấp mấy lần — thu lại thì chỉ còn xếp các nơi.
+  const draggingRow =
+    !!activeItem && !(dnd.containerOf(activeItem.id)?.startsWith("in:") ?? false);
+
+  // Thu gọn NGAY LÚC NHẤN tay kéo của một hàng, không đợi chuột dịch đủ ngưỡng kích hoạt kéo.
+  const [pressed, setPressed] = useState<string | null>(null);
+  const pressAnchor = useRef<{ id: string; top: number } | null>(null);
+  function pressRow(id: string) {
+    const el = document.querySelector<HTMLElement>(`[data-stop-row="${id}"]`);
+    pressAnchor.current = el ? { id, top: el.getBoundingClientRect().top } : null;
+    setPressed(id);
+  }
+  useEffect(() => {
+    if (!pressed) return;
+    const release = () => setPressed(null);
+    window.addEventListener("pointerup", release);
+    window.addEventListener("pointercancel", release);
+    return () => {
+      window.removeEventListener("pointerup", release);
+      window.removeEventListener("pointercancel", release);
+    };
+  }, [pressed]);
+  // Các hàng phía trên thu lại thì hàng đang nhấn NHẢY LÊN, trượt khỏi con trỏ — cuộn bù đúng
+  // khoảng đó để nó đứng yên dưới chuột (cũng là chỗ dnd-kit đo để bắt đầu kéo).
+  useLayoutEffect(() => {
+    const a = pressAnchor.current;
+    if (!pressed || !a) return;
+    pressAnchor.current = null;
+    const el = document.querySelector<HTMLElement>(`[data-stop-row="${a.id}"]`);
+    if (el) window.scrollBy(0, el.getBoundingClientRect().top - a.top);
+  }, [pressed]);
+  const collapseRows = draggingRow || pressed !== null;
 
   return (
     <DndContext
       // `id` CỐ ĐỊNH — xem chú thích cùng chỗ ở `trip-dock.tsx`.
       id="trip-dnd"
       sensors={sensors}
-      collisionDetection={closestCorners}
+      collisionDetection={collide}
+      // Vùng "Làm gì" trống chỉ nở ra KHI bắt đầu kéo ⇒ bố cục đổi giữa lúc kéo; đo lại liên tục
+      // kẻo dnd-kit dò điểm thả theo toạ độ cũ.
+      measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
       onDragStart={onDragStart}
       onDragOver={onDragOver}
       onDragEnd={onDragEnd}
@@ -219,6 +303,7 @@ export function TripEditor({
       }}
     >
     <TripShell
+      canvas
       header={
         <TripTopbar
           trip={trip}
@@ -313,6 +398,10 @@ export function TripEditor({
                   isTemplate={trip.isTemplate}
                   fields={fields}
                   itemIds={dnd.board[dayKey(day.id)] ?? []}
+                  doingsOf={(id) => dnd.board[doingsKey(id)] ?? []}
+                  draggingDoing={draggingDoing}
+                  collapsed={collapseRows}
+                  onPressRow={pressRow}
                   byId={dnd.byId}
                   stale={slow && staleDays.includes(day.id)}
                   dayCount={days.length}
@@ -550,6 +639,10 @@ function DayBlock({
   isTemplate,
   fields,
   itemIds,
+  doingsOf,
+  draggingDoing,
+  collapsed,
+  onPressRow,
   byId,
   stale,
   dayCount,
@@ -562,20 +655,39 @@ function DayBlock({
   day: DayView;
   isTemplate: boolean;
   fields: TripFields;
+  /** MỤC GỐC của ngày, theo bàn kéo–thả. */
   itemIds: string[];
+  /** Việc của một mục gốc, theo bàn kéo–thả. */
+  doingsOf: (id: string) => string[];
+  /** Đang kéo một việc ⇒ các nơi chưa có việc mở chỗ thả. */
+  draggingDoing: boolean;
+  /** Đang kéo cả hàng ⇒ ẩn việc của mọi hàng, chỉ ghi "kèm N việc". */
+  collapsed: boolean;
+  /** Vừa nhấn tay kéo của một hàng (chưa chắc đã kéo). */
+  onPressRow: (id: string) => void;
   byId: Map<string, ItemView>;
   stale: boolean;
   dayCount: number;
   allDays: DayView[];
   active: boolean;
   onFocus: () => void;
-  onAdd: (pos?: { at: DropAt; where?: string }) => void;
+  onAdd: (pos?: AddPos) => void;
   run: (fn: () => Promise<{ ok: boolean; error?: string }>, done?: string) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: dayKey(day.id) });
   const listRef = useRef<HTMLOListElement | null>(null);
-  const insert = (index: number) =>
-    onAdd(insertAt(itemIds, index, (id) => byId.get(id)?.name ?? "mục này"));
+  const tops = itemIds.map((id) => byId.get(id)).filter((x): x is ItemView => !!x);
+  const [noteFor, setNoteFor] = useState<string | null>(null);
+  const nameOf = (id: string) => byId.get(id)?.name ?? "mục này";
+
+  // Chèn ở hàng thứ k: một NƠI thành hàng mới ở đó; một VIỆC thì thuộc hàng ngay trên.
+  const topPos = (k: number): AddPos => ({ ...insertAt(itemIds, k, nameOf), mode: "place" });
+  // Chèn VIỆC vào trong nơi `parentId` ở vị trí `idx` của cột "Làm gì".
+  const childPos = (parentId: string, idx: number): AddPos => ({
+    ...insertAt(itemIds, itemIds.indexOf(parentId) + 1, nameOf),
+    parent: { id: parentId, name: nameOf(parentId), at: insertAt(doingsOf(parentId), idx, nameOf).at },
+    mode: "doing",
+  });
 
   return (
     <section
@@ -612,25 +724,18 @@ function DayBlock({
         span={null}
         right={
           <div className="flex items-center gap-1">
-            <label className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <Glyph name="sunrise" className="size-4 shrink-0" />
-              <input
-                key={day.startMin}
-                type="time"
-                defaultValue={toTimeValue(day.startMin)}
-                onChange={(e) => {
-                  const min = fromTimeValue(e.target.value);
-                  if (min != null) run(() => updateDay(day.id, { startMin: min }));
-                }}
-                aria-label={`Giờ bắt đầu ngày ${day.index + 1}`}
-                className="bg-transparent font-medium tabular-nums text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <StartTimePicker
+                startMin={day.startMin}
+                label={`Giờ bắt đầu ngày ${day.index + 1}`}
+                onSet={(min) => run(() => updateDay(day.id, { startMin: min }))}
               />
               {itemIds.length > 0 && (
                 <span className="whitespace-nowrap tabular-nums">
                   → {formatMinutes(day.endMin)}
                 </span>
               )}
-            </label>
+            </div>
 
             {dayCount > 1 && (
               <DropdownMenu>
@@ -676,6 +781,8 @@ function DayBlock({
       {fields.warn &&
         day.warnings.map((w) => <Warning key={w.code} warning={w} />)}
 
+      {/* Mục kéo ở cấp ngày là CẢ HÀNG (nơi + việc của nó) — các hàng xếp dọc. Việc trong
+          cột "Làm gì" có SortableContext riêng (`DoingsColumn`). */}
       <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
         <ol
           ref={(node) => {
@@ -683,7 +790,8 @@ function DayBlock({
             listRef.current = node;
           }}
           className={cn(
-            "relative -mx-2 mt-6 min-h-[4rem] rounded-[6px] px-2 transition-colors",
+            "relative -mx-2 min-h-[4rem] rounded-[6px] px-2 transition-colors",
+            "mt-6",
             isOver && "bg-primary/5 ring-1 ring-primary/20",
           )}
         >
@@ -692,7 +800,7 @@ function DayBlock({
               {/* Ngày trống chưa có trục nên chưa có dấu + nào — lối thêm duy nhất là đây. */}
               <button
                 type="button"
-                onClick={() => onAdd()}
+                onClick={() => onAdd({ mode: "place" })}
                 className="inline-flex h-8 items-center gap-1.5 rounded-[4px] border border-border px-2.5 font-medium text-foreground transition-colors hover:border-primary/50 hover:text-primary-ink"
               >
                 <Glyph name="plus" className="size-4" />
@@ -701,45 +809,123 @@ function DayBlock({
               hoặc kéo một mục từ cột Chưa xếp ngày sang đây.
             </li>
           ) : (
-            itemIds.map((id, i) => {
-              const item = byId.get(id);
-              if (!item) return null;
-              return (
-                <Fragment key={id}>
-                  <SortableRailItem
-                    item={item}
-                    index={i}
-                    stale={stale}
-                    fields={fields}
-                    stay={<StayPicker item={item} run={run} />}
-                    note={
+            (() => {
+              let num = 0;
+              return tops.map((top, k) => {
+                const kids = doingsOf(top.id)
+                  .map((id) => byId.get(id))
+                  .filter((x): x is ItemView => !!x);
+                const editProps = (item: ItemView, before: AddPos, after: AddPos, lead?: ReactNode) => ({
+                  stale,
+                  fields,
+                  stay: <StayPicker item={item} run={run} />,
+                  // Mục chưa có ghi chú KHÔNG giữ sẵn một dòng ẩn (bản cũ: ~22px trắng dưới MỌI mục);
+                  // mở từ menu "Thêm ghi chú" thì ô gõ hiện ngay tại chỗ.
+                  note:
+                    item.note || noteFor === item.id ? (
                       <InlineEdit
+                        key={noteFor === item.id ? "new" : "has"}
                         value={item.note}
-                        placeholder="Thêm ghi chú…"
+                        placeholder="Ghi chú cho mục này…"
+                        startEditing={noteFor === item.id}
+                        onClose={() => setNoteFor(null)}
                         onSave={(note) => run(() => updateItem(item.id, { note }))}
                         multiline
                         textClassName="mt-1.5 text-xs italic leading-relaxed text-muted-foreground hover:text-foreground"
-                        emptyClassName="mt-1.5 text-xs text-muted-foreground/60 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 [@media(pointer:coarse)]:opacity-100"
+                        emptyClassName="mt-1.5 text-xs text-muted-foreground/60"
                       />
-                    }
-                    actions={
+                    ) : null,
+                  actions: (
+                    <>
+                      {lead}
                       <ItemActions
                         item={item}
                         day={day}
                         allDays={allDays}
                         run={run}
-                        onInsertBefore={() => insert(i)}
-                        onInsertAfter={() => insert(i + 1)}
+                        onInsertBefore={() => onAdd(before)}
+                        onInsertAfter={() => onAdd(after)}
+                        onAddNote={item.note ? undefined : () => setNoteFor(item.id)}
                       />
-                    }
+                    </>
+                  ),
+                });
+                const isPlace = !canBeDoing(top);
+                // Nút của CHÍNH hàng: chỉ thêm việc vào đúng nơi này (không thêm được nơi khác).
+                const addDoing = (
+                  <AddDoingButton
+                    label={top.name}
+                    onClick={() => onAdd({ ...childPos(top.id, kids.length), mode: "doing" })}
                   />
-                  {fields.leg && i < itemIds.length - 1 && <RailLeg item={item} />}
-                </Fragment>
-              );
-            })
+                );
+                const no = isPlace || (top.kind === "activity" && top.atName) ? ++num : null;
+                const lastItem = kids[kids.length - 1] ?? top;
+                return (
+                  <Fragment key={top.id}>
+                    <SortableStop
+                      item={top}
+                      onPress={() => onPressRow(top.id)}
+                      left={(h) =>
+                        isPlace ? (
+                          <RailItem
+                            as="div"
+                            item={top}
+                            index={k}
+                            number={no}
+                            grip={h.grip}
+                            handleProps={h.handleProps}
+                            {...editProps(top, topPos(k), topPos(k + 1), addDoing)}
+                          />
+                        ) : (
+                          <PlaceStub
+                            name={top.kind === "activity" ? top.atName : null}
+                            minute={top.arriveMin}
+                            number={no}
+                          />
+                        )
+                      }
+                      hasDoings={!isPlace || kids.length > 0 || draggingDoing}
+                      summary={collapsed && kids.length > 0 ? `kèm ${kids.length} việc` : null}
+                      right={(h) => (
+                        <>
+                          <DoingsColumn
+                            parentId={top.id}
+                            ids={kids.map((d) => d.id)}
+                            armed={draggingDoing}
+                          >
+                            {/* Hàng không có mục nơi: chính mục gốc đứng đầu cột "Làm gì" và
+                                cầm tay kéo của CẢ HÀNG. */}
+                            {!isPlace && (
+                              <DoingRow
+                                item={top}
+                                grip={h.grip}
+                                {...editProps(top, topPos(k), topPos(k + 1), addDoing)}
+                              />
+                            )}
+                            {!collapsed && kids.map((d, idx) => (
+                              <SortableDoing
+                                key={d.id}
+                                item={d}
+                                {...editProps(d, childPos(top.id, idx), childPos(top.id, idx + 1))}
+                              />
+                            ))}
+                          </DoingsColumn>
+                        </>
+                      )}
+                    />
+                    {fields.leg && k < tops.length - 1 && <RailLeg item={lastItem} />}
+                  </Fragment>
+                );
+              });
+            })()
           )}
-          {itemIds.length > 0 && (
-            <InsertMarks listRef={listRef} itemIds={itemIds} onInsert={insert} />
+          {itemIds.length > 0 && !collapsed && (
+            <InsertMarks
+              listRef={listRef}
+              itemIds={itemIds}
+              slotIndexes={itemIds.map((_, k) => k + 1)}
+              onInsert={(k) => onAdd(topPos(k))}
+            />
           )}
         </ol>
       </SortableContext>
@@ -755,15 +941,16 @@ function DayBlock({
 function InsertMarks({
   listRef,
   itemIds,
+  slotIndexes,
   onInsert,
 }: {
   listRef: React.RefObject<HTMLOListElement | null>;
   itemIds: string[];
+  /** Hàng thứ k (`[data-stop-row]`); chèn sau hàng đó = chỉ số `slotIndexes[k]`. */
+  slotIndexes: number[];
   onInsert: (index: number) => void;
 }) {
-  const [dots, setDots] = useState<{ x: number; y: number }[]>([]);
-  // Đáy trục — chỗ đặt dấu + "thêm sau mục cuối".
-  const [endY, setEndY] = useState(0);
+  const [slots, setSlots] = useState<{ x: number; y: number }[]>([]);
   const [hovered, setHovered] = useState<number | null>(null);
   const { active } = useDndContext();
   const ids = itemIds.join(",");
@@ -773,14 +960,26 @@ function InsertMarks({
   useEffect(() => {
     const list = listRef.current;
     if (!list) return;
+    // Dấu + nằm GIỮA HAI HÀNG (dưới các việc của hàng trên), ngang trục — không giữa hai chấm
+    // số: việc của một nơi nằm ngay dưới nó, giữa hai chấm.
+    const rows = () => [...list.querySelectorAll<HTMLElement>("[data-stop-row]")];
     const measure = () => {
       const box = list.getBoundingClientRect();
-      const next = [...list.querySelectorAll<HTMLElement>("[data-rail-dot]")].map((el) => {
-        const r = el.getBoundingClientRect();
-        return { x: r.left + r.width / 2 - box.left, y: r.top + r.height / 2 - box.top };
-      });
-      setEndY(box.height);
-      setDots((prev) =>
+      const dot = list.querySelector<HTMLElement>("[data-rail-dot]")?.getBoundingClientRect();
+      if (!dot) return setSlots([]);
+      const x = dot.left + dot.width / 2 - box.left;
+      // Dấu + nằm GIỮA HAI CHẤM SỐ trên trục (① ↔ ②) — bấm vào chèn một nơi ngay sau hàng trên.
+      // Hàng cuối: giữa chấm của nó và đáy trục.
+      const rs = rows();
+      const dotY = (r: HTMLElement) => {
+        const d = r.querySelector<HTMLElement>("[data-rail-dot]")?.getBoundingClientRect();
+        return d ? d.top + d.height / 2 : r.getBoundingClientRect().top;
+      };
+      const next = rs.map((r, k) => ({
+        x,
+        y: (k < rs.length - 1 ? (dotY(r) + dotY(rs[k + 1])) / 2 : (dotY(r) + r.getBoundingClientRect().bottom) / 2) - box.top,
+      }));
+      setSlots((prev) =>
         prev.length === next.length && prev.every((p, i) => p.x === next[i].x && p.y === next[i].y)
           ? prev
           : next,
@@ -790,16 +989,11 @@ function InsertMarks({
     const ro = new ResizeObserver(measure);
     ro.observe(list);
 
-    // Mục k chiếm từ giữa khe phía trên tới giữa khe phía dưới — trọn cả mục lẫn dòng
-    // "di chuyển" của nó, không chỉ khoảng trắng.
+    // Hàng k chiếm từ đỉnh của nó tới đỉnh hàng kế — trọn nơi, các việc, lẫn dòng "di chuyển".
     const onMove = (e: MouseEvent) => {
-      const y = e.clientY - list.getBoundingClientRect().top;
-      const centers = [...list.querySelectorAll<HTMLElement>("[data-rail-dot]")].map((el) => {
-        const r = el.getBoundingClientRect();
-        return r.top + r.height / 2 - list.getBoundingClientRect().top;
-      });
+      const tops = rows().map((r) => r.getBoundingClientRect().top);
       let k = 0;
-      while (k < centers.length - 1 && y > (centers[k] + centers[k + 1]) / 2) k++;
+      while (k < tops.length - 1 && e.clientY >= tops[k + 1]) k++;
       setHovered(k);
     };
     const onLeave = () => setHovered(null);
@@ -812,37 +1006,31 @@ function InsertMarks({
     };
   }, [listRef, ids]);
 
-  if (dots.length === 0 || active) return null;
-
-  // Khe i nằm giữa mục i và i + 1; khe cuối nằm ở đáy trục, sau mục cuối.
-  const slots = dots.map((a, i) => ({
-    x: a.x,
-    y: i < dots.length - 1 ? (a.y + dots[i + 1].y) / 2 : endY - 12,
-  }));
+  if (slots.length === 0 || active) return null;
 
   return (
     <div aria-hidden={false} className="pointer-events-none absolute inset-0">
       {slots.map((slot, i) => {
-        // Chỉ hiện ở khe NGAY DƯỚI mục đang rê.
+        // Chỉ hiện ở khe NGAY DƯỚI hàng đang rê.
         const shown = hovered === i;
         return (
           <button
             key={i}
             type="button"
-            onClick={() => onInsert(i + 1)}
+            onClick={() => onInsert(slotIndexes[i] ?? itemIds.length)}
             title="Chèn vào đây"
             aria-label={
-              i < dots.length - 1
+              i < slots.length - 1
                 ? `Chèn một mục vào giữa mục ${i + 1} và ${i + 2}`
                 : `Thêm một mục sau mục ${i + 1}`
             }
             style={{ left: slot.x, top: slot.y }}
             className={cn(
-              "pointer-events-auto absolute z-10 grid size-6 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-[3px] border border-border bg-background text-muted-foreground shadow-sm transition-opacity hover:border-primary/50 hover:text-primary-ink focus-visible:opacity-100",
+              "pointer-events-auto absolute z-10 grid size-5 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-[3px] border border-border bg-background text-muted-foreground shadow-sm transition-opacity hover:border-primary/50 hover:text-primary-ink focus-visible:opacity-100",
               shown ? "opacity-100" : "opacity-0",
             )}
           >
-            <Glyph name="plus" className="size-4" />
+            <Glyph name="plus" className="size-3.5" />
           </button>
         );
       })}
@@ -873,9 +1061,106 @@ function DragGrip({
   );
 }
 
-function SortableRailItem({
+function AddDoingButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={`Thêm việc ở ${label}`}
+      aria-label={`Thêm việc ở ${label}`}
+      className="inline-flex h-7 shrink-0 items-center gap-1 rounded-[3px] px-1.5 text-xs font-medium text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-focus-within:opacity-100 group-hover:opacity-100 [@media(pointer:coarse)]:opacity-100"
+    >
+      <Glyph name="plus" className="size-3.5" />
+      {/* Khổ hẹp chỉ còn dấu +: cụm nút bên phải tên đã chật, thêm chữ là tên nơi bị bóp xuống dòng. */}
+      <span className="hidden sm:inline">Việc</span>
+    </button>
+  );
+}
+
+type DragHandle = { grip: ReactNode; handleProps: SyntheticListenerMap | undefined };
+
+/** CẢ HÀNG "Ở đâu | Làm gì" là một mục kéo ở cấp ngày — kéo nơi thì việc của nó đi theo. */
+function SortableStop({
   item,
-  index,
+  left,
+  right,
+  hasDoings,
+  summary,
+  onPress,
+}: {
+  item: ItemView;
+  left: (h: DragHandle) => ReactNode;
+  right: (h: DragHandle) => ReactNode;
+  hasDoings: boolean;
+  onPress: () => void;
+  /** Đang thu gọn (kéo cả hàng): dòng thay cho các việc. */
+  summary: string | null;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: item.id });
+  const press = {
+    ...listeners,
+    onPointerDown: (e: React.PointerEvent) => {
+      if (e.button === 0) onPress();
+      listeners?.onPointerDown?.(e);
+    },
+  } as SyntheticListenerMap;
+  const h: DragHandle = {
+    grip: <DragGrip label={`Kéo để đổi chỗ ${item.name}`} attributes={attributes} listeners={press} />,
+    handleProps: press,
+  };
+  return (
+    <StopRow
+      rowId={item.id}
+      innerRef={setNodeRef}
+      style={{ transform: CSS.Translate.toString(transform), transition }}
+      dragging={isDragging}
+      hasDoings={hasDoings}
+      left={left(h)}
+      right={
+        <>
+          {right(h)}
+          {summary && <p className="-mt-2 text-xs text-muted-foreground">{summary}</p>}
+        </>
+      }
+    />
+  );
+}
+
+/** Cột "Làm gì": vùng thả riêng (`in:<id>`) để kéo việc giữa các nơi, kể cả nơi chưa có việc. */
+function DoingsColumn({
+  parentId,
+  ids,
+  armed,
+  children,
+}: {
+  parentId: string;
+  ids: string[];
+  /** Đang kéo một VIỆC — chỉ khi đó nơi chưa có việc mới mở chỗ thả (lúc thường cao 0). */
+  armed: boolean;
+  children: ReactNode;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: doingsKey(parentId) });
+  const { active } = useDndContext();
+  const open = armed && ids.length === 0 && active?.id !== parentId;
+  return (
+    <SortableContext items={ids} strategy={verticalListSortingStrategy}>
+      <ul
+        ref={setNodeRef}
+        className={cn(
+          "rounded-[4px] transition-colors",
+          open && "my-1 min-h-9 border border-dashed border-border",
+          isOver && "border-primary/40 bg-primary/5",
+        )}
+      >
+        {children}
+      </ul>
+    </SortableContext>
+  );
+}
+
+function SortableDoing({
+  item,
   stale,
   actions,
   note,
@@ -883,7 +1168,6 @@ function SortableRailItem({
   fields,
 }: {
   item: ItemView;
-  index: number;
   stale: boolean;
   actions: ReactNode;
   note: ReactNode;
@@ -892,15 +1176,17 @@ function SortableRailItem({
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: item.id });
-
   return (
-    <RailItem
+    <DoingRow
       item={item}
-      index={index}
+      fields={fields}
       actions={actions}
       note={note}
       stay={stay}
-      fields={fields}
+      stale={stale}
+      dragging={isDragging}
+      innerRef={setNodeRef}
+      style={{ transform: CSS.Translate.toString(transform), transition }}
       grip={
         <DragGrip
           label={`Kéo để đổi chỗ ${item.name}`}
@@ -908,11 +1194,6 @@ function SortableRailItem({
           listeners={listeners}
         />
       }
-      stale={stale}
-      dragging={isDragging}
-      innerRef={setNodeRef}
-      style={{ transform: CSS.Translate.toString(transform), transition }}
-      handleProps={listeners}
     />
   );
 }
@@ -924,6 +1205,7 @@ function ItemActions({
   run,
   onInsertBefore,
   onInsertAfter,
+  onAddNote,
 }: {
   item: ItemView;
   day: DayView;
@@ -931,7 +1213,10 @@ function ItemActions({
   run: (fn: () => Promise<{ ok: boolean; error?: string }>, done?: string) => void;
   onInsertBefore: () => void;
   onInsertAfter: () => void;
+  /** Chỉ khi mục CHƯA có ghi chú (có rồi thì bấm thẳng vào chữ để sửa). */
+  onAddNote?: () => void;
 }) {
+  const noteAfterClose = useRef(false);
   return (
     <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 [@media(pointer:coarse)]:opacity-100">
       <DropdownMenu>
@@ -944,7 +1229,18 @@ function ItemActions({
             <Glyph name="more" className="size-4" />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48">
+        {/* "Thêm ghi chú" chỉ mở ô gõ SAU KHI menu đóng hẳn: lúc còn chạy hiệu ứng đóng, menu
+            vẫn giữ focus trong nó — mở sớm là ô gõ (còn trống) mất focus và tự đóng ngay. */}
+        <DropdownMenuContent
+          align="end"
+          className="w-48"
+          onCloseAutoFocus={(e) => {
+            if (!noteAfterClose.current) return;
+            noteAfterClose.current = false;
+            e.preventDefault();
+            onAddNote?.();
+          }}
+        >
           <DropdownMenuItem onSelect={onInsertBefore}>
             <Glyph name="plus" className="size-4" />
             Thêm phía trước
@@ -953,6 +1249,12 @@ function ItemActions({
             <Glyph name="plus" className="size-4" />
             Thêm phía sau
           </DropdownMenuItem>
+          {onAddNote && (
+            <DropdownMenuItem onSelect={() => (noteAfterClose.current = true)}>
+              <Glyph name="note" className="size-4" />
+              Thêm ghi chú
+            </DropdownMenuItem>
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuLabel>Chuyển sang</DropdownMenuLabel>
           {allDays
@@ -990,6 +1292,95 @@ function ItemActions({
   );
 }
 
+const START_PRESETS = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20].map((h) => h * 60);
+
+/**
+ * Giờ bắt đầu ngày, LUÔN 24 giờ. Không dùng `<input type="time">`: trình duyệt vẽ nó theo ngôn
+ * ngữ của máy nên ra "02:00 PM" ngay cạnh mọi giờ khác trên trang viết "14:00".
+ */
+function StartTimePicker({
+  startMin,
+  label,
+  onSet,
+}: {
+  startMin: number;
+  label: string;
+  onSet: (min: number) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState("");
+  const draftMin = fromTimeValue(draft.trim());
+
+  function set(min: number) {
+    setOpen(false);
+    if (min !== startMin) onSet(min);
+  }
+
+  return (
+    <Popover
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (o) setDraft(toTimeValue(startMin));
+      }}
+    >
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label={`${label}: ${formatMinutes(startMin)}`}
+          className="inline-flex items-center gap-1.5 rounded-[3px] px-1 py-0.5 font-medium tabular-nums text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <Glyph name="sunrise" className="size-4 shrink-0 text-muted-foreground" />
+          {formatMinutes(startMin)}
+        </button>
+      </PopoverTrigger>
+
+      <PopoverContent align="end" className="w-72">
+        <p className="text-sm font-semibold tracking-tight">Bắt đầu ngày lúc</p>
+        <div className="mt-2.5 grid grid-cols-4 gap-1">
+          {START_PRESETS.map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => set(m)}
+              className={cn(
+                "rounded-[4px] py-1 text-xs tabular-nums transition-colors",
+                startMin === m ? "bg-primary text-primary-foreground" : "bg-muted hover:bg-muted/70",
+              )}
+            >
+              {formatMinutes(m)}
+            </button>
+          ))}
+        </div>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (draftMin != null) set(draftMin);
+          }}
+          className="mt-3 flex gap-2"
+        >
+          <Input
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            inputMode="numeric"
+            placeholder="Giờ khác, vd 4:30"
+            aria-label="Giờ bắt đầu khác (giờ:phút)"
+            className="h-9 rounded-[4px] tabular-nums"
+          />
+          <Button
+            type="submit"
+            variant="outline"
+            disabled={draftMin == null}
+            className="h-9 shrink-0 rounded-[4px] px-3"
+          >
+            Đặt
+          </Button>
+        </form>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 function StayPicker({
   item,
   run,
@@ -1019,7 +1410,7 @@ function StayPicker({
           className="inline-flex items-center gap-1 rounded underline-offset-2 transition-colors hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Glyph name="clock" className="size-3.5" />
-          {fmtDuration(item.effectiveStayMin)}
+          {stayLabel(item)}
         </button>
       </PopoverTrigger>
 
@@ -1088,6 +1479,8 @@ function InlineEdit({
   multiline,
   textClassName,
   emptyClassName,
+  startEditing = false,
+  onClose,
 }: {
   value: string | null;
   placeholder: string;
@@ -1095,12 +1488,16 @@ function InlineEdit({
   multiline?: boolean;
   textClassName?: string;
   emptyClassName?: string;
+  /** Mở sẵn ô gõ (thêm ghi chú từ menu). */
+  startEditing?: boolean;
+  onClose?: () => void;
 }) {
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(startEditing);
   const [draft, setDraft] = useState(value ?? "");
 
   function commit() {
     setEditing(false);
+    onClose?.();
     const next = draft.trim() || null;
     if (next !== (value ?? null)) onSave(next);
   }
@@ -1117,6 +1514,7 @@ function InlineEdit({
         if (e.key === "Escape") {
           setDraft(value ?? "");
           setEditing(false);
+          onClose?.();
         }
         if (e.key === "Enter" && !multiline) (e.target as HTMLElement).blur();
       },

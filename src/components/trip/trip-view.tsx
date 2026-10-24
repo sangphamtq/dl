@@ -19,12 +19,16 @@ import { TripDayStrip } from "@/components/trip/trip-day-strip";
 import { TripFieldsMenu, useTripFields } from "@/components/trip/trip-fields";
 import {
   DayHeading,
+  DoingRow,
   MICRO,
+  PlaceStub,
   RailItem,
   RailLeg,
+  StopRow,
   Thumb,
   Warning,
 } from "@/components/trip/trip-rail";
+import { groupStops } from "@/lib/trip-stops";
 
 export function TripView({
   trip,
@@ -220,14 +224,46 @@ export function TripView({
                 {day.items.length === 0 ? (
                   <p className="mt-4 text-sm text-muted-foreground">Ngày trống.</p>
                 ) : (
-                  <ol className="mt-6">
-                    {day.items.map((item, i) => (
-                      <Fragment key={item.id}>
-                        <RailItem item={item} index={i} fields={fields} />
-                        {fields.leg && i < day.items.length - 1 && <RailLeg item={item} />}
-                      </Fragment>
-                    ))}
-                  </ol>
+                  <div className="mt-6">
+                    <ol>
+                      {groupStops(day.items).map((stop, k, all) => (
+                        <Fragment key={(stop.place ?? stop.doings[0]).id}>
+                          <StopRow
+                            hasDoings={stop.doings.length > 0}
+                            left={
+                              stop.place ? (
+                                <RailItem
+                                  as="div"
+                                  item={stop.place}
+                                  index={stop.first}
+                                  number={stop.no}
+                                  fields={fields}
+                                />
+                              ) : (
+                                <PlaceStub
+                                  name={stop.placeName}
+                                  minute={stop.doings[0].arriveMin}
+                                  number={stop.placeName ? stop.no : null}
+                                />
+                              )
+                            }
+                            right={
+                              stop.doings.length > 0 ? (
+                                <ul>
+                                  {stop.doings.map((d) => (
+                                    <DoingRow key={d.id} item={d} fields={fields} />
+                                  ))}
+                                </ul>
+                              ) : null
+                            }
+                          />
+                          {fields.leg && k < all.length - 1 && (
+                            <RailLeg item={day.items[stop.last]} />
+                          )}
+                        </Fragment>
+                      ))}
+                    </ol>
+                  </div>
                 )}
               </section>
             ))}

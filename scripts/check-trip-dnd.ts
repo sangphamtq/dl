@@ -1,6 +1,7 @@
 import { applyMove } from "@/components/trip/trip-dnd";
 import { dropAt, insertAt, placeAt, type DropAt } from "@/lib/trip-drop";
 import { anchorsOf, scheduleDay, legKey } from "@/lib/trip-time";
+import { groupStops } from "@/lib/trip-stops";
 
 
 let pass = 0, fail = 0;
@@ -124,6 +125,41 @@ check("việc đầu ngày: giữ thời lượng đã đặt", sd2.items[1].arr
   check("lồng: không vẽ chặng nơi → hoạt động", sd3.items[0].legHidden, true);
   check("lồng: chặng đi tiếp tính từ NƠI (A→B)", sd3.items[1].legKey, "A->B");
   check("lồng: giờ tới B = 8:00 + 60 + 45 + 20", sd3.items[2].arriveMin, 8 * 60 + 60 + 45 + 20);
+}
+
+// Gom "Ở đâu | Làm gì" theo parentId (danh sách đã phẳng: gốc rồi các con).
+{
+  let n = 0;
+  const mk = (name: string, kind: "spot" | "activity" | "custom", parentId: string | null = null, extra = {}) =>
+    ({ id: `${name}-${n++}`, name, kind, parentId, lat: kind === "custom" ? null : 1, lng: kind === "custom" ? null : 1, atName: null as string | null, ...extra });
+  const shape = (xs: { place: { name: string } | null; placeName: string | null; doings: { name: string }[]; no: number }[]) =>
+    xs.map((s) => `${s.no}:${s.place?.name ?? `(${s.placeName ?? "-"})`}[${s.doings.map((d) => d.name).join(",")}]`);
+  const doi = mk("Đồi", "spot");
+  check("nơi + các việc của nó → một hàng",
+    shape(groupStops([doi, mk("Trượt", "activity", doi.id), mk("Đặt xe", "custom", doi.id), mk("Bàu", "spot")])),
+    ["1:Đồi[Trượt,Đặt xe]", "2:Bàu[]"]);
+  const luot = mk("Lướt", "activity", null, { atName: "Bãi biển" });
+  check("hoạt động gốc → hàng ghi nơi của nó, việc con theo sau",
+    shape(groupStops([mk("Bàu", "spot"), luot, mk("Chờ", "custom", luot.id)])), ["1:Bàu[]", "2:(Bãi biển)[Lướt,Chờ]"]);
+  check("việc gốc đầu ngày → hàng không rõ nơi",
+    shape(groupStops([mk("Đặt xe", "custom"), mk("Đồi", "spot")])), ["1:(-)[Đặt xe]", "2:Đồi[]"]);
+  check("việc gốc KHÔNG tự nhập vào nơi phía trên (chỉ cha mới quyết định)",
+    shape(groupStops([doi, mk("Chờ", "custom")])), ["1:Đồi[]", "2:(-)[Chờ]"]);
+  const cp = mk("Nhà bạn Minh", "custom", null, { customPlace: true });
+  check("nơi tự gõ → một hàng có nơi",
+    shape(groupStops([cp, mk("Ăn trưa", "custom", cp.id)])), ["1:Nhà bạn Minh[Ăn trưa]"]);
+}
+
+// Nơi tự gõ (không toạ độ) cắt chuỗi toạ độ: chặng kế tiếp KHÔNG được tính từ nơi trước nó.
+{
+  const A3 = { id: "A", kind: "spot" as const, name: "Đồi", stayMin: 60, lat: 10, lng: 106 };
+  const C3 = { id: "C", kind: "custom" as const, name: "Chợ", stayMin: 30, lat: null, lng: null, customPlace: true };
+  const B3 = { id: "B", kind: "spot" as const, name: "Bàu", stayMin: 60, lat: 11, lng: 107 };
+  const sd4 = scheduleDay(8 * 60, [A3, C3, B3], { [legKey("A", "B")]: 57 });
+  check("nơi tự gõ: chặng Chợ → Bàu không mượn chặng Đồi → Bàu", sd4.items[1].legKey, null);
+  check("nơi tự gõ: giờ tới Bàu = 8:00 + 60 + 30 (không cộng 57)", sd4.items[2].arriveMin, 8 * 60 + 90);
+  check("nơi tự gõ: không cảnh báo thiếu toạ độ",
+    sd4.items.flatMap((i) => i.warnings.map((w) => w.code)).includes("noCoords"), false);
 }
 
 console.log(`\n${pass} qua · ${fail} hỏng`);

@@ -54,9 +54,10 @@ function Row({
       aria-current={active ? "page" : undefined}
       className={cn(
         rowBase,
+        // Mục đang mở = một mảnh "tờ" trắng trên nền canvas, cùng ngôn ngữ với tờ lịch trình.
         active
-          ? "bg-muted font-semibold text-foreground"
-          : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+          ? "bg-background font-semibold text-foreground shadow-[0_1px_2px_rgb(0_0_0/0.06)]"
+          : "text-muted-foreground hover:bg-background/60 hover:text-foreground",
       )}
     >
       <Glyph
@@ -88,8 +89,8 @@ export function TripSideNav({ tripId, collapsed }: { tripId: string; collapsed?:
                 R_CTRL,
                 "relative grid size-8 place-items-center justify-self-center transition-colors",
                 active
-                  ? "bg-muted text-warm"
-                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                  ? "bg-background text-warm shadow-[0_1px_2px_rgb(0_0_0/0.06)]"
+                  : "text-muted-foreground hover:bg-background/60 hover:text-foreground",
               )}
             >
               <Glyph name={s.glyph} className="size-4" />

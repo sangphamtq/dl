@@ -8,7 +8,7 @@ import {
   ACTIVITY_CATEGORY_LABELS,
   label,
 } from "@/lib/listing-labels";
-import { anchorsOf, scheduleDay, type ScheduleItemInput, type TripItemKind, type TripWarning } from "@/lib/trip-time";
+import { scheduleDay, type ScheduleItemInput, type TripItemKind, type TripWarning } from "@/lib/trip-time";
 import { getLegs, legMinutes } from "@/lib/trip-route";
 
 export type ResolvedItem = {
@@ -36,6 +36,10 @@ export type ResolvedItem = {
   spotId: string | null;
   /** Chỉ mục kind=activity: các nơi diễn ra hoạt động này (thứ tự biên tập). */
   atSpots: { id: string; name: string }[];
+  /** Chỉ mục kind=custom: một NƠI tự gõ ("Nhà bạn Minh"), không phải một việc. */
+  customPlace: boolean;
+  /** Mục gốc mà việc này THUỘC về (hàng "Ở đâu | Làm gì"); null = mục gốc. */
+  parentId: string | null;
 };
 
 export type TripDayData = {
@@ -165,6 +169,8 @@ function resolveItem(item: RawItem): ResolvedItem {
     notice: null as string | null,
     spotId: item.spotId,
     atSpots: [] as { id: string; name: string }[],
+    customPlace: item.customPlace ?? false,
+    parentId: item.parentId ?? null,
   };
 
   if (item.spot) {
@@ -226,6 +232,26 @@ function resolveItem(item: RawItem): ResolvedItem {
   };
 }
 
+/**
+ * Thứ tự phẳng của một vùng: mỗi mục gốc rồi NGAY SAU là các việc của nó. `order` của mục con
+ * đếm trong cha, của mục gốc đếm trong vùng — sắp chung một lượt là xáo lẫn nhau.
+ * Mục con mà cha không ở cùng vùng (dữ liệu lệch) thì coi như mục gốc, đừng làm mất nó.
+ */
+function flatten(list: ResolvedItem[]): ResolvedItem[] {
+  const ids = new Set(list.map((i) => i.id));
+  const byOrder = (a: ResolvedItem, b: ResolvedItem) => a.order - b.order;
+  const kids = new Map<string, ResolvedItem[]>();
+  const tops: ResolvedItem[] = [];
+  for (const i of list) {
+    if (i.parentId && ids.has(i.parentId)) {
+      const k = kids.get(i.parentId);
+      if (k) k.push(i);
+      else kids.set(i.parentId, [i]);
+    } else tops.push(i.parentId ? { ...i, parentId: null } : i);
+  }
+  return tops.sort(byOrder).flatMap((t) => [t, ...(kids.get(t.id) ?? []).sort(byOrder)]);
+}
+
 function shape(trip: RawTrip): TripData {
   const items = trip.items.map(resolveItem);
   return {
@@ -263,9 +289,9 @@ function shape(trip: RawTrip): TripData {
       startMin: d.startMin,
       title: d.title,
       note: d.note,
-      items: items.filter((i) => i.dayId === d.id).sort((a, b) => a.order - b.order),
+      items: flatten(items.filter((i) => i.dayId === d.id)),
     })),
-    backlog: items.filter((i) => i.dayId === null).sort((a, b) => a.order - b.order),
+    backlog: flatten(items.filter((i) => i.dayId === null)),
     updatedAt: trip.updatedAt,
   };
 }
@@ -322,7 +348,10 @@ export async function buildDayViews(trip: TripData): Promise<DayView[]> {
       // nằm giữa hai nơi không được cắt đôi chặng.
       // Hoạt động đang lồng dưới nơi của nó cũng vậy: nó diễn ra TẠI nơi đó.
       // Tắt tự tính thì KHÔNG gọi OSRM luôn — đỡ một lượt mạng cho mỗi chặng.
-      const anchors = anchorsOf(day.items);
+      // Việc diễn ra TẠI nơi của nó: không có chặng tới nó, không nằm trên tuyến.
+      const anchors = day.items.map((i) =>
+        i.parentId ? day.items.findIndex((p) => p.id === i.parentId) : null,
+      );
       const legs = trip.autoTravel
         ? await getLegs(
             day.items
@@ -398,6 +427,7 @@ function toScheduleInput(item: ResolvedItem): ScheduleItemInput {
     openingHours: item.openingHours,
     lat: item.lat,
     lng: item.lng,
+    customPlace: item.customPlace,
   };
 }
 
