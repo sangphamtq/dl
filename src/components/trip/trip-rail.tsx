@@ -19,15 +19,18 @@ const TYPE_GLYPH: Record<TripItemKind, GlyphName> = {
   custom: "pin",
 };
 
-const TIME = "w-[3.25rem] shrink-0 pt-0.5 text-right text-sm font-semibold tabular-nums sm:w-16 sm:text-[0.95rem]";
+// Điện thoại: cột giờ HẸP (2.5rem, chữ nhỏ hơn) — giờ vẫn đứng bên trái chấm số như một bảng giờ, nhưng không
+// ăn mất một phần tư bề ngang như cột 3.25rem cũ. Khoảng cách tới trục cũng hẹp hơn (gap-2).
+const TIME = "w-10 shrink-0 pt-0.5 text-right text-[0.8125rem] font-semibold tabular-nums sm:w-16 sm:text-[0.95rem]";
+const ROW_GAP = "gap-2 sm:gap-3";
 
 /**
  * Trục dọc 2px. Nét LIỀN = đang ở một chỗ (nơi + việc làm ở đó); nét ĐỨT = đang đi giữa hai
  * nơi (dòng "di chuyển") — nhìn trục là thấy ngày chia thành ở/đi.
  */
-function Rail({ node, dashed }: { node?: ReactNode; dashed?: boolean }) {
+function Rail({ node, dashed, below }: { node?: ReactNode; dashed?: boolean; below?: ReactNode }) {
   return (
-    <div className="relative flex w-5 shrink-0 justify-center sm:w-6">
+    <div className="relative flex w-5 shrink-0 flex-col items-center sm:w-6">
       <span
         aria-hidden
         className={cn(
@@ -36,7 +39,32 @@ function Rail({ node, dashed }: { node?: ReactNode; dashed?: boolean }) {
         )}
       />
       {node}
+      {below && <div className="relative z-10 mt-1.5">{below}</div>}
     </div>
+  );
+}
+
+/**
+ * Nhãn THỜI GIAN nằm TRÊN TRỤC, ngay dưới mốc của mục — trục là chiều thời gian, thời lượng là một đoạn của nó.
+ * Chỉ là chữ xám nhỏ, KHÔNG viền / không đậm (biên tập: "đơn giản hơn"); nền trắng chỉ để vạch trục ngắt sau chữ.
+ */
+export const STAY_PILL =
+  "block whitespace-nowrap bg-background py-px text-[0.6875rem] leading-4 tabular-nums text-muted-foreground";
+
+/** "45′" · "1g30" · "0′" — nhãn gọn đủ chỗ trên trục. */
+export function stayShort(min: number): string {
+  if (min <= 0) return "0′";
+  if (min < 60) return `${min}′`;
+  const h = Math.floor(min / 60);
+  const r = min % 60;
+  return r ? `${h}g${String(r).padStart(2, "0")}` : `${h}g`;
+}
+
+function RailStay({ item }: { item: ItemView }) {
+  return (
+    <span className={STAY_PILL} title={stayLabel(item)}>
+      {stayShort(item.effectiveStayMin)}
+    </span>
   );
 }
 
@@ -83,7 +111,8 @@ function ItemBody({
                 <span className="sr-only">{item.typeLabel}</span>
               </span>
             )}
-            <span className="min-w-0">
+            {/* Tên dài: tối đa HAI dòng (tràn thì "…"), không cắt một dòng như ô nhập cũ. */}
+            <span className="line-clamp-2 min-w-0 [overflow-wrap:anywhere]">
               {/* Mục của site có trang ⇒ tên là liên kết, gạch chân chấm để thấy ngay đó là một ĐỐI
                   TƯỢNG của dự án chứ không phải chữ tự gõ (mục tự gõ không bao giờ có href). */}
               {name ?? (item.href ? (
@@ -215,7 +244,7 @@ export function RailItem({
     <Tag
       ref={innerRef}
       style={style}
-      className={cn("group flex gap-2.5 sm:gap-3", dragging && "opacity-40")}
+      className={cn("group flex", ROW_GAP, dragging && "opacity-40")}
     >
       <span className={cn(TIME, (stale || noTime) && "text-muted-foreground/50")}>
         {noTime ? "···" : formatMinutes(item.arriveMin)}
@@ -228,11 +257,13 @@ export function RailItem({
             handleProps={handleProps}
           />
         }
+        below={fields.stay ? (stay ?? <RailStay item={item} />) : null}
       />
 
       {/* Tắt hết dòng phụ ⇒ mục chỉ còn một dòng tên, đệm 20px là quá thưa cho một danh sách. */}
       <div className={cn("min-w-0 flex-1", isBare(item, fields) ? "pb-3" : "pb-5")}>
-        <ItemBody {...{ item, fields, grip, actions, note, stay, name }} />
+        {/* Thời gian đã nằm trên trục ⇒ dòng thông tin dưới tên chỉ còn giờ mở cửa. */}
+        <ItemBody {...{ item, grip, actions, note, name }} fields={{ ...fields, stay: false }} />
       </div>
     </Tag>
   );
@@ -249,7 +280,7 @@ export function PlaceStub({
   number: number | null;
 }) {
   return (
-    <div className="flex gap-2.5 sm:gap-3">
+    <div className={cn("flex", ROW_GAP)}>
       <span className={cn(TIME, minute < 0 && "text-muted-foreground/50")}>
         {minute < 0 ? "···" : formatMinutes(minute)}
       </span>
@@ -266,9 +297,10 @@ export function PlaceStub({
 // "Làm gì" xếp DƯỚI nơi, thụt theo nội dung — vẽ tiếp đoạn trục đúng toạ độ trục bên trên
 // (cột giờ + khoảng cách + nửa cột trục) để đường không đứt.
 const STACKED_RAIL =
-  "before:absolute before:inset-y-0 before:left-[calc(3.25rem+0.625rem+0.625rem)] before:w-0.5 before:-translate-x-1/2 before:bg-border sm:before:left-[calc(4rem+0.75rem+0.75rem)]";
+  "before:absolute before:inset-y-0 before:left-[calc(2.5rem+0.5rem+0.625rem)] before:w-0.5 before:-translate-x-1/2 before:bg-border sm:before:left-[calc(4rem+0.75rem+0.75rem)]";
 /** Lề trái của phần "Làm gì": thẳng với nội dung của nơi bên trên. */
-export const DOINGS_INDENT = "pl-[calc(3.25rem+0.625rem+1.25rem+0.625rem)] sm:pl-[calc(4rem+0.75rem+1.5rem+0.75rem)]";
+// Dưới sm: cột giờ 2.5rem + gap 0.5rem + trục 1.25rem + gap 0.5rem = mép nội dung của nơi.
+export const DOINGS_INDENT = "pl-[calc(2.5rem+0.5rem+1.25rem+0.5rem)] sm:pl-[calc(4rem+0.75rem+1.5rem+0.75rem)]";
 
 /** Một hàng: nơi, rồi NGAY DƯỚI là các việc làm ở đó. */
 export function StopRow({
@@ -340,15 +372,18 @@ export function DoingRow({
       ref={innerRef}
       style={style}
       className={cn(
-        "group flex gap-3 border-t border-border/50 py-2 first:border-t-0 first:pt-0",
+        "group flex gap-0 border-t border-border/50 py-2 first:border-t-0 first:pt-0 sm:gap-3",
+        // Đủ cao cho mốc + nhãn thời gian dưới mốc (nằm `absolute`), kẻo nhãn tràn xuống hàng sau.
+        fields.stay && "min-h-[3.25rem]",
         dragging && "opacity-40",
       )}
     >
       <span
         className={cn(
-          // `self-start`: ô giờ cao ĐÚNG một dòng chữ — để kéo giãn theo cả dòng thì mốc
-          // (top-1/2) rơi xuống giữa dòng, lệch khỏi chữ giờ.
-          "relative mt-px w-10 shrink-0 self-start text-right text-xs font-medium tabular-nums text-muted-foreground",
+          // `self-start`: ô giờ cao ĐÚNG một dòng chữ (h-5) — để kéo giãn theo cả dòng thì mốc
+          // (top-1/2) rơi xuống giữa dòng, lệch khỏi chữ giờ. Dưới sm ô rộng 0: giờ của việc nằm trong CỘT GIỜ
+          // chung bên trái trục (thẳng hàng giờ của các nơi), nội dung việc thẳng mép nội dung của nơi.
+          "relative mt-px h-5 w-0 shrink-0 self-start text-right text-xs font-medium tabular-nums text-muted-foreground sm:w-10",
           (stale || item.arriveMin < 0) && "text-muted-foreground/50",
         )}
       >
@@ -356,12 +391,21 @@ export function DoingRow({
             (= DOINGS_INDENT trừ tâm trục). */}
         <span
           aria-hidden
-          className="absolute left-[-1.25rem] top-1/2 size-[7px] -translate-x-1/2 -translate-y-1/2 rounded-[2px] bg-muted-foreground/50 ring-[3px] ring-background sm:left-[-1.5rem]"
+          className="absolute left-[-1.125rem] top-1/2 size-[7px] -translate-x-1/2 -translate-y-1/2 rounded-[2px] bg-muted-foreground/50 ring-[3px] ring-background sm:left-[-1.5rem]"
         />
-        {item.arriveMin < 0 ? "···" : formatMinutes(item.arriveMin)}
+        {fields.stay && (
+          // Thời gian của việc: trên trục, ngay dưới mốc (cùng toạ độ ngang với mốc).
+          <span className="absolute left-[-1.125rem] top-[1.6rem] z-10 -translate-x-1/2 sm:left-[-1.5rem]">
+            {stay ?? <RailStay item={item} />}
+          </span>
+        )}
+        {/* Dưới sm: đẩy sang trái đúng bằng (khoảng cách + trục + khoảng cách) ⇒ mép phải chữ trùng mép phải cột giờ. */}
+        <span className="absolute right-[2.25rem] top-0 whitespace-nowrap sm:static">
+          {item.arriveMin < 0 ? "···" : formatMinutes(item.arriveMin)}
+        </span>
       </span>
       <div className="min-w-0 flex-1">
-        <ItemBody {...{ item, fields, grip, actions, note, stay, name }} compact />
+        <ItemBody {...{ item, grip, actions, note, name }} fields={{ ...fields, stay: false }} compact />
       </div>
     </li>
   );
@@ -375,7 +419,7 @@ function fmtKm(km: number): string {
 export function RailLeg({ item }: { item: ItemView }) {
   if (item.legHidden) return null;
   return (
-    <li className="flex gap-2.5 sm:gap-3" aria-hidden={false}>
+    <li className={cn("flex", ROW_GAP)} aria-hidden={false}>
       <span className={cn(TIME, "invisible")}>—</span>
       <Rail dashed />
       <p className="flex min-w-0 flex-1 items-center gap-1.5 pb-5 text-xs text-muted-foreground">
@@ -410,7 +454,8 @@ export function Thumb({
   hideImage?: boolean;
 }) {
   const glyph = glyphOf(item);
-  const box = size === "sm" ? "size-10" : "size-12";
+  // Khổ điện thoại nhỏ đi một nấc: mỗi 8px ở đây là 8px chữ của tên mục (375px đã bị bóp còn ~100px).
+  const box = size === "sm" ? "size-8 sm:size-10" : "size-10 sm:size-12";
 
   if (!item.image || hideImage) {
     return (
@@ -480,7 +525,7 @@ export function Warning({
   );
 }
 
-export const MICRO = "text-[0.66rem] font-semibold uppercase tracking-[0.14em]";
+export const MICRO = "text-[0.6875rem] font-semibold uppercase tracking-[0.14em]";
 
 export function DayHeading({
   index,

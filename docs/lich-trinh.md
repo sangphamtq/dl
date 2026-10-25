@@ -1261,3 +1261,32 @@ giãn chữ lẫn vào hàng ô nhập).
 - ⚠️ **Dải ngày dính dưới thanh khung nhìn**: thanh chọn khung nhìn (Lịch trình · Chưa xếp ngày · Ghi chú) dính `top-0`
   dưới `lg`, cao CỐ ĐỊNH `h-10` và khai `--trip-pane-bar` ở gốc `TripShell`; dải ngày dính ở
   `top-[var(--trip-pane-bar)]` (từ lg về `top-0`). Cùng `top-0` thì dải ngày chui xuống dưới thanh kia.
+- **Chọn giờ bắt đầu ngày** (`StartTimePicker`): lưới ĐỦ 24 giờ (6 cột, giờ ngoài 5–21h chữ nhạt) + bốn mốc phút
+  :00 :15 :30 :45; bấm giờ là áp NGAY (giữ phút đang chọn), bấm phút để chỉnh — hai chạm ra mọi giờ tròn 15 phút.
+  Giờ lẻ (4:20) thì gõ ("420" tự thành "4:20"). Bảng hiện số giờ đang chọn cỡ lớn. Bản cũ chỉ có 05–20h tròn giờ.
+- **Chọn thời gian** (`StayPicker`), ba cách theo cách người ta nghĩ: **8 nút có sẵn** (0′ 15′ 30′ 45′ / 1g 1g30 2g 3g) ·
+  **tự chọn số giờ (−/+) + số phút (0/15/30/45)** — không bắt quy ra phút như ô số cũ · **"đến lúc"** (gõ 17:00 ⇒ tự trừ giờ
+  bắt đầu, hiện "= 2 giờ 15"; sớm hơn giờ bắt đầu thì hiểu là qua nửa đêm). Không dùng `<input type="number">`/`type="time"`.
+  · **CÓ 0 phút**: một NƠI có thể chỉ là chỗ đến (bãi biển) còn thời gian nằm ở VIỆC làm ở đó (tắm biển).
+  · **Chữ theo loại mục** (`canBeDoing`): nơi ⇒ "Ở lại bao lâu?" / "ở đến lúc"; hoạt động & việc tự gõ ⇒ **"Mất bao lâu?" /
+    "làm đến lúc"** — một hoạt động không phải chỗ để ở. Việc 0 phút ghi "0 phút" (`stayLabel`), không ghi "Ghé qua".- **Lịch trình trên điện thoại (màn cảm ứng, thử ở iPhone 11 Pro 375px)**: cụm nút luôn hiện bên phải (tay kéo ⠿ · "+" ·
+  ⋯ ≈ 90px) bóp tên nơi còn ~100px, xuống 2–3 dòng. Đã gọn lại:
+  · Hàng NƠI: **ẩn tay kéo** trên `pointer: coarse` — kéo cả hàng bằng **nhấn giữ chấm số** trên trục (`handleProps`,
+    `TouchSensor` delay 220ms nên không cướp cuộn). Hàng VIỆC vẫn giữ tay kéo (không có chấm số).
+  · **Ẩn nút "+ Việc"** trên màn cảm ứng; lối thêm việc là mục **"Thêm việc ở đây"** trong menu ⋯ (có ở mọi khổ).
+  · Ảnh thu nhỏ một nấc dưới `sm` (48→40px, việc 40→32px).
+- **Dưới `sm` cột giờ HẸP, vẫn bên trái chấm số** (biên tập: "bên trái chiếm nhiều" nhưng "vẫn nên để mốc giờ bên trái số
+  mốc"): cột giờ 2.5rem chữ 0.8125rem, khoảng cách `gap-2` (`TIME`, `ROW_GAP` trong trip-rail.tsx) ⇒ phần trái ≈ 72px thay
+  vì 92px. **Giờ của VIỆC lồng cũng nằm trong cột giờ chung** (thẳng hàng giờ của các nơi — đọc dọc như một bảng giờ),
+  nội dung việc thẳng mép nội dung của nơi, không thụt thêm. Cài đặt: ô giờ của `DoingRow` rộng 0 dưới sm, chữ giờ
+  `absolute right-[2.25rem]` (= gap + trục + gap) để mép phải trùng mép cột giờ; mốc việc `left-[-1.125rem]` nằm đúng trục.
+  ⚠️ Đổi bất kỳ số nào trong (cột giờ · gap · trục) thì phải sửa cả `DOINGS_INDENT`, `STACKED_RAIL`, hai số ở `DoingRow`.
+  Đã thử và BỎ: dưới sm bỏ hẳn cột giờ, đưa giờ vào dòng thông tin dưới tên.- **Thời gian nằm TRÊN TRỤC** (biên tập yêu cầu): nhãn gọn (`STAY_PILL` + `stayShort()` — "45′", "1g30", "0′") ngay dưới chấm
+  số của nơi (`Rail` có `below`) và dưới mốc của việc (`absolute`, cùng toạ độ ngang với mốc; hàng việc `min-h` đủ chỗ).
+  Trục là chiều thời gian ⇒ thời lượng là một đoạn của nó. Nhãn ở trang soạn là NÚT mở `StayPicker`; trang xem là chữ.
+  Kiểu: CHỈ chữ xám nhỏ, không viền, không đậm (đã thử và bỏ bản viên có viền — "đơn giản hơn"); nền trắng chỉ để vạch
+  trục ngắt sau chữ. Nút ở trang soạn: rê vào thì đậm màu + gạch chân chấm.
+  Dòng thông tin dưới tên chỉ còn giờ mở cửa.
+- **Tên mục tối đa HAI dòng** (`line-clamp-2`, tràn thì "…"). Tên mục TỰ THÊM (`NameEdit`) lúc thường là CHỮ (cũng 2 dòng) —
+  bấm mới thành `textarea` tự giãn: `<input>` chỉ hiện được một dòng nên tên dài bị cắt. Menu "Đổi tên" bấm hộ nút
+  `[data-rename]` (không còn `.select()` một ô có sẵn). Enter lưu, Esc huỷ (cờ `cancelled`).

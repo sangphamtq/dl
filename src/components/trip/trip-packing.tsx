@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { UserPlus } from "@/components/icons";
 import { Glyph, type GlyphName } from "@/components/site/glyphs";
 import { cn } from "@/lib/utils";
+import { TOUCH_INPUT } from "@/lib/touch";
 import { initials } from "@/lib/format";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -402,6 +403,7 @@ function InlineText({
       className={cn(
         "-ml-1.5 min-w-0 flex-1 rounded-[4px] bg-background px-1.5 outline-none shadow-[0_0_0_1.5px_color-mix(in_oklab,var(--color-primary)_70%,transparent),0_0_0_4px_color-mix(in_oklab,var(--color-primary)_14%,transparent)]",
         className,
+        TOUCH_INPUT,
       )}
     />
   );
@@ -461,6 +463,7 @@ function AddRow({
         className={cn(
           "min-w-0 flex-1 bg-transparent outline-none placeholder:text-muted-foreground",
           small ? "h-8 text-[0.8125rem] placeholder:text-muted-foreground/70" : "h-10 text-sm",
+          TOUCH_INPUT,
         )}
       />
     </form>

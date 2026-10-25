@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { RotateCcw } from "@/components/icons";
 import { Glyph } from "@/components/site/glyphs";
 import { cn } from "@/lib/utils";
+import { TOUCH_INPUT } from "@/lib/touch";
 import { formatVnd, initials, timeAgo } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -567,7 +568,7 @@ function ContributeButton({
               inputMode="numeric"
               placeholder="500"
               aria-label="Số tiền góp (nghìn đồng)"
-              className="w-full min-w-0 bg-transparent text-right text-sm tabular-nums outline-none"
+              className={cn("w-full min-w-0 bg-transparent text-right text-sm tabular-nums outline-none", TOUCH_INPUT)}
             />
             <span aria-hidden className="shrink-0 pl-0.5 text-sm text-muted-foreground">
               .000đ
@@ -937,7 +938,7 @@ function FaceStack({ people }: { people: (TripPerson | null)[] }) {
         </span>
       ))}
       {people.length > shown.length && (
-        <span className="grid size-4 place-items-center rounded-full bg-muted text-[0.55rem] font-semibold ring-2 ring-background">
+        <span className="grid size-4 place-items-center rounded-full bg-muted text-[0.625rem] font-semibold ring-2 ring-background">
           +{people.length - shown.length}
         </span>
       )}
@@ -1000,8 +1001,9 @@ function Face({ person, size }: { person: TripPerson | TripExpenseRow["paidBy"];
   return (
     <Avatar className={cn("shrink-0", size === "xs" ? "size-4" : "size-6")}>
       {person?.image && <AvatarImage src={person.image} alt="" />}
-      <AvatarFallback className={size === "xs" ? "text-[0.5rem]" : "text-[0.65rem]"}>
-        {initials(person?.name ?? null)}
+      <AvatarFallback className={size === "xs" ? "text-[0.625rem]" : "text-[0.65rem]"}>
+        {/* Avatar 16px chỉ đủ chỗ MỘT chữ ở cỡ đọc được (2 chữ thì phải xuống 8px). */}
+        {size === "xs" ? initials(person?.name ?? null).slice(0, 1) : initials(person?.name ?? null)}
       </AvatarFallback>
     </Avatar>
   );
@@ -1216,7 +1218,7 @@ function ExpenseForm({
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Tiền phòng, bữa tối, đổ xăng…"
             aria-label="Tên khoản chi"
-            className="min-w-0 flex-1 bg-transparent text-[0.9375rem] outline-none placeholder:text-muted-foreground"
+            className={cn("min-w-0 flex-1 bg-transparent text-[0.9375rem] outline-none placeholder:text-muted-foreground", TOUCH_INPUT)}
           />
         </label>
         <div className="mt-2 flex flex-wrap gap-1.5">
@@ -1284,7 +1286,10 @@ function ExpenseForm({
                 inputMode="numeric"
                 placeholder="19:30"
                 aria-label="Giờ chi (24 giờ, tuỳ chọn)"
-                className="w-full min-w-0 bg-transparent text-center text-[0.9375rem] font-semibold tabular-nums outline-none placeholder:font-normal placeholder:text-muted-foreground/50"
+                className={cn(
+                  "w-full min-w-0 bg-transparent text-center text-[0.9375rem] font-semibold tabular-nums outline-none placeholder:font-normal placeholder:text-muted-foreground/50",
+                  TOUCH_INPUT,
+                )}
               />
             </label>
             <span className="text-xs text-muted-foreground">Không nhớ giờ thì để trống.</span>
@@ -1385,7 +1390,10 @@ function ExpenseForm({
                           inputMode="numeric"
                           placeholder="0"
                           aria-label={`Phần của ${p.name ?? "người này"} (nghìn đồng)`}
-                          className="w-full min-w-0 bg-transparent text-right text-[0.9375rem] font-semibold tabular-nums outline-none placeholder:font-normal placeholder:text-muted-foreground/50"
+                          className={cn(
+                            "w-full min-w-0 bg-transparent text-right text-[0.9375rem] font-semibold tabular-nums outline-none placeholder:font-normal placeholder:text-muted-foreground/50",
+                            TOUCH_INPUT,
+                          )}
                         />
                         <span aria-hidden className="shrink-0 text-sm text-muted-foreground">
                           .000đ

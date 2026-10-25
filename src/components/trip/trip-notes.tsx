@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Loader2 } from "@/components/icons";
 import { Glyph } from "@/components/site/glyphs";
 import { cn } from "@/lib/utils";
+import { TOUCH_INPUT } from "@/lib/touch";
 import { initials, timeAgo } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -321,6 +322,7 @@ function NoteForm({
         }}
         className={cn(
           "block w-full resize-none bg-transparent px-4 py-3 text-[0.9375rem] leading-relaxed outline-none [field-sizing:content] placeholder:text-muted-foreground",
+          TOUCH_INPUT,
           open ? "min-h-24" : "min-h-0",
         )}
       />

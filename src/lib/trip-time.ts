@@ -141,9 +141,16 @@ export type ScheduledDay = {
 };
 
 /** "0 phút" đọc như lỗi: ở lại 0 phút là GHÉ QUA (chỗ ở thì là mốc nhận phòng). */
-export function stayLabel(item: { kind: TripItemKind; effectiveStayMin: number }): string {
+export function stayLabel(item: {
+  kind: TripItemKind;
+  effectiveStayMin: number;
+  customPlace?: boolean;
+}): string {
   if (item.effectiveStayMin > 0) return fmtDuration(item.effectiveStayMin);
-  return item.kind === "accommodation" ? "Nhận phòng" : "Ghé qua";
+  if (item.kind === "accommodation") return "Nhận phòng";
+  // VIỆC (hoạt động, việc tự gõ) 0 phút thì không phải "ghé qua" — chỉ là không tính giờ.
+  if (item.kind === "activity" || (item.kind === "custom" && !item.customPlace)) return "0 phút";
+  return "Ghé qua";
 }
 
 export function legKey(fromId: string, toId: string): string {

@@ -7,6 +7,7 @@ import { Loader2 } from "@/components/icons";
 import { Glyph, type GlyphName } from "@/components/site/glyphs";
 import { R_BADGE } from "@/lib/radius";
 import { cn } from "@/lib/utils";
+import { TOUCH_INPUT } from "@/lib/touch";
 import { fmtDuration, TASK_STAY_MIN } from "@/lib/trip-time";
 import type { DropAt } from "@/lib/trip-drop";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -422,7 +423,7 @@ export function TripAddSearch({
               value={q}
               onValueChange={setQ}
               placeholder="Tìm nơi, hoặc gõ một nơi / một việc…"
-              className="h-12"
+              className={cn("h-12", TOUCH_INPUT)}
             />
             {loading && (
               <Loader2

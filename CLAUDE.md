@@ -264,6 +264,10 @@ Trước khi dựng/chỉnh giao diện: theo **skill `design`** (`.claude/skill
   HOẶC bóng.
 - ⚠️ **Chữ trên nền sáng dùng bản `-ink`** (`--warm-ink`, `--primary-ink`); `--warm`/`--primary`
   chỉ cho MẢNG nền đặc — dùng chúng làm chữ trên nền sáng chỉ đạt 1,7–2,8:1.
+- ⚠️ **Ô nhập trên màn cảm ứng ≥ 16px** — Safari iOS tự phóng to cả trang khi chạm vào ô < 16px và không thu lại.
+  Ô nào đặt cỡ chữ nhỏ hơn (`text-sm`, `text-xs`, `text-[0.9375rem]`…) thì thêm **`TOUCH_INPUT`** (`lib/touch.ts`,
+  theo `pointer: coarse` nên iPad cũng được, máy có chuột giữ cỡ thiết kế). `Input`/`Textarea` của shadcn đã 16px dưới
+  `md` — chỉ hỏng khi ghi đè cỡ chữ. KHÔNG chặn bằng `maximum-scale=1` (tắt luôn véo-phóng-to).
 - **Khổ nhỏ nhất phải chạy được là 320px.** Hàng số liệu hero giữ MỘT HÀNG tới 320px bằng cách
   **bỏ CHỮ chứ không bỏ SỐ**; bong bóng "+N" phải **render hai bản** rồi để `display` chọn.
 - ⚠️ **Kiểm layout hẹp KHÔNG chụp bằng `--window-size`** — Chrome headless trên macOS có bề

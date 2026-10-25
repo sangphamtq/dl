@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { Glyph } from "@/components/site/glyphs";
 import { R_CARD } from "@/lib/radius";
 import { cn } from "@/lib/utils";
+import { TOUCH_INPUT } from "@/lib/touch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -59,7 +60,9 @@ import {
   DoingRow,
   PlaceStub,
   RailLeg,
+  STAY_PILL,
   StopRow,
+  stayShort,
   Thumb,
   Warning,
 } from "@/components/trip/trip-rail";
@@ -118,7 +121,9 @@ type TripHeader = {
   people: TripPerson[];
 };
 
-const STAY_PRESETS = [15, 30, 45, 60, 90, 120, 180, 240, 360];
+// Tám mốc hay gặp — 4 cột × 2 hàng. CÓ 0′: một nơi chỉ là chỗ đến (bãi biển) còn thời gian nằm ở việc làm
+// ở đó (tắm biển). Khác thì tự chọn giờ + phút, hoặc "đến lúc".
+const STAY_PRESETS = [0, 15, 30, 45, 60, 90, 120, 180];
 
 export function TripEditor({
   trip,
@@ -829,7 +834,13 @@ function DayBlock({
                 const kids = doingsOf(top.id)
                   .map((id) => byId.get(id))
                   .filter((x): x is ItemView => !!x);
-                const editProps = (item: ItemView, before: AddPos, after: AddPos, lead?: ReactNode) => ({
+                const editProps = (
+                  item: ItemView,
+                  before: AddPos,
+                  after: AddPos,
+                  lead?: ReactNode,
+                  onAddDoing?: () => void,
+                ) => ({
                   stale,
                   fields,
                   stay: <StayPicker item={item} run={run} />,
@@ -868,6 +879,7 @@ function DayBlock({
                         run={run}
                         onInsertBefore={() => onAdd(before)}
                         onInsertAfter={() => onAdd(after)}
+                        onAddDoing={onAddDoing}
                         onAddNote={item.note ? undefined : () => setNoteFor(item.id)}
                       />
                     </>
@@ -895,9 +907,13 @@ function DayBlock({
                             item={top}
                             index={k}
                             number={no}
-                            grip={h.grip}
+                            // Cảm ứng: kéo cả hàng bằng NHẤN GIỮ chấm số trên trục (`handleProps`) — tay kéo riêng ẩn đi
+                            // cho tên nơi khỏi bị bóp.
+                            grip={<span className="contents [@media(pointer:coarse)]:hidden">{h.grip}</span>}
                             handleProps={h.handleProps}
-                            {...editProps(top, topPos(k), topPos(k + 1), addDoing)}
+                            {...editProps(top, topPos(k), topPos(k + 1), addDoing, () =>
+                              onAdd({ ...childPos(top.id, kids.length), mode: "doing" }),
+                            )}
                           />
                         ) : (
                           <PlaceStub
@@ -1091,7 +1107,8 @@ function AddDoingButton({ label, onClick }: { label: string; onClick: () => void
       onClick={onClick}
       title={`Thêm việc ở ${label}`}
       aria-label={`Thêm việc ở ${label}`}
-      className="inline-flex h-7 shrink-0 items-center gap-1 rounded-[3px] px-1.5 text-xs font-medium text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-focus-within:opacity-100 group-hover:opacity-100 [@media(pointer:coarse)]:opacity-100"
+      // Màn cảm ứng: ẨN — nút luôn hiện (không rê được) chiếm ~30px của tên mục; lối thêm việc nằm trong menu ⋯.
+      className="inline-flex h-7 shrink-0 items-center gap-1 rounded-[3px] px-1.5 text-xs font-medium text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-focus-within:opacity-100 group-hover:opacity-100 [@media(pointer:coarse)]:hidden"
     >
       <Glyph name="plus" className="size-3.5" />
       {/* Khổ hẹp chỉ còn dấu +: cụm nút bên phải tên đã chật, thêm chữ là tên nơi bị bóp xuống dòng. */}
@@ -1232,6 +1249,7 @@ function ItemActions({
   onInsertBefore,
   onInsertAfter,
   onAddNote,
+  onAddDoing,
 }: {
   item: ItemView;
   day: DayView;
@@ -1241,6 +1259,8 @@ function ItemActions({
   onInsertAfter: () => void;
   /** Chỉ khi mục CHƯA có ghi chú (có rồi thì bấm thẳng vào chữ để sửa). */
   onAddNote?: () => void;
+  /** Chỉ ở một NƠI: thêm việc làm ở đó (trên màn cảm ứng đây là lối duy nhất — nút "+ Việc" ẩn). */
+  onAddDoing?: () => void;
 }) {
   // Việc cần làm SAU KHI menu đóng hẳn (xem chú thích ở `onCloseAutoFocus`).
   const afterClose = useRef<"note" | "rename" | null>(null);
@@ -1268,11 +1288,15 @@ function ItemActions({
             e.preventDefault();
             if (next === "note") onAddNote?.();
             else
-              document
-                .querySelector<HTMLInputElement>(`[data-rename="${item.id}"]`)
-                ?.select();
+              document.querySelector<HTMLElement>(`[data-rename="${item.id}"]`)?.click();
           }}
         >
+          {onAddDoing && (
+            <DropdownMenuItem onSelect={onAddDoing}>
+              <Glyph name="plus" className="size-4" />
+              Thêm việc ở đây
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem onSelect={onInsertBefore}>
             <Glyph name="plus" className="size-4" />
             Thêm phía trước
@@ -1330,11 +1354,26 @@ function ItemActions({
   );
 }
 
-const START_PRESETS = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20].map((h) => h * 60);
+const QUARTERS = [0, 15, 30, 45];
+
+/** Gõ "1930" ra "19:30" — trên điện thoại bàn phím số không có dấu ":". */
+function hhmmInput(raw: string): string {
+  const d = raw.replace(/\D/g, "").slice(0, 4);
+  return d.length <= 2 ? d : `${d.slice(0, d.length - 2)}:${d.slice(-2)}`;
+}
+
+/** "45′", "1g", "1g30" — nhãn gọn cho nút chọn nhanh. */
+function shortDur(m: number): string {
+  if (m < 60) return `${m}′`;
+  const h = Math.floor(m / 60);
+  const r = m % 60;
+  return r ? `${h}g${String(r).padStart(2, "0")}` : `${h}g`;
+}
 
 /**
- * Giờ bắt đầu ngày, LUÔN 24 giờ. Không dùng `<input type="time">`: trình duyệt vẽ nó theo ngôn
- * ngữ của máy nên ra "02:00 PM" ngay cạnh mọi giờ khác trên trang viết "14:00".
+ * Giờ bắt đầu ngày, LUÔN 24 giờ (không dùng `<input type="time">`: trình duyệt vẽ theo ngôn ngữ máy, ra
+ * "02:00 PM"). Chọn nhanh mà vẫn ĐỦ: lưới đủ 24 giờ + bốn mốc phút — bấm giờ là áp ngay (giữ phút đang chọn),
+ * bấm phút để chỉnh; hai chạm là ra mọi giờ tròn 15 phút. Giờ lẻ hơn (4:20) thì gõ.
  */
 function StartTimePicker({
   startMin,
@@ -1346,11 +1385,15 @@ function StartTimePicker({
   onSet: (min: number) => void;
 }) {
   const [open, setOpen] = useState(false);
+  // Giá trị đang chọn TRONG bảng — đổi ngay dưới tay, không đợi server dựng lại cả ngày.
+  const [sel, setSel] = useState(startMin);
   const [draft, setDraft] = useState("");
   const draftMin = fromTimeValue(draft.trim());
+  const h = Math.floor(sel / 60);
+  const m = sel % 60;
 
-  function set(min: number) {
-    setOpen(false);
+  function apply(min: number) {
+    setSel(min);
     if (min !== startMin) onSet(min);
   }
 
@@ -1359,7 +1402,10 @@ function StartTimePicker({
       open={open}
       onOpenChange={(o) => {
         setOpen(o);
-        if (o) setDraft(toTimeValue(startMin));
+        if (o) {
+          setSel(startMin);
+          setDraft("");
+        }
       }}
     >
       <PopoverTrigger asChild>
@@ -1373,44 +1419,71 @@ function StartTimePicker({
         </button>
       </PopoverTrigger>
 
-      <PopoverContent align="end" className="w-72">
-        <p className="text-sm font-semibold tracking-tight">Bắt đầu ngày lúc</p>
-        <div className="mt-2.5 grid grid-cols-4 gap-1">
-          {START_PRESETS.map((m) => (
+      <PopoverContent align="end" className="w-[19rem] p-3">
+        <div className="flex items-baseline justify-between">
+          <p className="text-sm font-semibold tracking-tight">Bắt đầu ngày lúc</p>
+          <p className="font-[family-name:var(--font-display)] text-2xl font-bold tabular-nums">
+            {formatMinutes(sel)}
+          </p>
+        </div>
+
+        <p className="mt-2 text-[0.6875rem] font-medium text-muted-foreground">Giờ</p>
+        <div className="mt-1 grid grid-cols-6 gap-1">
+          {Array.from({ length: 24 }, (_, i) => i).map((hr) => (
             <button
-              key={m}
+              key={hr}
               type="button"
-              onClick={() => set(m)}
+              onClick={() => apply(hr * 60 + m)}
+              aria-pressed={hr === h}
               className={cn(
-                "rounded-[4px] py-1 text-xs tabular-nums transition-colors",
-                startMin === m ? "bg-primary text-primary-foreground" : "bg-muted hover:bg-muted/70",
+                "h-8 rounded-[4px] text-sm tabular-nums transition-colors",
+                hr === h ? "bg-primary font-semibold text-primary-foreground" : "bg-muted hover:bg-muted/70",
+                // Khung giờ hay dùng (5–21h) đậm hơn — mắt tìm nhanh hơn trong lưới 24 ô.
+                hr !== h && (hr < 5 || hr > 21) && "text-muted-foreground",
               )}
             >
-              {formatMinutes(m)}
+              {String(hr).padStart(2, "0")}
             </button>
           ))}
         </div>
+
+        <p className="mt-2.5 text-[0.6875rem] font-medium text-muted-foreground">Phút</p>
+        <div className="mt-1 grid grid-cols-4 gap-1">
+          {QUARTERS.map((q) => (
+            <button
+              key={q}
+              type="button"
+              onClick={() => apply(h * 60 + q)}
+              aria-pressed={q === m}
+              className={cn(
+                "h-8 rounded-[4px] text-sm tabular-nums transition-colors",
+                q === m ? "bg-primary font-semibold text-primary-foreground" : "bg-muted hover:bg-muted/70",
+              )}
+            >
+              :{String(q).padStart(2, "0")}
+            </button>
+          ))}
+        </div>
+
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            if (draftMin != null) set(draftMin);
+            if (draftMin != null) {
+              apply(draftMin);
+              setOpen(false);
+            }
           }}
-          className="mt-3 flex gap-2"
+          className="mt-3 flex gap-2 border-t border-border/60 pt-3"
         >
           <Input
             value={draft}
-            onChange={(e) => setDraft(e.target.value)}
+            onChange={(e) => setDraft(hhmmInput(e.target.value))}
             inputMode="numeric"
-            placeholder="Giờ khác, vd 4:30"
+            placeholder="Giờ lẻ, vd 4:20"
             aria-label="Giờ bắt đầu khác (giờ:phút)"
             className="h-9 rounded-[4px] tabular-nums"
           />
-          <Button
-            type="submit"
-            variant="outline"
-            disabled={draftMin == null}
-            className="h-9 shrink-0 rounded-[4px] px-3"
-          >
+          <Button type="submit" variant="outline" disabled={draftMin == null} className="h-9 shrink-0 rounded-[4px] px-3">
             Đặt
           </Button>
         </form>
@@ -1419,6 +1492,10 @@ function StartTimePicker({
   );
 }
 
+/**
+ * Ở lại bao lâu. Ba cách, theo cách người ta NGHĨ về thời lượng: một nút có sẵn (đa số) · số giờ + số phút
+ * (không bắt quy ra phút) · "ở đến mấy giờ" (tự trừ giờ đến — thường là cách nghĩ thật: "chơi đến 5 giờ chiều").
+ */
 function StayPicker({
   item,
   run,
@@ -1427,7 +1504,16 @@ function StayPicker({
   run: (fn: () => Promise<{ ok: boolean; error?: string }>, done?: string) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [draft, setDraft] = useState("");
+  const [hours, setHours] = useState(0);
+  const [mins, setMins] = useState(0);
+  const [until, setUntil] = useState("");
+  // Nơi thì "ở lại"; việc (hoạt động, việc tự gõ) thì "mất bao lâu" — một hoạt động không phải chỗ để ở.
+  const doing = canBeDoing(item);
+  const custom = hours * 60 + mins;
+  const untilMin = fromTimeValue(until.trim());
+  const canUntil = item.arriveMin >= 0;
+  // "Ở đến" sớm hơn giờ đến ⇒ hiểu là qua nửa đêm (nhận phòng tối, trả phòng sáng hôm sau).
+  const untilDur = untilMin != null && canUntil ? (untilMin - item.arriveMin + 1440) % 1440 : null;
 
   function set(min: number | null) {
     setOpen(false);
@@ -1439,68 +1525,134 @@ function StayPicker({
       open={open}
       onOpenChange={(o) => {
         setOpen(o);
-        if (o) setDraft(String(item.effectiveStayMin));
+        if (o) {
+          setHours(Math.floor(item.effectiveStayMin / 60));
+          setMins(QUARTERS.includes(item.effectiveStayMin % 60) ? item.effectiveStayMin % 60 : 0);
+          setUntil("");
+        }
       }}
     >
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="inline-flex items-center gap-1 rounded underline-offset-2 transition-colors hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          aria-label={`${doing ? "Mất" : "Ở lại"} ${stayLabel(item)} — bấm để đổi`}
+          title={stayLabel(item)}
+          className={cn(
+            STAY_PILL,
+            "cursor-pointer rounded-[2px] decoration-dotted underline-offset-2 transition-colors hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring data-[state=open]:font-semibold data-[state=open]:text-foreground",
+          )}
         >
-          <Glyph name="clock" className="size-3.5" />
-          {stayLabel(item)}
+          {stayShort(item.effectiveStayMin)}
         </button>
       </PopoverTrigger>
 
-      <PopoverContent align="start" className="w-64">
-        <p className="text-sm font-semibold tracking-tight">Ở lại bao lâu?</p>
+      <PopoverContent align="start" className="w-[19rem] p-3">
+        <p className="text-sm font-semibold tracking-tight">{doing ? "Mất bao lâu?" : "Ở lại bao lâu?"}</p>
 
-        <div className="mt-2.5 flex flex-wrap gap-1">
+        <div className="mt-2.5 grid grid-cols-4 gap-1">
           {STAY_PRESETS.map((m) => (
             <button
               key={m}
               type="button"
               onClick={() => set(m)}
+              aria-pressed={item.effectiveStayMin === m}
               className={cn(
-                "rounded-[4px] px-2.5 py-1 text-xs tabular-nums transition-colors",
+                "h-8 rounded-[4px] text-sm tabular-nums transition-colors",
                 item.effectiveStayMin === m
-                  ? "bg-primary text-primary-foreground"
+                  ? "bg-primary font-semibold text-primary-foreground"
                   : "bg-muted hover:bg-muted/70",
               )}
             >
-              {m < 60 ? `${m}′` : fmtDuration(m)}
+              {shortDur(m)}
             </button>
           ))}
         </div>
 
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            const n = Number(draft);
-            if (Number.isFinite(n) && n >= 0) set(Math.round(n));
-          }}
-          className="mt-3 flex gap-2"
-        >
-          <Input
-            type="number"
-            min={0}
-            max={1440}
-            step={5}
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            aria-label="Số phút ở lại"
-            className="h-9 rounded-[4px] tabular-nums"
-          />
-          <Button type="submit" variant="outline" className="h-9 shrink-0 rounded-[4px] px-3">
-            Đặt
+        {/* Giờ + phút — không bắt người dùng tự quy "2 tiếng rưỡi" ra 150 phút. */}
+        <div className="mt-3 border-t border-border/60 pt-3">
+          <p className="text-[0.6875rem] font-medium text-muted-foreground">Hoặc tự chọn</p>
+          <div className="mt-1.5 flex items-center gap-2">
+            <div className="flex items-center rounded-[4px] bg-muted">
+              <button
+                type="button"
+                onClick={() => setHours((v) => Math.max(0, v - 1))}
+                aria-label="Bớt một giờ"
+                className="grid size-8 place-items-center rounded-[4px] text-lg leading-none hover:bg-muted/70"
+              >
+                −
+              </button>
+              <span className="w-12 text-center text-sm font-semibold tabular-nums">{hours} giờ</span>
+              <button
+                type="button"
+                onClick={() => setHours((v) => Math.min(23, v + 1))}
+                aria-label="Thêm một giờ"
+                className="grid size-8 place-items-center rounded-[4px] text-lg leading-none hover:bg-muted/70"
+              >
+                +
+              </button>
+            </div>
+            <div className="grid flex-1 grid-cols-4 gap-1">
+              {QUARTERS.map((q) => (
+                <button
+                  key={q}
+                  type="button"
+                  onClick={() => setMins(q)}
+                  aria-pressed={q === mins}
+                  className={cn(
+                    "h-8 rounded-[4px] text-xs tabular-nums transition-colors",
+                    q === mins ? "bg-foreground font-semibold text-background" : "bg-muted hover:bg-muted/70",
+                  )}
+                >
+                  {q}′
+                </button>
+              ))}
+            </div>
+          </div>
+          <Button type="button" onClick={() => set(custom)} className="mt-2 h-9 w-full rounded-[4px]">
+            {custom === 0 ? "Đặt 0 phút" : `Đặt ${fmtDuration(custom)}`}
           </Button>
-        </form>
+        </div>
+
+        {canUntil && (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (untilDur) set(untilDur);
+            }}
+            className="mt-3 border-t border-border/60 pt-3"
+          >
+            <p className="text-[0.6875rem] font-medium text-muted-foreground">
+              {doing ? "Hoặc làm đến lúc" : "Hoặc ở đến lúc"} (bắt đầu {formatMinutes(item.arriveMin)})
+            </p>
+            <div className="mt-1.5 flex items-center gap-2">
+              <Input
+                value={until}
+                onChange={(e) => setUntil(hhmmInput(e.target.value))}
+                inputMode="numeric"
+                placeholder="vd 17:00"
+                aria-label={doing ? "Làm đến lúc (giờ:phút)" : "Ở đến lúc (giờ:phút)"}
+                className="h-9 w-24 rounded-[4px] text-center tabular-nums"
+              />
+              <span className="min-w-0 flex-1 text-xs tabular-nums text-muted-foreground">
+                {untilDur ? `= ${fmtDuration(untilDur)}` : ""}
+              </span>
+              <Button
+                type="submit"
+                variant="outline"
+                disabled={!untilDur}
+                className="h-9 shrink-0 rounded-[4px] px-3"
+              >
+                Đặt
+              </Button>
+            </div>
+          </form>
+        )}
 
         {item.stayMin != null && (
           <button
             type="button"
             onClick={() => set(null)}
-            className="mt-2 text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+            className="mt-3 text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
           >
             Về mặc định ({fmtDuration(DEFAULT_STAY_MIN[item.kind])})
           </button>
@@ -1524,49 +1676,67 @@ function NameEdit({
   value: string;
   onSave: (next: string) => void;
 }) {
+  const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
   // Esc rồi blur() chạy NGAY trong cùng lượt: onBlur vẫn thấy `draft` cũ ⇒ sẽ lưu nhầm.
   const cancelled = useRef(false);
-  return (
-    <span className="-mx-1.5 inline-grid min-w-0 max-w-[calc(100%+0.75rem)] align-top">
-      <span aria-hidden className="invisible col-start-1 row-start-1 truncate whitespace-pre px-1.5">
-        {draft || " "}
-      </span>
-      <input
+
+  // Lúc thường là CHỮ (xuống tối đa hai dòng như tên các mục khác) — một <input> chỉ hiện được một dòng nên tên
+  // dài bị cắt. Bấm vào mới thành ô gõ (textarea tự giãn, cũng xuống dòng). `data-rename`: menu "Đổi tên" bấm hộ.
+  if (!editing)
+    return (
+      <button
+        type="button"
         data-rename={itemId}
-        value={draft}
-        size={1}
-        spellCheck={false}
-        draggable={false}
-        aria-label={`Tên mục: ${value}`}
         title="Bấm để đổi tên"
-        onChange={(e) => setDraft(e.target.value)}
-        // Trong hàng kéo–thả: đừng để cú nhấn vào ô gõ bắt đầu một lượt kéo.
         onPointerDown={(e) => e.stopPropagation()}
-        onBlur={() => {
-          if (cancelled.current) {
-            cancelled.current = false;
-            setDraft(value);
-            return;
-          }
-          const next = draft.trim();
-          if (next && next !== value) onSave(next);
-          else setDraft(value);
+        onClick={() => {
+          setDraft(value);
+          setEditing(true);
         }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") e.currentTarget.blur();
-          if (e.key === "Escape") {
-            cancelled.current = true;
-            e.currentTarget.blur();
-          }
-        }}
-        className={cn(
-          "col-start-1 row-start-1 w-full min-w-0 cursor-text truncate rounded-[4px] bg-transparent px-1.5 caret-primary outline-none transition-[background-color,box-shadow] duration-150",
-          "selection:bg-primary/20 hover:bg-muted/70",
-          "focus:bg-background focus:shadow-[0_0_0_1.5px_color-mix(in_oklab,var(--color-primary)_70%,transparent),0_0_0_4px_color-mix(in_oklab,var(--color-primary)_16%,transparent)] focus:hover:bg-background",
-        )}
-      />
-    </span>
+        className="-mx-1.5 line-clamp-2 cursor-text rounded-[4px] px-1.5 text-left transition-colors [overflow-wrap:anywhere] hover:bg-muted/70"
+      >
+        {value}
+      </button>
+    );
+
+  return (
+    <textarea
+      autoFocus
+      rows={1}
+      value={draft}
+      spellCheck={false}
+      aria-label={`Tên mục: ${value}`}
+      onFocus={(e) => e.currentTarget.select()}
+      onChange={(e) => setDraft(e.target.value.replace(/\n/g, " "))}
+      // Trong hàng kéo–thả: đừng để cú nhấn vào ô gõ bắt đầu một lượt kéo.
+      onPointerDown={(e) => e.stopPropagation()}
+      onBlur={() => {
+        setEditing(false);
+        if (cancelled.current) {
+          cancelled.current = false;
+          setDraft(value);
+          return;
+        }
+        const next = draft.trim();
+        if (next && next !== value) onSave(next);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          e.currentTarget.blur();
+        }
+        if (e.key === "Escape") {
+          cancelled.current = true;
+          e.currentTarget.blur();
+        }
+      }}
+      className={cn(
+        "-mx-1.5 block w-[calc(100%+0.75rem)] resize-none rounded-[4px] bg-background px-1.5 caret-primary outline-none [field-sizing:content]",
+        "shadow-[0_0_0_1.5px_color-mix(in_oklab,var(--color-primary)_70%,transparent),0_0_0_4px_color-mix(in_oklab,var(--color-primary)_16%,transparent)]",
+        TOUCH_INPUT,
+      )}
+    />
   );
 }
 
@@ -1618,7 +1788,7 @@ function InlineEdit({
       },
     };
     return multiline ? (
-      <Textarea {...shared} rows={2} className="mt-1.5 min-h-0 resize-none text-xs" />
+      <Textarea {...shared} rows={2} className={cn("mt-1.5 min-h-0 resize-none text-xs", TOUCH_INPUT)} />
     ) : (
       <Input {...shared} className="mt-1 h-9 rounded-[4px]" />
     );
@@ -1641,10 +1811,6 @@ function InlineEdit({
   );
 }
 
-
-function toTimeValue(min: number): string {
-  return `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
-}
 
 function fromTimeValue(v: string): number | null {
   const m = v.match(/^(\d{1,2}):(\d{2})$/);
