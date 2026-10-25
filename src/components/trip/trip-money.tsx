@@ -9,10 +9,12 @@ import { formatVnd, initials, timeAgo } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MICRO } from "@/components/trip/trip-rail";
@@ -20,12 +22,14 @@ import {
   balances,
   fundSummary,
   personSummary,
+  vnDayMinute,
+  partsOf,
   settlements,
-  splitShares,
   type ExpenseInput,
 } from "@/lib/trip-money";
 import {
   addExpense,
+  updateExpense,
   addFundContributions,
   deleteExpense,
   restoreExpense,
@@ -44,27 +48,35 @@ const toInput = (e: TripExpenseRow): ExpenseInput => ({
   shareIds: e.shareIds,
   kind: e.kind,
   fromFund: e.fromFund,
+  shareAmounts: e.shareAmounts,
 });
 
 /** Phần của từng người trong một khoản — cùng một phép chia với số dư, nên hai chỗ không lệch nhau. */
-const sharesOf = (e: TripExpenseRow) =>
-  splitShares(e.amount, e.shareIds, e.fromFund ? null : (e.paidBy?.id ?? null));
+const sharesOf = (e: TripExpenseRow) => partsOf(toInput(e));
 
 export function TripMoney({
   tripId,
   fundKeeperId,
+  startDate = null,
+  dayCount = 0,
   expenses,
   people,
   viewerId,
 }: {
   tripId: string;
   fundKeeperId: string;
+  /** Ngày khởi hành "YYYY-MM-DD" — có thì khoản chi xếp theo "Ngày 1, Ngày 2…" và ô ghi có nút chọn ngày. */
+  startDate?: string | null;
+  dayCount?: number;
   expenses: TripExpenseRow[];
   people: TripPerson[];
   viewerId: string;
 }) {
   const [pending, start] = useTransition();
-  const [view, setView] = useState<"items" | "people">("items");
+  const [view, setView] = useState<"items" | "table" | "people" | "settle">("items");
+  const [formOpen, setFormOpen] = useState(false);
+  // Khoản đang sửa — cùng hộp thoại với ghi mới, điền sẵn.
+  const [editing, setEditing] = useState<TripExpenseRow | null>(null);
   const solo = people.length < 2;
 
   const run: Run = (fn) =>
@@ -75,7 +87,11 @@ export function TripMoney({
 
   const alive = expenses.filter((e) => !e.deletedAt);
   const removed = expenses.filter((e) => e.deletedAt);
-  const spending = alive.filter((e) => e.kind === "expense");
+  // Theo LÚC CHI (không theo lúc ghi): ngày cũ trước, trong ngày theo giờ; không nhớ giờ thì cuối ngày.
+  const spending = alive
+    .filter((e) => e.kind === "expense")
+    .sort((a, b) => a.spentOn.localeCompare(b.spentOn) || (a.spentMin ?? 1440) - (b.spentMin ?? 1440));
+  const days = tripDays(startDate, dayCount);
   const contributions = alive.filter((e) => e.kind === "contribution");
 
   const inputs = alive.map(toInput);
@@ -88,165 +104,211 @@ export function TripMoney({
   const nameOf = (id: string) => personOf(id)?.name ?? "Đã rời chuyến";
   const keeper = personOf(fundKeeperId);
 
+  const VIEWS = [
+    ["items", "Các khoản"],
+    ["table", "Bảng chia"],
+    ["people", "Từng người"],
+    ["settle", "Ai trả ai"],
+  ] as const;
+
+  const openForm = (
+    <Button onClick={() => setFormOpen(true)} className="h-11 w-full rounded-[6px] text-[0.9375rem]">
+      <Glyph name="plus" className="size-4" />
+      Ghi khoản chi
+    </Button>
+  );
+
   return (
     <div className="pt-6">
-      <header className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
-        <div>
-          <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold tracking-tight sm:text-[1.75rem]">
-            Chi phí
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {solo
-              ? "Ghi lại những khoản đã chi trong chuyến."
-              : "Ghi lại ai đã ứng tiền hay chi từ quỹ chung. Cuối chuyến trang này tự tính ai trả ai."}
-          </p>
-        </div>
-        {/* Số trần, `tabular-nums` — KHÔNG biểu đồ tròn: một cái bánh chia màu chỉ vẽ lại đúng mấy
-            con số này, mà lại đòi thêm một bảng chú giải. */}
-        {spending.length > 0 && (
-          <dl className="text-sm">
-            <Stat label="Tổng đã chi" value={formatVnd(total)} big />
-          </dl>
-        )}
+      <header>
+        <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold tracking-tight sm:text-[1.75rem]">
+          Chi phí
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {solo
+            ? "Ghi lại những khoản đã chi trong chuyến."
+            : "Ghi lại ai đã ứng tiền hay chi từ quỹ chung. Cuối chuyến trang này tự tính ai trả ai."}
+        </p>
       </header>
 
-      {/* Dưới lg: ô ghi → sổ của nhóm → danh sách (đang đi thì việc hay làm nhất là GHI). Từ lg: ô ghi
-          và danh sách ở cột trái, sổ của nhóm dính ở cột phải. */}
-      <div
-        className={cn(
-          "mt-6",
-          !solo && "lg:grid lg:grid-cols-[minmax(0,1fr)_21rem] lg:grid-rows-[auto_1fr] lg:items-start lg:gap-x-8",
-        )}
+      <Dialog
+        open={formOpen || editing != null}
+        onOpenChange={(o) => {
+          if (o) return;
+          setFormOpen(false);
+          setEditing(null);
+        }}
       >
-        <div className="min-w-0 lg:col-start-1 lg:row-start-1">
-          <ExpenseForm tripId={tripId} people={people} viewerId={viewerId} solo={solo} pending={pending} run={run} />
-        </div>
+        <DialogContent className="max-h-[92dvh] overflow-y-auto rounded-[6px] p-0 sm:max-w-[34rem]">
+          <DialogHeader className="px-5 pt-5">
+            <DialogTitle className="font-[family-name:var(--font-display)] text-xl">
+              {editing ? "Sửa khoản chi" : "Ghi khoản chi"}
+            </DialogTitle>
+          </DialogHeader>
+          <ExpenseForm
+            key={editing?.id ?? "new"}
+            initial={editing}
+            tripId={tripId}
+            people={people}
+            viewerId={viewerId}
+            solo={solo}
+            pending={pending}
+            run={run}
+            days={days}
+            onDone={() => {
+              setFormOpen(false);
+              setEditing(null);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* HÀNG TÓM TẮT: tiêu bao nhiêu · quỹ còn bao nhiêu. Sổ chi tiết (kể cả "ai trả ai") trải hết bề ngang
+          bên dưới — bảng chia cần chỗ cho nhiều cột. */}
+      <div className={cn("mt-6 grid items-stretch gap-3", !solo && "sm:grid-cols-2")}>
+        <section className="flex flex-col rounded-[6px] bg-band p-4">
+          <h2 className={cn(MICRO, "text-foreground/60")}>Tổng đã chi</h2>
+          {/* Số trần, `tabular-nums` — KHÔNG biểu đồ tròn: một cái bánh chia màu chỉ vẽ lại đúng mấy con số
+              này, mà lại đòi thêm một bảng chú giải. */}
+          <p className="mt-1.5 font-[family-name:var(--font-display)] text-[1.75rem] font-bold leading-none tabular-nums">
+            {formatVnd(total)}
+          </p>
+          <div className="mt-auto pt-4">{openForm}</div>
+        </section>
 
         {!solo && (
-          <aside className="mt-8 grid gap-3 lg:sticky lg:top-6 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:mt-0">
-            <FundCard
-              tripId={tripId}
-              people={people}
-              keeper={keeper}
-              fund={fund}
-              hasFund={hasFund}
-              contributions={contributions}
-              pending={pending}
-              run={run}
-            />
-
-            <section className="rounded-[6px] bg-band p-4">
-              <h2 className={cn(MICRO, "text-foreground/60")}>Ai trả ai</h2>
-              {alive.length === 0 ? (
-                <p className="mt-2 text-sm text-muted-foreground">Chưa có khoản nào để tính.</p>
-              ) : owed.length === 0 ? (
-                <p className="mt-2 text-sm text-muted-foreground">Cả nhóm đang hoà nhau.</p>
-              ) : (
-                <ul className="mt-2 grid gap-2.5">
-                  {owed.map((t) => (
-                    <li key={t.fromId + t.toId} className="flex min-w-0 items-center gap-2 text-sm">
-                      <p className="flex min-w-0 flex-1 items-center gap-1.5">
-                        <Face person={personOf(t.fromId)} size="xs" />
-                        <span className="min-w-0 truncate">{nameOf(t.fromId)}</span>
-                        <Glyph name="forward" className="size-3.5 shrink-0 text-muted-foreground" />
-                        <Face person={personOf(t.toId)} size="xs" />
-                        <span className="min-w-0 truncate">{nameOf(t.toId)}</span>
-                      </p>
-                      <strong className="shrink-0 font-semibold tabular-nums">{formatVnd(t.amount)}</strong>
-                    </li>
-                  ))}
-                </ul>
-              )}
-              <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-                {hasFund && keeper
-                  ? `Tiền quỹ đang ở ${keeper.name ?? "người giữ quỹ"}, nên phần dư hay hụt của quỹ tính vào người đó. `
-                  : ""}
-                Phần chia làm tròn lên nghìn, người ứng tiền chịu phần lẻ.
-              </p>
-            </section>
-          </aside>
+          <FundCard
+            tripId={tripId}
+            people={people}
+            keeper={keeper}
+            fund={fund}
+            hasFund={hasFund}
+            contributions={contributions}
+            pending={pending}
+            run={run}
+          />
         )}
 
-        <div className="min-w-0 lg:col-start-1 lg:row-start-2">
-          <section className="mt-8">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className={cn(MICRO, "text-foreground/60")}>
-                {view === "items" ? "Các khoản đã chi" : "Chi phí từng người"}
-              </h2>
-              {!solo && spending.length > 0 && (
-                <div role="tablist" aria-label="Cách xem" className="flex rounded-[4px] bg-muted p-0.5 text-xs">
-                  {(
-                    [
-                      ["items", "Theo khoản"],
-                      ["people", "Theo người"],
-                    ] as const
-                  ).map(([v, label]) => (
-                    <button
-                      key={v}
-                      type="button"
-                      role="tab"
-                      aria-selected={view === v}
-                      onClick={() => setView(v)}
-                      className={cn(
-                        "rounded-[3px] px-2.5 py-1 font-medium transition-colors",
-                        view === v
-                          ? "bg-background text-foreground shadow-[0_1px_2px_rgb(0_0_0/0.08)]"
-                          : "text-foreground/60 hover:text-foreground",
-                      )}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+      </div>
 
-            {spending.length === 0 ? (
-              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                Chưa ghi khoản nào. Ghi ngay khi có người ứng tiền: tiền phòng, tiền xăng, bữa ăn ai đó trả cả
-                bàn.
-              </p>
-            ) : view === "items" || solo ? (
-              <ul className="mt-2 divide-y divide-border/60">
-                {spending.map((e) => (
-                  <ExpenseRow key={e.id} e={e} solo={solo} people={people} pending={pending} run={run} />
-                ))}
-              </ul>
+      <section className="mt-9">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-base font-semibold">Sổ chi tiêu</h2>
+          {/* Một chỗ, ba cách xem cùng một sổ. */}
+          {!solo && spending.length > 0 && (
+            <div role="tablist" aria-label="Cách xem" className="flex max-w-full overflow-x-auto rounded-[6px] bg-muted p-1">
+              {VIEWS.map(([v, label]) => (
+                <button
+                  key={v}
+                  type="button"
+                  role="tab"
+                  aria-selected={view === v}
+                  onClick={() => setView(v)}
+                  className={cn(
+                    "shrink-0 whitespace-nowrap rounded-[4px] px-2.5 py-1.5 text-sm font-medium transition-colors sm:px-3.5",
+                    view === v
+                      ? "bg-background text-foreground shadow-[0_1px_2px_rgb(0_0_0/0.08)]"
+                      : "text-foreground/60 hover:text-foreground",
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {spending.length === 0 ? (
+          <div className="mt-3 rounded-[6px] bg-band px-5 py-8 text-center">
+            <p className="text-sm font-medium">Chưa ghi khoản nào</p>
+            <p className="mx-auto mt-1 max-w-sm text-sm leading-relaxed text-muted-foreground">
+              Ghi ngay khi có người ứng tiền: tiền phòng, tiền xăng, bữa ăn ai đó trả cả bàn.
+            </p>
+          </div>
+        ) : view === "items" || solo ? (
+          <div className="mt-3">
+            {groupByDay(spending, days).map((g) => (
+              <section key={g.key} className="mt-5 first:mt-0">
+                <h3 className="flex items-baseline gap-2.5 border-b border-border pb-1.5">
+                  <span className="text-sm font-semibold">{g.title}</span>
+                  {g.sub && <span className="text-xs text-muted-foreground">{g.sub}</span>}
+                  <span className="ml-auto text-xs tabular-nums text-muted-foreground">
+                    {formatVnd(g.list.reduce((n, e) => n + e.amount, 0))}
+                  </span>
+                </h3>
+                <ul className="divide-y divide-border/60">
+                  {g.list.map((e) => (
+                    <ExpenseRow
+                      key={e.id}
+                      e={e}
+                      solo={solo}
+                      people={people}
+                      pending={pending}
+                      run={run}
+                      showTime={g.showTime}
+                      onEdit={() => setEditing(e)}
+                    />
+                  ))}
+                </ul>
+              </section>
+            ))}
+          </div>
+        ) : view === "table" ? (
+          <ShareTable spending={spending} people={people} />
+        ) : view === "settle" ? (
+          <div className="mt-3 border-t border-border/60">
+            {owed.length === 0 ? (
+              <p className="py-6 text-sm text-muted-foreground">Cả nhóm đang hoà nhau, không ai nợ ai.</p>
             ) : (
-              <ul className="mt-2 divide-y divide-border/60">
-                {people.map((p) => (
-                  <PersonRow
-                    key={p.id}
-                    person={p}
-                    isKeeper={hasFund && p.id === fundKeeperId}
-                    summary={personSummary(inputs, p.id)}
-                    balance={bal.get(p.id) ?? 0}
-                    items={spending.filter((e) => e.shareIds.includes(p.id))}
-                  />
+              <ul className="divide-y divide-border/60">
+                {owed.map((t) => (
+                  <li key={t.fromId + t.toId} className="flex min-w-0 items-center gap-3 py-3.5">
+                    <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2.5 gap-y-1 text-[0.9375rem]">
+                      <span className="inline-flex min-w-0 items-center gap-2">
+                        <Face person={personOf(t.fromId)} />
+                        <span className="truncate font-medium">{nameOf(t.fromId)}</span>
+                      </span>
+                      <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                        chuyển cho
+                        <Glyph name="forward" className="size-3.5" />
+                      </span>
+                      <span className="inline-flex min-w-0 items-center gap-2">
+                        <Face person={personOf(t.toId)} />
+                        <span className="truncate font-medium">{nameOf(t.toId)}</span>
+                      </span>
+                    </span>
+                    <strong className="shrink-0 font-[family-name:var(--font-display)] text-lg font-bold tabular-nums">
+                      {formatVnd(t.amount)}
+                    </strong>
+                  </li>
                 ))}
               </ul>
             )}
-          </section>
-
-          {removed.length > 0 && <DeletedLog removed={removed} pending={pending} run={run} />}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Stat({ label, value, big }: { label: string; value: string; big?: boolean }) {
-  return (
-    <div>
-      <dt className="whitespace-nowrap text-xs text-muted-foreground">{label}</dt>
-      <dd
-        className={cn(
-          "mt-0.5 whitespace-nowrap font-[family-name:var(--font-display)] font-bold leading-none tabular-nums",
-          big ? "text-xl sm:text-2xl" : "text-base sm:text-lg",
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              Ít lượt chuyển khoản nhất để cả nhóm hoà nhau.{" "}
+              {hasFund && keeper
+                ? `Tiền quỹ đang ở ${keeper.name ?? "người giữ quỹ"}, nên phần dư hay hụt của quỹ tính vào người đó. `
+                : ""}
+              Phần chia làm tròn lên nghìn, người ứng tiền chịu phần lẻ.
+            </p>
+          </div>
+        ) : (
+          <ul className="mt-3 divide-y divide-border/60 border-t border-border/60">
+            {people.map((p) => (
+              <PersonRow
+                key={p.id}
+                person={p}
+                isKeeper={hasFund && p.id === fundKeeperId}
+                summary={personSummary(inputs, p.id)}
+                balance={bal.get(p.id) ?? 0}
+                items={spending.filter((e) => e.shareIds.includes(p.id))}
+              />
+            ))}
+          </ul>
         )}
-      >
-        {value}
-      </dd>
+      </section>
+
+      {removed.length > 0 && <DeletedLog removed={removed} pending={pending} run={run} />}
     </div>
   );
 }
@@ -525,18 +587,76 @@ function ContributeButton({
   );
 }
 
+type TripDayRef = { index: number; iso: string; label: string };
+const WEEKDAY = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+
+/** Các ngày của chuyến theo lịch ("YYYY-MM-DD", tính theo ngày lịch UTC — không để múi giờ máy làm lệch). */
+function tripDays(start: string | null, count: number): TripDayRef[] {
+  if (!start || count <= 0) return [];
+  const base = Date.parse(`${start}T00:00:00Z`);
+  return Array.from({ length: count }, (_, i) => {
+    const d = new Date(base + i * 86_400_000);
+    const iso = d.toISOString().slice(0, 10);
+    return { index: i, iso, label: `${WEEKDAY[d.getUTCDay()]} ${iso.slice(8, 10)}/${iso.slice(5, 7)}` };
+  });
+}
+
+function shortDate(iso: string) {
+  const d = new Date(`${iso}T00:00:00Z`);
+  return `${WEEKDAY[d.getUTCDay()]} ${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
+}
+
+/**
+ * Nhóm của một khoản: TRONG chuyến thì theo từng ngày (lúc đó mới cần soát "hôm qua tiêu gì"); TRƯỚC / SAU
+ * chuyến gom MỘT nhóm, không chia ngày, không hiện giờ — đặt vé, đặt phòng, chia lại sau chuyến hiếm ai quan
+ * tâm ngày giờ. Chuyến chưa có ngày đi thì chia theo ngày lịch.
+ */
+type DayGroup = { key: string; title: string; sub: string | null; showTime: boolean; list: TripExpenseRow[] };
+
+function groupByDay(list: TripExpenseRow[], days: TripDayRef[]): DayGroup[] {
+  const out = new Map<string, DayGroup>();
+  for (const e of list) {
+    const hit = days.find((d) => d.iso === e.spentOn);
+    const g: Omit<DayGroup, "list"> = hit
+      ? { key: e.spentOn, title: `Ngày ${hit.index + 1}`, sub: hit.label, showTime: true }
+      : days.length > 0 && e.spentOn < days[0].iso
+        ? { key: "before", title: "Trước chuyến", sub: null, showTime: false }
+        : days.length > 0
+          ? { key: "after", title: "Sau chuyến", sub: null, showTime: false }
+          : { key: e.spentOn, title: shortDate(e.spentOn), sub: null, showTime: true };
+    const cur = out.get(g.key);
+    if (cur) cur.list.push(e);
+    else out.set(g.key, { ...g, list: [e] });
+  }
+  // `list` đã xếp theo lúc chi ⇒ thứ tự nhóm tự đúng: trước chuyến → ngày 1…n → sau chuyến.
+  return [...out.values()];
+}
+
+/** Một thời điểm → "15:37 25/10" theo giờ Việt Nam. */
+function stamp(d: Date): string {
+  const { day, min } = vnDayMinute(d);
+  return `${hhmm(min)} ${day.slice(8, 10)}/${day.slice(5, 7)}`;
+}
+
+const hhmm = (min: number) => `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
+
 function ExpenseRow({
   e,
   solo,
   people,
   pending,
   run,
+  showTime = true,
+  onEdit,
 }: {
   e: TripExpenseRow;
   solo: boolean;
   people: TripPerson[];
   pending: boolean;
   run: Run;
+  /** Ngoài lịch chuyến thì không hiện giờ (không ai soát giờ của khoản đặt vé / chia lại sau chuyến). */
+  showTime?: boolean;
+  onEdit: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const part = Math.max(0, ...sharesOf(e).values());
@@ -550,9 +670,12 @@ function ExpenseRow({
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
-          disabled={solo}
           className="flex min-w-0 flex-1 items-center gap-3 rounded-[4px] text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
+          {/* Cột giờ chi (theo giờ VN) — trống khi không nhớ giờ, để tên các khoản vẫn dóng một mép. */}
+          <span className="w-10 shrink-0 self-start pt-0.5 text-xs font-medium tabular-nums text-muted-foreground">
+            {showTime && e.spentMin != null ? hhmm(e.spentMin) : ""}
+          </span>
           <div className="min-w-0 flex-1">
             <p className="truncate text-[0.9375rem] font-medium">{e.title}</p>
             {!solo && (
@@ -578,15 +701,13 @@ function ExpenseRow({
             )}
           </div>
           <p className="shrink-0 font-semibold tabular-nums">{formatVnd(e.amount)}</p>
-          {!solo && (
-            <Glyph
-              name="chevron-down"
-              className={cn(
-                "size-4 shrink-0 text-muted-foreground transition-transform duration-200 motion-reduce:transition-none",
-                !open && "-rotate-90",
-              )}
-            />
-          )}
+          <Glyph
+            name="chevron-down"
+            className={cn(
+              "size-4 shrink-0 text-muted-foreground transition-transform duration-200 motion-reduce:transition-none",
+              !open && "-rotate-90",
+            )}
+          />
         </button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -600,6 +721,11 @@ function ExpenseRow({
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuItem onSelect={onEdit}>
+              <Glyph name="pencil" className="size-4" />
+              Sửa khoản chi
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem variant="destructive" onSelect={() => run(() => deleteExpense(e.id))}>
               <Glyph name="trash" className="size-4" />
               Xoá khỏi sổ
@@ -613,7 +739,9 @@ function ExpenseRow({
 
       {/* Hàng gập chỉ nói AI TRẢ; chia cho ai và mỗi người bao nhiêu để dành cho lúc mở — không lặp lại. */}
       {open && (
-        <div className="ml-1 mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-l-2 border-border pl-3 text-sm">
+        <div className="ml-[3.25rem] mt-2.5 grid gap-2 border-l-2 border-border pl-3">
+        {!solo && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm">
           <span className="text-xs text-muted-foreground">
             Chi cho {everyone ? "cả nhóm" : `${e.shareIds.length} người`}
           </span>
@@ -621,13 +749,41 @@ function ExpenseRow({
             <span key={p?.id ?? i} className="inline-flex items-center gap-1.5">
               <Face person={p} size="xs" />
               {p?.name ?? "Đã rời chuyến"}
+              {/* Chia không đều: số của từng người nằm ngay cạnh tên — không có "mỗi người" chung. */}
+              {e.shareAmounts && (
+                <strong className="font-semibold tabular-nums">{formatVnd(e.shareAmounts[p?.id ?? ""] ?? 0)}</strong>
+              )}
             </span>
           ))}
-          {e.shareIds.length > 1 && (
+          {e.shareIds.length > 1 && !e.shareAmounts && (
             <span className="ml-auto text-xs tabular-nums text-muted-foreground">
               mỗi người <strong className="font-semibold text-foreground">{formatVnd(part)}</strong>
             </span>
           )}
+          {e.shareAmounts && <span className="ml-auto text-xs text-muted-foreground">chia không đều</span>}
+        </div>
+        )}
+        {/* Lúc GHI ≠ lúc CHI, và sổ chung sửa được ⇒ ai ghi / ai sửa phải nhìn thấy được. */}
+        <p suppressHydrationWarning className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground">
+          <span>
+            Ghi lúc {stamp(e.recordedAt)}
+            {e.recordedBy?.name && (
+              <>
+                {" "}bởi <strong className="font-medium text-foreground/75">{e.recordedBy.name}</strong>
+              </>
+            )}
+          </span>
+          {e.editedAt && (
+            <span>
+              Sửa lúc {stamp(e.editedAt)}
+              {e.editedBy?.name && (
+                <>
+                  {" "}bởi <strong className="font-medium text-foreground/75">{e.editedBy.name}</strong>
+                </>
+              )}
+            </span>
+          )}
+        </p>
         </div>
       )}
     </li>
@@ -694,6 +850,80 @@ function PersonRow({
         </ul>
       )}
     </li>
+  );
+}
+
+/**
+ * Bảng chia tiền: mỗi khoản một hàng, mỗi người một cột, ô = phần người đó chịu (cùng phép chia với số
+ * dư). Hàng cuối cộng phần từng người. Nhiều người thì bảng cuộn ngang, cột tên khoản đứng yên.
+ */
+function ShareTable({ spending, people }: { spending: TripExpenseRow[]; people: TripPerson[] }) {
+  const rows = spending.map((e) => ({ e, parts: sharesOf(e) }));
+  const totalOf = (id: string) => rows.reduce((n, r) => n + (r.parts.get(id) ?? 0), 0);
+  const grand = spending.reduce((n, e) => n + e.amount, 0);
+  const stick = "sticky left-0 z-10 bg-background";
+
+  return (
+    <section className="mt-3">
+      <div className="overflow-x-auto rounded-[6px]">
+        <table className="w-full border-collapse text-sm tabular-nums">
+          <thead>
+            <tr className="border-b border-border/70 bg-band text-xs text-foreground/65">
+              <th scope="col" className={cn(stick, "bg-band px-3 py-2 text-left font-medium")}>
+                Khoản chi
+              </th>
+              <th scope="col" className="whitespace-nowrap px-3 py-2 text-right font-medium">
+                Tổng
+              </th>
+              {people.map((p) => (
+                <th key={p.id} scope="col" className="whitespace-nowrap px-3 py-2 text-right font-medium">
+                  {/* Tên ĐỦ: lấy một chữ thì "Huy Phạm" và "Sang Pham" đều ra "Phạm" — tên trong tài khoản
+                      không theo một thứ tự họ/tên cố định. */}
+                  <span className="inline-flex max-w-[8rem] items-center gap-1.5" title={p.name ?? undefined}>
+                    <Face person={p} size="xs" />
+                    <span className="truncate">{p.name ?? "Không rõ"}</span>
+                  </span>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(({ e, parts }) => (
+              <tr key={e.id} className="border-b border-border/50 last:border-b-0">
+                <th scope="row" className={cn(stick, "max-w-[11rem] px-3 py-2 text-left font-normal")}>
+                  <span className="block truncate font-medium">{e.title}</span>
+                  <span className="block truncate text-xs text-muted-foreground">
+                    {e.fromFund ? "Quỹ chung trả" : `${e.paidBy?.name ?? "Đã rời chuyến"} trả`}
+                  </span>
+                </th>
+                <td className="whitespace-nowrap px-3 py-2 text-right font-semibold">{formatVnd(e.amount)}</td>
+                {people.map((p) => {
+                  const v = parts.get(p.id);
+                  return (
+                    <td key={p.id} className="whitespace-nowrap px-3 py-2 text-right">
+                      {v ? formatVnd(v) : <span className="text-muted-foreground/50">—</span>}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr className="border-t border-border bg-band font-semibold">
+              <th scope="row" className={cn(stick, "bg-band px-3 py-2 text-left text-xs font-semibold text-foreground/70")}>
+                Mỗi người chịu
+              </th>
+              <td className="whitespace-nowrap px-3 py-2 text-right">{formatVnd(grand)}</td>
+              {people.map((p) => (
+                <td key={p.id} className="whitespace-nowrap px-3 py-2 text-right">
+                  {formatVnd(totalOf(p.id))}
+                </td>
+              ))}
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
   );
 }
 
@@ -820,6 +1050,9 @@ function ExpenseForm({
   solo,
   pending,
   run,
+  days = [],
+  onDone,
+  initial = null,
 }: {
   tripId: string;
   people: TripPerson[];
@@ -827,18 +1060,67 @@ function ExpenseForm({
   solo: boolean;
   pending: boolean;
   run: Run;
+  /** Các ngày của chuyến — để ghi lại khoản chi của một ngày đã qua. */
+  days?: TripDayRef[];
+  /** Gọi ngay khi gửi (hộp thoại đóng lại, không đợi server). */
+  onDone?: () => void;
+  /** Có ⇒ SỬA khoản này (điền sẵn mọi ô, gửi `updateExpense`). */
+  initial?: TripExpenseRow | null;
 }) {
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState(initial?.title ?? "");
+  // LÚC CHI. Hôm nay nằm trong chuyến (hoặc chuyến chưa có ngày) ⇒ mặc định "vừa xong" — ghi ngay tại chỗ.
+  // Ngoài chuyến (thường là về rồi mới ghi) ⇒ KHÔNG chọn sẵn, bắt chọn ngày: "vừa xong" lúc đó là ngày sai.
+  const today = vnDayMinute(new Date()).day;
+  const inTrip = days.length === 0 || days.some((d) => d.iso === today);
+  const [when, setWhen] = useState<string | null>(initial ? initial.spentOn : inTrip ? "now" : null);
+  const [time, setTime] = useState(initial?.spentMin != null ? hhmm(initial.spentMin) : "");
+  const timeMin = parseHhmm(time);
   // Số NGHÌN đồng, chỉ chữ số. Hiển thị có dấu chấm ngăn nhóm.
-  const [digits, setDigits] = useState("");
-  const [paidById, setPaidById] = useState(viewerId);
-  const [shareIds, setShareIds] = useState<string[]>(people.map((p) => p.id));
+  const [digits, setDigits] = useState(initial ? String(Math.round(initial.amount / 1_000)) : "");
+  const [paidById, setPaidById] = useState(
+    initial ? (initial.fromFund ? FUND : (initial.paidBy?.id ?? viewerId)) : viewerId,
+  );
+  const [shareIds, setShareIds] = useState<string[]>(initial?.shareIds ?? people.map((p) => p.id));
   const [moreHints, setMoreHints] = useState(false);
+  // Chia không đều: số NGHÌN đồng mỗi người tự nhập (chuỗi chữ số; trống = không chịu phần nào).
+  const [mode, setMode] = useState<"even" | "custom">(initial?.shareAmounts ? "custom" : "even");
+  const [custom, setCustom] = useState<Record<string, string>>(
+    initial?.shareAmounts
+      ? Object.fromEntries(Object.entries(initial.shareAmounts).map(([id, v]) => [id, String(Math.round(v / 1_000))]))
+      : {},
+  );
 
   const nghin = digits ? Number(digits) : 0;
   const amount = nghin * 1_000;
-  const canSubmit = title.trim().length > 0 && amount > 0 && shareIds.length > 0;
+  const customOf = (id: string) => Number(custom[id] || 0);
+  const customSum = people.reduce((n, p) => n + customOf(p.id), 0) * 1_000;
+  const customIds = people.filter((p) => customOf(p.id) > 0).map((p) => p.id);
+  const uneven = !solo && mode === "custom";
+  const canSubmit =
+    title.trim().length > 0 &&
+    amount > 0 &&
+    when !== null &&
+    (time === "" || timeMin != null) &&
+    (uneven ? customIds.length > 0 && customSum === amount : shareIds.length > 0);
   const everyone = shareIds.length === people.length;
+  const left = amount - customSum;
+
+  /** Chia đều phần CÒN LẠI cho những người chưa nhập (theo nghìn, người đầu hứng phần dư). */
+  function fillRest() {
+    const empty = people.filter((p) => !custom[p.id]).map((p) => p.id);
+    const restK = Math.round(left / 1_000);
+    if (empty.length === 0 || restK <= 0) return;
+    const base = Math.floor(restK / empty.length);
+    const extra = restK - base * empty.length;
+    setCustom((cur) => {
+      const next = { ...cur };
+      empty.forEach((id, i) => {
+        const v = base + (i < extra ? 1 : 0);
+        if (v > 0) next[id] = String(v);
+      });
+      return next;
+    });
+  }
 
   function toggleShare(id: string) {
     setShareIds((cur) =>
@@ -850,21 +1132,29 @@ function ExpenseForm({
     e.preventDefault();
     if (!canSubmit) return;
     const fromFund = !solo && paidById === FUND;
+    const shareAmounts = uneven
+      ? Object.fromEntries(customIds.map((id) => [id, customOf(id) * 1_000]))
+      : null;
     setTitle("");
     setDigits("");
-    run(() =>
-      addExpense(tripId, {
+    setCustom({});
+    onDone?.();
+    const payload = {
         title,
         amount,
         paidById: solo || fromFund ? viewerId : paidById,
-        shareIds: solo ? [viewerId] : shareIds,
+        shareIds: solo ? [viewerId] : uneven ? customIds : shareIds,
         fromFund,
-      }),
-    );
+        shareAmounts,
+        // "Vừa xong" ⇒ để server lấy giờ của chính nó (cùng một đồng hồ cho cả nhóm).
+        spentOn: when === "now" ? null : when,
+        spentMin: when === "now" ? null : timeMin,
+    };
+    run(() => (initial ? updateExpense(initial.id, payload) : addExpense(tripId, payload)));
   }
 
   return (
-    <form onSubmit={submit} className="grid grid-cols-1 gap-4 rounded-[6px] bg-band p-4 sm:p-5">
+    <form onSubmit={submit} className="grid grid-cols-1 gap-4 px-5 pb-5">
       <div>
         <FieldLabel>Số tiền</FieldLabel>
         {/* Chín tờ tiền nằm MỘT hàng ngay dưới ô. */}
@@ -937,7 +1227,7 @@ function ExpenseForm({
               onClick={() => setTitle(t)}
               className={cn(
                 "h-8 rounded-[4px] px-2.5 text-[0.8125rem] transition-colors",
-                title === t ? "bg-foreground text-background" : "bg-background text-foreground/75 hover:text-foreground",
+                title === t ? "bg-foreground text-background" : "bg-muted text-foreground/75 hover:text-foreground",
               )}
             >
               {t}
@@ -951,6 +1241,55 @@ function ExpenseForm({
             {moreHints ? "Thu gọn" : `+${TITLE_HINTS.length - TITLE_FIRST} gợi ý khác`}
           </button>
         </div>
+      </div>
+
+      <div>
+        <FieldLabel>Khi nào</FieldLabel>
+        <div className="mt-1.5 flex flex-wrap gap-1.5">
+          <Choice selected={when === "now"} onClick={() => setWhen("now")}>
+            <span className="pl-1.5">Vừa xong</span>
+          </Choice>
+          {days.map((d) => (
+            <Choice key={d.iso} selected={when === d.iso} onClick={() => setWhen(d.iso)}>
+              <span className="pl-1.5">
+                Ngày {d.index + 1} <span className="font-normal text-muted-foreground">{d.label}</span>
+              </span>
+            </Choice>
+          ))}
+          {/* Đang sửa một khoản có ngày NGOÀI lịch chuyến: giữ ngày đó thành một nút, kẻo không nút nào sáng. */}
+          {when && when !== "now" && !days.some((d) => d.iso === when) && (
+            <Choice selected onClick={() => setWhen(when)}>
+              <span className="pl-1.5">{shortDate(when)}</span>
+            </Choice>
+          )}
+        </div>
+        {when === null && (
+          <p className="mt-2 text-xs font-medium text-warm-ink">
+            Hôm nay không nằm trong lịch chuyến — chọn ngày đã chi, hoặc “Vừa xong” nếu là khoản của hôm nay.
+          </p>
+        )}
+        {when !== null && when !== "now" && (
+          <div className="mt-2 flex items-center gap-2.5">
+            <span className="text-xs text-muted-foreground">Lúc</span>
+            <label
+              className={cn(
+                "flex h-10 w-24 items-center rounded-[6px] border border-border bg-background px-3 transition-[border-color,box-shadow]",
+                FIELD_FOCUS,
+                time !== "" && timeMin == null && "border-warm",
+              )}
+            >
+              <input
+                value={time}
+                onChange={(e) => setTime(formatHhmmInput(e.target.value))}
+                inputMode="numeric"
+                placeholder="19:30"
+                aria-label="Giờ chi (24 giờ, tuỳ chọn)"
+                className="w-full min-w-0 bg-transparent text-center text-[0.9375rem] font-semibold tabular-nums outline-none placeholder:font-normal placeholder:text-muted-foreground/50"
+              />
+            </label>
+            <span className="text-xs text-muted-foreground">Không nhớ giờ thì để trống.</span>
+          </div>
+        )}
       </div>
 
       {!solo && (
@@ -974,24 +1313,109 @@ function ExpenseForm({
           </div>
 
           <div>
-            <div className="flex items-baseline justify-between gap-3">
-              <FieldLabel>Chia đều cho</FieldLabel>
-              <button
-                type="button"
-                onClick={() => setShareIds(everyone ? [viewerId] : people.map((p) => p.id))}
-                className="text-xs font-medium text-primary-ink hover:underline"
-              >
-                {everyone ? "Chỉ mình tôi" : "Cả nhóm"}
-              </button>
+            <div className="flex items-center justify-between gap-3">
+              <FieldLabel>Chia cho</FieldLabel>
+              <div role="tablist" aria-label="Cách chia" className="flex rounded-[4px] bg-muted p-0.5 text-xs">
+                {(
+                  [
+                    ["even", "Chia đều"],
+                    ["custom", "Theo số tiền"],
+                  ] as const
+                ).map(([v, label]) => (
+                  <button
+                    key={v}
+                    type="button"
+                    role="tab"
+                    aria-selected={mode === v}
+                    onClick={() => setMode(v)}
+                    className={cn(
+                      "rounded-[3px] px-2.5 py-1 font-medium transition-colors",
+                      mode === v
+                        ? "bg-background text-foreground shadow-[0_1px_2px_rgb(0_0_0/0.08)]"
+                        : "text-foreground/60 hover:text-foreground",
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="mt-1.5 flex flex-wrap gap-1.5">
-              {people.map((p) => (
-                <Choice key={p.id} selected={shareIds.includes(p.id)} onClick={() => toggleShare(p.id)} multi>
-                  <Face person={p} />
-                  {p.id === viewerId ? "Tôi" : (p.name ?? "Không rõ")}
-                </Choice>
-              ))}
-            </div>
+
+            {mode === "even" ? (
+              <>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {people.map((p) => (
+                    <Choice key={p.id} selected={shareIds.includes(p.id)} onClick={() => toggleShare(p.id)} multi>
+                      <Face person={p} />
+                      {p.id === viewerId ? "Tôi" : (p.name ?? "Không rõ")}
+                    </Choice>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShareIds(everyone ? [viewerId] : people.map((p) => p.id))}
+                  className="mt-2 text-xs font-medium text-primary-ink hover:underline"
+                >
+                  {everyone ? "Chỉ mình tôi" : "Cả nhóm"}
+                </button>
+              </>
+            ) : (
+              <>
+                <ul className="mt-2 grid gap-1.5">
+                  {people.map((p) => (
+                    <li key={p.id} className="flex items-center gap-2.5">
+                      <Face person={p} />
+                      <span className="min-w-0 flex-1 truncate text-sm">
+                        {p.id === viewerId ? "Tôi" : (p.name ?? "Không rõ")}
+                      </span>
+                      <label
+                        className={cn(
+                          "flex h-10 w-36 shrink-0 items-center rounded-[6px] border border-border bg-background pl-3 pr-2.5 transition-[border-color,box-shadow]",
+                          FIELD_FOCUS,
+                        )}
+                      >
+                        <input
+                          value={custom[p.id] ? Number(custom[p.id]).toLocaleString("vi-VN") : ""}
+                          onChange={(e) =>
+                            setCustom((cur) => ({
+                              ...cur,
+                              [p.id]: e.target.value.replace(/\D/g, "").replace(/^0+/, "").slice(0, 7),
+                            }))
+                          }
+                          inputMode="numeric"
+                          placeholder="0"
+                          aria-label={`Phần của ${p.name ?? "người này"} (nghìn đồng)`}
+                          className="w-full min-w-0 bg-transparent text-right text-[0.9375rem] font-semibold tabular-nums outline-none placeholder:font-normal placeholder:text-muted-foreground/50"
+                        />
+                        <span aria-hidden className="shrink-0 text-sm text-muted-foreground">
+                          .000đ
+                        </span>
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 text-xs tabular-nums">
+                  <span className={cn(left === 0 && amount > 0 ? "text-muted-foreground" : "font-medium text-warm-ink")}>
+                    {amount === 0
+                      ? "Nhập số tiền của khoản trước."
+                      : left === 0
+                        ? `Đã chia đủ ${formatVnd(amount)}.`
+                        : left > 0
+                          ? `Đã chia ${formatVnd(customSum)}, còn thiếu ${formatVnd(left)}.`
+                          : `Chia dư ${formatVnd(-left)} so với ${formatVnd(amount)}.`}
+                  </span>
+                  {left > 0 && people.some((p) => !custom[p.id]) && (
+                    <button
+                      type="button"
+                      onClick={fillRest}
+                      className="font-medium text-primary-ink hover:underline"
+                    >
+                      Chia đều phần còn lại
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </>
       )}
@@ -1000,10 +1424,10 @@ function ExpenseForm({
         {amount > 0 ? (
           <>
             Ghi khoản <span className="tabular-nums">{formatVnd(amount)}</span>
-            {!solo && shareIds.length > 1 && (
+            {!solo && (uneven ? customIds : shareIds).length > 1 && (
               <span className="font-normal opacity-80">
                 {" "}
-                ({shareIds.length} người)
+                ({(uneven ? customIds : shareIds).length} người{uneven ? ", không đều" : ""})
               </span>
             )}
           </>
@@ -1013,6 +1437,21 @@ function ExpenseForm({
       </Button>
     </form>
   );
+}
+
+/** "19:30" → 1170; sai định dạng / ngoài 00:00–23:59 → null. */
+function parseHhmm(v: string): number | null {
+  const m = v.match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return null;
+  const h = Number(m[1]);
+  const mi = Number(m[2]);
+  return h < 24 && mi < 60 ? h * 60 + mi : null;
+}
+
+/** Gõ "1930" ra "19:30": tự chèn dấu hai chấm — trên điện thoại bàn phím số không có dấu ":". */
+function formatHhmmInput(raw: string): string {
+  const d = raw.replace(/\D/g, "").slice(0, 4);
+  return d.length <= 2 ? d : `${d.slice(0, d.length - 2)}:${d.slice(-2)}`;
 }
 
 function FieldLabel({ children }: { children: React.ReactNode }) {

@@ -10,7 +10,15 @@ export type ExpenseInput = {
   kind?: "expense" | "contribution";
   /** Khoản chi trả bằng quỹ chung. */
   fromFund?: boolean;
+  /** Chia KHÔNG đều: số tiền từng người chịu (tổng = `amount`). Không có ⇒ chia đều. */
+  shareAmounts?: Record<string, number> | null;
 };
+
+/** Phần từng người trong MỘT khoản — chia không đều thì lấy đúng số đã nhập, không thì chia đều. */
+export function partsOf(e: ExpenseInput): Map<string, number> {
+  if (e.shareAmounts) return new Map(Object.entries(e.shareAmounts));
+  return splitShares(e.amount, e.shareIds, e.fromFund ? null : e.paidById);
+}
 
 export function splitEven(amount: number, n: number): number[] {
   if (n <= 0) return [];
@@ -69,7 +77,7 @@ export function balances(
     const payer = e.fromFund ? fundKeeperId : e.paidById;
     bump(payer, e.amount);
     // Quỹ trả thì không ai "ứng" — phần lẻ rơi vào người đầu danh sách chia.
-    for (const [id, part] of splitShares(e.amount, e.shareIds, e.fromFund ? null : e.paidById)) bump(id, -part);
+    for (const [id, part] of partsOf(e)) bump(id, -part);
   }
   return out;
 }
@@ -92,7 +100,7 @@ export function personSummary(expenses: ExpenseInput[], id: string) {
       continue;
     }
     if (!e.fromFund && e.paidById === id) paid += e.amount;
-    spent += splitShares(e.amount, e.shareIds, e.fromFund ? null : e.paidById).get(id) ?? 0;
+    spent += partsOf(e).get(id) ?? 0;
   }
   return { spent, paid, contributed };
 }
@@ -119,4 +127,20 @@ export function settlements(bal: Map<string, number>): Settlement[] {
     if (creditors[j].v < 1) j++;
   }
   return out;
+}
+
+const VN_PARTS = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Asia/Ho_Chi_Minh",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+});
+
+/** Một thời điểm → NGÀY ("YYYY-MM-DD") và PHÚT trong ngày, theo giờ Việt Nam (không theo đồng hồ máy). */
+export function vnDayMinute(d: Date): { day: string; min: number } {
+  const p = Object.fromEntries(VN_PARTS.formatToParts(d).map((x) => [x.type, x.value]));
+  return { day: `${p.year}-${p.month}-${p.day}`, min: Number(p.hour) * 60 + Number(p.minute) };
 }

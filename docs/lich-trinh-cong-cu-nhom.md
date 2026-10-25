@@ -535,8 +535,15 @@ trong đó 2 đã xếp vào túi"* luôn đúng, và không sinh ra trạng th�
 
 - **Ô ba trạng thái của §12.2b GIỮ NGUYÊN** — đã thử "hai cột tick Có sẵn | Trong túi" và biên tập chọn quay
   lại ô bấm-chuyển. Đừng tách lại thành hai cột. Ô đổi NGAY (`useOptimistic` từng hàng), vùng bấm 36px.
-- Đầu tab: tiêu đề + dòng chú giải vẽ ba nấc + hai con số **Đã có sẵn N/T** và **Đã xếp vào túi N/T**.
+- Đầu tab: tiêu đề + dòng chú giải vẽ ba nấc. **KHÔNG có số tổng chung** (đã gỡ): nó cộng lẫn đồ chung (trạng thái
+  của cả nhóm) với đồ riêng (tick của riêng mình) nên chẳng nói được gì — mỗi mục đã có số `xong/tổng` của riêng nó.
 - "Chưa ai nhận" là nút viền đứt cam "Ai mang?" (chữ `warm-ink`). Chuyển chung/riêng + xoá ở menu ⋯.
+
+- **Mọi nhóm gập được** (2026-10-25): hai mục lớn (bấm tiêu đề mục) và từng nhóm đồ riêng (bấm tên nhóm; menu ⋯
+  vẫn riêng). Mặc định mở. Gập vẫn còn số `xong/tổng` (và "N món chưa ai nhận" ở đồ chung). `Collapse` dùng
+  `grid-template-rows 0fr ↔ 1fr` + `inert` khi gập (món ẩn không nhận Tab); chỉ `overflow-hidden` lúc gập — mở rồi
+  để tràn, kẻo cắt viền focus của ô sửa tên. "Thêm món vào nhóm" trên một nhóm đang gập thì tự mở nhóm đó.
+  Trạng thái gập KHÔNG lưu (tải lại là mở hết).
 
 ### 12.2d ⚠️ SỬA §12.3: đồ riêng CÓ trường nhóm (`TripPackItem.groupName`)
 
@@ -836,6 +843,16 @@ Ca kiểm: `pnpm check:trip-money` (quỹ dư, quỹ hụt, trộn quỹ + ứng
     bấm vào là bung các khoản người đó có phần.
 - Xoá lần góp: menu ⋯ ở dòng người góp (xoá MỀM như mọi khoản, nằm ở "Đã xoá").
 
+### 13.3e Bảng chia tiền (2026-10-25)
+
+Dưới "Các khoản đã chi" (giữ nguyên) có thêm **bảng**: mỗi KHOẢN một hàng (tên + ai trả · tổng), mỗi NGƯỜI một
+cột, ô = phần người đó chịu — cùng `splitShares` với số dư nên bảng và "ai trả ai" không lệch nhau. Không có
+phần thì "—". Hàng cuối **"Mỗi người chịu"** cộng theo cột (tổng các cột = tổng đã chi). Nhiều người thì bảng
+cuộn ngang, cột tên khoản `sticky left-0`. Chỉ hiện khi đi nhóm.
+- Tiêu đề cột ghi **tên ĐỦ** (cắt khi dài): tên trong tài khoản không theo thứ tự họ/tên cố định — lấy một chữ
+  thì "Huy Phạm" và "Sang Pham" cùng ra "Phạm".
+- Bảng KHÔNG viền khung (không bấm được) — hàng đầu & hàng tổng nền `band`, các hàng ngăn bằng hairline.
+
 ### 13.3d Ô ghi khoản chi — bản to, dễ bấm (2026-10-25)
 
 Thứ tự theo lúc đang cầm điện thoại thanh toán: **SỐ TIỀN** (ô cao 64px, chữ `--font-display` ~30px,
@@ -851,6 +868,64 @@ MỘT hàng ngay dưới → **tên khoản** + chip gợi ý → **Ai trả** (
 - ⚠️ `form` là `grid` ⇒ BẮT BUỘC `grid-cols-1`: không khai cột thì cột co theo max-content của ô số tiền
   (chữ 30px) và cả trang cuộn ngang trên điện thoại.
 - Đã thử và bỏ: tờ tiền nằm BÊN PHẢI ô số (gãy thành ba hàng lởm chởm); bỏ tờ +1k/+2k (biên tập cần đủ chín).
+
+### 13.3f ⚠️ Bố cục bản cuối (2026-10-25) — THAY phần bố cục ở §13.3a/§13.3e
+
+- **Hàng tóm tắt HAI tấm** ngay dưới tiêu đề (từ `sm` một hàng): **Tổng đã chi** (số to + nút chính "Ghi khoản
+  chi" ở đáy tấm) · **Quỹ chung**.
+- **Sổ chi tiêu trải HẾT bề ngang** bên dưới, một bộ chuyển BỐN cách xem: **Các khoản · Bảng chia · Từng người ·
+  Ai trả ai** (biên tập chuyển "Ai trả ai" từ hàng tóm tắt xuống đây). "Ai trả ai" dạng hàng: người chuyển →
+  người nhận, số tiền to bên phải. Dưới `sm` bộ chuyển thu đệm, tràn thì cuộn ngang.
+- **Ô ghi khoản chi mở trong HỘP THOẠI** (`Dialog`): nó cao ~600px, để sẵn trên trang thì đẩy sổ xuống dưới nếp
+  gấp. Gửi xong hộp thoại đóng ngay. Nội dung ô ghi giữ nguyên §13.3d / §13.3g.
+- Đã thử và BỎ: ô ghi nằm sẵn đầu trang · danh sách + bảng xếp chồng · hai cột (sổ trái, Ai trả ai + Quỹ dính
+  bên phải — cột phải ngắn, để trống một mảng lớn cạnh danh sách dài).
+
+### 13.3g ⚠️ SỬA §13.2: có CHIA KHÔNG ĐỀU (2026-10-25)
+
+§13.2 ghi "cố ý không có số tiền trên từng phần" — **đã đổi**: `TripExpenseShare.amount Int?` (migration
+`trip_expense_share_amount`, chỉ thêm cột).
+- **null ở mọi phần = chia đều** như cũ (làm tròn lên nghìn, người ứng chịu lẻ). Có số ở MỌI phần = chia không
+  đều, lấy đúng số đó. Dữ liệu lửng (phần có phần không) ⇒ coi là chia đều (`getTripExpenses`).
+- Mọi chỗ tính tiền đi qua **`partsOf()`** (lib/trip-money.ts) — số dư, "ai trả ai", từng người, bảng chia —
+  nên hai cách chia không bao giờ cho hai con số khác nhau.
+- `addExpense` kiểm ở **SERVER**: tổng các phần phải ĐÚNG BẰNG số tiền khoản (lệch là số dư cả nhóm lệch khỏi 0 và
+  "ai trả ai" sai lặng lẽ); phần 0đ thì bỏ người đó ra.
+- Ô ghi: "Chia cho" có hai nút **Chia đều | Theo số tiền**. Theo số tiền: mỗi người một ô (nghìn đồng, đuôi
+  `.000đ`), dòng trạng thái "đã chia / còn thiếu / chia dư" (cam khi chưa khớp), nút **"Chia đều phần còn lại"**
+  cho người chưa nhập; nút Ghi chỉ bật khi khớp tổng.
+- Danh sách: mở một khoản chia không đều thì số tiền đứng NGAY CẠNH từng tên, không có "mỗi người X".
+- Ca kiểm: `pnpm check:trip-money` (5 ca chia không đều).
+
+### 13.3h LÚC CHI ≠ lúc ghi (2026-10-25)
+
+Có khoản ghi ngay khi trả, có khoản về rồi mới ghi. `TripExpense.spentOn` (`@db.Date`, NGÀY theo giờ VN) +
+`spentMin` (phút trong ngày, **null = không nhớ giờ**) — migration `trip_expense_spent_at`, chỉ thêm cột.
+- Khoản cũ (cả hai null) coi như **chi đúng lúc ghi** (`getTripExpenses` quy `createdAt` về giờ VN bằng
+  `vnDayMinute()`) — phần lớn ghi ngay tại chỗ.
+- Ô ghi có mục **"Khi nào"**: **Vừa xong** + một nút cho mỗi ngày của chuyến ("Ngày 2 T7 17/10"). Chọn một ngày thì
+  hiện ô **"Lúc"** (24 giờ, gõ "1930" tự thành "19:30", để trống = không nhớ giờ). KHÔNG dùng `<input type="time">`
+  (trình duyệt vẽ theo ngôn ngữ máy, ra "07:30 PM").
+- ⚠️ Hôm nay NGOÀI lịch chuyến (thường là về rồi mới ghi) ⇒ **không chọn sẵn gì**, bắt chọn ngày: chọn sẵn
+  "Vừa xong" lúc đó là ghi sai ngày lặng lẽ. Trong chuyến (hoặc chuyến chưa có ngày) ⇒ chọn sẵn "Vừa xong".
+- "Vừa xong" ⇒ client KHÔNG gửi giờ, server tự lấy giờ VN của nó — một đồng hồ chung cho cả nhóm.
+- Danh sách "Các khoản": **TRONG chuyến nhóm theo từng ngày** (Ngày 1…n, tiêu đề kèm tổng ngày, xếp theo giờ, không
+  nhớ giờ thì cuối ngày, có **cột giờ** bên trái) — lúc đó mới cần soát "hôm qua tiêu gì". **Trước / Sau chuyến
+  gom MỘT nhóm mỗi bên, không chia ngày, không hiện giờ** (biên tập: đặt vé, đặt phòng, chia lại sau chuyến hiếm ai
+  quan tâm ngày giờ). Cột giờ vẫn giữ chỗ (trống) để tên các khoản dóng một mép. Chuyến chưa có ngày đi ⇒ chia theo
+  ngày lịch.
+
+### 13.3i Sửa khoản chi — sửa CÔNG KHAI (2026-10-25)
+
+- Menu ⋯ của một khoản có **"Sửa khoản chi"**: mở CÙNG hộp thoại với ghi mới, điền sẵn mọi ô (số tiền, tên, lúc chi,
+  ai trả / quỹ, chia đều hoặc theo số tiền). Ngày chi nằm ngoài lịch chuyến thì hiện thêm một nút ngày đó (kẻo không
+  nút nào sáng).
+- Ghi mới và sửa đi qua **một hàm kiểm chung** `cleanExpense()` (actions.ts) — hai đường không bao giờ lệch luật
+  (tổng phần chia, người trong chuyến, giờ hợp lệ…). Sửa thay trọn phần chia trong một giao dịch.
+- Cùng lý do với xoá mềm: sổ tiền chung ai cũng sửa được ⇒ **sửa phải để lại dấu**. `TripExpense.createdById`,
+  `editedAt`, `editedById` (migration `trip_expense_audit`). Mở chi tiết một khoản: **"Ghi lúc 15:37 25/10 bởi X"**
+  và nếu có, **"Sửa lúc … bởi Y"** (giờ VN). Chỉ lưu LẦN SỬA CUỐI — chưa có lịch sử từng lần.
+- Không sửa được: khoản đã xoá (khôi phục trước) và lần góp quỹ (xoá rồi góp lại).
 
 ### 13.3b Xoá là XOÁ MỀM — sổ tiền chung không được phép quên
 
@@ -871,7 +946,7 @@ Tức là "xoá" ở đây nghĩa là *gạch khỏi sổ một cách công khai
 1. **Chưa đánh dấu "đã trả"** (quỹ chung đã dựng — §13.3c — theo đúng hướng "khoản đặc biệt" dưới đây) — khối "ai trả ai" là một phép tính, chưa xoá nợ được. Hướng đã
    nghĩ sẵn: coi một lần trả nợ là **một khoản chi đặc biệt** (`kind: transfer`, người trả ứng
    tiền, chia cho đúng một người) — số dư tự triệt tiêu, không cần bảng thứ ba.
-2. **Chưa sửa được khoản đã ghi**, chỉ xoá rồi thêm lại.
+2. ~~Chưa sửa được khoản đã ghi~~ — đã có (§13.3i). Còn thiếu: lịch sử TỪNG lần sửa (hiện chỉ lần cuối).
 3. **Chỉ chia được cho người CÓ TÀI KHOẢN trong chuyến.** Nhóm 5 người mà chỉ 2 người dùng app
    thì phần của 3 người kia không vào được sổ. Đây là giới hạn thật, cần một mô hình "người
    không có tài khoản" trước khi gỡ.

@@ -60,7 +60,9 @@ export function TripMap({
   }
 
   return (
-    <div className="h-full min-h-[24rem]">
+    // `isolate`: Leaflet tự đặt z-index 400–1000 cho các lớp của nó — không khoá trong một ngữ cảnh xếp chồng riêng
+    // thì bản đồ nổi ĐÈ lên tấm chọn mục / hộp thoại (z-50) trên điện thoại.
+    <div className="relative isolate h-full min-h-[24rem]">
       <TripMapInner points={points} route={points.length >= 2 ? route : null} ghosts={ghosts} />
     </div>
   );

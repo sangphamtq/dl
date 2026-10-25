@@ -2,19 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
 import { Glyph } from "@/components/site/glyphs";
 import { R_CTRL } from "@/lib/radius";
 import { cn } from "@/lib/utils";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import { TRIP_NAV, TRIP_SECTIONS, tripSectionHref, type TripSection } from "@/lib/trip-sections";
+import { TRIP_NAV, tripSectionHref, type TripSection } from "@/lib/trip-sections";
 
 function useActiveToken(tripId: string): string | null {
   const path = usePathname();
@@ -112,50 +103,41 @@ export function TripSideNav({ tripId, collapsed }: { tripId: string; collapsed?:
   );
 }
 
-export function TripSectionSheet({ tripId }: { tripId: string }) {
+/**
+ * Dải mục trên ĐIỆN THOẠI: mọi mục hiện sẵn, một chạm là sang (bản cũ là viên chọn mục mở tấm trượt — hai chạm,
+ * và không nhìn thấy có những mục nào). Kiểu viên phân đoạn — khác hẳn thanh gạch chân cam của khung nhìn BÊN
+ * TRONG một mục, để hai tầng điều hướng không lẫn nhau.
+ */
+export function TripSectionTabs({ tripId, className }: { tripId: string; className?: string }) {
   const token = useActiveToken(tripId);
-  const [open, setOpen] = useState(false);
-  const current = TRIP_SECTIONS.find((s) => s.token === token) ?? TRIP_SECTIONS[0];
-
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <button
-          type="button"
-          className={cn(
-            R_CTRL,
-            "inline-flex h-9 items-center gap-1.5 px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 lg:hidden",
-            "bg-muted hover:bg-muted/70 focus-visible:ring-ring",
-          )}
-        >
-          <Glyph name={current.glyph} className="size-4 shrink-0 text-warm" />
-          <span className="max-w-[8rem] truncate">{current.label}</span>
-          <Glyph
-            name="chevron-down"
-            className="size-4 shrink-0 text-muted-foreground"
-          />
-        </button>
-      </SheetTrigger>
-
-      <SheetContent side="bottom" className="rounded-t-[6px]">
-        <SheetHeader className="pb-0">
-          <SheetTitle>Mục của chuyến này</SheetTitle>
-          <SheetDescription className="sr-only">
-            Chuyển giữa lịch trình, ghi chú, đồ mang theo, phân công và chi phí.
-          </SheetDescription>
-        </SheetHeader>
-        <div className="grid gap-0.5 px-4 pb-6">
-          {TRIP_NAV.map((s) => (
-            <Row
+    // Icon TRÊN chữ: bốn mục chia đều bề ngang và vừa tới 320px — xếp ngang icon + chữ thì cần ~420px, mục
+    // cuối bị đẩy khỏi màn hình mà không ai biết là còn.
+    <nav aria-label="Mục của lịch trình" className={className}>
+      <div className="grid grid-flow-col auto-cols-fr gap-1 rounded-[6px] bg-foreground/[0.05] p-1">
+        {TRIP_NAV.map((s) => {
+          const active = s.token === token;
+          const href = tripSectionHref(tripId, s.token);
+          return (
+            <Link
               key={s.label}
-              section={s}
-              tripId={tripId}
-              active={s.token === token}
-              onNavigate={() => setOpen(false)}
-            />
-          ))}
-        </div>
-      </SheetContent>
-    </Sheet>
+              href={href}
+              prefetch={false}
+              onClick={(e) => navClick(e, href)}
+              aria-current={active ? "page" : undefined}
+              className={cn(
+                "flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-[4px] px-1 py-1.5 text-[0.75rem] leading-tight transition-colors",
+                active
+                  ? "bg-background font-semibold text-foreground shadow-[0_1px_2px_rgb(0_0_0/0.08)]"
+                  : "font-medium text-foreground/65",
+              )}
+            >
+              <Glyph name={s.glyph} className={cn("size-[1.125rem] shrink-0", active ? "text-warm" : "text-foreground/45")} />
+              <span className="max-w-full text-center">{s.label}</span>
+            </Link>
+          );
+        })}
+      </div>
+    </nav>
   );
 }

@@ -127,7 +127,12 @@ export function TripShell({
   return (
     // Trang soạn: cả trang nền `band`, riêng cột lịch là TỜ TRẮNG — chỗ làm việc nổi lên, phần còn
     // lại (đầu trang, cột trái, cột phải) lùi về sau.
-    <div className={cn("flex flex-1 flex-col", banner && "bg-band")}>
+    // `--trip-pane-bar`: chiều cao thanh chọn khung nhìn dính ở đầu (chỉ dưới lg, chỉ khi có >1 khung) — thanh dính
+    // khác (dải ngày) dùng làm `top` để KHÔNG chui xuống dưới nó.
+    <div
+      className={cn("flex flex-1 flex-col", banner && "bg-band")}
+      style={{ "--trip-pane-bar": panes.length > 1 ? "2.5rem" : "0px" } as React.CSSProperties}
+    >
       {banner ? (
         // lg:pt chừa 4rem cho header site nằm đè lên dải này (`underlay` ở lib/site-chrome).
         <div className={cn(SHELL, "pb-2 pt-5 sm:pb-4 sm:pt-8 lg:pt-[5.5rem]")}>{header}</div>
@@ -141,7 +146,8 @@ export function TripShell({
           "bộ lọc app thương mại điện tử"). */}
       {panes.length > 1 && (
         <div className={cn("sticky top-0 z-30 mt-4 backdrop-blur lg:hidden", banner ? "bg-band/90" : "bg-background/90")}>
-          <div className={cn(SHELL, "flex")}>
+          {/* Cao CỐ ĐỊNH (= `--trip-pane-bar`): các thanh dính bên dưới (dải ngày) neo theo con số này. */}
+          <div className={cn(SHELL, "flex h-10")}>
             {panes.map(({ id, label, glyph, badge }) => {
               const on = pane === id;
               return (
@@ -151,7 +157,7 @@ export function TripShell({
                   onClick={() => setPane(id)}
                   aria-pressed={on}
                   className={cn(
-                    "flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap border-b-2 px-2 py-2.5 text-xs transition-colors sm:text-sm",
+                    "flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap border-b-2 px-2 text-xs transition-colors sm:text-sm",
                     on
                       ? "border-warm font-semibold text-foreground"
                       : "border-transparent text-muted-foreground",

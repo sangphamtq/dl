@@ -1251,3 +1251,13 @@ giãn chữ lẫn vào hàng ô nhập).
 - **"Ghi chú" đã gỡ khỏi menu mục (cột trái + tấm chọn mục trên điện thoại)** — ghi chú đã ở cột phải tab Lịch
   trình. Mục vẫn còn trong `TRIP_SECTIONS` với `hidden: true` nên `/ghi-chu` vẫn vào được bằng URL (gỡ hẳn thì
   `findTripSection` trả null ⇒ 404); menu đọc `TRIP_NAV`.
+- ⚠️ **Bản đồ chuyến (`trip-map.tsx`) phải bọc `isolate`**: Leaflet tự đặt z-index 400–1000 cho các lớp của nó, không
+  khoá trong một ngữ cảnh xếp chồng riêng thì bản đồ nổi ĐÈ lên tấm chọn mục (Sheet) và hộp thoại (z-50) trên điện
+  thoại. Đã sửa ở chính component nên mọi chỗ dùng bản đồ chuyến đều an toàn. (`vietnam-map.tsx` có sẵn `isolate`.)
+- **Điện thoại: dải mục hiện sẵn** (`TripSectionTabs`, cuối thanh đầu trang, `lg:hidden`) — Lịch trình · Bản đồ · Đồ mang
+  theo · Chi phí, một chạm là sang. ĐÃ BỎ viên "Lịch trình ▾" mở tấm trượt (biên tập: bất tiện — hai chạm, không thấy
+  có những mục nào). Kiểu viên phân đoạn, icon TRÊN chữ để bốn mục vừa tới 320px; khác thanh gạch chân cam của khung
+  nhìn bên trong mục để hai tầng không lẫn.
+- ⚠️ **Dải ngày dính dưới thanh khung nhìn**: thanh chọn khung nhìn (Lịch trình · Chưa xếp ngày · Ghi chú) dính `top-0`
+  dưới `lg`, cao CỐ ĐỊNH `h-10` và khai `--trip-pane-bar` ở gốc `TripShell`; dải ngày dính ở
+  `top-[var(--trip-pane-bar)]` (từ lg về `top-0`). Cùng `top-0` thì dải ngày chui xuống dưới thanh kia.

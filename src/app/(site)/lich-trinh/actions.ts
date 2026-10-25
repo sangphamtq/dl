@@ -11,6 +11,7 @@ import { Prisma } from "@/generated/prisma/client";
 import type { ActionResult } from "@/app/(site)/blog/actions";
 import { placeAt, type DropAt } from "@/lib/trip-drop";
 import { isCatalogGroup, packGroupOf } from "@/lib/packing-suggestions";
+import { vnDayMinute } from "@/lib/trip-money";
 
 /**
  * Như `ActionResult` nhưng có thêm `stale`: thao tác bị từ chối vì lịch trình đã
@@ -1291,33 +1292,65 @@ async function peopleInTrip(tripId: string, ids: string[]): Promise<string[]> {
   return [...new Set(ids)].filter((id) => inTrip.has(id));
 }
 
-export async function addExpense(
-  tripId: string,
-  input: { title: string; amount: number; paidById: string | null; shareIds: string[]; fromFund?: boolean },
-): Promise<ActionResult<{ id: string }>> {
+export type ExpenseInput = {
+  title: string;
+  amount: number;
+  paidById: string | null;
+  shareIds: string[];
+  fromFund?: boolean;
+  /** Chia không đều: đồng/người, tổng phải đúng bằng `amount`. Bỏ trống = chia đều. */
+  shareAmounts?: Record<string, number> | null;
+  /** Ngày chi "YYYY-MM-DD" (giờ VN) + phút trong ngày (null = không nhớ giờ). Bỏ trống = lúc ghi. */
+  spentOn?: string | null;
+  spentMin?: number | null;
+};
+
+/**
+ * Kiểm & chuẩn hoá một khoản chi — DÙNG CHUNG cho ghi mới và sửa, để hai đường không bao giờ lệch luật.
+ * Trả về dữ liệu ghi được, hoặc câu lỗi.
+ */
+async function cleanExpense(tripId: string, input: ExpenseInput) {
   const title = clip(input.title.trim(), MAX_TITLE);
-  if (!title) return { ok: false, error: "Chưa nhập tên khoản chi." };
+  if (!title) return "Chưa nhập tên khoản chi.";
   const amount = Math.round(input.amount);
-  if (!Number.isFinite(amount) || amount <= 0)
-    return { ok: false, error: "Số tiền không hợp lệ." };
-  if (amount > MAX_AMOUNT) return { ok: false, error: "Số tiền lớn bất thường." };
+  if (!Number.isFinite(amount) || amount <= 0) return "Số tiền không hợp lệ.";
+  if (amount > MAX_AMOUNT) return "Số tiền lớn bất thường.";
 
+  const [payer] = await peopleInTrip(tripId, input.paidById ? [input.paidById] : []);
+  const shareIds = await peopleInTrip(tripId, input.shareIds);
+  if (shareIds.length === 0) return "Chưa chọn ai chia khoản này.";
+
+  let custom: Map<string, number> | null = null;
+  if (input.shareAmounts) {
+    custom = new Map(shareIds.map((id) => [id, Math.round(Number(input.shareAmounts![id] ?? 0))] as const));
+    const values = [...custom.values()];
+    if (values.some((v) => !Number.isFinite(v) || v < 0)) return "Số tiền từng người không hợp lệ.";
+    // Kiểm ở SERVER: phần cộng lệch tổng thì số dư cả nhóm lệch khỏi 0, "ai trả ai" sai lặng lẽ.
+    if (values.reduce((n, v) => n + v, 0) !== amount) return "Tổng các phần chưa bằng số tiền của khoản.";
+    for (const [id, v] of custom) if (v === 0) custom.delete(id);
+  }
+
+  return {
+    title,
+    amount,
+    // Quỹ trả thì không ai ứng tiền riêng.
+    paidById: input.fromFund ? null : (payer ?? null),
+    fromFund: !!input.fromFund,
+    ...spentAt(input.spentOn, input.spentMin),
+    shares: custom
+      ? [...custom].map(([userId, amount]) => ({ userId, amount }))
+      : shareIds.map((userId) => ({ userId, amount: null })),
+  };
+}
+
+export async function addExpense(tripId: string, input: ExpenseInput): Promise<ActionResult<{ id: string }>> {
   try {
-    await editableTrip(tripId);
-    const [payer] = await peopleInTrip(tripId, input.paidById ? [input.paidById] : []);
-    const shareIds = await peopleInTrip(tripId, input.shareIds);
-    if (shareIds.length === 0) return { ok: false, error: "Chưa chọn ai chia khoản này." };
-
+    const { userId } = await editableTrip(tripId);
+    const clean = await cleanExpense(tripId, input);
+    if (typeof clean === "string") return { ok: false, error: clean };
+    const { shares, ...data } = clean;
     const expense = await prisma.tripExpense.create({
-      data: {
-        tripId,
-        title,
-        amount,
-        // Quỹ trả thì không ai ứng tiền riêng.
-        paidById: input.fromFund ? null : (payer ?? null),
-        fromFund: !!input.fromFund,
-        shares: { create: shareIds.map((userId) => ({ userId })) },
-      },
+      data: { tripId, ...data, createdById: userId, shares: { create: shares } },
       select: { id: true },
     });
     await refreshMoney(tripId);
@@ -1325,6 +1358,47 @@ export async function addExpense(
   } catch (e) {
     return fail(e);
   }
+}
+
+/**
+ * Sửa một khoản chi. Ghi lại AI sửa và LÚC NÀO (`editedById` / `editedAt`) — sổ tiền chung ai trong chuyến cũng
+ * sửa được, nên sửa phải để lại dấu, giống xoá mềm. Phần chia thay trọn (xoá hết rồi tạo lại) trong một giao dịch.
+ */
+export async function updateExpense(expenseId: string, input: ExpenseInput): Promise<ActionResult> {
+  try {
+    const ex = await prisma.tripExpense.findUnique({
+      where: { id: expenseId },
+      select: { tripId: true, kind: true, deletedAt: true },
+    });
+    if (!ex) return { ok: false, error: "Không tìm thấy khoản chi." };
+    if (ex.deletedAt) return { ok: false, error: "Khoản này đã bị xoá — khôi phục rồi mới sửa được." };
+    if (ex.kind !== "expense") return { ok: false, error: "Lần góp quỹ không sửa ở đây được." };
+    const { userId } = await editableTrip(ex.tripId);
+    const clean = await cleanExpense(ex.tripId, input);
+    if (typeof clean === "string") return { ok: false, error: clean };
+    const { shares, ...data } = clean;
+    await prisma.$transaction([
+      prisma.tripExpenseShare.deleteMany({ where: { expenseId } }),
+      prisma.tripExpense.update({
+        where: { id: expenseId },
+        data: { ...data, editedAt: new Date(), editedById: userId, shares: { create: shares } },
+      }),
+    ]);
+    await refreshMoney(ex.tripId);
+    return { ok: true };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+/** Lúc chi hợp lệ, hoặc mặc định "lúc ghi" (giờ VN). Ngày không đọc được thì cũng rơi về lúc ghi. */
+function spentAt(day?: string | null, min?: number | null): { spentOn: Date; spentMin: number | null } {
+  if (day && /^\d{4}-\d{2}-\d{2}$/.test(day) && !Number.isNaN(Date.parse(`${day}T00:00:00Z`))) {
+    const m = min == null ? null : Math.round(min);
+    return { spentOn: new Date(`${day}T00:00:00Z`), spentMin: m != null && m >= 0 && m < 1440 ? m : null };
+  }
+  const now = vnDayMinute(new Date());
+  return { spentOn: new Date(`${now.day}T00:00:00Z`), spentMin: now.min };
 }
 
 /** Góp quỹ chung — một hoặc nhiều người một lượt ("mỗi người góp 500k"). Mỗi người một dòng sổ. */
@@ -1338,12 +1412,19 @@ export async function addFundContributions(
   if (clean.length === 0) return { ok: false, error: "Chưa nhập số tiền góp." };
   if (clean.some((e) => e.amount > MAX_AMOUNT)) return { ok: false, error: "Số tiền lớn bất thường." };
   try {
-    await editableTrip(tripId);
+    const { userId: me } = await editableTrip(tripId);
     const inTrip = new Set(await peopleInTrip(tripId, clean.map((e) => e.userId)));
     const rows = clean.filter((e) => inTrip.has(e.userId));
     if (rows.length === 0) return { ok: false, error: "Người góp không còn trong chuyến." };
     await prisma.tripExpense.createMany({
-      data: rows.map((e) => ({ tripId, title: "Góp quỹ", amount: e.amount, kind: "contribution", paidById: e.userId })),
+      data: rows.map((e) => ({
+        tripId,
+        title: "Góp quỹ",
+        amount: e.amount,
+        kind: "contribution",
+        paidById: e.userId,
+        createdById: me,
+      })),
     });
     await refreshMoney(tripId);
     return { ok: true };

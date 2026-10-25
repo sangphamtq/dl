@@ -73,8 +73,6 @@ export function TripPacking({
 
   const group = items.filter((i) => i.scope === "group");
   const personal = items.filter((i) => i.scope === "personal");
-  const ready = items.filter((i) => i.isReady).length;
-  const packed = items.filter((i) => i.isPacked).length;
   const orphan = group.filter((i) => !i.assignee).length;
 
   return (
@@ -96,12 +94,6 @@ export function TripPacking({
             ))}
           </p>
         </div>
-        {items.length > 0 && (
-          <dl className="flex gap-6 text-sm">
-            <Stat label="Đã có sẵn" value={ready} total={items.length} />
-            <Stat label="Đã xếp vào túi" value={packed} total={items.length} />
-          </dl>
-        )}
       </header>
 
       <Section
@@ -120,18 +112,6 @@ export function TripPacking({
         items={personal}
         {...{ tripId, people, pending, run }}
       />
-    </div>
-  );
-}
-
-function Stat({ label, value, total }: { label: string; value: number; total: number }) {
-  return (
-    <div>
-      <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className="mt-0.5 tabular-nums">
-        <span className="font-[family-name:var(--font-display)] text-2xl font-bold leading-none">{value}</span>
-        <span className="text-muted-foreground">/{total}</span>
-      </dd>
     </div>
   );
 }
@@ -175,23 +155,34 @@ function Section({
   pending: boolean;
   run: Run;
 }) {
+  const [open, setOpen] = useState(true);
   const rows = (list: TripPackRow[]) =>
     list.map((item) => <PackRow key={`${item.id}:${item.name}`} {...{ item, people, pending, run }} />);
 
   return (
     <section className="mt-10">
       <div className="border-b border-border pb-2">
-        <h2 className="flex flex-wrap items-baseline gap-x-2.5 text-base font-semibold">
-          {title}
-          {items.length > 0 && (
-            <span className="text-sm font-normal tabular-nums text-muted-foreground">
-              {items.filter((i) => i.isReady).length}/{items.length}
-            </span>
-          )}
-          {flag && <span className="text-xs font-medium text-warm-ink">{flag}</span>}
+        <h2>
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            aria-expanded={open}
+            className="-ml-1 flex flex-wrap items-baseline gap-x-2.5 rounded-[4px] px-1 text-left text-base font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <Chevron open={open} className="size-4 self-center" />
+            {title}
+            {items.length > 0 && (
+              <span className="text-sm font-normal tabular-nums text-muted-foreground">
+                {items.filter((i) => i.isReady).length}/{items.length}
+              </span>
+            )}
+            {flag && <span className="text-xs font-medium text-warm-ink">{flag}</span>}
+          </button>
         </h2>
-        <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>
+        {open && <p className="mt-0.5 pl-6 text-xs text-muted-foreground">{hint}</p>}
       </div>
+
+      <Collapse open={open}>
 
       {grouped ? (
         groupItems(items).map(([label, list]) => (
@@ -212,7 +203,41 @@ function Section({
           placeholder={scope === "group" ? "Thêm đồ chung rồi Enter…" : "Thêm đồ khác rồi Enter…"}
         />
       </div>
+      </Collapse>
     </section>
+  );
+}
+
+/**
+ * Gập / mở bằng `grid-template-rows: 0fr ↔ 1fr` (nội suy được, khỏi đoán chiều cao). Gập thì `inert` — món bên
+ * trong không còn nhận Tab. Chỉ cắt (`overflow-hidden`) lúc gập, mở rồi thì để tràn: viền focus của ô sửa tên
+ * vẽ ra ngoài khung.
+ */
+function Collapse({ open, children }: { open: boolean; children: ReactNode }) {
+  return (
+    <div
+      className={cn(
+        "grid transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none",
+        open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+      )}
+    >
+      <div inert={!open} className={cn("min-h-0", open ? "overflow-visible" : "overflow-hidden")}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function Chevron({ open, className }: { open: boolean; className?: string }) {
+  return (
+    <Glyph
+      name="chevron-down"
+      className={cn(
+        "shrink-0 text-muted-foreground transition-transform duration-200 motion-reduce:transition-none",
+        !open && "-rotate-90",
+        className,
+      )}
+    />
   );
 }
 
@@ -249,6 +274,7 @@ function GroupBlock({
   children: ReactNode;
 }) {
   const [mode, setMode] = useState<"idle" | "add" | "rename">("idle");
+  const [open, setOpen] = useState(true);
   const afterClose = useRef<"add" | "rename" | null>(null);
   const renamable = !isCatalogGroup(label);
 
@@ -266,11 +292,21 @@ function GroupBlock({
             }}
           />
         ) : (
-          <h3 className="text-xs font-semibold text-foreground/80">{label}</h3>
+          <h3>
+            <button
+              type="button"
+              onClick={() => setOpen((v) => !v)}
+              aria-expanded={open}
+              className="-ml-1 flex items-center gap-1.5 rounded-[3px] px-1 text-xs font-semibold text-foreground/80 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <Chevron open={open} className="size-3.5" />
+              {label}
+              <span className="font-normal tabular-nums text-muted-foreground">
+                {list.filter((i) => i.isReady).length}/{list.length}
+              </span>
+            </button>
+          </h3>
         )}
-        <span className="text-xs tabular-nums text-muted-foreground">
-          {list.filter((i) => i.isReady).length}/{list.length}
-        </span>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
@@ -292,6 +328,8 @@ function GroupBlock({
               afterClose.current = null;
               e.preventDefault();
               setMode(next);
+              // Thêm món vào một nhóm đang gập ⇒ mở nó ra, kẻo ô gõ hiện dưới một nhóm trống trơn.
+              if (next === "add") setOpen(true);
             }}
           >
             <DropdownMenuItem onSelect={() => (afterClose.current = "add")}>
@@ -307,7 +345,9 @@ function GroupBlock({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <ul className="mt-1 divide-y divide-border/60">{children}</ul>
+      <Collapse open={open}>
+        <ul className="mt-1 divide-y divide-border/60">{children}</ul>
+      </Collapse>
       {mode === "add" && (
         <AddRow
           scope="personal"

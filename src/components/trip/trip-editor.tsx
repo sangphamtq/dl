@@ -389,7 +389,8 @@ export function TripEditor({
         main={
           <>
           <div className={cn(tab === null ? undefined : "hidden")}>
-            <div className="sticky top-0 z-20 flex items-center gap-3 border-b border-border/60 bg-background pb-1 pt-1">
+            {/* Dưới lg neo ngay DƯỚI thanh chọn khung nhìn (cũng dính `top-0`) — không thì dải ngày chui xuống dưới nó. */}
+            <div className="sticky top-[var(--trip-pane-bar,0px)] z-20 flex items-center gap-3 border-b border-border/60 bg-background pb-1 pt-1 lg:top-0">
               <div className="min-w-0 flex-1">
                 <TripDayStrip days={days} activeId={activeDay?.id ?? null} onPick={pickDay} />
               </div>
@@ -497,6 +498,8 @@ export function TripEditor({
             <TripMoney
               tripId={trip.id}
               fundKeeperId={trip.fundKeeperId}
+              startDate={trip.startDate}
+              dayCount={days.length}
               expenses={expenses}
               people={trip.people}
               viewerId={viewerId}

@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { coverUrl } from "@/lib/place-image";
+import { vnDayMinute } from "@/lib/trip-money";
 import {
   SPOT_CATEGORY_LABELS,
   EATERY_CATEGORY_LABELS,
@@ -517,6 +518,18 @@ export type TripExpenseRow = {
   amount: number;
   paidBy: { id: string; name: string | null; image: string | null } | null;
   shareIds: string[];
+  /** Chia không đều: số tiền từng người. null = chia đều. */
+  shareAmounts: Record<string, number> | null;
+  /** NGÀY chi ("YYYY-MM-DD", giờ VN) — khoản cũ chưa có thì lấy ngày ghi. */
+  spentOn: string;
+  /** Phút trong ngày; null = không nhớ giờ. */
+  spentMin: number | null;
+  /** Lúc GHI vào sổ + ai ghi (null = khoản cũ, không rõ). */
+  recordedAt: Date;
+  recordedBy: { name: string | null } | null;
+  /** Lần sửa cuối — null nếu chưa ai sửa. */
+  editedAt: Date | null;
+  editedBy: { name: string | null } | null;
   /** `contribution` = một lần góp quỹ (không có phần chia). */
   kind: "expense" | "contribution";
   /** Khoản chi trả bằng quỹ chung. */
@@ -532,9 +545,12 @@ export async function getTripExpenses(tripId: string): Promise<TripExpenseRow[]>
     orderBy: { createdAt: "desc" },
     select: {
       id: true, title: true, amount: true, deletedAt: true, kind: true, fromFund: true,
+      spentOn: true, spentMin: true, createdAt: true, editedAt: true,
+      createdBy: { select: { name: true } },
+      editedBy: { select: { name: true } },
       paidBy: { select: { id: true, name: true, image: true } },
       deletedBy: { select: { name: true } },
-      shares: { select: { userId: true } },
+      shares: { select: { userId: true, amount: true } },
     },
   });
   return rows.map((r) => ({
@@ -543,8 +559,24 @@ export async function getTripExpenses(tripId: string): Promise<TripExpenseRow[]>
     amount: r.amount,
     paidBy: r.paidBy,
     shareIds: r.shares.map((s) => s.userId),
+    // Chỉ coi là chia không đều khi MỌI phần đều có số — dữ liệu lửng (một phần có, một phần không) thì chia đều.
+    shareAmounts:
+      r.shares.length > 0 && r.shares.every((s) => s.amount != null)
+        ? Object.fromEntries(r.shares.map((s) => [s.userId, s.amount!]))
+        : null,
     kind: r.kind,
     fromFund: r.fromFund,
+    recordedAt: r.createdAt,
+    recordedBy: r.createdBy,
+    editedAt: r.editedAt,
+    editedBy: r.editedBy,
+    // Khoản ghi trước khi có trường này: coi như chi ĐÚNG LÚC GHI (phần lớn ghi ngay tại chỗ).
+    ...(r.spentOn
+      ? { spentOn: r.spentOn.toISOString().slice(0, 10), spentMin: r.spentMin }
+      : (() => {
+          const { day, min } = vnDayMinute(r.createdAt);
+          return { spentOn: day, spentMin: min };
+        })()),
     deletedAt: r.deletedAt,
     deletedBy: r.deletedBy,
   }));

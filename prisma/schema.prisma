@@ -285,6 +285,8 @@ model User {
   tripPackChecks  TripPackCheck[] @relation("TripPackChecker")
   tripExpensesPaid TripExpense[] @relation("TripExpensePayer")
   tripFundsKept    Trip[]        @relation("TripFundKeeper")
+  tripExpensesCreated TripExpense[] @relation("TripExpenseCreator")
+  tripExpensesEdited  TripExpense[] @relation("TripExpenseEditor")
   tripExpensesDeleted TripExpense[] @relation("TripExpenseDeleter")
   tripExpenseShares TripExpenseShare[] @relation("TripExpenseSharer")
 
@@ -1434,14 +1436,27 @@ model TripExpense {
   // Khoản chi TRẢ BẰNG QUỸ chung (không ai ứng tiền riêng) — `paidById` bỏ trống.
   fromFund Boolean @default(false)
 
+  // LÚC CHI — khác `createdAt` (lúc GHI): có khoản ghi ngay khi trả, có khoản về nhà mới ghi lại.
+  // `spentOn` là NGÀY theo giờ Việt Nam; `spentMin` là phút trong ngày, null = không nhớ giờ.
+  // Khoản cũ (cả hai null) coi như chi đúng lúc ghi — xem getTripExpenses().
+  spentOn  DateTime? @db.Date
+  spentMin Int?
+
+  // Ai GHI và ai SỬA lần cuối — sổ tiền chung sửa được thì phải sửa CÔNG KHAI (cùng lý do với xoá mềm
+  // dưới đây). null ở khoản cũ = không rõ. SetNull: người rời chuyến thì mất tên, khoản vẫn còn.
+  createdById String?
+  createdBy   User?     @relation("TripExpenseCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  editedAt    DateTime?
+  editedById  String?
+  editedBy    User?     @relation("TripExpenseEditor", fields: [editedById], references: [id], onDelete: SetNull)
+
   // Ai ứng tiền. SetNull: gỡ người khỏi chuyến thì khoản chi vẫn còn (nó đã xảy
   // ra rồi), chỉ mất tên người trả.
   paidById String?
   paidBy   User?   @relation("TripExpensePayer", fields: [paidById], references: [id], onDelete: SetNull)
 
-  // Chia ĐỀU cho những người có mặt trong `shares`. Cố ý không có số tiền trên
-  // từng phần: chia theo tỉ lệ/số lẻ là bài toán khác hẳn, và nhóm bạn đi chơi
-  // gần như luôn chia đều.
+  // Ai chịu khoản này. Mặc định chia ĐỀU (phần không có `amount`); chia không đều thì mỗi phần
+  // mang `amount` riêng — xem TripExpenseShare.
   shares TripExpenseShare[]
 
   // XOÁ MỀM, không xoá thật. Đây là sổ tiền của cả nhóm — ai trong chuyến cũng
@@ -1470,6 +1485,9 @@ model TripExpenseShare {
   expense   TripExpense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
   userId    String
   user      User        @relation("TripExpenseSharer", fields: [userId], references: [id], onDelete: Cascade)
+  // Chia KHÔNG đều: số tiền người này chịu (đồng). null ở mọi phần của một khoản = chia đều (làm tròn
+  // lên nghìn, người ứng chịu lẻ — lib/trip-money.ts). Có thì đặt cho ĐỦ mọi phần, tổng = `amount` của khoản.
+  amount    Int?
 
   @@unique([expenseId, userId])
   @@index([userId])

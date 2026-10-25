@@ -9,7 +9,7 @@ import { R_CARD } from "@/lib/radius";
 import { updateTrip } from "@/app/(site)/lich-trinh/actions";
 import { MICRO } from "@/components/trip/trip-rail";
 import { TripShare } from "@/components/trip/trip-share";
-import { TripSectionSheet } from "@/components/trip/trip-side-nav";
+import { TripSectionTabs } from "@/components/trip/trip-side-nav";
 import { Switch } from "@/components/ui/switch";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { TripRefreshButton, type TripSync } from "@/components/trip/trip-refresh-button";
@@ -66,7 +66,6 @@ export function TripTopbar({
         </Link>
 
         <div className="flex items-center gap-2.5">
-          <TripSectionSheet tripId={trip.id} />
           {sync && <TripRefreshButton sync={sync} />}
           <TripShare
             tripId={trip.id}
@@ -140,6 +139,8 @@ export function TripTopbar({
           </p>
         )}
       </div>
+      {/* Điện thoại: dải mục hiện sẵn (từ lg đã có cột trái). */}
+      <TripSectionTabs tripId={trip.id} className="mt-5 lg:hidden" />
       <span className="sr-only" aria-live="polite">
         {pending ? "Đang lưu" : ""}
       </span>

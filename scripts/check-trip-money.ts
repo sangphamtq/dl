@@ -1,4 +1,4 @@
-import { balances, ceilTo, fundSummary, personSummary, settlements, splitEven, splitShares } from "@/lib/trip-money";
+import { balances, ceilTo, fundSummary, partsOf, personSummary, settlements, splitEven, splitShares } from "@/lib/trip-money";
 
 let pass = 0, fail = 0;
 function ok(name: string, cond: boolean, got?: unknown) {
@@ -106,6 +106,18 @@ const mix = balances(
   A,
 );
 ok("trộn quỹ + ứng riêng: tổng vẫn bằng 0", sum([...mix.values()]) === 0, [...mix]);
+
+// --- Chia KHÔNG đều: A trả 500k, A chịu 100k, B 150k, C 250k ---
+const uneven = { amount: 500_000, paidById: A, shareIds: [A, B, C], shareAmounts: { [A]: 100_000, [B]: 150_000, [C]: 250_000 } };
+const pu = partsOf(uneven);
+ok("không đều: lấy đúng số đã nhập", pu.get(B) === 150_000 && pu.get(C) === 250_000, [...pu]);
+const bu = balances([uneven], [A, B, C]);
+ok("không đều: A được nhận 400k, B trả 150k, C trả 250k",
+  bu.get(A) === 400_000 && bu.get(B) === -150_000 && bu.get(C) === -250_000, [...bu]);
+ok("không đều: tổng số dư vẫn bằng 0", sum([...bu.values()]) === 0, [...bu]);
+ok("không đều + quỹ trả: tổng vẫn bằng 0",
+  sum([...balances([{ ...uneven, paidById: null, fromFund: true }], [A, B, C], A).values()]) === 0);
+ok("từng người: C tiêu đúng 250k", personSummary([uneven], C).spent === 250_000);
 
 console.log(`\n${pass} qua · ${fail} hỏng`);
 if (fail) process.exit(1);
