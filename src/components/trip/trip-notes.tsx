@@ -52,7 +52,16 @@ function linkify(text: string): ReactNode[] {
   return out;
 }
 
-export function TripNotes({ tripId, notes }: { tripId: string; notes: TripNoteRow[] }) {
+export function TripNotes({
+  tripId,
+  notes,
+  compact = false,
+}: {
+  tripId: string;
+  notes: TripNoteRow[];
+  /** Bản gọn ở cột phải tab Lịch trình: không tiêu đề, một cột, tự cuộn trong cột. */
+  compact?: boolean;
+}) {
   const [pending, start] = useTransition();
   const [editing, setEditing] = useState<string | null>(null);
 
@@ -73,6 +82,7 @@ export function TripNotes({ tripId, notes }: { tripId: string; notes: TripNoteRo
   const card = (n: TripNoteRow) => (
     <NoteCard
       key={n.id}
+      compact={compact}
       note={n}
       editing={editing === n.id}
       pending={pending}
@@ -84,8 +94,12 @@ export function TripNotes({ tripId, notes }: { tripId: string; notes: TripNoteRo
     />
   );
 
+  const grid = compact ? "grid gap-2" : GRID;
+
   return (
-    <div className="pt-6">
+    <div className={compact ? "min-h-0 flex-auto overflow-y-auto px-3 pb-3 pt-1" : "pt-6"}>
+      {!compact && (
+        <>
       <header className="flex items-baseline gap-3">
         <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold tracking-tight sm:text-[1.75rem]">
           Ghi chú
@@ -98,31 +112,33 @@ export function TripNotes({ tripId, notes }: { tripId: string; notes: TripNoteRo
         Ghi chú của cả chuyến, ai trong nhóm cũng xem và sửa được. Ghi chú của từng điểm thì ghi ngay
         dưới điểm đó ở tab Lịch trình.
       </p>
+        </>
+      )}
 
-      <Composer tripId={tripId} pending={pending} run={run} />
+      <Composer tripId={tripId} pending={pending} run={run} compact={compact} />
 
       {notes.length === 0 ? (
-        <p className="mt-8 text-sm leading-relaxed text-muted-foreground">
+        <p className={cn("text-sm leading-relaxed text-muted-foreground", compact ? "mt-4 px-1 text-xs" : "mt-8")}>
           Chưa có ghi chú nào. Hợp nhất để ghi mã đặt phòng, số hiệu chuyến bay, số điện thoại chủ nhà
           hay tài xế, và những lời dặn cả nhóm trước giờ đi.
         </p>
       ) : (
         <>
           {pinned.length > 0 && (
-            <section className="mt-8">
+            <section className={compact ? "mt-4" : "mt-8"}>
               <h2 className={cn(MICRO, "mb-3 flex items-center gap-1.5 text-muted-foreground")}>
                 <Glyph name="pushpin" className="size-3.5" />
                 Đã ghim
               </h2>
-              <ul className={GRID}>{pinned.map(card)}</ul>
+              <ul className={grid}>{pinned.map(card)}</ul>
             </section>
           )}
           {rest.length > 0 && (
-            <section className="mt-8">
+            <section className={compact ? "mt-4" : "mt-8"}>
               {pinned.length > 0 && (
                 <h2 className={cn(MICRO, "mb-3 text-muted-foreground")}>Khác</h2>
               )}
-              <ul className={GRID}>{rest.map(card)}</ul>
+              <ul className={grid}>{rest.map(card)}</ul>
             </section>
           )}
         </>
@@ -136,6 +152,7 @@ const GRID = "grid items-start gap-3 sm:grid-cols-2 xl:grid-cols-3";
 
 function NoteCard({
   note: n,
+  compact = false,
   editing,
   pending,
   onEdit,
@@ -145,6 +162,7 @@ function NoteCard({
   onDelete,
 }: {
   note: TripNoteRow;
+  compact?: boolean;
   editing: boolean;
   pending: boolean;
   onEdit: () => void;
@@ -155,7 +173,7 @@ function NoteCard({
 }) {
   if (editing)
     return (
-      <li className="sm:col-span-2 xl:col-span-3">
+      <li className={compact ? undefined : "sm:col-span-2 xl:col-span-3"}>
         <NoteForm initial={n.body} pending={pending} submitLabel="Lưu" onCancel={onCancel} onSubmit={onSave} />
       </li>
     );
@@ -164,11 +182,16 @@ function NoteCard({
   return (
     // Thẻ KHÔNG bấm được (sửa qua menu ⋯) ⇒ khai bằng NỀN, không viền — chữ bôi đen chép được.
     <li className="group/note flex flex-col rounded-[6px] bg-band">
-      <p className="whitespace-pre-wrap break-words px-4 pt-3.5 text-[0.9375rem] leading-relaxed">
+      <p
+        className={cn(
+          "whitespace-pre-wrap break-words leading-relaxed",
+          compact ? "px-3 pt-2.5 text-sm" : "px-4 pt-3.5 text-[0.9375rem]",
+        )}
+      >
         {linkify(n.body)}
       </p>
 
-      <div className="mt-auto flex items-center gap-2 px-4 pb-3 pt-3 text-xs">
+      <div className={cn("mt-auto flex items-center gap-2 text-xs", compact ? "px-3 pb-2 pt-2" : "px-4 pb-3 pt-3")}>
         <Avatar className="size-5 shrink-0">
           {n.author?.image && <AvatarImage src={n.author.image} alt="" />}
           <AvatarFallback className="text-[0.6rem]">{initials(n.author?.name ?? null)}</AvatarFallback>
@@ -217,14 +240,16 @@ function Composer({
   tripId,
   pending,
   run,
+  compact = false,
 }: {
   tripId: string;
   pending: boolean;
   run: (fn: () => Promise<{ ok: boolean; error?: string }>, done?: () => void) => void;
+  compact?: boolean;
 }) {
   const [key, setKey] = useState(0);
   return (
-    <div className="mt-5">
+    <div className={compact ? undefined : "mt-5"}>
       <NoteForm
         key={key}
         initial=""

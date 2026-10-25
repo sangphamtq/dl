@@ -28,7 +28,7 @@ const STICKY = "lg:sticky lg:top-6 lg:h-[calc(100dvh-3rem)]";
 const PANEL =
   "rounded-[6px] lg:sticky lg:top-6 lg:max-h-[calc(100dvh-3rem)] lg:self-start";
 
-const RIGHT_ICONS = { map: "pin", backpack: "bag" } as const;
+const RIGHT_ICONS = { map: "pin", backpack: "bag", note: "note" } as const;
 
 // Bản đồ ăn theo PHẦN bề ngang còn lại (`0.62fr`), không phải một số rem cố
 // định: trong container, mỗi rem bản đồ lấy thêm là một rem cột lịch trình mất
@@ -323,7 +323,8 @@ export function TripShell({
                   <Glyph name="panel-right" className="size-4" />
                 </button>
               </div>
-              <div className="min-h-0 flex-auto">{right}</div>
+              {/* flex-col: nội dung cột (gợi ý đồ, ghi chú) tự cuộn bằng `min-h-0 flex-auto overflow-y-auto`. */}
+              <div className="flex min-h-0 flex-auto flex-col">{right}</div>
             </div>
           </div>
         )}

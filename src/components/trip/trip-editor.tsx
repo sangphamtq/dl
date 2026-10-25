@@ -323,7 +323,14 @@ export function TripEditor({
             rightTitle: "Gợi ý món hay mang",
             rightIcon: "backpack" as const,
           }
-        : {})}
+        : tab === null
+          ? {
+              // Ghi chú chuyến cạnh lịch: mã đặt phòng, số tài xế… là thứ hay phải tra NGAY lúc xếp lịch.
+              right: <TripNotes tripId={trip.id} notes={notes} compact />,
+              rightTitle: notes.length > 0 ? `Ghi chú (${notes.length})` : "Ghi chú",
+              rightIcon: "note" as const,
+            }
+          : {})}
       {...(tab !== null
         ? {}
         : {

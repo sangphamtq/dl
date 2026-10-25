@@ -60,7 +60,6 @@ export function anchorsOf(
 }
 
 const LONG_DRIVE_MIN = 90;
-const DAY_LATE_END = 22 * 60;
 const DAY_MAX_LENGTH = 12 * 60; // tổng ngày quá 12 tiếng
 
 // ── Đọc `Activity.durationText` thành phút ───────────────────────────────
@@ -116,7 +115,6 @@ export type TripWarning = {
     | "closingSoon"
     | "longDrive"
     | "noCoords"
-    | "dayLate"
     | "dayLong";
   text: string;
 };
@@ -267,13 +265,6 @@ export function scheduleDay(
 
   const endMin = out.length ? out[out.length - 1].leaveMin : startMin;
   const dayWarnings: TripWarning[] = [];
-  if (endMin > DAY_LATE_END) {
-    dayWarnings.push({
-      level: "medium",
-      code: "dayLate",
-      text: `Ngày này kết thúc lúc ${formatMinutes(endMin)} — khá muộn`,
-    });
-  }
   if (endMin - startMin > DAY_MAX_LENGTH) {
     dayWarnings.push({
       level: "medium",

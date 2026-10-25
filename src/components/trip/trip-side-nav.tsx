@@ -14,7 +14,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { TRIP_SECTIONS, tripSectionHref, type TripSection } from "@/lib/trip-sections";
+import { TRIP_NAV, TRIP_SECTIONS, tripSectionHref, type TripSection } from "@/lib/trip-sections";
 
 function useActiveToken(tripId: string): string | null {
   const path = usePathname();
@@ -76,7 +76,7 @@ export function TripSideNav({ tripId, collapsed }: { tripId: string; collapsed?:
   if (collapsed) {
     return (
       <nav aria-label="Mục của lịch trình" className="grid gap-1">
-        {TRIP_SECTIONS.map((s) => {
+        {TRIP_NAV.map((s) => {
           const active = s.token === token;
           return (
             <Link
@@ -105,7 +105,7 @@ export function TripSideNav({ tripId, collapsed }: { tripId: string; collapsed?:
 
   return (
     <nav aria-label="Mục của lịch trình" className="grid gap-0.5">
-      {TRIP_SECTIONS.map((s) => (
+      {TRIP_NAV.map((s) => (
         <Row key={s.label} section={s} tripId={tripId} active={s.token === token} />
       ))}
     </nav>
@@ -145,7 +145,7 @@ export function TripSectionSheet({ tripId }: { tripId: string }) {
           </SheetDescription>
         </SheetHeader>
         <div className="grid gap-0.5 px-4 pb-6">
-          {TRIP_SECTIONS.map((s) => (
+          {TRIP_NAV.map((s) => (
             <Row
               key={s.label}
               section={s}

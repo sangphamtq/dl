@@ -686,7 +686,7 @@ export function PackSuggestions({
   );
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex min-h-0 flex-auto flex-col">
       <div className="sticky top-0 z-10 bg-background/95 px-3 py-2.5 backdrop-blur">
         <div className="flex items-center gap-1.5">
           <span className="shrink-0 text-xs font-medium text-foreground/70">Thêm vào</span>

@@ -1242,3 +1242,12 @@ giãn chữ lẫn vào hàng ô nhập).
     đó, như VS Code / Notion), cùng MỘT icon cho cả hai chiều. Đã bỏ mũi tên ←/→: nó đọc ra "quay lại / đi tới".
   · ⚠️ Tay kéo + nút "+" **nổi đè mép phải** khi rê (`absolute` + `bg-muted`), KHÔNG ẩn bằng `opacity` tại
     chỗ — ẩn mà vẫn chiếm chỗ thì tên bị cắt cụt cả lúc không rê. Màn cảm ứng: để trong dòng, luôn hiện.
+- **Tab Lịch trình có cột phải = GHI CHÚ chuyến** (2026-10-25, biên tập yêu cầu): `TripNotes compact` (không
+  tiêu đề, một cột, tự cuộn trong cột) qua `right` của `TripShell`, gấp được như cột gợi ý đồ; dưới `lg` là khung
+  nhìn thứ ba "Ghi chú (N)". Lý do: mã đặt phòng, số tài xế… là thứ hay phải tra NGAY lúc đang xếp lịch.
+  Tab Ghi chú riêng vẫn giữ (bản đầy đủ, lưới nhiều cột).
+- **Đã BỎ cảnh báo "Ngày này kết thúc lúc … — khá muộn"** (`dayLate`, mốc 22:00) — biên tập yêu cầu. Cảnh báo
+  "ngày dài quá 12 tiếng" (`dayLong`) vẫn giữ.
+- **"Ghi chú" đã gỡ khỏi menu mục (cột trái + tấm chọn mục trên điện thoại)** — ghi chú đã ở cột phải tab Lịch
+  trình. Mục vẫn còn trong `TRIP_SECTIONS` với `hidden: true` nên `/ghi-chu` vẫn vào được bằng URL (gỡ hẳn thì
+  `findTripSection` trả null ⇒ 404); menu đọc `TRIP_NAV`.
