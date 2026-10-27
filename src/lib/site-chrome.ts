@@ -5,10 +5,11 @@ const MAP_ROUTES = /^\/ban-do$|^\/diem-den\/[^/]+\/ban-do$/;
 /** Trang chi tiết một điểm đến: `/diem-den/<slug>`, KHÔNG gồm các màn con. */
 const PLACE_DETAIL = /^\/diem-den\/[^/]+$/;
 
-const TRIP_DETAIL = /^\/lich-trinh\/(?!cua-toi$)(?:cua-toi\/)?[^/]+/;
+// `/lich-trinh/cua-toi/tao` là trang TẠO chuyến (một form thường), không phải một chuyến — giữ header như mọi trang.
+const TRIP_DETAIL = /^\/lich-trinh\/(?!cua-toi$|cua-toi\/tao$)(?:cua-toi\/)?[^/]+/;
 
 /** Trình sửa lịch trình: header nằm ĐÈ lên dải ảnh của chuyến, cuộn đi cùng trang. */
-const TRIP_EDITOR = /^\/lich-trinh\/cua-toi\/[^/]+(?:\/[^/]+)?$/;
+const TRIP_EDITOR = /^\/lich-trinh\/cua-toi\/(?!tao$)[^/]+(?:\/[^/]+)?$/;
 
 export function isMapRoute(pathname: string): boolean {
   return MAP_ROUTES.test(pathname);

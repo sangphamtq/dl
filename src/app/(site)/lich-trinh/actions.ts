@@ -12,6 +12,8 @@ import type { ActionResult } from "@/app/(site)/blog/actions";
 import { placeAt, type DropAt } from "@/lib/trip-drop";
 import { isCatalogGroup, packGroupOf } from "@/lib/packing-suggestions";
 import { vnDayMinute } from "@/lib/trip-money";
+import { defaultTripTitle } from "@/lib/trip-title";
+import { SPECIALS, TRAVEL_MODES, type TravelMode, type TripSpecial } from "@/lib/trip-special";
 
 /**
  * Như `ActionResult` nhưng có thêm `stale`: thao tác bị từ chối vì lịch trình đã
@@ -32,7 +34,7 @@ const MAX_DAYS = 30;
 
 // Đích của một mục — đúng 1 loại (exclusive arc ở tầng dữ liệu).
 // KHÔNG có "place": điểm đến là nơi CHỨA các mục, không phải một mục. Trang
-// điểm đến dùng nút "Lên lịch trình đi X" (startTripForPlace) thay cho nút này.
+// điểm đến dùng nút "Lên lịch trình đi X" (mở bước tạo chuyến với nơi đến điền sẵn) thay cho nút này.
 export type ItemTarget =
   | { kind: "spot" | "eatery" | "accommodation" | "activity"; id: string }
   | { kind: "custom"; title: string; stayMin?: number };
@@ -170,9 +172,14 @@ async function resolveTargetTrip(userId: string): Promise<string> {
     return latest.id;
   }
 
-  const created = await createTripRow(userId, "Chuyến đi của tôi");
-  await rememberPlanning(created);
-  return created;
+  // Lối tạo NGẦM khi bấm "Thêm vào lịch trình" mà chưa có chuyến nào — không chen bước hỏi thông tin vào giữa
+  // lúc người ta đang lưu một địa điểm; sửa sau ở thanh đầu trang soạn.
+  const created = await prisma.trip.create({
+    data: { ownerId: userId, title: "Chuyến đi của tôi", days: { create: [{ index: 0 }] } },
+    select: { id: true },
+  });
+  await rememberPlanning(created.id);
+  return created.id;
 }
 
 async function rememberPlanning(tripId: string) {
@@ -185,29 +192,94 @@ async function rememberPlanning(tripId: string) {
   });
 }
 
-async function createTripRow(ownerId: string, title: string): Promise<string> {
-  const trip = await prisma.trip.create({
-    data: {
-      ownerId,
-      title,
-      days: { create: [{ index: 0 }] },
-    },
-    select: { id: true },
-  });
-  return trip.id;
+/** Thông tin cơ bản hỏi ở bước tạo chuyến — phần nào cũng bỏ trống được. */
+export type NewTripInput = {
+  title?: string;
+  placeId?: string | null;
+  /** "YYYY-MM-DD". */
+  startDate?: string | null;
+  /** Số ngày dựng sẵn (1–14). */
+  days?: number;
+  partySize?: number | null;
+};
+
+const MAX_NEW_DAYS = 14;
+
+function cleanDate(v: string | null | undefined): Date | null | "bad" {
+  if (!v) return null;
+  const d = new Date(`${v}T00:00:00Z`);
+  return Number.isNaN(d.getTime()) ? "bad" : d;
 }
 
-export async function createTrip(title?: string): Promise<ActionResult<{ id: string }>> {
+export async function createTrip(input: NewTripInput = {}): Promise<ActionResult<{ id: string }>> {
   let userId: string;
   try {
     userId = await requireUserId();
   } catch {
     return { ok: false, error: "Bạn cần đăng nhập để tạo lịch trình." };
   }
-  const id = await createTripRow(userId, clip(title || "", MAX_TITLE) || "Chuyến đi của tôi");
-  await rememberPlanning(id);
+
+  const place = input.placeId
+    ? await prisma.place.findUnique({ where: { id: input.placeId }, select: { id: true, name: true } })
+    : null;
+  if (input.placeId && !place) return { ok: false, error: "Không tìm thấy nơi đến." };
+  const startDate = cleanDate(input.startDate);
+  if (startDate === "bad") return { ok: false, error: "Ngày đi không hợp lệ." };
+  const days = Math.min(MAX_NEW_DAYS, Math.max(1, Math.round(input.days ?? 1)));
+
+  const trip = await prisma.trip.create({
+    data: {
+      ownerId: userId,
+      title: clip(input.title ?? "", MAX_TITLE) || defaultTripTitle(place?.name, days),
+      placeId: place?.id ?? null,
+      startDate,
+      partySize: input.partySize == null ? null : Math.min(99, Math.max(1, Math.round(input.partySize))),
+      days: { create: Array.from({ length: days }, (_, index) => ({ index })) },
+    },
+    select: { id: true },
+  });
+  await rememberPlanning(trip.id);
   revalidatePath("/lich-trinh/cua-toi");
-  return { ok: true, data: { id } };
+  return { ok: true, data: { id: trip.id } };
+}
+
+export type TripDestination = {
+  id: string;
+  name: string;
+  /** Tỉnh chứa nó (điểm đến con), null với tỉnh. */
+  province: string | null;
+  isProvince: boolean;
+  image: string | null;
+};
+
+/**
+ * Nơi chọn được ở bước "nơi đến": MỌI điểm đến và MỌI tỉnh đã xuất bản. Thứ tự theo dải `/diem-den` (điểm đến + tỉnh
+ * bật `treatAsDestination` trước), các tỉnh còn lại xếp sau theo tên — đi Quảng Ninh cũng là một chuyến hợp lệ.
+ */
+export async function getTripDestinations(): Promise<TripDestination[]> {
+  const rows = await prisma.place.findMany({
+    where: { status: "published" },
+    orderBy: [{ isFeatured: "desc" }, { order: "asc" }, { name: "asc" }],
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      kind: true,
+      treatAsDestination: true,
+      parent: { select: { name: true } },
+      images: { where: { isCover: true }, take: 1, select: { url: true, isCover: true } },
+    },
+  });
+  const lead = (r: (typeof rows)[number]) => r.kind === "destination" || r.treatAsDestination;
+  return [...rows.filter(lead), ...rows.filter((r) => !lead(r)).sort((x, y) => x.name.localeCompare(y.name, "vi"))].map(
+    (r) => ({
+      id: r.id,
+      name: r.name,
+      province: r.kind === "province" ? null : (r.parent?.name ?? null),
+      isProvince: r.kind === "province",
+      image: r.images.length ? coverUrl(r.images, r.slug, 96, 96) : null,
+    }),
+  );
 }
 
 export async function updateTrip(
@@ -371,7 +443,7 @@ export async function addItem(
   tripId?: string,
   dayId?: string | null,
   at: DropAt = "end",
-  /** Thêm thành VIỆC của nơi này (chỉ khi có `tripId`); `at` khi đó bị bỏ qua, dùng `parent.at`. */
+  /** Hoạt động: thành THẺ của nơi này. Thứ khác: đứng ngay sau nơi này. Chỉ khi có `tripId`. */
   parent: { id: string; at?: DropAt } | null = null,
 ): Promise<
   ActionResult<{
@@ -442,8 +514,30 @@ export async function addItem(
   if (tripId && parent) {
     const ps = await parentScope(targetTripId, parent.id);
     if (typeof ps === "string") return { ok: false, error: ps };
-    scope = ps;
-    pos = parent.at ?? "end";
+    if (target.kind === "activity") {
+      scope = ps;
+      pos = parent.at ?? "end";
+    } else {
+      // Chỉ HOẠT ĐỘNG mới là thẻ của một nơi; thứ khác có giờ riêng nên đứng ngay sau nơi đó.
+      scope = { dayId: ps.dayId, parentId: null };
+      pos = await afterItem(targetTripId, ps.dayId, parent.id);
+    }
+  } else if (tripId && intoDay && target.kind === "activity") {
+    // Hoạt động diễn ra ở một nơi ĐÃ có trong ngày ⇒ tự thành thẻ của nơi đó.
+    const host = await prisma.tripItem.findFirst({
+      where: {
+        tripId: targetTripId,
+        dayId: intoDay,
+        parentId: null,
+        spot: { activityLinks: { some: { activityId: target.id } } },
+      },
+      orderBy: { order: "asc" },
+      select: { id: true },
+    });
+    if (host) {
+      scope = { dayId: intoDay, parentId: host.id };
+      pos = "end";
+    }
   }
 
   const [item, trip, tripCount] = await Promise.all([
@@ -508,6 +602,8 @@ const CANDIDATE_TABLES = [
 export async function searchTripCandidates(
   tripId: string,
   rawQ: string,
+  /** "Làm gì ở X": ô trống thì gợi ý đúng các hoạt động diễn ra ở nơi X. */
+  forItemId?: string,
 ): Promise<TripActionResult<{ items: TripCandidate[] }>> {
   let placeId: string | null;
   try {
@@ -520,6 +616,42 @@ export async function searchTripCandidates(
   }
 
   const q = rawQ.trim().slice(0, 80);
+  if (!q && forItemId) {
+    const host = await prisma.tripItem.findFirst({
+      where: { id: forItemId, tripId },
+      select: { spotId: true, spot: { select: { name: true } } },
+    });
+    if (host?.spotId) {
+      const links = await prisma.spotActivity.findMany({
+        where: { spotId: host.spotId, activity: { status: "published" } },
+        orderBy: { order: "asc" },
+        select: {
+          activity: {
+            select: {
+              id: true,
+              name: true,
+              images: { where: { kind: "gallery" }, orderBy: [{ isCover: "desc" }, { order: "asc" }], take: 1, select: { url: true } },
+              tripItems: { where: { tripId }, select: { id: true }, take: 1 },
+            },
+          },
+        },
+      });
+      return {
+        ok: true,
+        data: {
+          items: links.map(({ activity: a }) => ({
+            kind: "activity" as const,
+            id: a.id,
+            name: a.name,
+            context: `tại ${host.spot!.name}`,
+            image: a.images[0]?.url ?? null,
+            inTrip: a.tripItems.length > 0,
+            local: true,
+          })),
+        },
+      };
+    }
+  }
   if (!q && !placeId) return { ok: true, data: { items: [] } };
   const like = `%${q}%`;
   const perKind = q ? 6 : 4;
@@ -585,23 +717,46 @@ export async function searchTripCandidates(
   };
 }
 
+const MAX_ADDRESS = 200;
+const MAX_CODE = 60;
+
+type SpecialFields = {
+  special?: TripSpecial | null;
+  travelMode?: TravelMode | null;
+  travelFrom?: string | null;
+  travelTo?: string | null;
+  bookingCode?: string | null;
+};
+
+/** Chỉ nhận giá trị trong tập cho phép; trường của Di chuyển chỉ giữ khi đúng là Di chuyển. */
+function cleanSpecial(i: SpecialFields) {
+  const special = SPECIALS.some((s) => s.special === i.special) ? (i.special as TripSpecial) : null;
+  const transport = special === "transport";
+  return {
+    special,
+    travelMode: transport && TRAVEL_MODES.some((m) => m.mode === i.travelMode) ? (i.travelMode as TravelMode) : null,
+    travelFrom: transport ? clip(i.travelFrom ?? "", MAX_TITLE) || null : null,
+    travelTo: transport ? clip(i.travelTo ?? "", MAX_TITLE) || null : null,
+    bookingCode: special && special !== "meal" && special !== "rest" ? clip(i.bookingCode ?? "", MAX_CODE) || null : null,
+  };
+}
+
 /**
- * Một dòng TỰ GÕ "ở đâu / làm gì / bao lâu" — phần nào cũng có thể trống (nhưng không cả hai).
- * Có "ở đâu" ⇒ một NƠI tự gõ (`customPlace`), "làm gì" thành việc ngay sau nó, nên cả hai
- * nằm chung một hàng. Chỉ "làm gì" ⇒ một việc tại nơi phía trước.
- * Trả về id mục CUỐI để lần thêm kế tiếp chèn ngay sau.
+ * Một mục TỰ THÊM: tiêu đề + địa chỉ (không bắt buộc) + bao lâu. KHÔNG còn chia "nơi / việc" ở giao diện: có địa chỉ
+ * ⇒ `customPlace` (một NƠI, lấy số mốc), không có ⇒ một việc (đặt xe, chờ người). Không bao giờ là mục con.
  */
 export async function addCustomStop(
   tripId: string,
   dayId: string | null,
   at: DropAt,
-  input: { where?: string; what?: string; stayMin?: number | null },
-  /** Chỉ có "làm gì" thì gắn vào nơi này (vị trí `parent.at` trong nơi đó). */
-  parent: { id: string; at?: DropAt } | null = null,
-): Promise<TripActionResult<{ itemId: string; placeId: string | null }>> {
-  const where = clip(input.where ?? "", MAX_TITLE);
-  const what = clip(input.what ?? "", MAX_TITLE);
-  if (!where && !what) return { ok: false, error: "Gõ ít nhất ở đâu hoặc làm gì." };
+  input: { title: string; address?: string | null; stayMin?: number | null } & SpecialFields,
+): Promise<TripActionResult<{ itemId: string }>> {
+  const title = clip(input.title ?? "", MAX_TITLE);
+  const special = cleanSpecial(input);
+  // Mục đặc biệt tự có tên (nhãn loại, hoặc "Hà Nội – Sa Pa") nên tiêu đề để trống được.
+  if (!title && !special.special) return { ok: false, error: "Gõ tiêu đề cho mục này." };
+  // Di chuyển không có "một địa chỉ" — nó đi từ nơi này tới nơi khác.
+  const address = special.special === "transport" ? null : clip(input.address ?? "", MAX_ADDRESS) || null;
   const stay =
     input.stayMin == null ? null : Math.min(24 * 60, Math.max(0, Math.round(input.stayMin)));
 
@@ -615,57 +770,29 @@ export async function addCustomStop(
     return fail(e);
   }
 
-  let taskScope: Scope | null = null;
-  if (!where && parent) {
-    const ps = await parentScope(tripId, parent.id);
-    if (typeof ps === "string") return { ok: false, error: ps };
-    taskScope = ps;
-  }
-
-  const result = await prisma.$transaction(async (tx) => {
-    const top: Scope = { dayId, parentId: null };
-    let placeId: string | null = null;
-    let last: string | null = null;
-    if (where) {
-      const place = await tx.tripItem.create({
-        data: {
-          tripId,
-          dayId,
-          order: await nextOrder(tx, tripId, top),
-          customTitle: where,
-          customPlace: true,
-          // Có việc thì thời lượng thuộc về VIỆC; nơi chỉ là chỗ đến.
-          stayMin: what ? 0 : stay,
-        },
-        select: { id: true },
-      });
-      if (at !== "end") await placeItem(tx, tripId, top, place.id, at);
-      placeId = last = place.id;
-    }
-    if (what) {
-      // Có "ở đâu" thì việc là của CHÍNH nơi vừa tạo; không thì của `parent`, hoặc là mục gốc.
-      const scope: Scope = placeId ? { dayId, parentId: placeId } : (taskScope ?? top);
-      const pos: DropAt = placeId ? "end" : taskScope ? (parent?.at ?? "end") : at;
-      const task = await tx.tripItem.create({
-        data: {
-          tripId,
-          dayId: scope.dayId,
-          parentId: scope.parentId,
-          order: await nextOrder(tx, tripId, scope),
-          customTitle: what,
-          stayMin: stay,
-        },
-        select: { id: true },
-      });
-      if (pos !== "end") await placeItem(tx, tripId, scope, task.id, pos);
-      last = task.id;
-    }
+  const itemId = await prisma.$transaction(async (tx) => {
+    const scope: Scope = { dayId, parentId: null };
+    const item = await tx.tripItem.create({
+      data: {
+        tripId,
+        dayId,
+        order: await nextOrder(tx, tripId, scope),
+        // "" chứ không null: `customTitle != null` là dấu hiệu "mục tự thêm" ở nhiều chỗ (vd. `updateItem`).
+        customTitle: title,
+        customAddress: address,
+        customPlace: address != null,
+        stayMin: stay,
+        ...special,
+      },
+      select: { id: true },
+    });
+    if (at !== "end") await placeItem(tx, tripId, scope, item.id, at);
     await tx.trip.update({ where: { id: tripId }, data: { version: { increment: 1 } } });
-    return { itemId: last!, placeId };
+    return item.id;
   });
 
   refresh(tripId);
-  return { ok: true, data: result };
+  return { ok: true, data: { itemId } };
 }
 
 export async function moveItemToTrip(
@@ -728,9 +855,10 @@ export async function removeItem(itemId: string): Promise<ActionResult> {
       select: { dayId: true, parentId: true, doings: { orderBy: { order: "asc" }, select: { id: true } } },
     });
     if (!full) return;
-    // Bỏ một nơi KHÔNG bỏ theo việc của nó: các việc đứng ra thành mục gốc ngay chỗ nơi đó
-    // vừa đứng — mất dữ liệu người ta tự gõ chỉ vì bỏ một địa điểm là quá tay.
+    // Bỏ một nơi KHÔNG bỏ theo thẻ hoạt động của nó: chúng đứng ra thành mục gốc (lấy lại giờ
+    // mặc định) ngay chỗ nơi đó vừa đứng.
     if (full.doings.length > 0) {
+      await tx.tripItem.updateMany({ where: { parentId: itemId }, data: { stayMin: null } });
       const scope: Scope = { dayId: full.dayId, parentId: null };
       const tops = (
         await tx.tripItem.findMany({ where: scopeWhere(item.tripId, scope), orderBy: { order: "asc" }, select: { id: true } })
@@ -750,11 +878,11 @@ export async function removeItem(itemId: string): Promise<ActionResult> {
 
 export async function updateItem(
   itemId: string,
-  patch: { stayMin?: number | null; note?: string | null; customTitle?: string },
+  patch: { stayMin?: number | null; note?: string | null; customTitle?: string; customAddress?: string | null } & SpecialFields,
 ): Promise<ActionResult> {
   const item = await prisma.tripItem.findUnique({
     where: { id: itemId },
-    select: { tripId: true, customTitle: true },
+    select: { tripId: true, customTitle: true, special: true },
   });
   if (!item) return { ok: false, error: "Không tìm thấy mục." };
   try {
@@ -772,8 +900,28 @@ export async function updateItem(
     // Chỉ mục TỰ NHẬP mới đổi tên được — tên của mục site là tên của địa điểm đó.
     if (item.customTitle == null) return { ok: false, error: "Chỉ đổi tên được mục tự thêm." };
     const title = clip(patch.customTitle, MAX_TITLE);
-    if (!title) return { ok: false, error: "Tên không được để trống." };
+    if (!title && !item.special) return { ok: false, error: "Tên không được để trống." };
     data.customTitle = title;
+  }
+  if (patch.customAddress !== undefined) {
+    if (item.customTitle == null) return { ok: false, error: "Chỉ sửa địa chỉ được ở mục tự thêm." };
+    const address = clip(patch.customAddress ?? "", MAX_ADDRESS) || null;
+    data.customAddress = address;
+    // Có địa chỉ là một NƠI (lấy số mốc, tính chặng); bỏ địa chỉ thì về lại một việc.
+    data.customPlace = address != null;
+  }
+  if (
+    patch.travelMode !== undefined ||
+    patch.travelFrom !== undefined ||
+    patch.travelTo !== undefined ||
+    patch.bookingCode !== undefined
+  ) {
+    if (!item.special) return { ok: false, error: "Mục này không phải mục đặc biệt." };
+    const clean = cleanSpecial({ ...patch, special: item.special });
+    if (patch.travelMode !== undefined) data.travelMode = clean.travelMode;
+    if (patch.travelFrom !== undefined) data.travelFrom = clean.travelFrom;
+    if (patch.travelTo !== undefined) data.travelTo = clean.travelTo;
+    if (patch.bookingCode !== undefined) data.bookingCode = clean.bookingCode;
   }
 
   await prisma.tripItem.update({ where: { id: itemId }, data });
@@ -832,14 +980,36 @@ async function nextOrder(tx: Prisma.TransactionClient, tripId: string, scope: Sc
   return (last?.order ?? -1) + 1;
 }
 
-/** Nơi để gắn việc vào: phải cùng chuyến và là mục GỐC (đúng 2 mức). Trả về ngày của nó. */
+/** Vị trí ngay sau mục gốc `id` trong ngày của nó. */
+async function afterItem(
+  tripId: string,
+  dayId: string | null,
+  id: string,
+  db: Prisma.TransactionClient = prisma,
+): Promise<DropAt> {
+  const ids = (
+    await db.tripItem.findMany({
+      where: scopeWhere(tripId, { dayId, parentId: null }),
+      orderBy: { order: "asc" },
+      select: { id: true },
+    })
+  ).map((r) => r.id);
+  const i = ids.indexOf(id);
+  if (i < 0) return "end";
+  return { afterId: id, beforeId: ids[i + 1] ?? null };
+}
+
+/** Nơi để gắn thẻ hoạt động vào: phải cùng chuyến và là mục GỐC (đúng 2 mức). Trả về ngày của nó. */
 async function parentScope(tripId: string, parentId: string): Promise<Scope | string> {
   const p = await prisma.tripItem.findFirst({
     where: { id: parentId, tripId },
-    select: { dayId: true, parentId: true },
+    select: { dayId: true, parentId: true, activityId: true, customTitle: true, customPlace: true, customLat: true },
   });
   if (!p) return "Nơi này vừa bị người khác bỏ khỏi lịch trình.";
-  if (p.parentId) return "Không đặt việc vào trong một việc khác được.";
+  if (p.parentId) return "Không gắn vào một thẻ khác được.";
+  // Chỉ một NƠI mới có thẻ "làm gì ở đây" — không phải một hoạt động hay một việc tự gõ.
+  if (p.activityId || (p.customTitle != null && !p.customPlace && p.customLat == null))
+    return "Chỉ gắn hoạt động vào một nơi được.";
   return { dayId: p.dayId, parentId };
 }
 
@@ -852,7 +1022,10 @@ export async function moveItem(
 ): Promise<TripActionResult> {
   const item = await prisma.tripItem.findUnique({
     where: { id: itemId },
-    select: { id: true, tripId: true, dayId: true, parentId: true, _count: { select: { doings: true } } },
+    select: {
+      id: true, tripId: true, dayId: true, parentId: true, activityId: true,
+      _count: { select: { doings: true } },
+    },
   });
   if (!item) return { ok: false, error: "Mục này vừa bị người khác bỏ khỏi lịch trình." };
   try {
@@ -864,6 +1037,7 @@ export async function moveItem(
   let to: Scope = { dayId, parentId: null };
   if (parentId) {
     if (parentId === itemId) return { ok: false, error: "Không đặt một mục vào chính nó được." };
+    if (!item.activityId) return { ok: false, error: "Chỉ hoạt động mới gắn vào một nơi được." };
     if (item._count.doings > 0)
       return { ok: false, error: "Nơi này đang có việc riêng — không đặt vào trong nơi khác được." };
     const scope = await parentScope(item.tripId, parentId);
@@ -880,7 +1054,10 @@ export async function moveItem(
 
   await prisma.$transaction(async (tx) => {
     await placeItem(tx, item.tripId, to, itemId, at);
-    // Việc của nơi này đi theo nơi sang ngày mới.
+    // Thẻ ra thành mục riêng thì lấy lại giờ mặc định — 0 phút chỉ là dấu "không tính giờ" của thẻ.
+    if (from.parentId && !to.parentId)
+      await tx.tripItem.update({ where: { id: itemId }, data: { stayMin: null } });
+    // Thẻ của nơi này đi theo nơi sang ngày mới.
     if (item._count.doings > 0 && to.dayId !== item.dayId)
       await tx.tripItem.updateMany({ where: { parentId: itemId }, data: { dayId: to.dayId } });
 
@@ -955,7 +1132,7 @@ export async function cloneTrip(
   const source = await prisma.trip.findUnique({
     where: { id: sourceId },
     select: {
-      id: true, title: true, summary: true, ownerId: true, isTemplate: true, visibility: true,
+      id: true, title: true, summary: true, ownerId: true, isTemplate: true, visibility: true, originName: true,
       members: { where: { userId }, select: { id: true } },
       days: { orderBy: { index: "asc" }, select: { id: true, index: true, startMin: true, title: true, note: true } },
       notes: { orderBy: { createdAt: "asc" }, select: { body: true, isPinned: true } },
@@ -966,7 +1143,8 @@ export async function cloneTrip(
           id: true, parentId: true,
           dayId: true, order: true, stayMin: true, note: true,
           spotId: true, eateryId: true, accommodationId: true, activityId: true,
-          customTitle: true, customLat: true, customLng: true, customPlace: true,
+          customTitle: true, customLat: true, customLng: true, customPlace: true, customAddress: true,
+          special: true, travelMode: true, travelFrom: true, travelTo: true, bookingCode: true,
         },
       },
     },
@@ -986,6 +1164,7 @@ export async function cloneTrip(
         ownerId: userId,
         title: source.isTemplate ? source.title : `${source.title} (bản sao)`,
         summary: source.summary,
+        originName: source.originName,
         // Bản sao KHÔNG kế thừa: ngày khởi hành, cờ template, slug, link chia sẻ.
       },
       select: { id: true },
@@ -1023,7 +1202,9 @@ export async function cloneTrip(
           spotId: it.spotId, eateryId: it.eateryId,
           accommodationId: it.accommodationId, activityId: it.activityId,
           customTitle: it.customTitle, customLat: it.customLat, customLng: it.customLng,
-          customPlace: it.customPlace,
+          customPlace: it.customPlace, customAddress: it.customAddress,
+          special: it.special, travelMode: it.travelMode, travelFrom: it.travelFrom, travelTo: it.travelTo,
+          bookingCode: it.bookingCode,
         },
       });
       itemIdMap.set(it.id, copy.id);
@@ -1573,37 +1754,6 @@ export async function getPlanOptions(placeId: string): Promise<ActionResult<Plan
   };
 }
 
-export async function startTripForPlace(
-  placeId: string,
-): Promise<ActionResult<{ id: string }>> {
-  let userId: string;
-  try {
-    userId = await requireUserId();
-  } catch {
-    return { ok: false, error: "Bạn cần đăng nhập để lên lịch trình." };
-  }
-
-  const place = await prisma.place.findUnique({
-    where: { id: placeId },
-    select: { id: true, name: true },
-  });
-  if (!place) return { ok: false, error: "Không tìm thấy điểm đến." };
-
-  const trip = await prisma.trip.create({
-    data: {
-      ownerId: userId,
-      placeId: place.id,
-      title: `Đi ${place.name}`,
-      days: { create: [{ index: 0 }] },
-    },
-    select: { id: true },
-  });
-
-  await rememberPlanning(trip.id);
-  revalidatePath("/lich-trinh/cua-toi");
-  return { ok: true, data: { id: trip.id } };
-}
-
 export async function startTripFromRoute(
   slugs: string[],
 ): Promise<ActionResult<{ id: string }>> {
@@ -1860,7 +2010,7 @@ export async function getTripBag(): Promise<TripBag> {
 
   const byDay = new Map<string, TripBagItem[]>();
   const unscheduled: TripBagItem[] = [];
-  // Ngăn nổi chỉ xếp MỤC GỐC: việc đi theo nơi của nó (kéo nơi là việc theo), nên chỉ ghi số.
+  // Ngăn nổi chỉ xếp MỤC GỐC: thẻ hoạt động đi theo nơi của nó (kéo nơi là thẻ theo), nên chỉ ghi số.
   const doingCount = new Map<string, number>();
   for (const row of trip.items)
     if (row.parentId) doingCount.set(row.parentId, (doingCount.get(row.parentId) ?? 0) + 1);
@@ -1868,7 +2018,7 @@ export async function getTripBag(): Promise<TripBag> {
     if (row.parentId) continue;
     const item = bagItem(row);
     const n = doingCount.get(row.id);
-    if (n) item.typeLabel = `${item.typeLabel}, kèm ${n} việc`;
+    if (n) item.typeLabel = `${item.typeLabel}, kèm ${n} hoạt động`;
     if (!row.dayId) {
       unscheduled.push(item);
       continue;

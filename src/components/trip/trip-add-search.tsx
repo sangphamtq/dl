@@ -8,7 +8,17 @@ import { Glyph, type GlyphName } from "@/components/site/glyphs";
 import { R_BADGE } from "@/lib/radius";
 import { cn } from "@/lib/utils";
 import { TOUCH_INPUT } from "@/lib/touch";
-import { fmtDuration, TASK_STAY_MIN } from "@/lib/trip-time";
+import { fmtDuration } from "@/lib/trip-time";
+import {
+  MEAL_PRESETS,
+  REST_PRESETS,
+  SPECIALS,
+  SPECIAL_LABEL,
+  TRAVEL_MODES,
+  specialTitle,
+  type TravelMode,
+  type TripSpecial,
+} from "@/lib/trip-special";
 import type { DropAt } from "@/lib/trip-drop";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -30,12 +40,22 @@ const GROUPS: { kind: TripCandidate["kind"]; label: string; glyph: GlyphName }[]
 
 // Việc hay gặp nhất khi tự lên lịch — bấm là thêm, kèm thời lượng hợp lý thay vì
 // mặc định chung. Sửa được ngay trên dòng thời gian sau đó.
+// Nghỉ trưa / thời gian tự do giờ là MỤC ĐẶC BIỆT "Nghỉ" (nhóm riêng bên dưới).
 const TASKS: { title: string; stayMin: number }[] = [
   { title: "Đặt xe", stayMin: 15 },
   { title: "Chờ người", stayMin: 30 },
-  { title: "Nghỉ trưa", stayMin: 60 },
-  { title: "Thời gian tự do", stayMin: 120 },
 ];
+
+type CustomForm = {
+  special: TripSpecial | null;
+  title: string;
+  address: string;
+  stay: number | null;
+  mode: TravelMode | null;
+  from: string;
+  to: string;
+  code: string;
+};
 
 const KINDS_BY_MODE: Record<"place" | "doing" | "any", TripCandidate["kind"][]> = {
   place: ["spot", "eatery", "accommodation"],
@@ -49,7 +69,7 @@ const fold = (s: string) =>
 const tasksMatching = (term: string) =>
   term ? TASKS.filter((t) => fold(t.title).includes(fold(term))) : [];
 
-/** Vị trí chèn: `at` cho một NƠI mới (mục gốc của ngày), `parent` cho một VIỆC (thuộc nơi đó). */
+/** Vị trí chèn: `at` cho một dòng mới (mục gốc của ngày), `parent` cho một THẺ hoạt động của nơi đó. */
 export type AddPos = {
   /** Mặc định "end". */
   at?: DropAt;
@@ -58,7 +78,7 @@ export type AddPos = {
   parent?: { id: string; name: string; at?: DropAt };
   /**
    * Nút ở đâu thì chỉ thêm thứ hợp chỗ đó: "place" (dấu + giữa hai hàng, ⋯ trước/sau một hàng) chỉ
-   * thêm NƠI thành hàng mới; "doing" (nút "+ Việc" của một hàng) chỉ thêm VIỆC vào đúng nơi đó;
+   * thêm NƠI thành hàng mới; "doing" ("+ Hoạt động" của một nơi) thêm thẻ hoạt động cho nơi đó;
    * "any" (ô tìm ở cột Chưa xếp ngày, ngăn nổi) thêm gì cũng được.
    */
   mode?: "place" | "doing" | "any";
@@ -89,17 +109,25 @@ export function TripAddSearch({
   // cmdk chỉ tự chọn dòng đầu lúc dựng; kết quả về SAU khi gõ thì không dòng nào
   // được chọn và Enter không làm gì — nên tự giữ dòng đang chọn.
   const [selected, setSelected] = useState("");
-  // Form "tự gõ đủ": null = đang ở chế độ tìm.
-  const [form, setForm] = useState<{ where: string; what: string; stay: number | null } | null>(null);
-  const openForm = (what: string) => setForm({ where: "", what, stay: null });
+  // Form tự thêm (tiêu đề · địa chỉ · bao lâu): null = đang ở chế độ tìm.
+  const [form, setForm] = useState<CustomForm | null>(null);
+  const openForm = (title: string, special: TripSpecial | null = null) =>
+    setForm({
+      special,
+      title,
+      address: "",
+      stay: null,
+      mode: special === "transport" ? "bus" : null,
+      from: "",
+      to: "",
+      code: "",
+    });
   const [, start] = useTransition();
   const seq = useRef(0);
   const open = target !== null;
   const term = q.trim();
   const mode = target?.mode ?? "any";
   const allows = (kind: TripCandidate["kind"]) => KINDS_BY_MODE[mode].includes(kind);
-  const allowsDoing = mode !== "place";
-  const allowsPlace = mode !== "doing";
 
   // Vị trí chèn TRÔI theo từng lần thêm: thêm A rồi B vào cùng một chỗ thì B phải
   // đứng SAU A, không chen lên trước nó.
@@ -113,22 +141,14 @@ export function TripAddSearch({
   const after = (at: DropAt | undefined, id: string): DropAt =>
     typeof at === "object" ? { afterId: id, beforeId: at.beforeId } : (at ?? "end");
 
-  /**
-   * - "place": vừa thêm một NƠI (hàng mới) ⇒ nơi kế tiếp đứng sau nó, VIỆC kế tiếp vào CHÍNH nó.
-   * - "doing": vừa thêm một việc vào `parent` ⇒ việc kế tiếp đứng sau nó, cùng nơi.
-   * - "row": vừa thêm một việc thành hàng riêng (chưa có nơi) ⇒ việc kế tiếp vào hàng đó.
-   */
-  function advance(kind: "place" | "doing" | "row", itemId: string | null, name: string) {
+  /** Thẻ kế tiếp đứng sau thẻ vừa thêm (cùng nơi); dòng kế tiếp đứng sau dòng vừa thêm. */
+  function advance(itemId: string | null, name: string, tag: boolean) {
     if (!itemId) return;
-    setPos((p) => {
-      if (kind === "doing" && p.parent)
-        return { ...p, parent: { ...p.parent, at: after(p.parent.at, itemId) } };
-      return {
-        at: after(p.at, itemId),
-        where: `sau ${name}`,
-        parent: { id: itemId, name, at: "end" },
-      };
-    });
+    setPos((p) =>
+      tag && p.parent
+        ? { ...p, parent: { ...p.parent, at: after(p.parent.at, itemId) } }
+        : { ...p, at: after(p.at, itemId), where: `sau ${name}` },
+    );
   }
 
   // Gõ "đặt xe" vẫn ra "Thuê xe máy…" — kết quả có mà không ĐÚNG. Chỉ coi là khớp
@@ -142,7 +162,11 @@ export function TripAddSearch({
     const t = setTimeout(
       async () => {
         setLoading(true);
-        const res = await searchTripCandidates(tripId, q);
+        const res = await searchTripCandidates(
+          tripId,
+          q,
+          target?.mode === "doing" ? target.parent?.id : undefined,
+        );
         // Gõ nhanh thì kết quả về lệch thứ tự — chỉ nhận của lượt hỏi mới nhất.
         if (mine !== seq.current) return;
         setLoading(false);
@@ -159,14 +183,13 @@ export function TripAddSearch({
         const hit = t
           ? ordered.find((i) => !i.inTrip && fold(i.name).includes(fold(t)))
           : ordered.find((i) => !i.inTrip);
-        const task = m === "place" ? undefined : tasksMatching(t)[0];
-        const typed = m === "place" ? "custom-place" : "custom";
-        setSelected(hit ? `${hit.kind}:${hit.id}` : task ? `task:${task.title}` : t ? typed : "");
+        const task = tasksMatching(t)[0];
+        setSelected(hit ? `${hit.kind}:${hit.id}` : task ? `task:${task.title}` : t ? "custom" : "");
       },
       q ? 220 : 0,
     );
     return () => clearTimeout(t);
-  }, [open, q, tripId, target?.mode]);
+  }, [open, q, tripId, target?.mode, target?.parent?.id]);
 
   function close(next: boolean) {
     if (next) return;
@@ -178,24 +201,41 @@ export function TripAddSearch({
   }
 
   function addCustom(
-    input: { where?: string; what?: string; stayMin?: number | null },
+    input: {
+      title: string;
+      address?: string | null;
+      stayMin?: number | null;
+      special?: TripSpecial | null;
+      travelMode?: TravelMode | null;
+      travelFrom?: string | null;
+      travelTo?: string | null;
+      bookingCode?: string | null;
+    },
     key = "custom",
     done?: () => void,
   ) {
     if (!target || adding) return;
     setAdding(key);
     start(async () => {
-      const parent = pos.parent ? { id: pos.parent.id, at: pos.parent.at } : null;
-      const res = await addCustomStop(tripId, target.dayId, pos.at ?? "end", input, parent);
+      // Mục tự thêm luôn là DÒNG RIÊNG có giờ — kể cả mở từ "làm gì ở đây": `pos.at` khi đó đã là
+      // ngay sau nơi đó, và trôi theo từng lần thêm nên hai mục liền nhau giữ đúng thứ tự.
+      const res = await addCustomStop(tripId, target.dayId, pos.at ?? "end", input);
       setAdding(null);
       if (!res.ok) {
         toast.error(res.error);
         return;
       }
-      const label = [input.where, input.what].filter(Boolean).join(", ");
+      const label = input.special
+        ? specialTitle({
+            special: input.special,
+            title: input.title,
+            travelMode: input.travelMode,
+            travelFrom: input.travelFrom,
+            travelTo: input.travelTo,
+          })
+        : input.title;
       setQ("");
-      if (res.data.placeId) advance("place", res.data.placeId, input.where ?? "");
-      else advance(parent ? "doing" : "row", res.data.itemId, input.what ?? "");
+      advance(res.data.itemId, label, false);
       onAdded?.();
       done?.();
       toast.success(`Đã thêm “${label}” vào ${target.label}`);
@@ -206,8 +246,9 @@ export function TripAddSearch({
     if (!target || adding) return;
     setAdding(c.id);
     start(async () => {
-      // Hoạt động là một VIỆC: vào nơi đang chọn. Còn lại là NƠI: thành hàng mới.
-      const asDoing = c.kind === "activity" && pos.parent;
+      // Mở từ "làm gì ở đây" ⇒ hoạt động thành thẻ của nơi đó. Còn lại server tự gắn hoạt động
+      // vào nơi của nó nếu nơi đó đã có trong ngày.
+      const asDoing = mode === "doing" && c.kind === "activity" && pos.parent;
       const res = await addItem(
         { kind: c.kind, id: c.id },
         tripId,
@@ -221,7 +262,7 @@ export function TripAddSearch({
         return;
       }
       setAdded((s) => new Set(s).add(c.id));
-      advance(asDoing ? "doing" : c.kind === "activity" ? "row" : "place", res.data.itemId, c.name);
+      advance(res.data.itemId, c.name, !!asDoing);
       onAdded?.();
       if (res.data.duplicate) toast(`${c.name} đã có trong lịch trình.`);
       else toast.success(`Đã thêm ${c.name} vào ${target.label}`);
@@ -232,7 +273,7 @@ export function TripAddSearch({
     .map((g) => ({ ...g, rows: (items ?? []).filter((i) => i.kind === g.kind) }))
     .filter((g) => g.rows.length > 0);
 
-  const matchedTasks = allowsDoing ? tasksMatching(term) : [];
+  const matchedTasks = tasksMatching(term);
   // Gõ đúng tên việc mẫu thì dòng chung "Thêm “…”" chỉ là bản sao kém hơn (thiếu thời lượng).
   const exactTask = matchedTasks.some((t) => fold(t.title) === fold(term));
 
@@ -245,7 +286,7 @@ export function TripAddSearch({
         <CommandItem
           key={t.title}
           value={`task:${t.title}`}
-          onSelect={() => addCustom({ what: t.title, stayMin: t.stayMin }, `task:${t.title}`)}
+          onSelect={() => addCustom({ title: t.title, stayMin: t.stayMin }, `task:${t.title}`)}
           className="group gap-3 rounded-[4px] px-2 py-2"
         >
           <Thumb>
@@ -257,221 +298,34 @@ export function TripAddSearch({
           </Thumb>
           <span className="flex min-w-0 flex-1 flex-col">
             <span className="truncate text-sm font-medium text-foreground">{t.title}</span>
-            <span className="truncate text-xs text-muted-foreground">Việc trong ngày, {fmtDuration(t.stayMin)}</span>
+            <span className="truncate text-xs text-muted-foreground">Mục hay dùng, {fmtDuration(t.stayMin)}</span>
           </span>
           <AddHint />
         </CommandItem>
       ))}
-      {allowsDoing && !exactTask && (
+      {!exactTask && (
         <CommandItem
           value="custom"
-          onSelect={() => addCustom({ what: term })}
+          onSelect={() => addCustom({ title: term })}
           className="group gap-3 rounded-[4px] px-2 py-2"
         >
           <Thumb>
-            {adding === "custom" ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Glyph name="note" className="size-5" />}
+            {adding === "custom" ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Glyph name="plus" className="size-5" />}
           </Thumb>
           <span className="flex min-w-0 flex-1 flex-col">
-            <span className="truncate text-sm font-medium text-foreground">
-              <span className="text-muted-foreground">Việc:</span> {term}
-            </span>
+            <span className="truncate text-sm font-medium text-foreground">Thêm “{term}”</span>
             <span className="truncate text-xs text-muted-foreground">
-              {pos.parent ? `Làm tại ${pos.parent.name}` : "Một dòng riêng"}, tính {fmtDuration(TASK_STAY_MIN)}
+              {mode === "doing" && pos.parent ? `Dòng riêng ngay sau ${pos.parent.name}` : "Mục tự thêm"}, chưa có địa chỉ
             </span>
           </span>
           <AddHint />
         </CommandItem>
       )}
-      {allowsPlace && (
-      <CommandItem
-        value="custom-place"
-        onSelect={() => addCustom({ where: term }, "custom-place")}
-        className="group gap-3 rounded-[4px] px-2 py-2"
-      >
-        <Thumb>
-          {adding === "custom-place" ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Glyph name="pin" className="size-5" />}
-        </Thumb>
-        <span className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate text-sm font-medium text-foreground">
-            <span className="text-muted-foreground">Nơi:</span> {term}
-          </span>
-          <span className="truncate text-xs text-muted-foreground">
-            Một hàng mới ở cột “Ở đâu”, không tính đường đi tới đó
-          </span>
-        </span>
-        <AddHint />
-      </CommandItem>
-      )}
-      <FormOpener mode={mode} onSelect={() => openForm(term)} />
+      <FormOpener onSelect={() => openForm(term)} />
     </CommandGroup>
   ) : null;
 
-  return (
-    <Dialog open={open} onOpenChange={close}>
-      <DialogContent
-        className="top-[12vh] translate-y-0 gap-0 overflow-hidden rounded-[6px] p-0 sm:max-w-xl"
-        showCloseButton={false}
-      >
-        <div className="border-b border-border/60 px-4 pb-1 pt-4">
-          <DialogTitle className="font-[family-name:var(--font-display)] text-lg font-bold">
-            {mode === "doing" && pos.parent
-              ? `Thêm việc ở ${pos.parent.name}`
-              : mode === "place"
-                ? `Thêm nơi vào ${target?.label ?? ""}`
-                : `Thêm vào ${target?.label ?? ""}`}
-          </DialogTitle>
-          {mode !== "doing" && pos.where && (
-            <p className="mt-0.5 text-sm text-foreground">Chèn {pos.where}</p>
-          )}
-          <DialogDescription className="mt-0.5 text-sm text-muted-foreground">
-            {form
-              ? mode === "place"
-                ? "Gõ tên nơi; có việc gì làm ở đó thì gõ luôn."
-                : "Gõ tự do. Phần nào không cần thì bỏ trống."
-              : mode === "doing"
-                ? "Chọn một hoạt động, hoặc gõ một việc để tự thêm."
-                : mode === "place"
-                  ? "Tìm địa điểm, quán ăn, chỗ ở trên site, hoặc gõ tên một nơi."
-                  : "Tìm một nơi trên site, hoặc gõ một nơi / một việc để tự thêm."}
-          </DialogDescription>
-        </div>
-
-        {form ? (
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              addCustom(
-                { where: form.where.trim(), what: form.what.trim(), stayMin: form.stay },
-                "custom-form",
-                () => setForm(null),
-              );
-            }}
-            className="grid gap-4 px-4 py-4"
-          >
-            {mode !== "doing" && (
-            <label className="grid gap-1.5">
-              <span className="text-sm font-medium">Ở đâu</span>
-              <Input
-                autoFocus={!form.what}
-                value={form.where}
-                onChange={(e) => setForm({ ...form, where: e.target.value })}
-                placeholder={
-                  mode === "place" ? "Nhà bạn Minh, sân bay Cam Ranh…" : "Nhà bạn Minh, sân bay Cam Ranh… (bỏ trống được)"
-                }
-                className="h-10 rounded-[4px]"
-              />
-            </label>
-            )}
-            <label className="grid gap-1.5">
-              <span className="text-sm font-medium">Làm gì</span>
-              <Input
-                autoFocus={!!form.what}
-                value={form.what}
-                onChange={(e) => setForm({ ...form, what: e.target.value })}
-                placeholder="Ăn trưa, gửi đồ, chờ người… (bỏ trống được)"
-                className="h-10 rounded-[4px]"
-              />
-            </label>
-            <div className="grid gap-1.5">
-              <span className="text-sm font-medium">Bao lâu</span>
-              <div className="flex flex-wrap gap-1.5">
-                {DURATIONS.map((d) => (
-                  <button
-                    key={d.label}
-                    type="button"
-                    onClick={() => setForm({ ...form, stay: d.min })}
-                    aria-pressed={form.stay === d.min}
-                    className={cn(
-                      "h-8 rounded-[4px] border px-2.5 text-sm transition-colors",
-                      form.stay === d.min
-                        ? "border-primary/60 bg-primary/5 font-medium text-primary-ink"
-                        : "border-border hover:bg-muted",
-                    )}
-                  >
-                    {d.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <p className="text-xs leading-relaxed text-muted-foreground">
-              Có <strong className="font-semibold text-foreground">ở đâu</strong> thì thành một hàng
-              mới ở cột “Ở đâu”, việc nằm ngay trong hàng đó. Chỉ có{" "}
-              <strong className="font-semibold text-foreground">làm gì</strong> thì là việc tại nơi
-              đang đứng.
-            </p>
-            <div className="flex items-center justify-between gap-3">
-              <Button type="button" variant="ghost" onClick={() => setForm(null)} className="rounded-[4px]">
-                Quay lại tìm
-              </Button>
-              <Button
-                type="submit"
-                disabled={
-                  (mode === "place" ? !form.where.trim() : !form.where.trim() && !form.what.trim()) ||
-                  adding !== null
-                }
-                className="rounded-[4px]"
-              >
-                {adding === "custom-form" ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Glyph name="plus" className="size-4" />}
-                Thêm
-              </Button>
-            </div>
-          </form>
-        ) : (
-        <Command shouldFilter={false} value={selected} onValueChange={setSelected} className="rounded-none">
-          <div className="relative">
-            <CommandInput
-              value={q}
-              onValueChange={setQ}
-              placeholder="Tìm nơi, hoặc gõ một nơi / một việc…"
-              className={cn("h-12", TOUCH_INPUT)}
-            />
-            {loading && (
-              <Loader2
-                className="absolute right-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground"
-                aria-hidden
-              />
-            )}
-          </div>
-
-          <CommandList className="max-h-[min(60vh,28rem)] border-t border-border/60">
-            {!term && !allowsDoing && (
-              <CommandGroup className="px-2">
-                <FormOpener mode={mode} onSelect={() => openForm("")} />
-              </CommandGroup>
-            )}
-            {!term && allowsDoing && (
-              <CommandGroup heading="Việc trong ngày" className="px-2">
-                <div className="flex flex-wrap gap-1.5 px-2 pb-2 pt-0.5">
-                  {TASKS.map((t) => (
-                    <CommandItem
-                      key={t.title}
-                      value={`task:${t.title}`}
-                      onSelect={() => addCustom({ what: t.title, stayMin: t.stayMin }, `task:${t.title}`)}
-                      className="h-8 gap-1.5 rounded-[4px] border border-border px-2.5 py-0 text-sm"
-                    >
-                      {adding === `task:${t.title}` ? (
-                        <Loader2 className="size-3.5 animate-spin" aria-hidden />
-                      ) : (
-                        <Glyph name="plus" className="size-3.5 text-muted-foreground" />
-                      )}
-                      {t.title}
-                      <span className="tabular-nums text-xs text-muted-foreground">{fmtDuration(t.stayMin)}</span>
-                    </CommandItem>
-                  ))}
-                </div>
-                <FormOpener mode={mode} onSelect={() => openForm("")} />
-              </CommandGroup>
-            )}
-
-            {!strong && customRow}
-
-            {!term && grouped.length > 0 && placeName && (
-              <p className="border-t border-border/60 px-4 pb-1 pt-3 text-xs text-muted-foreground">
-                Gợi ý ở <strong className="font-semibold text-foreground">{placeName}</strong>
-              </p>
-            )}
-
-            {grouped.map((g) => (
+  const results = grouped.map((g) => (
               <CommandGroup key={g.kind} heading={g.label} className="px-2">
                 {g.rows.map((c) => {
                   const done = c.inTrip || added.has(c.id);
@@ -515,7 +369,261 @@ export function TripAddSearch({
                   );
                 })}
               </CommandGroup>
-            ))}
+            ));
+
+  return (
+    <Dialog open={open} onOpenChange={close}>
+      <DialogContent
+        className="top-[12vh] translate-y-0 gap-0 overflow-hidden rounded-[6px] p-0 sm:max-w-xl"
+        showCloseButton={false}
+      >
+        <div className="border-b border-border/60 px-4 pb-1 pt-4">
+          <DialogTitle className="font-[family-name:var(--font-display)] text-lg font-bold">
+            {mode === "doing" && pos.parent
+              ? `Làm gì ở ${pos.parent.name}`
+              : `Thêm vào ${target?.label ?? ""}`}
+          </DialogTitle>
+          {mode !== "doing" && pos.where && (
+            <p className="mt-0.5 text-sm text-foreground">Chèn {pos.where}</p>
+          )}
+          <DialogDescription className="mt-0.5 text-sm text-muted-foreground">
+            {form
+              ? form.special
+                ? `${SPECIAL_LABEL[form.special]}: điền phần cần, bỏ trống phần không cần.`
+                : "Một mục của riêng chuyến này. Có địa chỉ thì nó được đánh số như một điểm dừng."
+              : mode === "doing"
+                ? "Hoạt động thành thẻ của nơi này, không tính giờ riêng. Mục tự thêm thành một dòng có giờ ngay sau."
+                : "Tìm địa điểm, quán ăn, chỗ ở trên site, hoặc gõ để tự thêm một mục."}
+          </DialogDescription>
+        </div>
+
+        {form ? (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const f = form;
+              addCustom(
+                {
+                  title: f.title.trim(),
+                  address: f.address.trim() || null,
+                  stayMin: f.stay,
+                  special: f.special,
+                  travelMode: f.mode,
+                  travelFrom: f.from.trim() || null,
+                  travelTo: f.to.trim() || null,
+                  bookingCode: f.code.trim() || null,
+                },
+                "custom-form",
+                () => setForm(null),
+              );
+            }}
+            className="grid gap-4 px-4 py-4"
+          >
+            {form.special === "transport" ? (
+              <>
+                <div className="grid gap-1.5">
+                  <span className="text-sm font-medium">Phương tiện</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {TRAVEL_MODES.map((m) => (
+                      <button
+                        key={m.mode}
+                        type="button"
+                        onClick={() => setForm({ ...form, mode: m.mode })}
+                        aria-pressed={form.mode === m.mode}
+                        className={cn(CHOICE, form.mode === m.mode ? CHOICE_ON : CHOICE_OFF)}
+                      >
+                        <Glyph name={m.glyph} className="size-4" />
+                        {m.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="grid gap-1.5">
+                    <span className="text-sm font-medium">Từ</span>
+                    <Input
+                      autoFocus
+                      value={form.from}
+                      onChange={(e) => setForm({ ...form, from: e.target.value })}
+                      placeholder="Hà Nội"
+                      className="h-10 rounded-[4px]"
+                    />
+                  </label>
+                  <label className="grid gap-1.5">
+                    <span className="text-sm font-medium">Đến</span>
+                    <Input
+                      value={form.to}
+                      onChange={(e) => setForm({ ...form, to: e.target.value })}
+                      placeholder="Sa Pa"
+                      className="h-10 rounded-[4px]"
+                    />
+                  </label>
+                </div>
+              </>
+            ) : (
+              <>
+                {(form.special === "meal" || form.special === "rest") && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {(form.special === "meal" ? MEAL_PRESETS : REST_PRESETS).map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setForm({ ...form, title: t })}
+                        aria-pressed={form.title === t}
+                        className={cn(CHOICE, form.title === t ? CHOICE_ON : CHOICE_OFF)}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <label className="grid gap-1.5">
+                  <span className="text-sm font-medium">
+                    {form.special === "checkin" || form.special === "checkout" ? "Chỗ ở" : "Tiêu đề"}
+                    {form.special && <span className="font-normal text-muted-foreground"> (không bắt buộc)</span>}
+                  </span>
+                  <Input
+                    autoFocus
+                    value={form.title}
+                    onChange={(e) => setForm({ ...form, title: e.target.value })}
+                    placeholder={
+                      form.special === "checkin" || form.special === "checkout"
+                        ? `${SPECIAL_LABEL[form.special]} Sunny House…`
+                        : form.special
+                          ? SPECIAL_LABEL[form.special]
+                          : "Nhà bạn Minh, ra sân bay, chờ xe…"
+                    }
+                    className="h-10 rounded-[4px]"
+                  />
+                </label>
+                {form.special !== "rest" && (
+                  <label className="grid gap-1.5">
+                    <span className="text-sm font-medium">
+                      Địa chỉ <span className="font-normal text-muted-foreground">(không bắt buộc)</span>
+                    </span>
+                    <Input
+                      value={form.address}
+                      onChange={(e) => setForm({ ...form, address: e.target.value })}
+                      placeholder="Số nhà, đường, phường…"
+                      className="h-10 rounded-[4px]"
+                    />
+                  </label>
+                )}
+              </>
+            )}
+            {(form.special === "transport" || form.special === "checkin" || form.special === "checkout") && (
+              <label className="grid gap-1.5">
+                <span className="text-sm font-medium">
+                  {form.special === "transport" ? "Mã chuyến / mã vé" : "Mã đặt phòng"}{" "}
+                  <span className="font-normal text-muted-foreground">(không bắt buộc)</span>
+                </span>
+                <Input
+                  value={form.code}
+                  onChange={(e) => setForm({ ...form, code: e.target.value })}
+                  placeholder={form.special === "transport" ? "VN213, SE7…" : "BK-48213"}
+                  className="h-10 rounded-[4px]"
+                />
+              </label>
+            )}
+            <div className="grid gap-1.5">
+              <span className="text-sm font-medium">{form.special === "transport" ? "Đi mất bao lâu" : "Bao lâu"}</span>
+              <div className="flex flex-wrap gap-1.5">
+                {(form.special === "transport" ? TRAVEL_DURATIONS : DURATIONS).map((d) => (
+                  <button
+                    key={d.label}
+                    type="button"
+                    onClick={() => setForm({ ...form, stay: d.min })}
+                    aria-pressed={form.stay === d.min}
+                    className={cn(CHOICE, form.stay === d.min ? CHOICE_ON : CHOICE_OFF)}
+                  >
+                    {d.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <Button type="button" variant="ghost" onClick={() => setForm(null)} className="rounded-[4px]">
+                Quay lại tìm
+              </Button>
+              <Button
+                type="submit"
+                disabled={(!form.special && !form.title.trim()) || adding !== null}
+                className="rounded-[4px]"
+              >
+                {adding === "custom-form" ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Glyph name="plus" className="size-4" />}
+                Thêm
+              </Button>
+            </div>
+          </form>
+        ) : (
+        <Command shouldFilter={false} value={selected} onValueChange={setSelected} className="rounded-none">
+          <div className="relative">
+            <CommandInput
+              value={q}
+              onValueChange={setQ}
+              placeholder="Tìm trên site, hoặc gõ để tự thêm…"
+              className={cn("h-12", TOUCH_INPUT)}
+            />
+            {loading && (
+              <Loader2
+                className="absolute right-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground"
+                aria-hidden
+              />
+            )}
+          </div>
+
+          <CommandList className="max-h-[min(60vh,28rem)] border-t border-border/60">
+            {mode === "doing" && results}
+            {!term && (
+              <CommandGroup heading="Hay dùng" className="px-2">
+                <div className="flex flex-wrap gap-1.5 px-2 pb-2 pt-0.5">
+                  {TASKS.map((t) => (
+                    <CommandItem
+                      key={t.title}
+                      value={`task:${t.title}`}
+                      onSelect={() => addCustom({ title: t.title, stayMin: t.stayMin }, `task:${t.title}`)}
+                      className="h-8 gap-1.5 rounded-[4px] border border-border px-2.5 py-0 text-sm"
+                    >
+                      {adding === `task:${t.title}` ? (
+                        <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                      ) : (
+                        <Glyph name="plus" className="size-3.5 text-muted-foreground" />
+                      )}
+                      {t.title}
+                      <span className="tabular-nums text-xs text-muted-foreground">{fmtDuration(t.stayMin)}</span>
+                    </CommandItem>
+                  ))}
+                </div>
+                <FormOpener onSelect={() => openForm("")} />
+              </CommandGroup>
+            )}
+            {!term && (
+              <CommandGroup heading="Mục đặc biệt" className="px-2">
+                <div className="flex flex-wrap gap-1.5 px-2 pb-2 pt-0.5">
+                  {SPECIALS.map((sp) => (
+                    <CommandItem
+                      key={sp.special}
+                      value={`special:${sp.special}`}
+                      onSelect={() => openForm("", sp.special)}
+                      className="h-9 gap-1.5 rounded-[4px] border border-border px-2.5 py-0 text-sm"
+                    >
+                      <Glyph name={sp.glyph} className="size-4 text-muted-foreground" />
+                      {sp.label}
+                    </CommandItem>
+                  ))}
+                </div>
+              </CommandGroup>
+            )}
+
+            {!strong && customRow}
+
+            {mode !== "doing" && !term && grouped.length > 0 && placeName && (
+              <p className="border-t border-border/60 px-4 pb-1 pt-3 text-xs text-muted-foreground">
+                Gợi ý ở <strong className="font-semibold text-foreground">{placeName}</strong>
+              </p>
+            )}
+
+            {mode !== "doing" && results}
 
             {strong && customRow}
           </CommandList>
@@ -526,7 +634,23 @@ export function TripAddSearch({
   );
 }
 
-// null = theo mặc định (nơi 1 giờ, việc 30 phút); 0 = không tốn thời gian.
+const CHOICE = "inline-flex h-8 items-center gap-1.5 rounded-[4px] border px-2.5 text-sm transition-colors";
+const CHOICE_ON = "border-primary/60 bg-primary/5 font-medium text-primary-ink";
+const CHOICE_OFF = "border-border hover:bg-muted";
+
+// Di chuyển tính theo THỜI LƯỢNG (biên tập chọn, không neo giờ vé) — mốc dài hơn hẳn mục thường.
+const TRAVEL_DURATIONS: { label: string; min: number | null }[] = [
+  { label: "Tự động", min: null },
+  { label: "30 phút", min: 30 },
+  { label: "1 giờ", min: 60 },
+  { label: "2 giờ", min: 120 },
+  { label: "4 giờ", min: 240 },
+  { label: "6 giờ", min: 360 },
+  { label: "8 giờ", min: 480 },
+  { label: "10 giờ", min: 600 },
+];
+
+// null = theo mặc định (có địa chỉ 1 giờ, không có 30 phút; mục đặc biệt theo loại); 0 = không tốn thời gian.
 const DURATIONS: { label: string; min: number | null }[] = [
   { label: "Tự động", min: null },
   { label: "Không tính", min: 0 },
@@ -537,21 +661,15 @@ const DURATIONS: { label: string; min: number | null }[] = [
   { label: "4 giờ", min: 240 },
 ];
 
-function FormOpener({ onSelect, mode }: { onSelect: () => void; mode: "place" | "doing" | "any" }) {
-  const label =
-    mode === "doing"
-      ? "Tự gõ một việc kèm thời lượng…"
-      : mode === "place"
-        ? "Tự gõ một nơi, kèm việc làm ở đó…"
-        : "Tự gõ đủ: ở đâu, làm gì, bao lâu…";
+function FormOpener({ onSelect }: { onSelect: () => void }) {
   return (
     <CommandItem value="custom-form" onSelect={onSelect} className="group gap-3 rounded-[4px] px-2 py-2">
       <Thumb>
         <Glyph name="sliders" className="size-5" />
       </Thumb>
       <span className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate text-sm font-medium text-foreground">{label}</span>
-        <span className="truncate text-xs text-muted-foreground">Một dòng của riêng chuyến này</span>
+        <span className="truncate text-sm font-medium text-foreground">Tự thêm kèm địa chỉ, thời lượng…</span>
+        <span className="truncate text-xs text-muted-foreground">Một mục của riêng chuyến này</span>
       </span>
       <AddHint />
     </CommandItem>

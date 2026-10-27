@@ -9,6 +9,8 @@ const EVERY_MS = 15_000;
 // Đang gõ / đang mở menu, popover thì KHÔNG tự làm mới: dữ liệu mới đổ vào giữa lúc
 // đó là giật mất thứ người dùng đang cầm. Khi đó chỉ báo "có thay đổi mới" trên nút.
 function userIsBusy(): boolean {
+  // Trang soạn đang kéo một thẻ — cờ đặt thẳng lên <html> (xem `trip-editor.tsx`), không qua state.
+  if (document.documentElement.hasAttribute("data-trip-dragging")) return true;
   const el = document.activeElement as HTMLElement | null;
   if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return true;
   // Chỉ dialog Radix/vaul ĐANG MỞ (`data-state="open"`) — bảng mời cài app cũng là

@@ -4,6 +4,8 @@ import {
   formatMinutes,
 } from "@/lib/opening-hours";
 
+import { SPECIAL_STAY, type TripSpecial } from "@/lib/trip-special";
+
 export type TripItemKind =
   | "spot"
   | "eatery"
@@ -31,36 +33,7 @@ export function isTask(i: {
   return i.kind === "custom" && !i.customPlace && (i.lat == null || i.lng == null);
 }
 
-/**
- * Hoạt động là một VIỆC làm tại một NƠI. Đứng sau đúng nơi của nó (cho phép xen việc /
- * hoạt động khác cũng đang ở nơi đó) thì nó "ở trong" nơi ấy: trả về chỉ số của Spot đó.
- * Không thì null — nó tự là một điểm dừng (mượn toạ độ nơi đầu tiên của nó).
- */
-export function anchorsOf(
-  items: {
-    kind: TripItemKind;
-    spotId?: string | null;
-    atSpots?: { id: string }[];
-    lat?: number | null;
-    lng?: number | null;
-  }[],
-): (number | null)[] {
-  const out: (number | null)[] = [];
-  items.forEach((item, i) => {
-    out[i] = null;
-    if (item.kind !== "activity" || !item.atSpots?.length) return;
-    for (let j = i - 1; j >= 0; j--) {
-      const prev = items[j];
-      if (isTask(prev) || out[j] != null) continue;
-      if (prev.kind === "spot" && item.atSpots.some((s) => s.id === prev.spotId)) out[i] = j;
-      return;
-    }
-  });
-  return out;
-}
-
 const LONG_DRIVE_MIN = 90;
-const DAY_MAX_LENGTH = 12 * 60; // tổng ngày quá 12 tiếng
 
 // ── Đọc `Activity.durationText` thành phút ───────────────────────────────
 // Văn bản tự do của biên tập: "~2 giờ", "nửa ngày", "2N1Đ", "90 phút", "3-4 giờ".
@@ -101,10 +74,10 @@ export type ScheduleItemInput = {
   openingHours?: string | null;
   lat?: number | null;
   lng?: number | null;
-  /** Diễn ra TẠI nơi phía trước (hoạt động đang lồng) — không có chặng tới nó. */
-  inPlace?: boolean;
   /** Mục tự thêm là một NƠI dù không có toạ độ. */
   customPlace?: boolean;
+  /** Mục đặc biệt (chỉ mục tự thêm) — thời lượng mặc định riêng; `transport` cắt chuỗi chặng. */
+  special?: TripSpecial | null;
 };
 
 export type TripWarning = {
@@ -114,8 +87,7 @@ export type TripWarning = {
     | "opensLater"
     | "closingSoon"
     | "longDrive"
-    | "noCoords"
-    | "dayLong";
+    | "noCoords";
   text: string;
 };
 
@@ -157,8 +129,12 @@ export function legKey(fromId: string, toId: string): string {
   return `${fromId}->${toId}`;
 }
 
-function stayMinOf(item: ScheduleItemInput): number {
+/** Thời lượng thật của một mục: `stayMin` đã chỉnh, không thì đọc `durationText`, không thì mặc định. */
+export function effectiveStayMin(
+  item: Pick<ScheduleItemInput, "kind" | "stayMin" | "durationText" | "lat" | "lng" | "customPlace" | "special">,
+): number {
   if (item.stayMin != null) return Math.max(0, item.stayMin);
+  if (item.kind === "custom" && item.special) return SPECIAL_STAY[item.special];
   if (item.kind === "activity") {
     const parsed = parseDurationMin(item.durationText);
     if (parsed != null) return parsed;
@@ -187,7 +163,7 @@ export function scheduleDay(
   items.forEach((item, i) => {
     const warnings: TripWarning[] = [];
     const arriveMin = t;
-    const stay = stayMinOf(item);
+    const stay = effectiveStayMin(item);
 
     const intervals = parseOpeningHours(item.openingHours ?? null);
     const status = openingStatus(intervals, arriveMin % 1440);
@@ -214,7 +190,7 @@ export function scheduleDay(
     }
 
     t = arriveMin + stay;
-    if (!item.inPlace && !isTask(item)) {
+    if (!isTask(item)) {
       // Tới một NƠI không có toạ độ (nơi tự gõ) là không còn biết mình đứng đâu: giữ nơi có
       // toạ độ cũ thì chặng kế tiếp bị tính từ chỗ đã rời đi từ lâu.
       lastPlace = hasCoords(item) ? item : null;
@@ -222,13 +198,22 @@ export function scheduleDay(
       here = item;
     }
 
+    // Chính mục Di chuyển đã là quãng đi (bay, tàu, xe khách): KHÔNG vẽ chặng ra khỏi nó, và tới nơi rồi thì không còn
+    // biết mình đứng đâu — chặng kế tiếp chỉ tính từ NƠI đầu tiên sau nó.
+    const travelled = item.special === "transport";
+    if (travelled) {
+      lastPlace = null;
+      here = null;
+      seenPlace = false;
+    }
+
     const next = items[i + 1];
     let driveToNextMin: number | null = null;
     let key: string | null = null;
     let legHidden = false;
-    if (next && (!travel || isTask(next) || next.inPlace)) {
+    if (next && (!travel || isTask(next) || travelled)) {
       legHidden = true;
-    } else if (next && !seenPlace && (isTask(item) || item.inPlace)) {
+    } else if (next && !seenPlace && isTask(item)) {
       legHidden = true;
     } else if (next) {
       key = lastPlace && hasCoords(next) ? legKey(lastPlace.id, next.id) : null;
@@ -271,16 +256,8 @@ export function scheduleDay(
   });
 
   const endMin = out.length ? out[out.length - 1].leaveMin : startMin;
-  const dayWarnings: TripWarning[] = [];
-  if (endMin - startMin > DAY_MAX_LENGTH) {
-    dayWarnings.push({
-      level: "medium",
-      code: "dayLong",
-      text: `Ngày này dài ${fmtDuration(endMin - startMin)} — cân nhắc bớt một điểm`,
-    });
-  }
-
-  return { items: out, startMin, endMin, driveMin: driveTotal, warnings: dayWarnings };
+  // Biên tập bỏ cảnh báo "ngày dài": ngày đi chơi 14–15 tiếng là chuyện thường, nhắc mãi thành nhiễu.
+  return { items: out, startMin, endMin, driveMin: driveTotal, warnings: [] };
 }
 
 function hasCoords(i: ScheduleItemInput): boolean {

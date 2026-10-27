@@ -1267,6 +1267,9 @@ model Trip {
   // nguyên), nên chỉ dùng làm gợi ý và đường quay lại, đừng coi là chân lý.
   placeId    String?
   place      Place?  @relation("TripPlace", fields: [placeId], references: [id], onDelete: SetNull)
+  // Đi từ đâu — tên một trong 34 tỉnh/thành (`PROVINCE_NAMES`). CHƯA DÙNG: bước tạo chuyến đã bỏ ô này (biên tập:
+  // "hiện tại chưa cần"); cột giữ lại cho lúc bật lại, `cloneTrip` vẫn chép.
+  originName String?
 
   days    TripDay[]
   items   TripItem[]
@@ -1590,10 +1593,37 @@ model TripItem {
   // Mục tự thêm là một NƠI (hàng "Ở đâu") dù không có toạ độ — "Nhà bạn Minh". false + không
   // toạ độ = một VIỆC tại nơi phía trước ("Chờ người"). Xem isTask() ở lib/trip-time.ts.
   customPlace Boolean @default(false)
+  // Địa chỉ gõ tay của mục tự thêm (chỉ là chữ — chưa geocode). Từ khi gộp "nơi / việc" tự thêm thành MỘT kiểu mục:
+  // có địa chỉ ⇒ `customPlace = true` (một NƠI, lấy số mốc), không có ⇒ một việc. Ghi ở `addCustomStop`/`updateItem`.
+  customAddress String?
+  // MỤC ĐẶC BIỆT (chỉ mục tự thêm): đổi cách hiện + thời lượng mặc định, KHÔNG đổi luật nơi/việc (vẫn theo địa chỉ).
+  // `transport` tính theo THỜI LƯỢNG (không neo giờ vé) và cắt chuỗi chặng: không vẽ chặng tới/ra khỏi nó.
+  special     TripItemSpecial?
+  travelMode  TravelMode? // chỉ `transport`
+  travelFrom  String?
+  travelTo    String?
+  bookingCode String? // mã chuyến / mã đặt chỗ — KHÔNG phải số tài khoản (xem §Nơi lưu trú)
 
   createdAt DateTime @default(now())
 
   @@index([tripId])
   @@index([dayId])
   @@index([parentId])
+}
+
+enum TripItemSpecial {
+  transport
+  checkin
+  checkout
+  meal
+  rest
+}
+
+enum TravelMode {
+  plane
+  train
+  bus
+  car
+  motorbike
+  boat
 }

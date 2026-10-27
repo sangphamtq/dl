@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { toast } from "sonner";
 import { Loader2 } from "@/components/icons";
 import { Glyph } from "@/components/site/glyphs";
@@ -23,36 +23,20 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  createTrip,
   deleteTrip,
   setPlanningTrip,
 } from "@/app/(site)/lich-trinh/actions";
 
 export function NewTripButton() {
-  const router = useRouter();
-  const [pending, start] = useTransition();
-
   return (
     <Button
-      onClick={() =>
-        start(async () => {
-          const res = await createTrip();
-          if (!res.ok) {
-            toast.error(res.error);
-            return;
-          }
-          router.push(`/lich-trinh/cua-toi/${res.data.id}`);
-        })
-      }
-      disabled={pending}
+      asChild
       className="h-11 rounded-[4px] bg-warm px-5 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-warm-foreground hover:bg-warm/90"
     >
-      {pending ? (
-        <Loader2 className="size-4 animate-spin" aria-hidden />
-      ) : (
+      <Link href="/lich-trinh/cua-toi/tao">
         <Glyph name="plus" className="size-4" />
-      )}
-      Tạo lịch trình
+        Tạo lịch trình
+      </Link>
     </Button>
   );
 }

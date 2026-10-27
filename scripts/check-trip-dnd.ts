@@ -1,6 +1,6 @@
 import { applyMove } from "@/components/trip/trip-dnd";
 import { dropAt, insertAt, placeAt, type DropAt } from "@/lib/trip-drop";
-import { anchorsOf, scheduleDay, legKey } from "@/lib/trip-time";
+import { scheduleDay, legKey } from "@/lib/trip-time";
 import { groupStops } from "@/lib/trip-stops";
 
 
@@ -105,49 +105,23 @@ check("việc đầu ngày: giữ thời lượng đã đặt", sd2.items[1].arr
     off.items.flatMap((i) => i.warnings.map((w) => w.code)).includes("longDrive"), false);
 }
 
-// Hoạt động lồng dưới đúng nơi của nó.
-{
-  const doi = { kind: "spot" as const, spotId: "doi", lat: 10, lng: 106 };
-  const bau = { kind: "spot" as const, spotId: "bau", lat: 11, lng: 107 };
-  const truot = { kind: "activity" as const, atSpots: [{ id: "doi" }, { id: "bau" }], lat: 10, lng: 106 };
-  const luot = { kind: "activity" as const, atSpots: [{ id: "biennn" }], lat: 12, lng: 108 };
-  const wait2 = { kind: "custom" as const, lat: null, lng: null };
-  check("hoạt động ngay sau nơi của nó → lồng", anchorsOf([doi, truot, bau]), [null, 0, null]);
-  check("xen một việc ở giữa vẫn lồng", anchorsOf([doi, wait2, truot]), [null, null, 0]);
-  check("hai hoạt động liền nhau cùng nơi → cả hai lồng", anchorsOf([doi, truot, { ...truot }]), [null, 0, 0]);
-  check("sau một nơi KHÁC → không lồng", anchorsOf([bau, luot]), [null, null]);
-  check("đứng đầu ngày → không lồng", anchorsOf([truot, doi]), [null, null]);
-
-  const A2 = { id: "A", kind: "spot" as const, name: "Đồi", stayMin: 60, lat: 10, lng: 106 };
-  const T2 = { id: "T", kind: "activity" as const, name: "Trượt", stayMin: 45, lat: 10, lng: 106, inPlace: true };
-  const B2 = { id: "B", kind: "spot" as const, name: "Bàu", stayMin: 60, lat: 11, lng: 107 };
-  const sd3 = scheduleDay(8 * 60, [A2, T2, B2], { [legKey("A", "B")]: 20 });
-  check("lồng: không vẽ chặng nơi → hoạt động", sd3.items[0].legHidden, true);
-  check("lồng: chặng đi tiếp tính từ NƠI (A→B)", sd3.items[1].legKey, "A->B");
-  check("lồng: giờ tới B = 8:00 + 60 + 45 + 20", sd3.items[2].arriveMin, 8 * 60 + 60 + 45 + 20);
-}
-
-// Gom "Ở đâu | Làm gì" theo parentId (danh sách đã phẳng: gốc rồi các con).
+// Hàng = mục gốc có giờ + các thẻ hoạt động của nó (danh sách đã phẳng: gốc rồi các con).
 {
   let n = 0;
   const mk = (name: string, kind: "spot" | "activity" | "custom", parentId: string | null = null, extra = {}) =>
-    ({ id: `${name}-${n++}`, name, kind, parentId, lat: kind === "custom" ? null : 1, lng: kind === "custom" ? null : 1, atName: null as string | null, ...extra });
-  const shape = (xs: { place: { name: string } | null; placeName: string | null; doings: { name: string }[]; no: number }[]) =>
-    xs.map((s) => `${s.no}:${s.place?.name ?? `(${s.placeName ?? "-"})`}[${s.doings.map((d) => d.name).join(",")}]`);
+    ({ id: `${name}-${n++}`, name, kind, parentId, lat: kind === "custom" ? null : 1, lng: kind === "custom" ? null : 1, ...extra });
+  const shape = (xs: { item: { name: string }; tags: { name: string }[]; no: number | null }[]) =>
+    xs.map((s) => `${s.no ?? "-"}:${s.item.name}[${s.tags.map((d) => d.name).join(",")}]`);
   const doi = mk("Đồi", "spot");
-  check("nơi + các việc của nó → một hàng",
-    shape(groupStops([doi, mk("Trượt", "activity", doi.id), mk("Đặt xe", "custom", doi.id), mk("Bàu", "spot")])),
-    ["1:Đồi[Trượt,Đặt xe]", "2:Bàu[]"]);
-  const luot = mk("Lướt", "activity", null, { atName: "Bãi biển" });
-  check("hoạt động gốc → hàng ghi nơi của nó, việc con theo sau",
-    shape(groupStops([mk("Bàu", "spot"), luot, mk("Chờ", "custom", luot.id)])), ["1:Bàu[]", "2:(Bãi biển)[Lướt,Chờ]"]);
-  check("việc gốc đầu ngày → hàng không rõ nơi",
-    shape(groupStops([mk("Đặt xe", "custom"), mk("Đồi", "spot")])), ["1:(-)[Đặt xe]", "2:Đồi[]"]);
-  check("việc gốc KHÔNG tự nhập vào nơi phía trên (chỉ cha mới quyết định)",
-    shape(groupStops([doi, mk("Chờ", "custom")])), ["1:Đồi[]", "2:(-)[Chờ]"]);
+  check("nơi + thẻ hoạt động → một hàng",
+    shape(groupStops([doi, mk("Trượt", "activity", doi.id), mk("Bàu", "spot")])),
+    ["1:Đồi[Trượt]", "2:Bàu[]"]);
+  check("hoạt động gốc → hàng riêng có số",
+    shape(groupStops([mk("Bàu", "spot"), mk("Lướt", "activity")])), ["1:Bàu[]", "2:Lướt[]"]);
+  check("việc tự gõ → hàng riêng KHÔNG số, không làm lệch số sau nó",
+    shape(groupStops([mk("Đặt xe", "custom"), mk("Đồi", "spot")])), ["-:Đặt xe[]", "1:Đồi[]"]);
   const cp = mk("Nhà bạn Minh", "custom", null, { customPlace: true });
-  check("nơi tự gõ → một hàng có nơi",
-    shape(groupStops([cp, mk("Ăn trưa", "custom", cp.id)])), ["1:Nhà bạn Minh[Ăn trưa]"]);
+  check("nơi tự gõ → có số", shape(groupStops([cp])), ["1:Nhà bạn Minh[]"]);
 }
 
 // Nơi tự gõ (không toạ độ) cắt chuỗi toạ độ: chặng kế tiếp KHÔNG được tính từ nơi trước nó.
@@ -160,6 +134,20 @@ check("việc đầu ngày: giữ thời lượng đã đặt", sd2.items[1].arr
   check("nơi tự gõ: giờ tới Bàu = 8:00 + 60 + 30 (không cộng 57)", sd4.items[2].arriveMin, 8 * 60 + 90);
   check("nơi tự gõ: không cảnh báo thiếu toạ độ",
     sd4.items.flatMap((i) => i.warnings.map((w) => w.code)).includes("noCoords"), false);
+}
+
+// Mục Di chuyển: chính nó là quãng đi — không chặng tới / ra khỏi nó, không mượn chặng của nơi trước đó.
+{
+  const A = { id: "A", kind: "spot" as const, name: "Hồ Gươm", stayMin: 60, lat: 21, lng: 105.8 };
+  const T = { id: "T", kind: "custom" as const, name: "Hà Nội – Sa Pa", stayMin: null, lat: null, lng: null, special: "transport" as const };
+  const B = { id: "B", kind: "spot" as const, name: "Cát Cát", stayMin: 60, lat: 22.3, lng: 103.8 };
+  const C = { id: "C", kind: "spot" as const, name: "Hàm Rồng", stayMin: 60, lat: 22.34, lng: 103.84 };
+  const sd = scheduleDay(8 * 60, [A, T, B, C], { [legKey("A", "B")]: 300, [legKey("B", "C")]: 10 });
+  check("di chuyển: không chặng TỚI nó", sd.items[0].legHidden, true);
+  check("di chuyển: không chặng RA khỏi nó", sd.items[1].legHidden, true);
+  check("di chuyển: mặc định 2 giờ", sd.items[1].stayMin, 120);
+  check("di chuyển: tới Cát Cát = 8:00 + 60 + 120 (không cộng chặng A→B)", sd.items[2].arriveMin, 8 * 60 + 180);
+  check("di chuyển: chặng sau đó tính bình thường (B→C)", sd.items[2].legKey, "B->C");
 }
 
 console.log(`\n${pass} qua · ${fail} hỏng`);

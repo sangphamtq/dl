@@ -19,7 +19,6 @@ import {
   cloneTrip,
   getPlanOptions,
   setPlanningTrip,
-  startTripForPlace,
   type PlanOptions,
 } from "@/app/(site)/lich-trinh/actions";
 
@@ -46,6 +45,8 @@ export function PlanTripButton({
   const [loginOpen, setLoginOpen] = useState(false);
   const [options, setOptions] = useState<PlanOptions | null>(null);
   const claimed = useRef(false);
+  // Bước tạo chuyến là một TRANG — điền sẵn nơi đến.
+  const newTripHref = `/lich-trinh/cua-toi/tao?noi-den=${encodeURIComponent(placeId)}`;
 
   function rememberIntent() {
     try {
@@ -74,14 +75,9 @@ export function PlanTripButton({
         return;
       }
 
+      // Chưa có chuyến nào cũng không có mẫu ⇒ thẳng vào bước tạo chuyến (nơi đến điền sẵn).
       if (res.data.trips.length === 0 && res.data.templates.length === 0) {
-        const made = await startTripForPlace(placeId);
-        if (!made.ok) {
-          toast.error(made.error);
-          return;
-        }
-        toast.success(`Bắt đầu lên lịch trình đi ${placeName}`);
-        go(made.data.id);
+        router.push(newTripHref);
         return;
       }
       setOptions(res.data);
@@ -203,16 +199,10 @@ export function PlanTripButton({
               <button
                 type="button"
                 disabled={pending}
-                onClick={() =>
-                  start(async () => {
-                    const res = await startTripForPlace(placeId);
-                    if (!res.ok) {
-                      toast.error(res.error);
-                      return;
-                    }
-                    go(res.data.id);
-                  })
-                }
+                onClick={() => {
+                  setOptions(null);
+                  router.push(newTripHref);
+                }}
                 className="flex w-full items-center gap-3 rounded-xl border border-dashed px-3 py-2.5 text-left transition-colors hover:bg-muted disabled:opacity-50"
               >
                 <CalendarDays className="size-4 shrink-0 text-muted-foreground" aria-hidden />

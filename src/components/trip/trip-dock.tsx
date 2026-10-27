@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   CalendarDays,
@@ -63,7 +63,6 @@ import { dropAt, insertAt, type DropAt } from "@/lib/trip-drop";
 import { onTripBagChanged, tripBagChanged } from "@/components/trip/trip-bag-events";
 import {
   addDay,
-  createTrip,
   getTripBag,
   listMyTrips,
   moveItem,
@@ -117,6 +116,12 @@ export function TripDock({ initial }: { initial: TripBag }) {
   const fabRef = useRef<HTMLButtonElement>(null);
   const [bump, setBump] = useState(false);
   const [addTarget, setAddTarget] = useState<AddTarget | null>(null);
+  const router = useRouter();
+  // Tạo chuyến là một TRANG riêng (thông tin cơ bản trước) — đóng ngăn rồi sang đó.
+  const newTrip = () => {
+    setOpen(false);
+    router.push("/lich-trinh/cua-toi/tao");
+  };
 
   const hidden = HIDDEN_ON.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
@@ -378,15 +383,7 @@ export function TripDock({ initial }: { initial: TripBag }) {
                         </DropdownMenuItem>
                       ))}
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onSelect={() =>
-                          act(async () => {
-                            const res = await createTrip();
-                            if (res.ok) toast.success("Đã tạo chuyến mới");
-                            return res;
-                          })
-                        }
-                      >
+                      <DropdownMenuItem onSelect={newTrip}>
                         <Plus className="size-4" aria-hidden />
                         Chuyến mới
                       </DropdownMenuItem>
@@ -440,13 +437,7 @@ export function TripDock({ initial }: { initial: TripBag }) {
                   action={
                     <Button
                       disabled={pending}
-                      onClick={() =>
-                        act(async () => {
-                          const res = await createTrip();
-                          if (res.ok) toast.success("Đã tạo “Chuyến đi của tôi”");
-                          return res;
-                        })
-                      }
+                      onClick={newTrip}
                     >
                       <Plus className="size-4" aria-hidden />
                       Tạo chuyến đầu tiên

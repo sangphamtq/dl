@@ -20,6 +20,7 @@ export type TripChrome = {
   title: string;
   startDate: string | null;
   partySize: number | null;
+  place?: { slug: string; name: string } | null;
   autoTravel?: boolean;
   shareId: string | null;
   visibility: "private" | "unlisted";
@@ -91,6 +92,12 @@ export function TripTopbar({
       {/* Hàng "thuộc tính" kiểu Notion: nút KHÔNG viền, rê vào mới có nền. `-ml-2` để chữ của
           thuộc tính đầu dóng thẳng mép tên chuyến chứ không phải mép nền hover. */}
       <div className="-ml-2 mt-3 flex flex-wrap items-center gap-x-1 gap-y-1">
+        {trip.place && (
+          <Link href={`/diem-den/${trip.place.slug}`} className={PROP} title={`Trang điểm đến ${trip.place.name}`}>
+            <Glyph name="pin" className={PROP_ICON} />
+            {trip.place.name}
+          </Link>
+        )}
         <DateChip
           value={trip.startDate}
           dayCount={dayCount}
@@ -156,17 +163,17 @@ const PROP_ICON = "size-4 shrink-0 text-muted-foreground";
 const WEEKDAY = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
 
 /** "YYYY-MM-DD" ⇄ Date theo NGÀY LỊCH (UTC) — không để múi giờ máy làm lệch một ngày. */
-function parseDay(v: string): Date {
+export function parseDay(v: string): Date {
   const [y, m, d] = v.split("-").map(Number);
   return new Date(Date.UTC(y, m - 1, d));
 }
-function isoDay(d: Date): string {
+export function isoDay(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
-function addDays(d: Date, n: number): Date {
+export function addDays(d: Date, n: number): Date {
   return new Date(d.getTime() + n * 86_400_000);
 }
-function shortDay(d: Date, withYear = false): string {
+export function shortDay(d: Date, withYear = false): string {
   const dd = String(d.getUTCDate()).padStart(2, "0");
   const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
   return `${WEEKDAY[d.getUTCDay()]} ${dd}/${mm}${withYear ? `/${d.getUTCFullYear()}` : ""}`;
@@ -236,7 +243,7 @@ function DateChip({
   );
 }
 
-function MonthGrid({
+export function MonthGrid({
   value,
   span,
   onPick,
@@ -415,7 +422,9 @@ function TitleField({
     // Ô nhập CO THEO CHỮ (lớp chữ ẩn cùng ô lưới đặt cỡ) để nền rê/nền sửa ôm sát tên. `-mx-2`
     // bù phần đệm: chữ vẫn dóng mép trái như khi không có nền.
     <span className="-mx-2 inline-grid min-w-0 max-w-[calc(100%+1rem)] align-top">
-      <span aria-hidden className={cn(text, "invisible col-start-1 row-start-1 whitespace-pre px-2 py-1")}>
+      {/* `min-w-0 overflow-hidden`: lớp đo này `whitespace-pre` — để nguyên thì tên dài ("Phan Thiết 3 ngày 2 đêm") đẩy
+          ô lưới rộng hơn màn hình 320px. Tên dài hơn khung thì ô nhập tự cuộn ngang khi gõ. */}
+      <span aria-hidden className={cn(text, "invisible col-start-1 row-start-1 min-w-0 overflow-hidden whitespace-pre px-2 py-1")}>
         {draft || " "}
       </span>
       <input

@@ -3,7 +3,8 @@
 import {
   Fragment,
   useEffect,
-  useLayoutEffect,
+  startTransition,
+  useMemo,
   useRef,
   useState,
   useTransition,
@@ -20,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,7 +42,7 @@ import type {
 import { TripNotes } from "@/components/trip/trip-notes";
 import { PackSuggestions, TripPacking } from "@/components/trip/trip-packing";
 import { TripMoney } from "@/components/trip/trip-money";
-import { formatMinutes, fmtDuration, DEFAULT_STAY_MIN } from "@/lib/trip-time";
+import { formatMinutes, fmtDuration, DEFAULT_STAY_MIN, isTask } from "@/lib/trip-time";
 import {
   addDay,
   moveItem,
@@ -55,41 +57,33 @@ import { TripShell } from "@/components/trip/trip-shell";
 import { TripDayStrip } from "@/components/trip/trip-day-strip";
 import { TripFieldsMenu, useTripFields, type TripFields } from "@/components/trip/trip-fields";
 import {
+  ActivityTags,
   DayHeading,
   RailItem,
-  DoingRow,
-  PlaceStub,
   RailLeg,
-  STAY_PILL,
+  cardClass,
+  lookOf,
   StopRow,
-  stayShort,
   Thumb,
   Warning,
 } from "@/components/trip/trip-rail";
 import { TripTopbar } from "@/components/trip/trip-topbar";
 import { useTripLiveSync } from "@/components/trip/trip-live-sync";
 import { TripAddSearch, type AddPos, type AddTarget } from "@/components/trip/trip-add-search";
-import { insertAt } from "@/lib/trip-drop";
+import { insertAt, type DropAt } from "@/lib/trip-drop";
+import { TRAVEL_MODES, type TravelMode } from "@/lib/trip-special";
 import {
   DndContext,
-  DragOverlay,
   KeyboardSensor,
-  MeasuringStrategy,
-  useDndContext,
   PointerSensor,
   TouchSensor,
-  closestCorners,
-  pointerWithin,
-  useDroppable,
+  closestCenter,
   useSensor,
   useSensors,
   type CollisionDetection,
   type DragEndEvent,
-  type DragOverEvent,
-  type DragStartEvent,
-  type DraggableAttributes,
+  type Modifier,
 } from "@dnd-kit/core";
-import type { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities";
 import {
   SortableContext,
   sortableKeyboardCoordinates,
@@ -104,6 +98,9 @@ import {
   doingsKey,
   useTripBoard,
 } from "@/components/trip/trip-dnd";
+
+/** Kéo chỉ theo chiều dọc — danh sách một cột, lệch ngang chỉ làm thẻ chạy lung tung. */
+const lockX: Modifier = ({ transform }) => ({ ...transform, x: 0 });
 
 type TripHeader = {
   id: string;
@@ -121,8 +118,8 @@ type TripHeader = {
   people: TripPerson[];
 };
 
-// Tám mốc hay gặp — 4 cột × 2 hàng. CÓ 0′: một nơi chỉ là chỗ đến (bãi biển) còn thời gian nằm ở việc làm
-// ở đó (tắm biển). Khác thì tự chọn giờ + phút, hoặc "đến lúc".
+// Tám mốc hay gặp — 4 cột × 2 hàng. CÓ 0′ (ghé qua). Thời gian ở một nơi là TỔNG, gồm cả các hoạt động
+// gắn thẻ ở đó. Khác thì tự chọn giờ + phút, hoặc "đến lúc".
 const STAY_PRESETS = [0, 15, 30, 45, 60, 90, 120, 180];
 
 export function TripEditor({
@@ -179,117 +176,42 @@ export function TripEditor({
     tripId: trip.id,
     version: trip.version,
     enabled: trip.people.length > 1,
-    busy: pending || dnd.activeId !== null,
+    busy: pending,
   });
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    // 3px: đủ để bấm tên / nút trong thẻ không thành kéo, mà không bắt "kéo một đoạn" mới thấy thẻ nhấc lên.
+    useSensor(PointerSensor, { activationConstraint: { distance: 3 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 220, tolerance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
-  // Cột "Làm gì" nằm TRONG một hàng lớn hơn nó nhiều: dò theo góc gần nhất thì cả hàng luôn
-  // thắng, việc thả vào cột trống của nơi khác lại rơi thành hàng riêng. Chuột đang ở trong
-  // cột / một việc nào thì lấy đúng cái đó trước.
+  // MỘT kiểu kéo: đổi chỗ trong CÙNG một ngày. Chính tấm thẻ đi theo tay (không có bóng kéo riêng), nên nó
+  // không đổi danh sách giữa chừng được — sang ngày khác là thẻ dựng lại ở chỗ mới và nhảy. Chuyển ngày: menu ⋯.
   const collide: CollisionDetection = (args) => {
-    const within = pointerWithin(args);
-    const inside = within.filter((c) => {
-      const box = dnd.containerOf(String(c.id));
-      return box?.startsWith("in:") || String(c.id).startsWith("in:");
+    const home = dnd.containerOf(String(args.active.id));
+    return closestCenter({
+      ...args,
+      droppableContainers: args.droppableContainers.filter((c) => dnd.containerOf(String(c.id)) === home),
     });
-    const doing = inside.find((c) => !String(c.id).startsWith("in:"));
-    if (doing) return [doing];
-    if (inside.length) return [inside[0]];
-    // Đang kéo một VIỆC (của một nơi) qua một hàng ⇒ vào việc của hàng đó, thả đâu trên hàng
-    // cũng được. Không thì trên đường kéo nó bị đổi thành hàng riêng mỗi lần lướt qua một
-    // hàng, bố cục xô đi và lúc thả rơi sai chỗ.
-    const active = String(args.active.id);
-    const isDoing = !!dnd.byId.get(active)?.parentId || !!dnd.containerOf(active)?.startsWith("in:");
-    if (isDoing) {
-      const row = within.find((c) => {
-        const box = dnd.containerOf(String(c.id));
-        return String(c.id) !== active && (box?.startsWith("day:") || box === BACKLOG);
-      });
-      if (row) return [{ id: doingsKey(String(row.id)) }];
-    }
-    // Kéo CẢ HÀNG: hàng giờ cao (việc nằm ngay dưới nơi) nên dò theo GÓC gần nhất thì hàng to
-    // luôn thấy gần chính nó nhất và không chịu đổi chỗ — lấy hàng đang nằm dưới chuột.
-    const row = within.find((c) => {
-      const box = dnd.containerOf(String(c.id));
-      return box?.startsWith("day:") || box === BACKLOG;
-    });
-    if (row) return [row];
-    return closestCorners(args);
   };
-
-  function onDragStart(e: DragStartEvent) {
-    dnd.beginDrag(String(e.active.id));
-  }
-
-  function onDragOver(e: DragOverEvent) {
-    const over = e.over;
-    if (!over) return;
-    const from = dnd.containerOf(String(e.active.id));
-    const to = dnd.containerOf(String(over.id));
-    if (from && to && from !== to) dnd.moveLocal(String(e.active.id), String(over.id));
-  }
 
   function onDragEnd(e: DragEndEvent) {
     const id = String(e.active.id);
     dnd.endDrag();
-
-    const fromDayId = dnd.byId.get(id)?.dayId ?? null;
+    document.documentElement.removeAttribute("data-trip-dragging");
     const at = dnd.commitMove(id, e.over ? String(e.over.id) : null);
-    setStaleDays([fromDayId, at?.dayId ?? null].filter((x): x is string => !!x));
-    if (at)
-      run(async () => {
-        const res = await moveItem(id, at.dayId, at.at, at.parentId);
-        if (!res.ok) {
-          dnd.resetFromProps();
-          router.refresh();
-        }
-        return res;
-      });
+    if (!at) return;
+    setStaleDays(at.dayId ? [at.dayId] : []);
+    run(async () => {
+      const res = await moveItem(id, at.dayId, at.at);
+      if (!res.ok) {
+        dnd.resetFromProps();
+        router.refresh();
+      }
+      return res;
+    });
   }
-
-  const activeItem = dnd.activeId ? dnd.byId.get(dnd.activeId) : null;
-  // Chỉ khi đang kéo một VIỆC (thả vào nơi khác được) mới mở chỗ thả trong các nơi chưa có việc.
-  // Kéo một NƠI thì không — nó không bao giờ chui vào nơi khác, mở ra chỉ làm cả ngày xô đi.
-  const draggingDoing =
-    !!activeItem && canBeDoing(activeItem) && (dnd.board[doingsKey(activeItem.id)]?.length ?? 0) === 0;
-  // Đang kéo CẢ HÀNG (một mục gốc) ⇒ mọi hàng thu gọn còn "kèm N việc": nơi nhiều việc kéo đi
-  // là một khối rất dài, cả ngày thì dài gấp mấy lần — thu lại thì chỉ còn xếp các nơi.
-  const draggingRow =
-    !!activeItem && !(dnd.containerOf(activeItem.id)?.startsWith("in:") ?? false);
-
-  // Thu gọn NGAY LÚC NHẤN tay kéo của một hàng, không đợi chuột dịch đủ ngưỡng kích hoạt kéo.
-  const [pressed, setPressed] = useState<string | null>(null);
-  const pressAnchor = useRef<{ id: string; top: number } | null>(null);
-  function pressRow(id: string) {
-    const el = document.querySelector<HTMLElement>(`[data-stop-row="${id}"]`);
-    pressAnchor.current = el ? { id, top: el.getBoundingClientRect().top } : null;
-    setPressed(id);
-  }
-  useEffect(() => {
-    if (!pressed) return;
-    const release = () => setPressed(null);
-    window.addEventListener("pointerup", release);
-    window.addEventListener("pointercancel", release);
-    return () => {
-      window.removeEventListener("pointerup", release);
-      window.removeEventListener("pointercancel", release);
-    };
-  }, [pressed]);
-  // Các hàng phía trên thu lại thì hàng đang nhấn NHẢY LÊN, trượt khỏi con trỏ — cuộn bù đúng
-  // khoảng đó để nó đứng yên dưới chuột (cũng là chỗ dnd-kit đo để bắt đầu kéo).
-  useLayoutEffect(() => {
-    const a = pressAnchor.current;
-    if (!pressed || !a) return;
-    pressAnchor.current = null;
-    const el = document.querySelector<HTMLElement>(`[data-stop-row="${a.id}"]`);
-    if (el) window.scrollBy(0, el.getBoundingClientRect().top - a.top);
-  }, [pressed]);
-  const collapseRows = draggingRow || pressed !== null;
 
   return (
     <DndContext
@@ -297,14 +219,17 @@ export function TripEditor({
       id="trip-dnd"
       sensors={sensors}
       collisionDetection={collide}
-      // Vùng "Làm gì" trống chỉ nở ra KHI bắt đầu kéo ⇒ bố cục đổi giữa lúc kéo; đo lại liên tục
-      // kẻo dnd-kit dò điểm thả theo toạ độ cũ.
-      measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
-      onDragStart={onDragStart}
-      onDragOver={onDragOver}
+      modifiers={[lockX]}
+      // "Đang kéo" là một thuộc tính trên <html>, CSS tự ẩn những gì cần ẩn — đi qua state/`useDndContext` thì
+      // mọi ngày, mọi thẻ dựng lại ở khung hình đầu và mỗi lần chuột nhích ⇒ giật.
+      onDragStart={() => {
+        dnd.beginDrag();
+        document.documentElement.setAttribute("data-trip-dragging", "");
+      }}
       onDragEnd={onDragEnd}
       onDragCancel={() => {
         dnd.endDrag();
+        document.documentElement.removeAttribute("data-trip-dragging");
         dnd.resetFromProps();
       }}
     >
@@ -386,7 +311,7 @@ export function TripEditor({
             )}
 
             {backlog.length > 0 && (
-              <p className="mt-1.5 px-1.5 pb-0.5 text-xs text-muted-foreground">Kéo vào một ngày để xếp lịch.</p>
+              <p className="mt-1.5 px-1.5 pb-0.5 text-xs text-muted-foreground">Bấm + để xếp vào một ngày.</p>
             )}
           </>
             ),
@@ -414,15 +339,16 @@ export function TripEditor({
                   fields={fields}
                   itemIds={dnd.board[dayKey(day.id)] ?? []}
                   doingsOf={(id) => dnd.board[doingsKey(id)] ?? []}
-                  draggingDoing={draggingDoing}
-                  collapsed={collapseRows}
-                  onPressRow={pressRow}
                   byId={dnd.byId}
                   stale={slow && staleDays.includes(day.id)}
                   dayCount={days.length}
                   allDays={days}
                   active={day.id === activeDay?.id}
-                  onFocus={() => setActiveDayId(day.id)}
+                  // Nhấn vào một thẻ là chạy cái này NGAY trong khung hình nhấn chuột: đặt lại state ở đây dựng lại
+                  // cả trang soạn (kể cả các tab ẩn) ⇒ cú kéo khựng lúc vừa cầm lên. Chỉ đặt khi ĐỔI ngày, và không gấp.
+                  onFocus={() => {
+                    if (day.id !== activeDayId) startTransition(() => setActiveDayId(day.id));
+                  }}
                   onAdd={(pos) => setAddTarget({ dayId: day.id, label: `Ngày ${day.index + 1}`, ...pos })}
                   run={run}
                 />
@@ -474,10 +400,10 @@ export function TripEditor({
                       lng: i.lng as number,
                     }))}
                   points={(activeDay?.items ?? [])
-                    .filter((i) => i.lat != null && i.lng != null)
+                    .filter((i) => i.lat != null && i.lng != null && !i.nested)
                     .map((i, idx) => ({
                       id: i.id,
-                      order: idx + 1,
+                      order: i.stopNo ?? idx + 1,
                       name: i.name,
                       kind: i.kind,
                       lat: i.lat as number,
@@ -514,16 +440,6 @@ export function TripEditor({
         }
       />
 
-      <DragOverlay dropAnimation={null}>
-        {activeItem ? (
-          <div className="flex items-center gap-3 rounded-[6px] bg-card px-3 py-2 shadow-lg shadow-black/10">
-            <Thumb item={activeItem} size="sm" />
-            <span className="max-w-[16rem] truncate text-sm font-medium">
-              {activeItem.name}
-            </span>
-          </div>
-        ) : null}
-      </DragOverlay>
 
       <TripAddSearch
         tripId={trip.id}
@@ -546,17 +462,8 @@ function BacklogList({
   days: DayView[];
   run: (fn: () => Promise<{ ok: boolean; error?: string }>, done?: string) => void;
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id: BACKLOG });
-
   return (
-    <SortableContext items={ids} strategy={verticalListSortingStrategy}>
-      <ul
-        ref={setNodeRef}
-        className={cn(
-          "grid min-h-[3rem] gap-0.5 rounded-[4px] transition-colors",
-          isOver && "bg-primary/5 ring-1 ring-primary/20",
-        )}
-      >
+      <ul className="grid gap-0.5">
         {ids.map((id) => {
           const item = byId.get(id);
           return item ? (
@@ -564,7 +471,6 @@ function BacklogList({
           ) : null;
         })}
       </ul>
-    </SortableContext>
   );
 }
 
@@ -577,39 +483,18 @@ function BacklogRow({
   days: DayView[];
   run: (fn: () => Promise<{ ok: boolean; error?: string }>, done?: string) => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: item.id });
-
   return (
-    <li
-      ref={setNodeRef}
-      style={{ transform: CSS.Translate.toString(transform), transition }}
-      className={cn(
-        "group relative flex min-w-0 items-center gap-2.5 rounded-[4px] px-1.5 py-1.5 transition-colors focus-within:bg-muted hover:bg-muted",
-        isDragging && "opacity-40",
-      )}
-    >
-      <span
-        {...listeners}
-        className="shrink-0 cursor-grab touch-none active:cursor-grabbing"
-      >
-        <Thumb item={item} size="sm" />
-      </span>
+    <li className="group relative flex min-w-0 items-center gap-2.5 rounded-[4px] px-1.5 py-1.5 transition-colors focus-within:bg-muted hover:bg-muted">
+      <Thumb item={item} size="sm" />
 
       <div className="min-w-0 flex-1">
         <p className="truncate text-[0.8125rem] font-medium leading-snug">{item.name}</p>
         <p className="mt-0.5 truncate text-xs text-muted-foreground">{item.typeLabel}</p>
       </div>
 
-      {/* Tay kéo & nút xếp NỔI ĐÈ mép phải khi rê vào — ẩn bằng opacity mà vẫn chiếm chỗ thì tên bị
-          cắt cụt cả lúc không rê. Màn cảm ứng không rê được ⇒ để trong dòng, luôn hiện. */}
+      {/* Nút xếp NỔI ĐÈ mép phải khi rê vào — ẩn bằng opacity mà vẫn chiếm chỗ thì tên bị cắt cụt cả lúc
+          không rê. Màn cảm ứng không rê được ⇒ để trong dòng, luôn hiện. */}
       <div className="absolute inset-y-0 right-1 flex items-center bg-muted pl-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100 [@media(pointer:coarse)]:static [@media(pointer:coarse)]:bg-transparent [@media(pointer:coarse)]:opacity-100">
-      <DragGrip
-        label={`Kéo ${item.name} vào một ngày`}
-        attributes={attributes}
-        listeners={listeners}
-      />
-
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
@@ -659,9 +544,6 @@ function DayBlock({
   fields,
   itemIds,
   doingsOf,
-  draggingDoing,
-  collapsed,
-  onPressRow,
   byId,
   stale,
   dayCount,
@@ -676,14 +558,8 @@ function DayBlock({
   fields: TripFields;
   /** MỤC GỐC của ngày, theo bàn kéo–thả. */
   itemIds: string[];
-  /** Việc của một mục gốc, theo bàn kéo–thả. */
+  /** Thẻ hoạt động của một mục gốc, theo bàn kéo–thả. */
   doingsOf: (id: string) => string[];
-  /** Đang kéo một việc ⇒ các nơi chưa có việc mở chỗ thả. */
-  draggingDoing: boolean;
-  /** Đang kéo cả hàng ⇒ ẩn việc của mọi hàng, chỉ ghi "kèm N việc". */
-  collapsed: boolean;
-  /** Vừa nhấn tay kéo của một hàng (chưa chắc đã kéo). */
-  onPressRow: (id: string) => void;
   byId: Map<string, ItemView>;
   stale: boolean;
   dayCount: number;
@@ -693,15 +569,14 @@ function DayBlock({
   onAdd: (pos?: AddPos) => void;
   run: (fn: () => Promise<{ ok: boolean; error?: string }>, done?: string) => void;
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id: dayKey(day.id) });
   const listRef = useRef<HTMLOListElement | null>(null);
   const tops = itemIds.map((id) => byId.get(id)).filter((x): x is ItemView => !!x);
-  const [noteFor, setNoteFor] = useState<string | null>(null);
+  const [editing, setEditing] = useState<string | null>(null);
   const nameOf = (id: string) => byId.get(id)?.name ?? "mục này";
 
-  // Chèn ở hàng thứ k: một NƠI thành hàng mới ở đó; một VIỆC thì thuộc hàng ngay trên.
-  const topPos = (k: number): AddPos => ({ ...insertAt(itemIds, k, nameOf), mode: "place" });
-  // Chèn VIỆC vào trong nơi `parentId` ở vị trí `idx` của cột "Làm gì".
+  // Chèn một dòng có giờ ở hàng thứ k (nơi, hoạt động đứng riêng, việc tự gõ).
+  const topPos = (k: number): AddPos => ({ ...insertAt(itemIds, k, nameOf), mode: "any" });
+  // Thêm thẻ hoạt động cho nơi `parentId`; `at` = ngay sau nơi đó (cho việc tự gõ mở từ cùng hộp).
   const childPos = (parentId: string, idx: number): AddPos => ({
     ...insertAt(itemIds, itemIds.indexOf(parentId) + 1, nameOf),
     parent: { id: parentId, name: nameOf(parentId), at: insertAt(doingsOf(parentId), idx, nameOf).at },
@@ -800,20 +675,8 @@ function DayBlock({
       {fields.warn &&
         day.warnings.map((w) => <Warning key={w.code} warning={w} />)}
 
-      {/* Mục kéo ở cấp ngày là CẢ HÀNG (nơi + việc của nó) — các hàng xếp dọc. Việc trong
-          cột "Làm gì" có SortableContext riêng (`DoingsColumn`). */}
       <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
-        <ol
-          ref={(node) => {
-            setNodeRef(node);
-            listRef.current = node;
-          }}
-          className={cn(
-            "relative -mx-2 min-h-[4rem] rounded-[6px] px-2 transition-colors",
-            "mt-6",
-            isOver && "bg-primary/5 ring-1 ring-primary/20",
-          )}
-        >
+        <ol ref={listRef} className="relative mt-6 min-h-[4rem]">
           {itemIds.length === 0 ? (
             <li className="flex flex-wrap items-center gap-x-2 gap-y-1 py-4 text-sm text-muted-foreground">
               {/* Ngày trống chưa có trục nên chưa có dấu + nào — lối thêm duy nhất là đây. */}
@@ -825,140 +688,89 @@ function DayBlock({
                 <Glyph name="plus" className="size-4" />
                 Thêm vào ngày {day.index + 1}
               </button>
-              hoặc kéo một mục từ cột Chưa xếp ngày sang đây.
+              hoặc xếp một mục từ cột Chưa xếp ngày.
             </li>
           ) : (
             (() => {
               let num = 0;
               return tops.map((top, k) => {
-                const kids = doingsOf(top.id)
+                const tags = doingsOf(top.id)
                   .map((id) => byId.get(id))
                   .filter((x): x is ItemView => !!x);
-                const editProps = (
-                  item: ItemView,
-                  before: AddPos,
-                  after: AddPos,
-                  lead?: ReactNode,
-                  onAddDoing?: () => void,
-                ) => ({
-                  stale,
-                  fields,
-                  stay: <StayPicker item={item} run={run} />,
-                  name:
-                    item.kind === "custom" ? (
-                      <NameEdit
-                        key={item.name}
-                        itemId={item.id}
-                        value={item.name}
-                        onSave={(customTitle) => run(() => updateItem(item.id, { customTitle }))}
-                      />
-                    ) : undefined,
-                  // Mục chưa có ghi chú KHÔNG giữ sẵn một dòng ẩn (bản cũ: ~22px trắng dưới MỌI mục);
-                  // mở từ menu "Thêm ghi chú" thì ô gõ hiện ngay tại chỗ.
-                  note:
-                    item.note || noteFor === item.id ? (
-                      <InlineEdit
-                        key={noteFor === item.id ? "new" : "has"}
-                        value={item.note}
-                        placeholder="Ghi chú cho mục này…"
-                        startEditing={noteFor === item.id}
-                        onClose={() => setNoteFor(null)}
-                        onSave={(note) => run(() => updateItem(item.id, { note }))}
-                        multiline
-                        textClassName="mt-1.5 text-xs italic leading-relaxed text-muted-foreground hover:text-foreground"
-                        emptyClassName="mt-1.5 text-xs text-muted-foreground/60"
-                      />
-                    ) : null,
-                  actions: (
-                    <>
-                      {lead}
-                      <ItemActions
-                        item={item}
-                        day={day}
-                        allDays={allDays}
-                        run={run}
-                        onInsertBefore={() => onAdd(before)}
-                        onInsertAfter={() => onAdd(after)}
-                        onAddDoing={onAddDoing}
-                        onAddNote={item.note ? undefined : () => setNoteFor(item.id)}
-                      />
-                    </>
-                  ),
-                });
-                const isPlace = !canBeDoing(top);
-                // Nút của CHÍNH hàng: chỉ thêm việc vào đúng nơi này (không thêm được nơi khác).
-                const addDoing = (
-                  <AddDoingButton
-                    label={top.name}
-                    onClick={() => onAdd({ ...childPos(top.id, kids.length), mode: "doing" })}
-                  />
-                );
-                const no = isPlace || (top.kind === "activity" && top.atName) ? ++num : null;
-                const lastItem = kids[kids.length - 1] ?? top;
+                // Hoạt động trên site chỉ gắn với ĐỊA ĐIỂM — quán ăn, chỗ ở không có thẻ.
+                const isPlace = top.kind === "spot" || (top.kind === "custom" && !isTask(top));
+                const no = isTask(top) ? null : ++num;
+                // Hoạt động đứng riêng mà nơi của nó đã có trong ngày ⇒ gắn vào được (thành thẻ).
+                // Hoạt động diễn ra ở nhiều nơi: lấy nơi GẦN NHẤT phía trên nó, không thì nơi đầu tiên phía dưới.
+                const isHost = (t: ItemView) => t.kind === "spot" && top.atSpots.some((sp) => sp.id === t.spotId);
+                const host =
+                  top.kind === "activity"
+                    ? (tops.slice(0, k).reverse().find(isHost) ?? tops.slice(k + 1).find(isHost))
+                    : undefined;
+                const addTag = () => onAdd(childPos(top.id, tags.length));
                 return (
                   <Fragment key={top.id}>
                     <SortableStop
                       item={top}
-                      onPress={() => onPressRow(top.id)}
-                      left={(h) =>
-                        isPlace ? (
-                          <RailItem
-                            as="div"
-                            item={top}
-                            index={k}
-                            number={no}
-                            // Cảm ứng: kéo cả hàng bằng NHẤN GIỮ chấm số trên trục (`handleProps`) — tay kéo riêng ẩn đi
-                            // cho tên nơi khỏi bị bóp.
-                            grip={<span className="contents [@media(pointer:coarse)]:hidden">{h.grip}</span>}
-                            handleProps={h.handleProps}
-                            {...editProps(top, topPos(k), topPos(k + 1), addDoing, () =>
-                              onAdd({ ...childPos(top.id, kids.length), mode: "doing" }),
-                            )}
-                          />
-                        ) : (
-                          <PlaceStub
-                            name={top.kind === "activity" ? top.atName : null}
-                            minute={top.arriveMin}
-                            number={no}
-                          />
-                        )
+                      // Chặng đi tiếp nằm TRONG hàng: đi theo thẻ khi các hàng trượt, không đứng yên giữa chúng.
+                      after={
+                        fields.leg && k < tops.length - 1 ? (
+                          <RailLeg as="div" item={top} className="[[data-trip-dragging]_&]:opacity-0" />
+                        ) : null
                       }
-                      hasDoings={!isPlace || kids.length > 0 || draggingDoing}
-                      summary={collapsed && kids.length > 0 ? `kèm ${kids.length} việc` : null}
-                      right={(h) => (
-                        <>
-                          <DoingsColumn
-                            parentId={top.id}
-                            ids={kids.map((d) => d.id)}
-                            armed={draggingDoing}
-                          >
-                            {/* Hàng không có mục nơi: chính mục gốc đứng đầu cột "Làm gì" và
-                                cầm tay kéo của CẢ HÀNG. */}
-                            {!isPlace && (
-                              <DoingRow
+                    >
+                      {(card) => (
+                        <RailItem
+                          as="div"
+                          item={top}
+                          index={k}
+                          number={no}
+                          card={card}
+                          stale={stale}
+                          fields={fields}
+                          actions={
+                            <>
+                              {isPlace && tags.length === 0 && (
+                                <AddTagButton label={top.name} onClick={addTag} quiet />
+                              )}
+                              <ItemActions
                                 item={top}
-                                grip={h.grip}
-                                {...editProps(top, topPos(k), topPos(k + 1), addDoing)}
+                                day={day}
+                                allDays={allDays}
+                                run={run}
+                                onEdit={() => setEditing(top.id)}
+                                onInsertBefore={() => onAdd(topPos(k))}
+                                onInsertAfter={() => onAdd(topPos(k + 1))}
+                                onAddDoing={isPlace ? addTag : undefined}
+                                host={host}
                               />
-                            )}
-                            {!collapsed && kids.map((d, idx) => (
-                              <SortableDoing
-                                key={d.id}
-                                item={d}
-                                {...editProps(d, childPos(top.id, idx), childPos(top.id, idx + 1))}
+                            </>
+                          }
+                          tags={
+                            tags.length > 0 ? (
+                              <ActivityTags
+                                tags={tags}
+                                action={(t) => (
+                                  <TagActions
+                                    tag={t}
+                                    dayId={day.id}
+                                    at={{ afterId: top.id, beforeId: itemIds[k + 1] ?? null }}
+                                    run={run}
+                                  />
+                                )}
+                                add={isPlace ? <AddTagButton label={top.name} onClick={addTag} /> : undefined}
                               />
-                            ))}
-                          </DoingsColumn>
-                        </>
+                            ) : null
+                          }
+                        />
                       )}
-                    />
-                    {fields.leg && k < tops.length - 1 && <RailLeg item={lastItem} />}
+                    </SortableStop>
                   </Fragment>
                 );
               });
             })()
           )}
-          {itemIds.length > 0 && !collapsed && (
+          {itemIds.length > 0 && (
             <InsertMarks
               listRef={listRef}
               itemIds={itemIds}
@@ -968,6 +780,11 @@ function DayBlock({
           )}
         </ol>
       </SortableContext>
+      <ItemEditDialog
+        item={editing ? (byId.get(editing) ?? null) : null}
+        onClose={() => setEditing(null)}
+        run={run}
+      />
     </section>
   );
 }
@@ -991,7 +808,6 @@ function InsertMarks({
 }) {
   const [slots, setSlots] = useState<{ x: number; y: number }[]>([]);
   const [hovered, setHovered] = useState<number | null>(null);
-  const { active } = useDndContext();
   const ids = itemIds.join(",");
 
   // useEffect, KHÔNG useLayoutEffect: effect bố cục của con chạy TRƯỚC khi React gắn
@@ -1045,10 +861,10 @@ function InsertMarks({
     };
   }, [listRef, ids]);
 
-  if (slots.length === 0 || active) return null;
+  if (slots.length === 0) return null;
 
   return (
-    <div aria-hidden={false} className="pointer-events-none absolute inset-0">
+    <div aria-hidden={false} className="pointer-events-none absolute inset-0 [[data-trip-dragging]_&]:hidden">
       {slots.map((slot, i) => {
         // Chỉ hiện ở khe NGAY DƯỚI hàng đang rê.
         const shown = hovered === i;
@@ -1077,167 +893,130 @@ function InsertMarks({
   );
 }
 
-function DragGrip({
-  label,
-  attributes,
-  listeners,
-}: {
-  label: string;
-  attributes: DraggableAttributes;
-  listeners: SyntheticListenerMap | undefined;
-}) {
-  return (
-    <button
-      type="button"
-      {...attributes}
-      {...listeners}
-      title={label}
-      aria-label={label}
-      className="grid size-6 shrink-0 cursor-grab touch-none place-items-center rounded-[3px] text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-focus-within:opacity-100 group-hover:opacity-100 active:cursor-grabbing [@media(pointer:coarse)]:opacity-100"
-    >
-      <Glyph name="grip" className="size-4" />
-    </button>
-  );
-}
-
-function AddDoingButton({ label, onClick }: { label: string; onClick: () => void }) {
+/**
+ * "+ Hoạt động". Nơi đã có thẻ: ô viền đứt cuối dải thẻ. Nơi chưa có (`quiet`): nút trơn cạnh ⋯, chỉ hiện khi
+ * rê vào hàng — giữ sẵn một dòng ẩn cho mọi nơi là cả ngày giãn ra; cảm ứng thì lối vào nằm trong menu ⋯.
+ */
+function AddTagButton({ label, onClick, quiet }: { label: string; onClick: () => void; quiet?: boolean }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      title={`Thêm việc ở ${label}`}
-      aria-label={`Thêm việc ở ${label}`}
-      // Màn cảm ứng: ẨN — nút luôn hiện (không rê được) chiếm ~30px của tên mục; lối thêm việc nằm trong menu ⋯.
-      className="inline-flex h-7 shrink-0 items-center gap-1 rounded-[3px] px-1.5 text-xs font-medium text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-focus-within:opacity-100 group-hover:opacity-100 [@media(pointer:coarse)]:hidden"
+      aria-label={`Thêm hoạt động ở ${label}`}
+      className={cn(
+        "inline-flex h-8 shrink-0 items-center gap-1 rounded-[3px] px-2 text-sm font-medium text-muted-foreground transition-colors",
+        quiet
+          ? "opacity-0 transition-opacity hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-focus-within:opacity-100 group-hover:opacity-100 [@media(pointer:coarse)]:hidden"
+          : "border border-dashed border-border hover:border-primary/50 hover:text-primary-ink",
+      )}
     >
       <Glyph name="plus" className="size-3.5" />
-      {/* Khổ hẹp chỉ còn dấu +: cụm nút bên phải tên đã chật, thêm chữ là tên nơi bị bóp xuống dòng. */}
-      <span className="hidden sm:inline">Việc</span>
+      {/* Khổ hẹp cạnh ⋯ chỉ còn dấu + — thêm chữ là tên nơi bị bóp xuống dòng. */}
+      <span className={quiet ? "hidden sm:inline" : undefined}>Hoạt động</span>
     </button>
   );
 }
 
-type DragHandle = { grip: ReactNode; handleProps: SyntheticListenerMap | undefined };
-
-/** CẢ HÀNG "Ở đâu | Làm gì" là một mục kéo ở cấp ngày — kéo nơi thì việc của nó đi theo. */
+/** CẢ HÀNG (mục gốc + thẻ của nó) là một mục kéo ở cấp ngày; tay kéo là cả tấm thẻ. */
 function SortableStop({
   item,
-  left,
-  right,
-  hasDoings,
-  summary,
-  onPress,
+  after,
+  children,
 }: {
   item: ItemView;
-  left: (h: DragHandle) => ReactNode;
-  right: (h: DragHandle) => ReactNode;
-  hasDoings: boolean;
-  onPress: () => void;
-  /** Đang thu gọn (kéo cả hàng): dòng thay cho các việc. */
-  summary: string | null;
+  after?: ReactNode;
+  children: (card: (content: ReactNode) => ReactNode) => ReactNode;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
     useSortable({ id: item.id });
-  const press = {
-    ...listeners,
-    onPointerDown: (e: React.PointerEvent) => {
-      if (e.button === 0) onPress();
-      listeners?.onPointerDown?.(e);
-    },
-  } as SyntheticListenerMap;
-  const h: DragHandle = {
-    grip: <DragGrip label={`Kéo để đổi chỗ ${item.name}`} attributes={attributes} listeners={press} />,
-    handleProps: press,
-  };
+  // dnd-kit dựng lại MỌI hàng mỗi lần chuột nhích (để tính chỗ trượt), nhưng ruột thẻ không đổi — ghi nhớ lại để
+  // chỉ khung hàng (`transform`) cập nhật. `attributes`/`listeners` của dnd-kit giữ nguyên tham chiếu khi trạng thái
+  // không đổi; `children` là hàm dựng ở `DayBlock`, mà `DayBlock` không dựng lại trong lúc kéo.
+  const body = useMemo(
+    () =>
+      children((content) => (
+        // `setActivatorNodeRef`: Enter/Space trên nút con (✎, ⋯) không kích hoạt kéo bằng bàn phím.
+        <div
+          ref={setActivatorNodeRef}
+          {...attributes}
+          {...listeners}
+          // Thẻ CHỨA link và nút — `role="button"` mặc định của dnd-kit giấu chúng khỏi trình đọc màn hình.
+          role="group"
+          aria-label={`${item.name}, giữ và kéo để đổi chỗ`}
+          className={cn(
+            cardClass(lookOf(item)),
+            isDragging && "border-foreground/25 shadow-[0_16px_32px_-12px_rgb(0_0_0/0.3)]",
+            "cursor-grab transition-[border-color,box-shadow] duration-150 hover:border-foreground/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing",
+            // Nhấn xuống là thẻ NHẤC LÊN ngay (cùng bóng với bóng kéo) — trừ khi nhấn vào nút / link bên trong.
+            "[&:active:not(:has(a:active,button:active))]:border-foreground/25 [&:active:not(:has(a:active,button:active))]:shadow-[0_16px_32px_-12px_rgb(0_0_0/0.3)]",
+            // Nhấn giữ để kéo trên cảm ứng: đừng để iOS bôi đen chữ / bật menu sao chép.
+            "[@media(pointer:coarse)]:select-none [@media(pointer:coarse)]:[-webkit-touch-callout:none]",
+          )}
+        >
+          {content}
+        </div>
+      )),
+    [children, attributes, listeners, setActivatorNodeRef, isDragging, item],
+  );
   return (
     <StopRow
       rowId={item.id}
       innerRef={setNodeRef}
       style={{ transform: CSS.Translate.toString(transform), transition }}
       dragging={isDragging}
-      hasDoings={hasDoings}
-      left={left(h)}
-      right={
-        <>
-          {right(h)}
-          {summary && <p className="-mt-2 text-xs text-muted-foreground">{summary}</p>}
-        </>
-      }
-    />
+    >
+      {body}
+      {after}
+    </StopRow>
   );
 }
 
-/** Cột "Làm gì": vùng thả riêng (`in:<id>`) để kéo việc giữa các nơi, kể cả nơi chưa có việc. */
-function DoingsColumn({
-  parentId,
-  ids,
-  armed,
-  children,
+/** ⋯ cuối một thẻ hoạt động: tách thành dòng có giờ riêng, hoặc bỏ. */
+function TagActions({
+  tag,
+  dayId,
+  at,
+  run,
 }: {
-  parentId: string;
-  ids: string[];
-  /** Đang kéo một VIỆC — chỉ khi đó nơi chưa có việc mới mở chỗ thả (lúc thường cao 0). */
-  armed: boolean;
-  children: ReactNode;
+  tag: ItemView;
+  dayId: string;
+  /** Ngay sau nơi của thẻ. */
+  at: DropAt;
+  run: (fn: () => Promise<{ ok: boolean; error?: string }>, done?: string) => void;
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id: doingsKey(parentId) });
-  const { active } = useDndContext();
-  const open = armed && ids.length === 0 && active?.id !== parentId;
   return (
-    <SortableContext items={ids} strategy={verticalListSortingStrategy}>
-      <ul
-        ref={setNodeRef}
-        className={cn(
-          "rounded-[4px] transition-colors",
-          open && "my-1 min-h-9 border border-dashed border-border",
-          isOver && "border-primary/40 bg-primary/5",
-        )}
-      >
-        {children}
-      </ul>
-    </SortableContext>
-  );
-}
-
-function SortableDoing({
-  item,
-  stale,
-  actions,
-  note,
-  stay,
-  name,
-  fields,
-}: {
-  item: ItemView;
-  stale: boolean;
-  actions: ReactNode;
-  note: ReactNode;
-  stay: ReactNode;
-  name?: ReactNode;
-  fields: TripFields;
-}) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: item.id });
-  return (
-    <DoingRow
-      item={item}
-      fields={fields}
-      actions={actions}
-      note={note}
-      stay={stay}
-      name={name}
-      stale={stale}
-      dragging={isDragging}
-      innerRef={setNodeRef}
-      style={{ transform: CSS.Translate.toString(transform), transition }}
-      grip={
-        <DragGrip
-          label={`Kéo để đổi chỗ ${item.name}`}
-          attributes={attributes}
-          listeners={listeners}
-        />
-      }
-    />
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label={`Tuỳ chọn cho ${tag.name}`}
+          className="-ml-1 grid h-full w-6 place-items-center rounded-r-[3px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <Glyph name="more" className="size-3.5" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuItem
+          onSelect={() =>
+            run(
+              () => moveItem(tag.id, dayId, at),
+              "Đã tách thành một dòng riêng",
+            )
+          }
+        >
+          <Glyph name="clock" className="size-4" />
+          Tách thành dòng có giờ riêng
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          variant="destructive"
+          onSelect={() => run(() => removeItem(tag.id), "Đã bỏ khỏi lịch trình")}
+        >
+          <Glyph name="trash" className="size-4" />
+          Bỏ khỏi lịch trình
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -1248,8 +1027,9 @@ function ItemActions({
   run,
   onInsertBefore,
   onInsertAfter,
-  onAddNote,
+  onEdit,
   onAddDoing,
+  host,
 }: {
   item: ItemView;
   day: DayView;
@@ -1257,15 +1037,24 @@ function ItemActions({
   run: (fn: () => Promise<{ ok: boolean; error?: string }>, done?: string) => void;
   onInsertBefore: () => void;
   onInsertAfter: () => void;
-  /** Chỉ khi mục CHƯA có ghi chú (có rồi thì bấm thẳng vào chữ để sửa). */
-  onAddNote?: () => void;
-  /** Chỉ ở một NƠI: thêm việc làm ở đó (trên màn cảm ứng đây là lối duy nhất — nút "+ Việc" ẩn). */
+  /** Mở hộp sửa tên / thời gian / ghi chú. */
+  onEdit: () => void;
+  /** Chỉ ở một NƠI: thêm thẻ hoạt động (trên màn cảm ứng đây là lối duy nhất khi nơi chưa có thẻ). */
   onAddDoing?: () => void;
+  /** Hoạt động đứng riêng: nơi của nó đang có trong ngày ⇒ gắn vào thành thẻ được. */
+  host?: ItemView;
 }) {
-  // Việc cần làm SAU KHI menu đóng hẳn (xem chú thích ở `onCloseAutoFocus`).
-  const afterClose = useRef<"note" | "rename" | null>(null);
   return (
     <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 [@media(pointer:coarse)]:opacity-100">
+      <button
+        type="button"
+        onClick={onEdit}
+        aria-label={`Sửa ${item.name}`}
+        title="Sửa tên, thời gian, ghi chú"
+        className="grid size-7 place-items-center rounded-[3px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      >
+        <Glyph name="pencil" className="size-4" />
+      </button>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
@@ -1276,25 +1065,21 @@ function ItemActions({
             <Glyph name="more" className="size-4" />
           </button>
         </DropdownMenuTrigger>
-        {/* "Thêm ghi chú" chỉ mở ô gõ SAU KHI menu đóng hẳn: lúc còn chạy hiệu ứng đóng, menu
-            vẫn giữ focus trong nó — mở sớm là ô gõ (còn trống) mất focus và tự đóng ngay. */}
-        <DropdownMenuContent
-          align="end"
-          className="w-48"
-          onCloseAutoFocus={(e) => {
-            const next = afterClose.current;
-            if (!next) return;
-            afterClose.current = null;
-            e.preventDefault();
-            if (next === "note") onAddNote?.();
-            else
-              document.querySelector<HTMLElement>(`[data-rename="${item.id}"]`)?.click();
-          }}
-        >
+        <DropdownMenuContent align="end" className="w-48">
           {onAddDoing && (
             <DropdownMenuItem onSelect={onAddDoing}>
               <Glyph name="plus" className="size-4" />
-              Thêm việc ở đây
+              Thêm hoạt động ở đây
+            </DropdownMenuItem>
+          )}
+          {host && (
+            <DropdownMenuItem
+              onSelect={() =>
+                run(() => moveItem(item.id, day.id, "end", host.id), `Đã gắn vào ${host.name}`)
+              }
+            >
+              <Glyph name="pin" className="size-4" />
+              Gắn vào {host.name}
             </DropdownMenuItem>
           )}
           <DropdownMenuItem onSelect={onInsertBefore}>
@@ -1305,18 +1090,6 @@ function ItemActions({
             <Glyph name="plus" className="size-4" />
             Thêm phía sau
           </DropdownMenuItem>
-          {item.kind === "custom" && (
-            <DropdownMenuItem onSelect={() => (afterClose.current = "rename")}>
-              <Glyph name="pencil" className="size-4" />
-              Đổi tên
-            </DropdownMenuItem>
-          )}
-          {onAddNote && (
-            <DropdownMenuItem onSelect={() => (afterClose.current = "note")}>
-              <Glyph name="note" className="size-4" />
-              Thêm ghi chú
-            </DropdownMenuItem>
-          )}
           <DropdownMenuSeparator />
           <DropdownMenuLabel>Chuyển sang</DropdownMenuLabel>
           {allDays
@@ -1496,247 +1269,273 @@ function StartTimePicker({
  * Ở lại bao lâu. Ba cách, theo cách người ta NGHĨ về thời lượng: một nút có sẵn (đa số) · số giờ + số phút
  * (không bắt quy ra phút) · "ở đến mấy giờ" (tự trừ giờ đến — thường là cách nghĩ thật: "chơi đến 5 giờ chiều").
  */
-function StayPicker({
+/**
+ * Hộp SỬA một mục — mọi chỉnh sửa gom về đây (biên tập: "edit cho vào button"), thẻ trên dòng thời gian chỉ còn
+ * để đọc và kéo. Một nút Lưu gửi một lượt `updateItem` với đúng các trường đã đổi.
+ */
+function ItemEditDialog({
   item,
+  onClose,
   run,
 }: {
-  item: ItemView;
+  item: ItemView | null;
+  onClose: () => void;
   run: (fn: () => Promise<{ ok: boolean; error?: string }>, done?: string) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const [hours, setHours] = useState(0);
-  const [mins, setMins] = useState(0);
+  const [forId, setForId] = useState<string | null>(null);
+  const [name, setName] = useState("");
+  const [address, setAddress] = useState("");
+  const [mode, setMode] = useState<TravelMode | null>(null);
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [code, setCode] = useState("");
+  const [note, setNote] = useState("");
+  // null = theo mặc định của loại mục.
+  const [stay, setStay] = useState<number | null>(null);
   const [until, setUntil] = useState("");
-  // Nơi thì "ở lại"; việc (hoạt động, việc tự gõ) thì "mất bao lâu" — một hoạt động không phải chỗ để ở.
-  const doing = canBeDoing(item);
-  const custom = hours * 60 + mins;
-  const untilMin = fromTimeValue(until.trim());
-  const canUntil = item.arriveMin >= 0;
-  // "Ở đến" sớm hơn giờ đến ⇒ hiểu là qua nửa đêm (nhận phòng tối, trả phòng sáng hôm sau).
-  const untilDur = untilMin != null && canUntil ? (untilMin - item.arriveMin + 1440) % 1440 : null;
-
-  function set(min: number | null) {
-    setOpen(false);
-    run(() => updateItem(item.id, { stayMin: min }));
+  if (item && item.id !== forId) {
+    setForId(item.id);
+    setName(item.name);
+    setAddress(item.address ?? "");
+    setMode(item.travelMode);
+    setFrom(item.travelFrom ?? "");
+    setTo(item.travelTo ?? "");
+    setCode(item.bookingCode ?? "");
+    setNote(item.note ?? "");
+    setStay(item.stayMin);
+    setUntil("");
   }
 
+  const shown = item ? (stay ?? (item.stayMin == null ? item.effectiveStayMin : DEFAULT_STAY_MIN[item.kind])) : 0;
+  const hours = Math.floor(shown / 60);
+  const mins = shown % 60;
+  // Nơi thì "ở lại"; việc (hoạt động, việc tự gõ) thì "mất bao lâu" — một hoạt động không phải chỗ để ở.
+  const doing = item ? canBeDoing(item) : false;
+  const canUntil = !!item && item.arriveMin >= 0;
+  const untilMin = fromTimeValue(until.trim());
+  // "Ở đến" sớm hơn giờ đến ⇒ hiểu là qua nửa đêm (nhận phòng tối, trả phòng sáng hôm sau).
+  const untilDur = item && untilMin != null && canUntil ? (untilMin - item.arriveMin + 1440) % 1440 : null;
+
+  function save(e: React.FormEvent) {
+    e.preventDefault();
+    if (!item) return;
+    const patch: Parameters<typeof updateItem>[1] = {};
+    if (stay !== item.stayMin) patch.stayMin = stay;
+    const n = note.trim();
+    if (n !== (item.note ?? "")) patch.note = n || null;
+    const t = name.trim();
+    if (item.kind === "custom") {
+      // Mục đặc biệt: tên đang hiện có thể là tên GHÉP ("Hà Nội – Sa Pa") — chỉ ghi khi người dùng gõ khác đi.
+      if (item.special ? t !== item.name : t && t !== item.name) patch.customTitle = t;
+      if (item.special === "transport") {
+        if (mode !== item.travelMode) patch.travelMode = mode;
+        if (from.trim() !== (item.travelFrom ?? "")) patch.travelFrom = from.trim() || null;
+        if (to.trim() !== (item.travelTo ?? "")) patch.travelTo = to.trim() || null;
+      }
+      if (code.trim() !== (item.bookingCode ?? "")) patch.bookingCode = code.trim() || null;
+    }
+    const a = address.trim();
+    if (item.kind === "custom" && a !== (item.address ?? "")) patch.customAddress = a || null;
+    onClose();
+    if (Object.keys(patch).length > 0) run(() => updateItem(item.id, patch), "Đã lưu");
+  }
+
+  const chip = (on: boolean) =>
+    cn(
+      "h-9 rounded-[4px] text-sm tabular-nums transition-colors",
+      on ? "bg-primary font-semibold text-primary-foreground" : "bg-muted hover:bg-muted/70",
+    );
+
   return (
-    <Popover
-      open={open}
-      onOpenChange={(o) => {
-        setOpen(o);
-        if (o) {
-          setHours(Math.floor(item.effectiveStayMin / 60));
-          setMins(QUARTERS.includes(item.effectiveStayMin % 60) ? item.effectiveStayMin % 60 : 0);
-          setUntil("");
-        }
-      }}
-    >
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          aria-label={`${doing ? "Mất" : "Ở lại"} ${stayLabel(item)} — bấm để đổi`}
-          title={stayLabel(item)}
-          className={cn(
-            STAY_PILL,
-            "cursor-pointer rounded-[2px] decoration-dotted underline-offset-2 transition-colors hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring data-[state=open]:font-semibold data-[state=open]:text-foreground",
-          )}
-        >
-          {stayShort(item.effectiveStayMin)}
-        </button>
-      </PopoverTrigger>
+    <Dialog open={!!item} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="gap-0 rounded-[6px] p-0 sm:max-w-md">
+        {item && (
+          <form onSubmit={save}>
+            <div className="border-b border-border/60 px-5 pb-3 pt-5">
+              <DialogTitle className="font-[family-name:var(--font-display)] text-lg font-bold leading-snug">
+                Sửa mục
+              </DialogTitle>
+              <DialogDescription className="mt-0.5 line-clamp-1 text-sm text-muted-foreground">
+                {item.kind === "custom" ? "Mục tự thêm" : `${item.typeLabel}: ${item.name}`}
+                {item.arriveMin >= 0 && `, đến lúc ${formatMinutes(item.arriveMin)}`}
+              </DialogDescription>
+            </div>
 
-      <PopoverContent align="start" className="w-[19rem] p-3">
-        <p className="text-sm font-semibold tracking-tight">{doing ? "Mất bao lâu?" : "Ở lại bao lâu?"}</p>
-
-        <div className="mt-2.5 grid grid-cols-4 gap-1">
-          {STAY_PRESETS.map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => set(m)}
-              aria-pressed={item.effectiveStayMin === m}
-              className={cn(
-                "h-8 rounded-[4px] text-sm tabular-nums transition-colors",
-                item.effectiveStayMin === m
-                  ? "bg-primary font-semibold text-primary-foreground"
-                  : "bg-muted hover:bg-muted/70",
+            <div className="grid gap-5 px-5 py-4">
+              {item.kind === "custom" && (
+                <label className="grid gap-1.5">
+                  <span className="text-sm font-medium">Tên</span>
+                  <Input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="h-10 rounded-[4px]"
+                  />
+                </label>
               )}
-            >
-              {shortDur(m)}
-            </button>
-          ))}
-        </div>
+              {item.special === "transport" && (
+                <>
+                  <div className="flex flex-wrap gap-1.5">
+                    {TRAVEL_MODES.map((m) => (
+                      <button
+                        key={m.mode}
+                        type="button"
+                        onClick={() => setMode(m.mode)}
+                        aria-pressed={mode === m.mode}
+                        className={cn(
+                          "inline-flex h-8 items-center gap-1.5 rounded-[4px] border px-2.5 text-sm transition-colors",
+                          mode === m.mode ? "border-primary/60 bg-primary/5 font-medium text-primary-ink" : "border-border hover:bg-muted",
+                        )}
+                      >
+                        <Glyph name={m.glyph} className="size-4" />
+                        {m.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <label className="grid gap-1.5">
+                      <span className="text-sm font-medium">Từ</span>
+                      <Input value={from} onChange={(e) => setFrom(e.target.value)} className="h-10 rounded-[4px]" />
+                    </label>
+                    <label className="grid gap-1.5">
+                      <span className="text-sm font-medium">Đến</span>
+                      <Input value={to} onChange={(e) => setTo(e.target.value)} className="h-10 rounded-[4px]" />
+                    </label>
+                  </div>
+                </>
+              )}
+              {(item.special === "transport" || item.special === "checkin" || item.special === "checkout") && (
+                <label className="grid gap-1.5">
+                  <span className="text-sm font-medium">
+                    {item.special === "transport" ? "Mã chuyến / mã vé" : "Mã đặt phòng"}
+                  </span>
+                  <Input value={code} onChange={(e) => setCode(e.target.value)} className="h-10 rounded-[4px]" />
+                </label>
+              )}
+              {item.kind === "custom" && item.special !== "transport" && item.special !== "rest" && (
+                <label className="grid gap-1.5">
+                  <span className="text-sm font-medium">
+                    Địa chỉ <span className="font-normal text-muted-foreground">(không bắt buộc)</span>
+                  </span>
+                  <Input
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    placeholder="Số nhà, đường, phường…"
+                    className="h-10 rounded-[4px]"
+                  />
+                </label>
+              )}
 
-        {/* Giờ + phút — không bắt người dùng tự quy "2 tiếng rưỡi" ra 150 phút. */}
-        <div className="mt-3 border-t border-border/60 pt-3">
-          <p className="text-[0.6875rem] font-medium text-muted-foreground">Hoặc tự chọn</p>
-          <div className="mt-1.5 flex items-center gap-2">
-            <div className="flex items-center rounded-[4px] bg-muted">
-              <button
-                type="button"
-                onClick={() => setHours((v) => Math.max(0, v - 1))}
-                aria-label="Bớt một giờ"
-                className="grid size-8 place-items-center rounded-[4px] text-lg leading-none hover:bg-muted/70"
-              >
-                −
-              </button>
-              <span className="w-12 text-center text-sm font-semibold tabular-nums">{hours} giờ</span>
-              <button
-                type="button"
-                onClick={() => setHours((v) => Math.min(23, v + 1))}
-                aria-label="Thêm một giờ"
-                className="grid size-8 place-items-center rounded-[4px] text-lg leading-none hover:bg-muted/70"
-              >
-                +
-              </button>
-            </div>
-            <div className="grid flex-1 grid-cols-4 gap-1">
-              {QUARTERS.map((q) => (
-                <button
-                  key={q}
-                  type="button"
-                  onClick={() => setMins(q)}
-                  aria-pressed={q === mins}
-                  className={cn(
-                    "h-8 rounded-[4px] text-xs tabular-nums transition-colors",
-                    q === mins ? "bg-foreground font-semibold text-background" : "bg-muted hover:bg-muted/70",
-                  )}
-                >
-                  {q}′
-                </button>
-              ))}
-            </div>
-          </div>
-          <Button type="button" onClick={() => set(custom)} className="mt-2 h-9 w-full rounded-[4px]">
-            {custom === 0 ? "Đặt 0 phút" : `Đặt ${fmtDuration(custom)}`}
-          </Button>
-        </div>
+              <div className="grid gap-2">
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="text-sm font-medium">{doing ? "Mất bao lâu?" : "Ở lại bao lâu?"}</span>
+                  <span className="text-sm tabular-nums text-muted-foreground">
+                    {stay == null ? `Mặc định, ${stayLabel({ ...item, effectiveStayMin: shown })}` : stayLabel({ ...item, effectiveStayMin: shown })}
+                  </span>
+                </div>
+                <div className="grid grid-cols-4 gap-1">
+                  {STAY_PRESETS.map((m) => (
+                    <button key={m} type="button" onClick={() => setStay(m)} aria-pressed={stay === m} className={chip(stay === m)}>
+                      {shortDur(m)}
+                    </button>
+                  ))}
+                </div>
+                {/* Giờ + phút — không bắt người dùng tự quy "2 tiếng rưỡi" ra 150 phút. */}
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center rounded-[4px] bg-muted">
+                    <button
+                      type="button"
+                      onClick={() => setStay(Math.max(0, hours - 1) * 60 + mins)}
+                      aria-label="Bớt một giờ"
+                      className="grid size-9 place-items-center rounded-[4px] text-lg leading-none hover:bg-muted/70"
+                    >
+                      −
+                    </button>
+                    <span className="w-12 text-center text-sm font-semibold tabular-nums">{hours} giờ</span>
+                    <button
+                      type="button"
+                      onClick={() => setStay(Math.min(23, hours + 1) * 60 + mins)}
+                      aria-label="Thêm một giờ"
+                      className="grid size-9 place-items-center rounded-[4px] text-lg leading-none hover:bg-muted/70"
+                    >
+                      +
+                    </button>
+                  </div>
+                  <div className="grid flex-1 grid-cols-4 gap-1">
+                    {QUARTERS.map((q) => (
+                      <button
+                        key={q}
+                        type="button"
+                        onClick={() => setStay(hours * 60 + q)}
+                        aria-pressed={q === mins}
+                        className={cn(
+                          "h-9 rounded-[4px] text-xs tabular-nums transition-colors",
+                          q === mins ? "bg-foreground font-semibold text-background" : "bg-muted hover:bg-muted/70",
+                        )}
+                      >
+                        {q}′
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {canUntil && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">{doing ? "hoặc làm đến" : "hoặc ở đến"}</span>
+                    <Input
+                      value={until}
+                      onChange={(e) => {
+                        const v = hhmmInput(e.target.value);
+                        setUntil(v);
+                        const m = fromTimeValue(v.trim());
+                        if (m != null) setStay((m - item.arriveMin + 1440) % 1440);
+                      }}
+                      inputMode="numeric"
+                      placeholder="17:00"
+                      aria-label={doing ? "Làm đến lúc (giờ:phút)" : "Ở đến lúc (giờ:phút)"}
+                      className="h-9 w-20 rounded-[4px] text-center tabular-nums"
+                    />
+                    {untilDur != null && (
+                      <span className="text-xs tabular-nums text-muted-foreground">= {fmtDuration(untilDur)}</span>
+                    )}
+                    {stay != null && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setStay(null);
+                          setUntil("");
+                        }}
+                        className="ml-auto text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                      >
+                        Về mặc định
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
 
-        {canUntil && (
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (untilDur) set(untilDur);
-            }}
-            className="mt-3 border-t border-border/60 pt-3"
-          >
-            <p className="text-[0.6875rem] font-medium text-muted-foreground">
-              {doing ? "Hoặc làm đến lúc" : "Hoặc ở đến lúc"} (bắt đầu {formatMinutes(item.arriveMin)})
-            </p>
-            <div className="mt-1.5 flex items-center gap-2">
-              <Input
-                value={until}
-                onChange={(e) => setUntil(hhmmInput(e.target.value))}
-                inputMode="numeric"
-                placeholder="vd 17:00"
-                aria-label={doing ? "Làm đến lúc (giờ:phút)" : "Ở đến lúc (giờ:phút)"}
-                className="h-9 w-24 rounded-[4px] text-center tabular-nums"
-              />
-              <span className="min-w-0 flex-1 text-xs tabular-nums text-muted-foreground">
-                {untilDur ? `= ${fmtDuration(untilDur)}` : ""}
-              </span>
-              <Button
-                type="submit"
-                variant="outline"
-                disabled={!untilDur}
-                className="h-9 shrink-0 rounded-[4px] px-3"
-              >
-                Đặt
+              <label className="grid gap-1.5">
+                <span className="text-sm font-medium">Ghi chú</span>
+                <Textarea
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder="Đến sớm cho đỡ nắng, nhớ mang tiền mặt…"
+                  rows={3}
+                  className="resize-none rounded-[4px]"
+                />
+              </label>
+            </div>
+
+            <div className="flex justify-end gap-2 border-t border-border/60 px-5 py-3">
+              <Button type="button" variant="ghost" onClick={onClose} className="rounded-[4px]">
+                Huỷ
+              </Button>
+              <Button type="submit" className="rounded-[4px]">
+                Lưu
               </Button>
             </div>
           </form>
         )}
-
-        {item.stayMin != null && (
-          <button
-            type="button"
-            onClick={() => set(null)}
-            className="mt-3 text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-          >
-            Về mặc định ({fmtDuration(DEFAULT_STAY_MIN[item.kind])})
-          </button>
-        )}
-      </PopoverContent>
-    </Popover>
-  );
-}
-
-/**
- * Tên mục TỰ THÊM, sửa tại chỗ: trông như chữ thường, rê vào có nền, bấm là gõ (cùng kiểu ô tên
- * chuyến ở `TripTopbar`). Ô CO THEO CHỮ để nền ôm sát tên; `size={1}` vì `<input>` mặc định rộng
- * ~20 ký tự. Tên dài thì xuống dòng không được — ô cuộn ngang khi đang gõ, lúc thường vẫn cắt gọn.
- */
-function NameEdit({
-  itemId,
-  value,
-  onSave,
-}: {
-  itemId: string;
-  value: string;
-  onSave: (next: string) => void;
-}) {
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(value);
-  // Esc rồi blur() chạy NGAY trong cùng lượt: onBlur vẫn thấy `draft` cũ ⇒ sẽ lưu nhầm.
-  const cancelled = useRef(false);
-
-  // Lúc thường là CHỮ (xuống tối đa hai dòng như tên các mục khác) — một <input> chỉ hiện được một dòng nên tên
-  // dài bị cắt. Bấm vào mới thành ô gõ (textarea tự giãn, cũng xuống dòng). `data-rename`: menu "Đổi tên" bấm hộ.
-  if (!editing)
-    return (
-      <button
-        type="button"
-        data-rename={itemId}
-        title="Bấm để đổi tên"
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={() => {
-          setDraft(value);
-          setEditing(true);
-        }}
-        className="-mx-1.5 line-clamp-2 cursor-text rounded-[4px] px-1.5 text-left transition-colors [overflow-wrap:anywhere] hover:bg-muted/70"
-      >
-        {value}
-      </button>
-    );
-
-  return (
-    <textarea
-      autoFocus
-      rows={1}
-      value={draft}
-      spellCheck={false}
-      aria-label={`Tên mục: ${value}`}
-      onFocus={(e) => e.currentTarget.select()}
-      onChange={(e) => setDraft(e.target.value.replace(/\n/g, " "))}
-      // Trong hàng kéo–thả: đừng để cú nhấn vào ô gõ bắt đầu một lượt kéo.
-      onPointerDown={(e) => e.stopPropagation()}
-      onBlur={() => {
-        setEditing(false);
-        if (cancelled.current) {
-          cancelled.current = false;
-          setDraft(value);
-          return;
-        }
-        const next = draft.trim();
-        if (next && next !== value) onSave(next);
-      }}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          e.currentTarget.blur();
-        }
-        if (e.key === "Escape") {
-          cancelled.current = true;
-          e.currentTarget.blur();
-        }
-      }}
-      className={cn(
-        "-mx-1.5 block w-[calc(100%+0.75rem)] resize-none rounded-[4px] bg-background px-1.5 caret-primary outline-none [field-sizing:content]",
-        "shadow-[0_0_0_1.5px_color-mix(in_oklab,var(--color-primary)_70%,transparent),0_0_0_4px_color-mix(in_oklab,var(--color-primary)_16%,transparent)]",
-        TOUCH_INPUT,
-      )}
-    />
+      </DialogContent>
+    </Dialog>
   );
 }
 

@@ -9,11 +9,11 @@ export const BACKLOG = "backlog";
 
 export const dayKey = (dayId: string) => `day:${dayId}`;
 export const dayIdOf = (key: string) => (key.startsWith("day:") ? key.slice(4) : null);
-/** Vùng "Làm gì" của một mục gốc — các việc thuộc nơi đó. */
+/** Dải thẻ hoạt động của một mục gốc — đi theo hàng khi kéo, bản thân không kéo được. */
 export const doingsKey = (parentId: string) => `in:${parentId}`;
 export const parentIdOf = (key: string) => (key.startsWith("in:") ? key.slice(3) : null);
 
-/** Nơi (hàng "Ở đâu") không chui vào trong nơi khác — chỉ việc và hoạt động mới làm "việc" được. */
+/** Mục mà thời lượng là "mất bao lâu" (một việc) chứ không phải "ở lại bao lâu" (một nơi). */
 export function canBeDoing(item: { kind: ItemView["kind"]; lat?: number | null; lng?: number | null; customPlace?: boolean }) {
   return item.kind === "activity" || isTask(item);
 }
@@ -41,8 +41,8 @@ function toItemView(x: ItemView | ResolvedItem): ItemView {
 }
 
 /**
- * Vùng gốc (`backlog`, `day:X`) chỉ chứa MỤC GỐC; việc của mỗi mục gốc nằm ở `in:<id>` (luôn
- * có, kể cả rỗng, để thả được vào cột "Làm gì" còn trống). Danh sách vào đã phẳng: gốc rồi con.
+ * Vùng gốc (`backlog`, `day:X`) chỉ chứa MỤC GỐC; thẻ của mỗi mục gốc nằm ở `in:<id>` (luôn có,
+ * kể cả rỗng). Danh sách vào đã phẳng: gốc rồi con.
  */
 function buildBoard(days: DayView[], backlog: ResolvedItem[]): Board {
   const board: Board = {};
@@ -99,7 +99,6 @@ function signature(board: Board): string {
 
 export function useTripBoard(days: DayView[], backlog: ResolvedItem[]) {
   const [board, setBoard] = useState<Board>(() => buildBoard(days, backlog));
-  const [activeId, setActiveId] = useState<string | null>(null);
   const dragging = useRef(false);
 
   const fromProps = buildBoard(days, backlog);
@@ -123,31 +122,17 @@ export function useTripBoard(days: DayView[], backlog: ResolvedItem[]) {
     return Object.keys(b).find((k) => b[k].includes(id)) ?? null;
   }
 
-  /**
-   * Thả `activeId` lên `overId` thì thực ra rơi vào đâu. Một NƠI (hoặc mục đang có việc) bị kéo
-   * qua cột "Làm gì" của hàng khác thì rơi vào VỊ TRÍ CỦA HÀNG đó, không chui vào trong nó.
-   */
-  function resolveOver(activeId: string, overId: string): string {
+  /** Thẻ không kéo được, nên lỡ chạm vào dải thẻ của một hàng thì coi như thả lên CHÍNH hàng đó. */
+  function resolveOver(overId: string): string {
     const to = containerOf(overId);
-    const parent = to ? parentIdOf(to) : null;
-    if (!parent) return overId;
-    const item = byId.get(activeId);
-    const hasDoings = (board[doingsKey(activeId)]?.length ?? 0) > 0;
-    if (parent === activeId || !item || !canBeDoing(item) || hasDoings) return parent;
-    return overId;
-  }
-
-  function moveLocal(activeId: string, overId: string) {
-    const target = resolveOver(activeId, overId);
-    if (target === activeId) return;
-    setBoard((prev) => applyMove(prev, activeId, target));
+    return (to && parentIdOf(to)) || overId;
   }
 
   function commitMove(
     activeId: string,
     overId: string | null,
   ): { dayId: string | null; parentId: string | null; at: DropAt } | null {
-    const target = overId ? resolveOver(activeId, overId) : null;
+    const target = overId ? resolveOver(overId) : null;
     const next = target && target !== activeId ? applyMove(board, activeId, target) : board;
     if (next !== board) setBoard(next);
 
@@ -162,23 +147,20 @@ export function useTripBoard(days: DayView[], backlog: ResolvedItem[]) {
     };
   }
 
-  function beginDrag(id: string) {
+  // KHÔNG setState ở đây: bắt đầu kéo mà dựng lại cả trang soạn là khung hình đầu tiên giật.
+  function beginDrag() {
     dragging.current = true;
-    setActiveId(id);
   }
   function endDrag() {
     dragging.current = false;
-    setActiveId(null);
   }
 
   return {
     board,
     byId,
-    activeId,
     beginDrag,
     endDrag,
     containerOf,
-    moveLocal,
     commitMove,
     resetFromProps: () => setBoard(buildBoard(days, backlog)),
   };

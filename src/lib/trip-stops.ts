@@ -1,20 +1,17 @@
 import { isTask, type TripItemKind } from "@/lib/trip-time";
 
 /**
- * Một hàng "Ở đâu | Làm gì" của dòng thời gian.
- * - `place`: mục làm cột trái (địa điểm, quán, chỗ ở…), hoặc null khi nơi đó KHÔNG phải
- *   một mục của chuyến — hoạt động đứng riêng (nơi = `placeName`, Spot đầu tiên của nó)
- *   hay việc đứng đầu ngày trước mọi nơi (`placeName` cũng null).
- * - `doings`: hoạt động đang lồng + việc tự thêm diễn ra tại đó, đúng thứ tự trong ngày.
- * - `first`/`last`: chỉ số mục đầu/cuối của hàng trong ngày — để chèn ngay sau hàng.
+ * Một hàng của dòng thời gian: một mục gốc có giờ (nơi, hoạt động đứng riêng, việc tự gõ) và
+ * các THẺ hoạt động của nó ("làm gì ở đây" — không giờ).
+ * - `no`: số trên mốc, chỉ đếm NƠI và hoạt động; việc tự gõ (đặt xe, chờ người) không lấy số.
+ * - `first`/`last`: chỉ số mục đầu/cuối của hàng trong ngày.
  */
 export type Stop<T> = {
-  place: T | null;
-  placeName: string | null;
-  doings: T[];
+  item: T;
+  tags: T[];
   first: number;
   last: number;
-  no: number;
+  no: number | null;
 };
 
 type StopInput = {
@@ -24,36 +21,20 @@ type StopInput = {
   customPlace?: boolean;
   lat?: number | null;
   lng?: number | null;
-  atName?: string | null;
 };
 
-/**
- * Danh sách đã PHẲNG theo `flatten()` (mục gốc rồi ngay sau là các việc của nó).
- * Mục gốc là một nơi ⇒ một hàng có nơi. Mục gốc là việc / hoạt động ⇒ hàng không có mục nơi
- * (hoạt động thì ghi nơi của nó), chính nó đứng đầu cột "Làm gì".
- */
+/** Danh sách đã PHẲNG theo `flatten()` (mục gốc rồi ngay sau là các thẻ của nó). */
 export function groupStops<T extends StopInput>(items: T[]): Stop<T>[] {
   const out: Stop<T>[] = [];
+  let num = 0;
   items.forEach((item, i) => {
     const cur = out[out.length - 1];
     if (item.parentId && cur) {
-      cur.doings.push(item);
+      cur.tags.push(item);
       cur.last = i;
       return;
     }
-    const no = out.length + 1;
-    if (isTask(item) || item.kind === "activity") {
-      out.push({
-        place: null,
-        placeName: item.kind === "activity" ? (item.atName ?? null) : null,
-        doings: [item],
-        first: i,
-        last: i,
-        no,
-      });
-      return;
-    }
-    out.push({ place: item, placeName: null, doings: [], first: i, last: i, no });
+    out.push({ item, tags: [], first: i, last: i, no: isTask(item) ? null : ++num });
   });
   return out;
 }

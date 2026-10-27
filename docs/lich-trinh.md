@@ -1016,6 +1016,8 @@ hàng ngày khởi hành / số người của trang soạn.
 
 ## 12e. Hoạt động lồng dưới địa điểm (2026-10-24, biên tập chọn)
 
+> ⚠️ **Đã thay bằng §12o** (2026-10-28): mục con giờ là THẺ hoạt động không giờ. Giữ lại làm lịch sử.
+
 Đúng §1 CLAUDE.md: `Spot` là một CHỖ, `Activity` là một VIỆC làm tại chỗ. Bản cũ cho hoạt động
 mượn toạ độ của Spot đầu tiên rồi đứng ngang hàng như một điểm dừng — có số riêng, có chặng
 "di chuyển 0 phút" từ chính chỗ của nó.
@@ -1030,6 +1032,8 @@ mượn toạ độ của Spot đầu tiên rồi đứng ngang hàng như một
 - Đã thử và BỎ: giữ ngang hàng chỉ thêm "tại …" · gộp hẳn hoạt động vào dòng của địa điểm.
 
 ## 12f. Hai cột "Ở đâu | Làm gì" (2026-10-24, biên tập chọn)
+
+> ⚠️ **Đã thay bằng §12o** (2026-10-28): mục con giờ là THẺ hoạt động không giờ. Giữ lại làm lịch sử.
 
 Mỗi ngày là các hàng `StopRow` (`trip-rail.tsx`), gom bằng `groupStops()` (`lib/trip-stops.ts`):
 
@@ -1086,6 +1090,8 @@ Soát trên chuyến thật 33 mục / 4 ngày; trang ngắn đi ~10–12% mà k
 
 ## 12i. Việc THUỘC nơi — `TripItem.parentId` (2026-10-25, biên tập chọn)
 
+> ⚠️ **Đã thay bằng §12o** (2026-10-28): mục con giờ là THẺ hoạt động không giờ. Giữ lại làm lịch sử.
+
 Thay cho §12e/§12f chỗ "gom suy ra từ thứ tự": quan hệ "nơi → việc" giờ **lưu thật**. Kéo một nơi
 là kéo cả hàng, việc của nó đi theo. Migration `trip_item_parent`.
 
@@ -1110,13 +1116,16 @@ là kéo cả hàng, việc của nó đi theo. Migration `trip_item_parent`.
 - **Bỏ một nơi KHÔNG bỏ việc của nó**: việc đứng ra thành mục gốc ngay chỗ nơi đó (`removeItem`).
   `moveItemToTrip` mang việc theo; `cloneTrip` nối lại cha bằng id mới; ngăn nổi chỉ xếp mục gốc,
   ghi "kèm N việc".
-- ⚠️ **DEPLOY: chạy `scripts/backfill-trip-item-parents.ts` MỘT LẦN** sau migration (chạy `--dry`
+- ~~DEPLOY: chạy `scripts/backfill-trip-item-parents.ts`~~ — **script đã xoá**, thay bằng
+  `scripts/migrate-trip-doings-to-tags.ts` (§12o). Ghi chép cũ: chạy MỘT LẦN sau migration (chạy `--dry`
   trước). Nó gom như cách lịch đang hiển thị. Phải đọc dữ liệu **đúng kiểu trang đọc** (items của
   cả chuyến, `orderBy: order`) — bản đầu hỏi riêng từng ngày và xáo một ngày có `order` TRÙNG trên
   dữ liệu dev (đã khôi phục tay theo ảnh chụp). Script in cảnh báo cho mọi ngày có `order` trùng —
   xem lại các ngày đó bằng mắt.
 
 ## 12j. "Làm gì" xếp DƯỚI nơi, không còn cột ngang (2026-10-25, biên tập chọn)
+
+> ⚠️ **Đã thay bằng §12o** (2026-10-28): mục con giờ là THẺ hoạt động không giờ. Giữ lại làm lịch sử.
 
 Thay bố cục hai cột của §12f: mỗi hàng là **nơi, rồi ngay dưới là các việc**, thụt thẳng theo nội
 dung của nơi, trục vẽ tiếp xuyên qua (`STACKED_RAIL`, `DOINGS_INDENT` trong `trip-rail.tsx`) —
@@ -1144,6 +1153,8 @@ dung của nơi, trục vẽ tiếp xuyên qua (`STACKED_RAIL`, `DOINGS_INDENT` 
   là phương án cuối.
 
 ## 12k. Nút ở đâu thì thêm đúng thứ ở đó (2026-10-25, biên tập yêu cầu)
+
+> ⚠️ **Đã thay bằng §12o** (2026-10-28): mục con giờ là THẺ hoạt động không giờ. Giữ lại làm lịch sử.
 
 `AddPos.mode` quyết định hộp thêm cho thêm GÌ:
 
@@ -1247,7 +1258,8 @@ giãn chữ lẫn vào hàng ô nhập).
   nhìn thứ ba "Ghi chú (N)". Lý do: mã đặt phòng, số tài xế… là thứ hay phải tra NGAY lúc đang xếp lịch.
   Tab Ghi chú riêng vẫn giữ (bản đầy đủ, lưới nhiều cột).
 - **Đã BỎ cảnh báo "Ngày này kết thúc lúc … — khá muộn"** (`dayLate`, mốc 22:00) — biên tập yêu cầu. Cảnh báo
-  "ngày dài quá 12 tiếng" (`dayLong`) vẫn giữ.
+  "ngày dài quá 12 tiếng" (`dayLong`) ~~vẫn giữ~~ — **cũng đã bỏ** (2026-10-28, biên tập yêu cầu): ngày đi chơi 14–15
+  tiếng là chuyện thường, nhắc mãi thành nhiễu. `scheduleDay` không còn cảnh báo cấp ngày nào.
 - **"Ghi chú" đã gỡ khỏi menu mục (cột trái + tấm chọn mục trên điện thoại)** — ghi chú đã ở cột phải tab Lịch
   trình. Mục vẫn còn trong `TRIP_SECTIONS` với `hidden: true` nên `/ghi-chu` vẫn vào được bằng URL (gỡ hẳn thì
   `findTripSection` trả null ⇒ 404); menu đọc `TRIP_NAV`.
@@ -1267,7 +1279,7 @@ giãn chữ lẫn vào hàng ô nhập).
 - **Chọn thời gian** (`StayPicker`), ba cách theo cách người ta nghĩ: **8 nút có sẵn** (0′ 15′ 30′ 45′ / 1g 1g30 2g 3g) ·
   **tự chọn số giờ (−/+) + số phút (0/15/30/45)** — không bắt quy ra phút như ô số cũ · **"đến lúc"** (gõ 17:00 ⇒ tự trừ giờ
   bắt đầu, hiện "= 2 giờ 15"; sớm hơn giờ bắt đầu thì hiểu là qua nửa đêm). Không dùng `<input type="number">`/`type="time"`.
-  · **CÓ 0 phút**: một NƠI có thể chỉ là chỗ đến (bãi biển) còn thời gian nằm ở VIỆC làm ở đó (tắm biển).
+  · **CÓ 0 phút** (ghé qua). ~~Thời gian nằm ở việc làm ở đó~~ — từ §12o thời gian ở một nơi là TỔNG, gồm cả hoạt động.
   · **Chữ theo loại mục** (`canBeDoing`): nơi ⇒ "Ở lại bao lâu?" / "ở đến lúc"; hoạt động & việc tự gõ ⇒ **"Mất bao lâu?" /
     "làm đến lúc"** — một hoạt động không phải chỗ để ở. Việc 0 phút ghi "0 phút" (`stayLabel`), không ghi "Ghé qua".- **Lịch trình trên điện thoại (màn cảm ứng, thử ở iPhone 11 Pro 375px)**: cụm nút luôn hiện bên phải (tay kéo ⠿ · "+" ·
   ⋯ ≈ 90px) bóp tên nơi còn ~100px, xuống 2–3 dòng. Đã gọn lại:
@@ -1290,3 +1302,205 @@ giãn chữ lẫn vào hàng ô nhập).
 - **Tên mục tối đa HAI dòng** (`line-clamp-2`, tràn thì "…"). Tên mục TỰ THÊM (`NameEdit`) lúc thường là CHỮ (cũng 2 dòng) —
   bấm mới thành `textarea` tự giãn: `<input>` chỉ hiện được một dòng nên tên dài bị cắt. Menu "Đổi tên" bấm hộ nút
   `[data-rename]` (không còn `.select()` một ô có sẵn). Enter lưu, Esc huỷ (cờ `cancelled`).
+
+## 12o. Nơi là đơn vị thời gian — hoạt động thành THẺ (2026-10-28, biên tập chọn)
+
+Thay §12e/§12f/§12i/§12j/§12k ở phần "việc có giờ riêng nằm trong nơi". Đo trên dữ liệu thật
+(7 chuyến, 94 mục): chỉ 11/72 nơi có việc con, gần hết một việc; 13/18 việc con là việc TỰ GÕ
+(chờ người, đặt xe) — thứ chẳng thuộc nơi nào; giờ của nơi + giờ của từng việc thì **đếm hai lần**
+(ở bãi biển 1 giờ + tắm biển 1 giờ = 2 giờ trên lịch).
+
+- **Thời gian ở một nơi là TỔNG**, nằm ở mốc của nơi. Mục con (`parentId`) là **thẻ "làm gì ở
+  đây"** — chỉ HOẠT ĐỘNG của site, không giờ, không số, không chặng (`buildDayViews` không đưa con
+  vào `scheduleDay`; `inPlace` và `anchorsOf()` đã xoá). Thẻ có viền vì bấm được (sang trang hoạt
+  động) — `ActivityTags` trong `trip-rail.tsx`, dùng ở cả trang soạn lẫn trang xem.
+- **Chỉ một ĐỊA ĐIỂM (hoặc nơi tự gõ) mới có thẻ** — hoạt động trên site chỉ gắn với `Spot`, nên
+  quán ăn / chỗ ở không có nút "+ Hoạt động". `parentScope()` chặn gắn vào hoạt động hay việc tự gõ.
+- **Việc tự gõ luôn là DÒNG RIÊNG có giờ**, ô vuông rỗng không số trên trục. `addCustomStop` không
+  còn tham số `parent`; mở từ "Làm gì ở X" thì `pos.at` đã là ngay sau X và trôi theo từng lần thêm
+  (hai việc liền nhau giữ đúng thứ tự). Form "ở đâu + làm gì" ⇒ nơi rồi việc ngay sau, cả hai gốc.
+- **Hoạt động cần giờ riêng** (tour, đặt chỗ) đứng riêng thành dòng, ghi "tại {Spot}". Thẻ ⋯ →
+  **Tách thành dòng có giờ riêng** (ngay sau nơi, `stayMin` về `null` = mặc định của hoạt động).
+  Dòng hoạt động ⋯ → **Gắn vào {nơi}** khi nơi của nó đang có trong ngày — nơi GẦN NHẤT phía trên,
+  không thì nơi đầu tiên phía dưới (Trượt cát diễn ra ở cả Đồi cát lẫn Bàu Trắng).
+- **Tự gắn**: thêm một hoạt động vào ngày mà nơi của nó (`SpotActivity`) đã có trong ngày ⇒ server
+  tự gắn thành thẻ của nơi đó (`addItem`). Hộp "Làm gì ở X" lúc chưa gõ gợi ý đúng các hoạt động
+  diễn ra ở X (`searchTripCandidates(…, forItemId)`), xếp TRÊN việc mẫu.
+- **Số mốc chỉ đếm nơi + hoạt động** (`stopNo`, `groupStops().no`) — việc tự gõ không lấy số, không
+  làm lệch số sau nó; bản đồ dùng đúng số đó và bỏ thẻ ra khỏi điểm dừng.
+- Kéo–thả: thẻ KHÔNG kéo được — đi theo hàng. `collide` chỉ còn "hàng dưới chuột, không thì
+  `closestCorners`"; bỏ hết `DoingsColumn`/`SortableDoing`/`draggingDoing`/thu gọn khi nhấn.
+  `DoingRow`, `PlaceStub`, `DOINGS_INDENT`, `STACKED_RAIL` đã xoá — các số đi kèm ở mục trên không
+  còn ràng buộc nhau.
+- "+ Hoạt động": nơi chưa có thẻ ⇒ nút trơn cạnh ⋯, chỉ hiện khi rê (cảm ứng: menu ⋯ "Thêm hoạt
+  động ở đây"); có thẻ rồi ⇒ ô viền đứt cuối dải thẻ. ⚠️ Đừng để ô đó giữ chỗ ẩn ở nơi chưa có
+  thẻ — bản đầu thế, mỗi hàng dài thêm ~36px trắng.
+- ⚠️ **DEPLOY: chạy `scripts/migrate-trip-doings-to-tags.ts` MỘT LẦN** (`--dry` trước; chạy lại
+  không đổi gì). Hoạt động con ⇒ thẻ, giờ của nó CỘNG vào nơi cha để giờ trong ngày không đổi, thẻ
+  mang `stayMin = 0` làm dấu đã chuyển. Việc tự gõ con ⇒ mục gốc ngay sau nơi cha, giữ giờ. Trên
+  dev: 5 thẻ, 13 việc tách ra. **KHÔNG chạy backfill cũ trước nó** — script đó lồng cả việc tự gõ
+  theo thứ tự, đúng thứ vừa bỏ. Mục con tạo bằng giao diện bản trước vẫn được script này chuyển.
+
+## 12p. Mục thành THẺ có viền, kéo cả thẻ, sửa qua một nút (2026-10-28, biên tập yêu cầu)
+
+Chỉ ở **trang soạn** (`RailItem` prop `card`, dựng trong `SortableStop`); trang xem / mẫu / link chia sẻ giữ dạng
+chữ trơn — ở đó thẻ không bấm được nên theo luật §3 không có viền.
+
+- **Cả tấm thẻ là tay kéo** (`setActivatorNodeRef` + listeners của dnd-kit). Tay kéo ⠿ riêng và kéo bằng mốc số đã
+  bỏ. Chuột: dịch 6px mới thành kéo nên bấm tên / nút trong thẻ vẫn chạy; cảm ứng: nhấn giữ 220ms.
+  · ⚠️ Phải dùng **`setActivatorNodeRef`**, không gắn listeners suông: không có activator thì Enter/Space trên nút
+    ✎ / ⋯ trong thẻ cũng kích hoạt kéo bằng bàn phím.
+  · ⚠️ `role="group"` đè `role="button"` của dnd-kit — thẻ chứa link và nút, role button giấu chúng khỏi trình đọc.
+  · ⚠️ Lint (React Compiler) báo "Cannot access refs during render" nếu truyền ref setter + attributes qua một
+    object prop rồi spread ở component khác ⇒ thẻ có viền dựng NGAY trong `SortableStop`, `RailItem` chỉ nhận
+    hàm bọc `card(content)`.
+- **Mọi chỉnh sửa vào nút ✎** → `ItemEditDialog`: tên (chỉ mục tự thêm) · thời gian (8 mốc, giờ ± và phút, "ở đến
+  lúc", về mặc định) · ghi chú; một nút Lưu gửi MỘT lượt `updateItem` với đúng các trường đã đổi. Đã bỏ: nhãn
+  thời gian trên trục là nút mở popover (`StayPicker`), sửa tên tại chỗ (`NameEdit`), ghi chú sửa tại chỗ, menu
+  "Đổi tên" / "Thêm ghi chú". Nhãn thời gian trên trục giờ chỉ là chữ.
+- Giờ và mốc trên trục dịch xuống (`pt-3` / `pt-2.5`) cho thẳng dòng tên trong thẻ.
+- **Kéo cho mượt** (biên tập: "kéo ra không giống item ban đầu"): bóng kéo (`DragOverlay`) của một mục trong ngày là
+  BẢN SAO tấm thẻ (`RailItem onlyCard` + `ITEM_CARD`, cùng bề rộng vì dnd-kit đặt khung bằng hàng gốc; cột giờ + trục
+  để trống), đổ bóng; hàng gốc mờ còn 30% làm chỗ trống. Thả thì trượt về chỗ mới (`dropAnimation` 200ms) thay vì
+  biến mất (`null` cũ). Mục kéo từ cột Chưa xếp ngày vẫn là viên nhỏ ảnh + tên.
+  · Dòng chặng "di chuyển" nằm TRONG hàng (`SortableStop after`, `RailLeg as="div"`) — để là một `<li>` riêng thì nó
+    đứng yên giữa các thẻ đang trượt, nhìn giật. Trong lúc kéo nó mờ hẳn (giữ chỗ, không đổi bố cục) vì số cũ đã sai.
+  · **Nhấn xuống là thẻ nhấc lên NGAY** (CSS `:active`, cùng bóng với bóng kéo; bỏ qua khi nhấn vào nút / link
+    trong thẻ bằng `:not(:has(a:active,button:active))`), ngưỡng kéo của chuột hạ 6px → 3px. Trước đó phải kéo
+    một đoạn thẻ mới "nổi lên" — trông như lag.
+
+### 12q. Kéo–thả gọt về MỘT kiểu (2026-10-28, biên tập chọn "đơn giản nhất", giữ dnd-kit)
+
+Thay phần bóng kéo của §12p:
+- **Chỉ đổi chỗ trong CÙNG một ngày.** Chính tấm thẻ (cả giờ + mốc) đi theo tay qua `transform` của `useSortable`,
+  nổi lên (`z-20` + bóng) — **không còn `DragOverlay`**. Vì không có bóng kéo riêng, thẻ không đổi danh sách giữa
+  chừng được (sang ngày khác là nó dựng lại ở chỗ mới và nhảy) ⇒ **chuyển ngày bằng menu ⋯ → "Chuyển sang Ngày N"**.
+- `collide` = `closestCenter` lọc chỉ các hàng CÙNG ngày; khoá trục ngang (`lockX`, modifier tự viết — khỏi thêm gói
+  `@dnd-kit/modifiers`). Bỏ `onDragOver` / `moveLocal` / dò va chạm ba tầng.
+- **Cột Chưa xếp ngày thôi kéo**: mỗi dòng chỉ còn nút **+ → Xếp vào Ngày N**. Ngày không còn là vùng thả (`useDroppable`
+  của ngày và của backlog đã gỡ), `DragGrip` đã xoá.
+- Ngăn nổi (`trip-dock.tsx`) KHÔNG đổi — nó có kéo–thả riêng, vẫn kéo giữa các ngày.
+- **Cầm lên phải trơn ngay khung hình đầu** (đo bằng rAF + `longtask` qua CDP, chế độ dev):
+  · ⚠️ Nhấn vào thẻ là `DayBlock` gọi `onFocus` (đánh dấu ngày đang xem) — `setActiveDayId` ở đó dựng lại CẢ trang
+    soạn (kể cả tab Chi phí / Đồ mang theo đang ẩn), ~60ms đúng lúc nhấn chuột. Giờ chỉ đặt khi ĐỔI ngày, bọc
+    `startTransition`.
+  · ⚠️ Không dùng `useDndContext()` trong `DayBlock` / `InsertMarks`: giá trị đổi MỖI lần chuột nhích ⇒ mọi ngày dựng
+    lại liên tục. "Đang kéo" là thuộc tính `data-trip-dragging` trên `<html>` (đặt ở `onDragStart`, gỡ ở end/cancel);
+    CSS ẩn dòng chặng và dấu "+" bằng variant `[[data-trip-dragging]_&]:…`; `useTripLiveSync` đọc cùng cờ đó.
+    `useTripBoard.beginDrag` cũng KHÔNG setState nữa.
+  · `SortableStop` ghi nhớ ruột thẻ (`useMemo`) — dnd-kit vẫn dựng lại mọi hàng mỗi lần nhích để tính chỗ trượt,
+    nhưng chỉ khung hàng (`transform`) đổi.
+  · Còn lại: một nhịp ~70ms (dev) lúc THẢ — lượt dựng lại đặt thẻ vào chỗ mới, phải chạy đồng bộ kẻo thẻ nháy về
+    chỗ cũ một khung.
+
+### 12r. Cỡ chữ & ghi chú trong mục (2026-10-28, biên tập: "text hơi bé", "thiết kế lại ghi chú")
+
+Dùng chung trang soạn và trang xem (`ItemBody`, `RailItem`, `trip-rail.tsx`):
+- Tên mục **17px đậm vừa** (`font-semibold`); dòng phụ (giờ mở cửa, "tại …") và dòng chặng **14px**; giờ ở cột
+  trái **15px / 16px** (`TIME`, cột rộng `w-11` dưới `sm`); nhãn thời gian trên trục 12px; thẻ hoạt động cao 32px chữ
+  14px; cảnh báo 13px; ảnh 44px (điện thoại) / 56px.
+- **Ghi chú = lời dặn, tầng PHỤ**: ký hiệu `note` nhỏ + chữ xám 14px, KHÔNG nghiêng, không nền, không viền; giữ xuống
+  dòng (`whitespace-pre-line`). Đã thử và BỎ: chữ 12px nghiêng (đọc như chú thích ảnh, dễ bỏ qua) · khối nền xám
+  15px (nổi hơn cả tên mục — "quá nổi bật").
+  · `NoteLine` render HAI bản, `display` chọn: từ `sm` nằm NGAY DƯỚI TÊN trong cột chữ; dưới `sm` nằm dưới ảnh,
+    hết bề ngang thẻ (kẹp cạnh ảnh thì mỗi dòng còn vài chữ). Một bản dưới ảnh ở mọi khổ thì trên máy tính chừa
+    một khoảng trống cạnh tên. Cảnh báo vẫn hết bề ngang thẻ.
+
+## 12s. Bước tạo chuyến: thông tin cơ bản trước, lịch trình sau (2026-10-28, biên tập yêu cầu)
+
+**Trang riêng `/lich-trinh/cua-toi/tao`** (biên tập: "sang hẳn trang mới, không popup") — `CreateTripForm`
+(`components/trip/create-trip-form.tsx`) hỏi **nơi đến · số ngày · ngày đi · số người · tên chuyến** rồi `createTrip(input)`
+và `router.replace` sang trang soạn. Mọi trường bỏ trống được. `?noi-den=<id Place>` điền sẵn nơi đến; chưa đăng nhập thì
+về `/login` kèm `callbackUrl` giữ nguyên tham số.
+
+- ⚠️ `lib/site-chrome.ts`: `tao` bị LOẠI khỏi `TRIP_DETAIL` / `TRIP_EDITOR` — không thì header kiểu "chìm" của trang soạn
+  áp lên một trang form thường. Route tĩnh `tao` thắng `[id]` của Next; id chuyến là cuid nên không đụng.
+- **Nơi đến** = `Trip.placeId`; `getTripDestinations()` trả MỌI `Place` đã xuất bản — điểm đến lẫn tỉnh (biên tập: "nơi đến
+  có thể là tỉnh"). Điểm đến + tỉnh bật `treatAsDestination` đứng trước (thứ tự dải `/diem-den`), tỉnh còn lại xếp sau theo
+  tên, ghi "Tỉnh, thành phố". Ô tìm **bỏ dấu** (`Command filter` + `slugifyVi` — bộ lọc mặc định của cmdk gõ "ha noi" không
+  ra "Hà Nội"), tìm cả theo tên tỉnh chứa nó ("quang" ra Hạ Long).
+  · Dưới ô tìm: **chip chữ "Hay đi"** = 8 nơi đầu danh sách. Đã thử ô ảnh: chỉ 1 điểm đến có ảnh bìa thật ⇒ dải một ô.
+- **Số ngày** (1–14, mặc định 3) dựng sẵn đúng chừng ấy `TripDay`. **Tên để trống ⇒ `defaultTripTitle()`**
+  (`lib/trip-title.ts`, dùng chung client + server): "Cao Bằng 3 ngày 2 đêm"; 1 ngày ⇒ "Cao Bằng 1 ngày"; không chọn nơi đến
+  ⇒ "Chuyến đi 3 ngày 2 đêm". Ngày đi dùng chung `MonthGrid` của thanh đầu trang soạn — KHÔNG `<input type="date">` (trình
+  duyệt vẽ theo ngôn ngữ máy: "mm/dd/yyyy").
+- **"Đi từ đâu" ĐÃ BỎ khỏi giao diện** (biên tập: "hiện tại chưa cần"). Cột `Trip.originName` (migration `trip_origin`) giữ
+  lại cho lúc bật lại, `cloneTrip` vẫn chép; server không còn nhận nó.
+- **Lối vào**: nút "Tạo lịch trình" ở `/lich-trinh/cua-toi` (là một link) · ngăn nổi ("Chuyến mới", "Tạo chuyến đầu tiên" —
+  đóng ngăn rồi chuyển trang) · "Lên lịch trình đi X" ở trang điểm đến (`?noi-den=`; chưa có chuyến lẫn mẫu thì vào thẳng).
+  `startTripForPlace` đã xoá.
+  · **Cố ý KHÔNG hỏi** ở lối ngầm: bấm "Thêm vào lịch trình" khi chưa có chuyến nào vẫn tự tạo "Chuyến đi của tôi"
+    (`resolveTargetTrip`) — chen một bước vào giữa lúc người ta đang lưu một địa điểm là ma sát.
+- Trang soạn: thanh thuộc tính có chip **nơi đến** (link sang trang điểm đến).
+
+## 12t. Mục tự thêm: MỘT kiểu — tiêu đề + địa chỉ (2026-10-28, biên tập yêu cầu)
+
+Thay §12g ở phần giao diện: không còn "Nơi: …" / "Việc: …" hay form "Ở đâu · Làm gì". Tự thêm = **tiêu đề · địa chỉ (không
+bắt buộc) · bao lâu** (`addCustomStop(tripId, dayId, at, { title, address, stayMin })`, tạo đúng MỘT mục).
+
+- Cột mới **`TripItem.customAddress`** (migration `trip_item_address`) — chỉ là chữ, CHƯA geocode (chưa có toạ độ ⇒ chặng
+  tới nó vẫn "chưa ước tính").
+- Bên trong vẫn phân biệt để tính giờ, nhưng **suy ra từ địa chỉ**, người dùng không phải chọn: có địa chỉ ⇒
+  `customPlace = true` (một NƠI: lấy số mốc, mặc định 1 giờ); không có ⇒ việc (ô vuông không số, mặc định 30 phút).
+  `updateItem({ customAddress })` đặt lại `customPlace` theo cùng luật. Mục cũ `customPlace` mà không địa chỉ giữ nguyên.
+- Hộp thêm: gõ chữ ⇒ dòng **"Thêm “…”"** (thêm ngay, chưa địa chỉ) + **"Tự thêm kèm địa chỉ, thời lượng…"** (mở form, tiêu
+  đề điền sẵn). Chip "Hay dùng" (Đặt xe, Chờ người…) hiện ở MỌI chế độ của hộp.
+- Hộp sửa ✎: mục tự thêm có thêm ô **Địa chỉ**. Thẻ hiện địa chỉ ở dòng phụ (ký hiệu `pin`). `cloneTrip` chép cả địa chỉ.
+
+## 12u. Mục đặc biệt: Di chuyển · Nhận / trả phòng · Bữa ăn · Nghỉ (2026-10-28, biên tập yêu cầu)
+
+Vẫn là MỤC TỰ THÊM (`kind = custom`), thêm `TripItem.special` (+ `travelMode`, `travelFrom`, `travelTo`, `bookingCode`;
+migration `trip_item_special`). Nhãn, icon, thời lượng mặc định, cách đặt tên ở **`lib/trip-special.ts`** (dùng chung
+server + client).
+
+| Loại | Ô nhập | Mặc định | Hiện |
+|---|---|---|---|
+| **Di chuyển** | phương tiện (máy bay · tàu hoả · xe khách · ô tô · xe máy · tàu thuyền), từ, đến, mã chuyến/vé | 2 giờ | tên "Hà Nội – Sa Pa" (gạch ngang, không mũi tên), mốc trục = icon phương tiện |
+| **Nhận / trả phòng** | chỗ ở, địa chỉ, mã đặt phòng | 15 phút | icon giường |
+| **Bữa ăn** | Ăn sáng / trưa / tối / vặt, địa chỉ | 1 giờ | icon bát |
+| **Nghỉ** | Nghỉ trưa / Tự do khám phá / Nghỉ ở chỗ ở | 1 giờ | icon đồng hồ |
+
+- **Luật nơi / việc KHÔNG đổi** (vẫn theo địa chỉ, §12t): có địa chỉ ⇒ lấy số mốc. Di chuyển không có địa chỉ (đi từ nơi này
+  tới nơi khác) nên không bao giờ có số.
+- **Di chuyển tính theo THỜI LƯỢNG** (biên tập chọn, không neo giờ vé). Nó CẮT chuỗi chặng (`scheduleDay`): không vẽ chặng lái
+  xe tới / ra khỏi nó — chính nó đã là quãng đi — và sau nó `lastPlace`/`here`/`seenPlace` về rỗng, chặng kế tiếp chỉ tính từ
+  NƠI đầu tiên sau nó (không thì ra "lái xe từ Hà Nội tới bãi biển Mũi Né").
+- Tiêu đề của mục đặc biệt **để trống được** — lưu `customTitle = ""` (KHÔNG null: `customTitle != null` là dấu hiệu "mục tự
+  thêm" ở `updateItem`), tên hiện ra ghép lúc đọc (`specialTitle`). Hộp sửa chỉ ghi tiêu đề khi người dùng gõ khác tên đang
+  hiện, nên đổi "Từ / Đến" vẫn đổi tên theo.
+- `bookingCode` là **mã chuyến / mã đặt chỗ** — KHÔNG phải số tài khoản (luật §Nơi lưu trú). Chỉ giữ cho Di chuyển và Nhận /
+  trả phòng (`cleanSpecial`).
+- Hộp thêm: nhóm **"Mục đặc biệt"** (5 nút) mở form theo loại; chip "Hay dùng" còn Đặt xe, Chờ người (Nghỉ trưa / Thời gian
+  tự do chuyển thành loại Nghỉ). `cloneTrip` chép đủ các trường.
+
+## 12v. Mỗi loại mục một HÌNH (2026-10-28, biên tập: "các item khác nhau nên có thiết kế khác nhau nổi bật hơn")
+
+Phân biệt bằng **hình**, KHÔNG bằng màu — màu đã khoá nghĩa (§3 CLAUDE.md: xanh = thời điểm, cam = cảnh báo). `lookOf(item)` +
+`cardClass(look)` trong `trip-rail.tsx`; thân thẻ không phải nơi là `CompactBody`.
+
+| Hình | Gồm | Thẻ | Mốc trên trục |
+|---|---|---|---|
+| `place` | mục của site | lớn, có ảnh, tên 17px đậm | số |
+| `transport` | Di chuyển | **tấm vé**: nền `muted/50`, "Hà Nội ┄┄ Phan Thiết" (vạch đứt, từ `sm`), dòng phụ = phương tiện + mã | chấm nhỏ |
+| `minor` | MỌI mục tự thêm khác (nhận/trả phòng, bữa ăn, việc, nơi tự gõ) | gọn: icon trần trước tên, tên 16px | nơi tự gõ: số; còn lại: chấm nhỏ |
+| `rest` | Nghỉ | **viền đứt, nền trong suốt**, tên xám — một khoảng trống của ngày | chấm nhỏ |
+
+- Mọi hình cùng ĐỆM (`px-3 py-2.5`) — giờ và mốc trên trục canh theo đệm đó.
+- Nhãn loại ở dòng phụ CHỈ cho Di chuyển (tên phương tiện); loại khác icon đã nói thay ("Ăn trưa / Bữa ăn" là lặp).
+- Dưới `sm` tấm vé là chữ thường "Hà Nội – Phan Thiết" (xuống dòng được) — vạch đứt ở 320px cắt tên còn "H ┄ P…".
+- ⚠️ `RailItem` phải `min-w-0`: nó là con của ô GRID trong `StopRow`, mặc định không co dưới bề rộng tối thiểu của nội dung ⇒
+  một tấm vé đủ đẩy cả trang tràn ngang trên điện thoại. Cùng lý do: lớp đo của ô tên chuyến (`TitleField`, `whitespace-pre`)
+  cần `min-w-0 overflow-hidden` — tên mặc định kiểu "Phan Thiết 3 ngày 2 đêm" từng làm tràn 320px.
+- Chỉ trang SOẠN đóng khung thẻ; trang xem dùng cùng thân (`CompactBody`) nên hình gọn / tấm vé vẫn đọc ra khác nhau.
+
+### 12w. Gọt "AI slop" khỏi dòng thời gian (2026-10-28, biên tập: "giữ dạng cũ, tinh chỉnh lại")
+
+Giữ bố cục giờ · trục · thẻ; gỡ đồ trang trí thừa:
+- **Số mốc TRUNG TÍNH** (viền `foreground/20`, chữ đậm 11px, 22px) — bản viền xanh `primary` rắc màu nhấn lên mọi hàng, trục
+  thành chuỗi hạt xanh. Mốc không số = **chấm vuông 10px** (bỏ ô icon trên trục: icon loại đã nằm trong thẻ, đừng lặp).
+- **Icon loại đứng trần** trước tên ở thẻ gọn — bỏ ô nền xám bọc icon.
+- **Không dán huy hiệu loại lên ảnh** (`Thumb`).
+- **Tên mục của site không gạch chân chấm** — rê vào đổi màu (cùng quy ước "tên đổi màu" của trang điểm đến).
+- **Ẩn "0′"** dưới mốc (ghé qua).
+- **Nơi tự gõ dạng gọn** (icon ghim cạnh tên, vẫn lấy số) — bỏ ô ảnh rỗng viền đứt to bằng ảnh thật.
+- **Cảnh báo mức cao = chữ đỏ + icon, không mảng nền** — dải hồng cả bề ngang nặng hơn chính tên mục.

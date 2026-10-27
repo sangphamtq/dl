@@ -18,10 +18,9 @@ import { TripShell } from "@/components/trip/trip-shell";
 import { TripDayStrip } from "@/components/trip/trip-day-strip";
 import { TripFieldsMenu, useTripFields } from "@/components/trip/trip-fields";
 import {
+  ActivityTags,
   DayHeading,
-  DoingRow,
   MICRO,
-  PlaceStub,
   RailItem,
   RailLeg,
   StopRow,
@@ -227,39 +226,18 @@ export function TripView({
                   <div className="mt-6">
                     <ol>
                       {groupStops(day.items).map((stop, k, all) => (
-                        <Fragment key={(stop.place ?? stop.doings[0]).id}>
-                          <StopRow
-                            hasDoings={stop.doings.length > 0}
-                            left={
-                              stop.place ? (
-                                <RailItem
-                                  as="div"
-                                  item={stop.place}
-                                  index={stop.first}
-                                  number={stop.no}
-                                  fields={fields}
-                                />
-                              ) : (
-                                <PlaceStub
-                                  name={stop.placeName}
-                                  minute={stop.doings[0].arriveMin}
-                                  number={stop.placeName ? stop.no : null}
-                                />
-                              )
-                            }
-                            right={
-                              stop.doings.length > 0 ? (
-                                <ul>
-                                  {stop.doings.map((d) => (
-                                    <DoingRow key={d.id} item={d} fields={fields} />
-                                  ))}
-                                </ul>
-                              ) : null
-                            }
-                          />
-                          {fields.leg && k < all.length - 1 && (
-                            <RailLeg item={day.items[stop.last]} />
-                          )}
+                        <Fragment key={stop.item.id}>
+                          <StopRow>
+                            <RailItem
+                              as="div"
+                              item={stop.item}
+                              index={stop.first}
+                              number={stop.no}
+                              fields={fields}
+                              tags={<ActivityTags tags={stop.tags} />}
+                            />
+                          </StopRow>
+                          {fields.leg && k < all.length - 1 && <RailLeg item={stop.item} />}
                         </Fragment>
                       ))}
                     </ol>
@@ -278,10 +256,10 @@ export function TripView({
             .filter((i) => i.lat != null && i.lng != null)
             .map((i) => ({ id: i.id, name: i.name, lat: i.lat as number, lng: i.lng as number }))}
           points={(activeDay?.items ?? [])
-            .filter((i) => i.lat != null && i.lng != null)
+            .filter((i) => i.lat != null && i.lng != null && !i.nested)
             .map((i, idx) => ({
               id: i.id,
-              order: idx + 1,
+              order: i.stopNo ?? idx + 1,
               name: i.name,
               kind: i.kind,
               lat: i.lat as number,

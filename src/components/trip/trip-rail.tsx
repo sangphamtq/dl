@@ -10,6 +10,7 @@ import { formatMinutes, fmtDuration, type TripWarning } from "@/lib/trip-time";
 import type { ItemView, ResolvedItem } from "@/lib/trip";
 import { isTask, stayLabel, type TripItemKind } from "@/lib/trip-time";
 import { ALL_ON, type TripFields } from "@/components/trip/trip-fields";
+import { specialGlyph } from "@/lib/trip-special";
 
 const TYPE_GLYPH: Record<TripItemKind, GlyphName> = {
   spot: "mountain",
@@ -21,7 +22,7 @@ const TYPE_GLYPH: Record<TripItemKind, GlyphName> = {
 
 // Điện thoại: cột giờ HẸP (2.5rem, chữ nhỏ hơn) — giờ vẫn đứng bên trái chấm số như một bảng giờ, nhưng không
 // ăn mất một phần tư bề ngang như cột 3.25rem cũ. Khoảng cách tới trục cũng hẹp hơn (gap-2).
-const TIME = "w-10 shrink-0 pt-0.5 text-right text-[0.8125rem] font-semibold tabular-nums sm:w-16 sm:text-[0.95rem]";
+const TIME = "w-11 shrink-0 pt-0.5 text-right text-[0.9375rem] font-semibold tabular-nums sm:w-16 sm:text-base";
 const ROW_GAP = "gap-2 sm:gap-3";
 
 /**
@@ -49,7 +50,7 @@ function Rail({ node, dashed, below }: { node?: ReactNode; dashed?: boolean; bel
  * Chỉ là chữ xám nhỏ, KHÔNG viền / không đậm (biên tập: "đơn giản hơn"); nền trắng chỉ để vạch trục ngắt sau chữ.
  */
 export const STAY_PILL =
-  "block whitespace-nowrap bg-background py-px text-[0.6875rem] leading-4 tabular-nums text-muted-foreground";
+  "block whitespace-nowrap bg-background py-px text-xs leading-4 tabular-nums text-muted-foreground";
 
 /** "45′" · "1g30" · "0′" — nhãn gọn đủ chỗ trên trục. */
 export function stayShort(min: number): string {
@@ -61,6 +62,8 @@ export function stayShort(min: number): string {
 }
 
 function RailStay({ item }: { item: ItemView }) {
+  // "0′" dưới mốc chỉ là nhiễu — ghé qua thì để trống.
+  if (item.effectiveStayMin <= 0) return null;
   return (
     <span className={STAY_PILL} title={stayLabel(item)}>
       {stayShort(item.effectiveStayMin)}
@@ -77,7 +80,6 @@ function ItemBody({
   note,
   stay,
   name,
-  compact,
 }: {
   item: ItemView;
   fields: TripFields;
@@ -87,22 +89,25 @@ function ItemBody({
   stay?: ReactNode;
   /** Thay chỗ tên (trang soạn: ô sửa tên cho mục tự thêm). */
   name?: ReactNode;
-  /** Ô "Làm gì": ảnh nhỏ, chữ nhỏ. */
-  compact?: boolean;
 }) {
   const warnings = fields.warn ? item.warnings : [];
+  // Hoạt động đứng riêng (không là thẻ của một nơi trong ngày): nói nó diễn ra ở đâu.
+  const at = item.kind === "activity" && !item.nested ? item.atName : null;
+  const look = lookOf(item);
+  if (look !== "place")
+    return <CompactBody {...{ item, fields, grip, actions, name, look }} warnings={warnings} />;
   return (
     // `data-row-part`: phần NỘI DUNG thấy được (không gồm đệm) — dấu + chèn giữa hai hàng đo
     // khoảng trắng thật từ đáy phần này tới chấm số hàng dưới.
-    <div data-row-part className="flex items-start gap-3">
-      {fields.image && <Thumb item={item} size={compact ? "sm" : "md"} />}
+    <div data-row-part>
+    <div className="flex items-start gap-3">
+      {fields.image && <Thumb item={item} />}
 
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-1">
           <p
             className={cn(
-              "flex min-w-0 items-start gap-1.5 font-medium leading-snug",
-              compact && "text-sm",
+              "flex min-w-0 items-start gap-1.5 text-[1.0625rem] font-semibold leading-snug tracking-[-0.005em]",
             )}
           >
             {!fields.image && (
@@ -119,7 +124,7 @@ function ItemBody({
                 <Link
                   href={item.href}
                   draggable={false}
-                  className="underline decoration-muted-foreground/40 decoration-dotted decoration-1 underline-offset-4 transition-colors hover:text-primary-ink hover:decoration-primary"
+                  className="transition-colors hover:text-primary-ink"
                 >
                   {item.name}
                 </Link>
@@ -134,8 +139,22 @@ function ItemBody({
           </div>
         </div>
 
-        {(fields.stay || (fields.hours && item.openingHours)) && (
-          <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+        {(fields.stay || (fields.hours && item.openingHours) || at || item.address || item.special) && (
+          <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+            {at && <span>tại {at}</span>}
+            {/* Mục đặc biệt: nói nó là GÌ (tên có thể là "Hà Nội – Sa Pa" hay "Ăn trưa") + mã đặt chỗ nếu có. */}
+            {item.special && item.typeLabel !== item.name && <span>{item.typeLabel}</span>}
+            {item.bookingCode && (
+              <span>
+                Mã <strong className="font-semibold tabular-nums text-foreground">{item.bookingCode}</strong>
+              </span>
+            )}
+            {item.address && (
+              <span className="inline-flex min-w-0 items-start gap-1">
+                <Glyph name="pin" className="mt-[0.2rem] size-3.5 shrink-0" />
+                <span className="[overflow-wrap:anywhere]">{item.address}</span>
+              </span>
+            )}
             {fields.stay &&
               (stay ?? (
                 <span className="inline-flex items-center gap-1">
@@ -146,19 +165,119 @@ function ItemBody({
             {fields.hours && item.openingHours && <span>Mở {item.openingHours}</span>}
           </p>
         )}
-
-        {fields.note &&
-          (note ??
-            (item.note && (
-              <p className="mt-1.5 text-xs italic leading-relaxed text-muted-foreground">
-                {item.note}
-              </p>
-            )))}
-
-        {warnings.map((w, i) => (
-          <Warning key={`${w.code}-${i}`} warning={w} />
-        ))}
+        {fields.note && !note && item.note && <NoteLine text={item.note} className="hidden sm:flex" />}
       </div>
+    </div>
+    {/* Điện thoại: ghi chú HẾT bề ngang thẻ (dưới ảnh) — kẹp trong cột chữ cạnh ảnh thì mỗi dòng còn vài chữ.
+        Từ `sm`: bản trong cột chữ, ngay dưới tên. Hai bản, `display` chọn. */}
+    {fields.note && (note ?? (item.note && <NoteLine text={item.note} className="sm:hidden" />))}
+    {warnings.map((w, i) => (
+      <Warning key={`${w.code}-${i}`} warning={w} />
+    ))}
+    </div>
+  );
+}
+
+/** Thân của mục KHÔNG phải nơi: không ảnh — icon loại thay chỗ ảnh; Di chuyển dựng thành một tấm vé. */
+function CompactBody({
+  item,
+  fields,
+  grip,
+  actions,
+  name,
+  look,
+  warnings,
+}: {
+  item: ItemView;
+  fields: TripFields;
+  grip?: ReactNode;
+  actions?: ReactNode;
+  name?: ReactNode;
+  look: Exclude<ItemLook, "place">;
+  warnings: TripWarning[];
+}) {
+  const route = look === "transport" && item.travelFrom && item.travelTo;
+  // Nhãn loại CHỈ cho Di chuyển (tên phương tiện) — loại khác đã có icon nói thay ("Ăn trưa / Bữa ăn" là lặp).
+  const meta = [
+    look === "transport" && item.typeLabel !== item.name ? item.typeLabel : null,
+    route && item.name !== `${item.travelFrom} – ${item.travelTo}` ? item.name : null,
+  ].filter(Boolean) as string[];
+  return (
+    <div data-row-part>
+      <div className={cn("flex gap-2.5", look === "transport" ? "items-center" : "items-start")}>
+        {/* Icon loại đứng TRẦN trước tên — không bọc ô nền (ô xám + icon là kiểu "thẻ mẫu" lặp ở mọi hàng). */}
+        <span className={cn("shrink-0 text-muted-foreground", look === "transport" ? "" : "mt-[0.2rem]")}>
+          <Glyph name={glyphOf(item)} className={look === "transport" ? "size-5" : "size-4"} />
+          <span className="sr-only">{item.typeLabel}</span>
+        </span>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-1">
+            {route ? (
+              <>
+                {/* Tấm VÉ: hai đầu in đậm nối bằng vạch đứt — đọc ngay là "đi từ đâu tới đâu" (KHÔNG mũi tên, luật §3).
+                    Dưới `sm` không đủ chỗ cho vạch (320px cắt còn "H ┄ P…") ⇒ bản chữ thường, xuống dòng được. */}
+                <p className="min-w-0 flex-1 text-[1.0625rem] font-semibold leading-snug [overflow-wrap:anywhere] sm:hidden">
+                  {item.travelFrom} – {item.travelTo}
+                </p>
+                <p className="hidden min-w-0 flex-1 items-center gap-2 text-[1.0625rem] font-semibold leading-snug sm:flex">
+                  <span className="min-w-0 truncate">{item.travelFrom}</span>
+                  <span aria-hidden className="h-0 min-w-5 flex-1 border-t-2 border-dashed border-muted-foreground/35" />
+                  <span className="sr-only">đến</span>
+                  <span className="min-w-0 truncate">{item.travelTo}</span>
+                </p>
+              </>
+            ) : (
+              <p
+                className={cn(
+                  "line-clamp-2 min-w-0 leading-snug [overflow-wrap:anywhere]",
+                  look === "transport" ? "text-[1.0625rem] font-semibold" : "text-base font-medium",
+                  look === "rest" && "text-muted-foreground",
+                )}
+              >
+                {name ?? item.name}
+              </p>
+            )}
+            <div className="flex shrink-0 items-center gap-0.5">
+              {grip}
+              {actions}
+            </div>
+          </div>
+
+          {(meta.length > 0 || item.bookingCode || item.address) && (
+            <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+              {meta.map((m) => (
+                <span key={m}>{m}</span>
+              ))}
+              {item.bookingCode && (
+                <span>
+                  Mã <strong className="font-semibold tabular-nums text-foreground">{item.bookingCode}</strong>
+                </span>
+              )}
+              {item.address && (
+                <span className="inline-flex min-w-0 items-start gap-1">
+                  <Glyph name="pin" className="mt-[0.2rem] size-3.5 shrink-0" />
+                  <span className="[overflow-wrap:anywhere]">{item.address}</span>
+                </span>
+              )}
+            </p>
+          )}
+          {fields.note && item.note && <NoteLine text={item.note} />}
+        </div>
+      </div>
+      {warnings.map((w, i) => (
+        <Warning key={`${w.code}-${i}`} warning={w} />
+      ))}
+    </div>
+  );
+}
+
+/** Lời dặn: đọc được (14px, không nghiêng) nhưng là tầng PHỤ — chữ xám, không nền, không viền. */
+function NoteLine({ text, className }: { text: string; className?: string }) {
+  return (
+    <div className={cn("mt-1.5 flex gap-1.5 text-sm leading-relaxed text-muted-foreground", className)}>
+      <Glyph name="note" className="mt-[0.2rem] size-3.5 shrink-0 opacity-70" />
+      <p className="min-w-0 whitespace-pre-line [overflow-wrap:anywhere]">{text}</p>
     </div>
   );
 }
@@ -177,7 +296,7 @@ function RailDot({
   number,
   handleProps,
 }: {
-  /** null = chấm nhỏ không số (nơi chưa rõ). */
+  /** null = mốc phụ (việc, bữa ăn, di chuyển…): chấm nhỏ, không số. Icon loại đã nằm trong thẻ — không lặp ở trục. */
   number: number | null;
   handleProps?: Record<string, unknown>;
 }) {
@@ -187,12 +306,11 @@ function RailDot({
       {...handleProps}
       data-rail-dot
       className={cn(
-        // Mốc VUÔNG bo nhỏ (hệ hình khối của site — không rounded-full), viền chứ không đặc:
-        // số đọc rõ hơn và trục trông nhẹ hơn một chuỗi chấm xanh đặc.
+        // Số mốc TRUNG TÍNH (viền xám, chữ đậm) — bản viền xanh rắc màu nhấn lên mọi hàng, trục thành một chuỗi hạt xanh.
         "relative shrink-0 bg-background ring-4 ring-background",
         number == null
-          ? "mt-[0.35rem] size-3 rounded-[3px] border-2 border-muted-foreground/40"
-          : "mt-0.5 grid size-6 place-items-center rounded-[5px] border-[1.5px] border-primary text-[0.7rem] font-bold tabular-nums text-primary-ink",
+          ? "mt-[0.4rem] size-2.5 rounded-[2px] bg-muted-foreground/35"
+          : "mt-0.5 grid size-[1.375rem] place-items-center rounded-[4px] border border-foreground/20 text-[0.6875rem] font-bold tabular-nums text-foreground/80",
         draggable &&
           "cursor-grab touch-none before:absolute before:-inset-2 before:content-[''] active:cursor-grabbing",
       )}
@@ -218,13 +336,19 @@ export function RailItem({
   handleProps,
   dragging,
   stale,
+  tags,
+  card,
   fields = ALL_ON,
 }: {
   item: ItemView;
   index: number;
+  /** Trang soạn: bọc nội dung thành THẺ kéo được (dựng ở `SortableStop`, nơi có `useSortable`). */
+  card?: (content: ReactNode) => ReactNode;
+  /** Thẻ "làm gì ở đây" ngay dưới tên. */
+  tags?: ReactNode;
   /** Số trên chấm; mặc định `stopNo`. */
   number?: number | null;
-  /** "div" khi nằm trong ô "Ở đâu" của một `StopRow`. */
+  /** "div" khi nằm trong một `StopRow`. */
   as?: "li" | "div";
   actions?: ReactNode;
   grip?: ReactNode;
@@ -244,81 +368,137 @@ export function RailItem({
     <Tag
       ref={innerRef}
       style={style}
-      className={cn("group flex", ROW_GAP, dragging && "opacity-40")}
+      // `min-w-0`: hàng là con của một ô GRID (`StopRow`) — mặc định nó không co dưới bề rộng tối thiểu của nội dung, một
+      // tấm vé "Hà Nội ┄ Phan Thiết" là đủ đẩy cả trang tràn ngang trên điện thoại.
+      className={cn("group flex min-w-0", ROW_GAP, dragging && "opacity-40")}
     >
-      <span className={cn(TIME, (stale || noTime) && "text-muted-foreground/50")}>
+      {/* Thẻ có đệm trên ⇒ giờ và mốc dịch xuống theo, cho thẳng dòng tên. */}
+      <span
+        className={cn(TIME, card && "pt-3", (stale || noTime) && "text-muted-foreground/50")}
+      >
         {noTime ? "···" : formatMinutes(item.arriveMin)}
       </span>
 
+      <div className="flex shrink-0">
       <Rail
         node={
-          <RailDot
-            number={number !== undefined ? number : (item.stopNo ?? index + 1)}
-            handleProps={handleProps}
-          />
+          <span className={cn("relative flex", card && "pt-2.5")}>
+            <RailDot
+              number={number !== undefined ? number : (item.stopNo ?? index + 1)}
+              handleProps={handleProps}
+            />
+          </span>
         }
         below={fields.stay ? (stay ?? <RailStay item={item} />) : null}
       />
-
-      {/* Tắt hết dòng phụ ⇒ mục chỉ còn một dòng tên, đệm 20px là quá thưa cho một danh sách. */}
-      <div className={cn("min-w-0 flex-1", isBare(item, fields) ? "pb-3" : "pb-5")}>
-        {/* Thời gian đã nằm trên trục ⇒ dòng thông tin dưới tên chỉ còn giờ mở cửa. */}
-        <ItemBody {...{ item, grip, actions, note, name }} fields={{ ...fields, stay: false }} />
       </div>
+
+      {card ? (
+        <div className="min-w-0 flex-1 pb-3">
+          {card(
+            <>
+              <ItemBody {...{ item, grip, actions, note, name }} fields={{ ...fields, stay: false }} />
+              {tags}
+            </>,
+          )}
+        </div>
+      ) : (
+        // Tắt hết dòng phụ ⇒ mục chỉ còn một dòng tên, đệm 20px là quá thưa cho một danh sách.
+        <div className={cn("min-w-0 flex-1", isBare(item, fields) ? "pb-3" : "pb-5")}>
+          {/* Thời gian đã nằm trên trục ⇒ dòng thông tin dưới tên chỉ còn giờ mở cửa. */}
+          <ItemBody {...{ item, grip, actions, note, name }} fields={{ ...fields, stay: false }} />
+          {tags}
+        </div>
+      )}
     </Tag>
   );
 }
 
-/** Ô "Ở đâu" khi nơi đó không phải một mục của chuyến (nơi của một hoạt động đứng riêng). */
-export function PlaceStub({
-  name,
-  minute,
-  number,
-}: {
-  name: string | null;
-  minute: number;
-  number: number | null;
-}) {
-  return (
-    <div className={cn("flex", ROW_GAP)}>
-      <span className={cn(TIME, minute < 0 && "text-muted-foreground/50")}>
-        {minute < 0 ? "···" : formatMinutes(minute)}
-      </span>
-      <Rail node={<RailDot number={number} />} />
-      <div className="min-w-0 flex-1 pb-5">
-        <p data-row-part className="font-medium leading-snug text-muted-foreground">
-          {name ?? "Chưa rõ ở đâu"}
-        </p>
-      </div>
-    </div>
+/**
+ * HÌNH của một mục — phân biệt bằng HÌNH, không bằng màu (màu đã khoá nghĩa ở §3: xanh = thời điểm, cam = cảnh báo).
+ * - `place`: nơi của site — thẻ lớn có ảnh + số mốc, xương sống của ngày.
+ * - `transport`: Di chuyển — thẻ kiểu VÉ: nền xám nhạt, "Hà Nội ┄┄ Sa Pa".
+ * - `minor`: mục tự thêm (nhận/trả phòng, bữa ăn, việc, nơi tự gõ) — thẻ gọn, icon nhỏ thay ảnh.
+ * - `rest`: Nghỉ — viền đứt, nền trong suốt: một KHOẢNG TRỐNG của ngày.
+ */
+export type ItemLook = "place" | "transport" | "minor" | "rest";
+
+export function lookOf(item: ResolvedItem): ItemLook {
+  if (item.kind !== "custom") return "place";
+  if (item.special === "transport") return "transport";
+  if (item.special === "rest") return "rest";
+  // Mục tự thêm (kể cả NƠI tự thêm có địa chỉ — nó vẫn lấy số mốc) không bao giờ có ảnh: dựng dạng gọn, đừng để một ô
+  // ảnh rỗng viền đứt to bằng ảnh thật.
+  return "minor";
+}
+
+/** Khung THẺ ở trang soạn theo hình của mục. Cùng đệm ở mọi hình — giờ và mốc trên trục canh theo đệm đó. */
+export function cardClass(look: ItemLook): string {
+  return cn(
+    "rounded-[6px] border px-3 py-2.5",
+    look === "rest" ? "border-dashed border-border bg-transparent" : "border-border",
+    look === "transport" && "bg-muted/50",
+    (look === "place" || look === "minor") && "bg-background",
   );
 }
 
-// "Làm gì" xếp DƯỚI nơi, thụt theo nội dung — vẽ tiếp đoạn trục đúng toạ độ trục bên trên
-// (cột giờ + khoảng cách + nửa cột trục) để đường không đứt.
-const STACKED_RAIL =
-  "before:absolute before:inset-y-0 before:left-[calc(2.5rem+0.5rem+0.625rem)] before:w-0.5 before:-translate-x-1/2 before:bg-border sm:before:left-[calc(4rem+0.75rem+0.75rem)]";
-/** Lề trái của phần "Làm gì": thẳng với nội dung của nơi bên trên. */
-// Dưới sm: cột giờ 2.5rem + gap 0.5rem + trục 1.25rem + gap 0.5rem = mép nội dung của nơi.
-export const DOINGS_INDENT = "pl-[calc(2.5rem+0.5rem+1.25rem+0.5rem)] sm:pl-[calc(4rem+0.75rem+1.5rem+0.75rem)]";
+/**
+ * Thẻ hoạt động của một nơi — "làm gì ở đây". KHÔNG giờ: thời gian ở nơi đó là tổng, nằm ở mốc của
+ * nơi. Thẻ bấm được (sang trang hoạt động) nên có viền; hoạt động cần giờ riêng (tour, đặt chỗ) thì
+ * tách thành mục riêng.
+ */
+export function ActivityTags({
+  tags,
+  action,
+  add,
+}: {
+  tags: ItemView[];
+  /** Trang soạn: nút ⋯ cuối mỗi thẻ. */
+  action?: (tag: ItemView) => ReactNode;
+  /** Trang soạn: thẻ "+ Hoạt động" cuối dải. */
+  add?: ReactNode;
+}) {
+  if (tags.length === 0 && !add) return null;
+  return (
+    <ul aria-label="Làm gì ở đây" className="mt-2 flex flex-wrap gap-1.5">
+      {tags.map((t) => (
+        <li
+          key={t.id}
+          className={cn(
+            "group/tag inline-flex h-8 min-w-0 max-w-full items-center rounded-[3px] border border-border bg-background text-sm transition-colors",
+            t.href && "hover:border-primary/50",
+          )}
+        >
+          <span className="inline-flex min-w-0 items-center gap-1.5 pl-2 pr-2">
+            <Glyph name="compass" className="size-3.5 shrink-0 text-muted-foreground" />
+            {t.href ? (
+              <Link href={t.href} draggable={false} className="truncate font-medium hover:text-primary-ink">
+                {t.name}
+              </Link>
+            ) : (
+              <span className="truncate font-medium">{t.name}</span>
+            )}
+          </span>
+          {action?.(t)}
+        </li>
+      ))}
+      {add && <li className="inline-flex">{add}</li>}
+    </ul>
+  );
+}
 
-/** Một hàng: nơi, rồi NGAY DƯỚI là các việc làm ở đó. */
+/** Một hàng của dòng thời gian: mục gốc (và thẻ của nó). */
 export function StopRow({
-  left,
-  right,
-  hasDoings = true,
+  children,
   rowId,
   innerRef,
   style,
   dragging,
 }: {
-  /** id mục gốc của hàng — để giữ hàng đứng yên dưới chuột khi các hàng thu gọn. */
+  children: ReactNode;
+  /** id mục gốc của hàng. */
   rowId?: string;
-  left: ReactNode;
-  right?: ReactNode;
-  /** Không có việc ⇒ phần dưới cao 0 (vẫn giữ chỗ cho nút "Thêm việc" nằm `absolute`). */
-  hasDoings?: boolean;
-  /** Trang soạn: CẢ HÀNG là một mục kéo–thả — kéo nơi thì việc của nó đi theo. */
+  /** Trang soạn: CẢ HÀNG là một mục kéo–thả — kéo nơi thì thẻ của nó đi theo. */
   innerRef?: (node: HTMLElement | null) => void;
   style?: CSSProperties;
   dragging?: boolean;
@@ -328,85 +508,11 @@ export function StopRow({
       ref={innerRef}
       style={style}
       data-stop-row={rowId ?? ""}
-      className={cn("group/stop grid bg-background", dragging && "relative z-10 opacity-60")}
+      // Đang kéo: chính hàng này đi theo tay — nổi lên trên các hàng nó trượt qua.
+      className={cn("group/stop relative grid bg-background", dragging && "z-20")}
     >
       {/* `grid`: ô con kéo hết chiều cao — trục không đứt. */}
-      <div className="grid min-w-0">{left}</div>
-      {right != null && (
-        <div className={cn("relative min-w-0", DOINGS_INDENT, STACKED_RAIL, hasDoings ? "pb-5" : "h-0")}>
-          {right}
-        </div>
-      )}
-    </li>
-  );
-}
-
-/** Một dòng trong cột "Làm gì": giờ nhỏ + thân mục rút gọn. */
-export function DoingRow({
-  item,
-  fields = ALL_ON,
-  grip,
-  actions,
-  note,
-  stay,
-  name,
-  innerRef,
-  style,
-  dragging,
-  stale,
-}: {
-  item: ItemView;
-  fields?: TripFields;
-  grip?: ReactNode;
-  actions?: ReactNode;
-  note?: ReactNode;
-  stay?: ReactNode;
-  name?: ReactNode;
-  innerRef?: (node: HTMLElement | null) => void;
-  style?: CSSProperties;
-  dragging?: boolean;
-  stale?: boolean;
-}) {
-  return (
-    <li
-      ref={innerRef}
-      style={style}
-      className={cn(
-        "group flex gap-0 border-t border-border/50 py-2 first:border-t-0 first:pt-0 sm:gap-3",
-        // Đủ cao cho mốc + nhãn thời gian dưới mốc (nằm `absolute`), kẻo nhãn tràn xuống hàng sau.
-        fields.stay && "min-h-[3.25rem]",
-        dragging && "opacity-40",
-      )}
-    >
-      <span
-        className={cn(
-          // `self-start`: ô giờ cao ĐÚNG một dòng chữ (h-5) — để kéo giãn theo cả dòng thì mốc
-          // (top-1/2) rơi xuống giữa dòng, lệch khỏi chữ giờ. Dưới sm ô rộng 0: giờ của việc nằm trong CỘT GIỜ
-          // chung bên trái trục (thẳng hàng giờ của các nơi), nội dung việc thẳng mép nội dung của nơi.
-          "relative mt-px h-5 w-0 shrink-0 self-start text-right text-xs font-medium tabular-nums text-muted-foreground sm:w-10",
-          (stale || item.arriveMin < 0) && "text-muted-foreground/50",
-        )}
-      >
-        {/* Mốc nhỏ của việc NẰM TRÊN TRỤC, ngang dòng giờ — lùi về đúng toạ độ trục
-            (= DOINGS_INDENT trừ tâm trục). */}
-        <span
-          aria-hidden
-          className="absolute left-[-1.125rem] top-1/2 size-[7px] -translate-x-1/2 -translate-y-1/2 rounded-[2px] bg-muted-foreground/50 ring-[3px] ring-background sm:left-[-1.5rem]"
-        />
-        {fields.stay && (
-          // Thời gian của việc: trên trục, ngay dưới mốc (cùng toạ độ ngang với mốc).
-          <span className="absolute left-[-1.125rem] top-[1.6rem] z-10 -translate-x-1/2 sm:left-[-1.5rem]">
-            {stay ?? <RailStay item={item} />}
-          </span>
-        )}
-        {/* Dưới sm: đẩy sang trái đúng bằng (khoảng cách + trục + khoảng cách) ⇒ mép phải chữ trùng mép phải cột giờ. */}
-        <span className="absolute right-[2.25rem] top-0 whitespace-nowrap sm:static">
-          {item.arriveMin < 0 ? "···" : formatMinutes(item.arriveMin)}
-        </span>
-      </span>
-      <div className="min-w-0 flex-1">
-        <ItemBody {...{ item, grip, actions, note, name }} fields={{ ...fields, stay: false }} compact />
-      </div>
+      <div className="grid min-w-0">{children}</div>
     </li>
   );
 }
@@ -416,13 +522,22 @@ function fmtKm(km: number): string {
   return `${km < 10 ? km.toLocaleString("vi-VN", { maximumFractionDigits: 1 }) : Math.round(km)} km`;
 }
 
-export function RailLeg({ item }: { item: ItemView }) {
+export function RailLeg({
+  item,
+  as: Tag = "li",
+  className,
+}: {
+  item: ItemView;
+  /** "div" khi nằm TRONG hàng kéo được (đi theo hàng, không đứng yên giữa các hàng đang trượt). */
+  as?: "li" | "div";
+  className?: string;
+}) {
   if (item.legHidden) return null;
   return (
-    <li className={cn("flex", ROW_GAP)} aria-hidden={false}>
+    <Tag className={cn("flex transition-opacity", ROW_GAP, className)}>
       <span className={cn(TIME, "invisible")}>—</span>
       <Rail dashed />
-      <p className="flex min-w-0 flex-1 items-center gap-1.5 pb-5 text-xs text-muted-foreground">
+      <p className="flex min-w-0 flex-1 items-center gap-1.5 pb-5 text-sm text-muted-foreground">
         {item.driveToNextMin != null ? (
           <>
             <Glyph name="car" className="size-3.5 shrink-0" />
@@ -436,11 +551,12 @@ export function RailLeg({ item }: { item: ItemView }) {
           <span className="italic">chưa ước tính được đường đi</span>
         )}
       </p>
-    </li>
+    </Tag>
   );
 }
 
 function glyphOf(item: ResolvedItem): GlyphName {
+  if (item.kind === "custom" && item.special) return specialGlyph(item.special, item.travelMode);
   return isTask(item) ? "note" : TYPE_GLYPH[item.kind];
 }
 
@@ -455,7 +571,7 @@ export function Thumb({
 }) {
   const glyph = glyphOf(item);
   // Khổ điện thoại nhỏ đi một nấc: mỗi 8px ở đây là 8px chữ của tên mục (375px đã bị bóp còn ~100px).
-  const box = size === "sm" ? "size-8 sm:size-10" : "size-10 sm:size-12";
+  const box = size === "sm" ? "size-8 sm:size-10" : "size-11 sm:size-14";
 
   if (!item.image || hideImage) {
     return (
@@ -482,20 +598,11 @@ export function Thumb({
         alt={item.name}
         fill
         draggable={false}
-        sizes={size === "sm" ? "40px" : "48px"}
+        sizes={size === "sm" ? "40px" : "56px"}
         className="object-cover"
       />
-      {/* Huy hiệu loại nằm TRONG ảnh, nền đặc — bản cũ tràn ra ngoài khung và
-          phải thêm `ring` để tách khỏi ảnh; ở đây nền đã đủ tách. */}
-      <span
-        className={cn(
-          "absolute bottom-0 left-0 grid place-items-center rounded-tr-[4px] bg-background text-foreground/70",
-          size === "sm" ? "size-[0.875rem]" : "size-[1.125rem]",
-        )}
-      >
-        <Glyph name={glyph} className={size === "sm" ? "size-2.5" : "size-3"} />
-        <span className="sr-only">{item.typeLabel}</span>
-      </span>
+      {/* KHÔNG dán huy hiệu loại lên ảnh — ảnh tự nói nó là gì, ô ký hiệu chỉ cho mục chưa có ảnh. */}
+      <span className="sr-only">{item.typeLabel}</span>
     </div>
   );
 }
@@ -512,8 +619,9 @@ export function Warning({
   return (
     <p
       className={cn(
-        "mt-1.5 flex items-start gap-1.5 text-xs leading-relaxed",
-        high && "rounded-[4px] bg-destructive/10 px-2 py-1 font-medium text-destructive",
+        "mt-1.5 flex items-start gap-1.5 text-[0.8125rem] leading-relaxed",
+        // Chữ đỏ + icon, KHÔNG mảng nền: một dải hồng cả bề ngang nặng hơn chính tên mục.
+        high && "font-medium text-destructive",
         warning.level === "medium" && "text-warm",
         warning.level === "info" && "text-muted-foreground",
         className,

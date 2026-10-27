@@ -9,7 +9,8 @@ import {
   ACTIVITY_CATEGORY_LABELS,
   label,
 } from "@/lib/listing-labels";
-import { scheduleDay, type ScheduleItemInput, type TripItemKind, type TripWarning } from "@/lib/trip-time";
+import { SPECIAL_LABEL, specialTitle, travelModeOf, type TravelMode, type TripSpecial } from "@/lib/trip-special";
+import { isTask, scheduleDay, type ScheduleItemInput, type TripItemKind, type TripWarning } from "@/lib/trip-time";
 import { getLegs, legMinutes } from "@/lib/trip-route";
 
 export type ResolvedItem = {
@@ -39,7 +40,15 @@ export type ResolvedItem = {
   atSpots: { id: string; name: string }[];
   /** Chỉ mục kind=custom: một NƠI tự gõ ("Nhà bạn Minh"), không phải một việc. */
   customPlace: boolean;
-  /** Mục gốc mà việc này THUỘC về (hàng "Ở đâu | Làm gì"); null = mục gốc. */
+  /** Chỉ mục kind=custom: địa chỉ gõ tay (chưa geocode). */
+  address: string | null;
+  /** Chỉ mục kind=custom: mục đặc biệt (di chuyển, nhận/trả phòng, bữa ăn, nghỉ). */
+  special: TripSpecial | null;
+  travelMode: TravelMode | null;
+  travelFrom: string | null;
+  travelTo: string | null;
+  bookingCode: string | null;
+  /** Nơi mà hoạt động này là THẺ "làm gì ở đây" của nó (không giờ riêng); null = mục gốc. */
   parentId: string | null;
 };
 
@@ -182,6 +191,12 @@ function resolveItem(item: RawItem): ResolvedItem {
     spotId: item.spotId,
     atSpots: [] as { id: string; name: string }[],
     customPlace: item.customPlace ?? false,
+    address: item.customAddress ?? null,
+    special: (item.special ?? null) as TripSpecial | null,
+    travelMode: (item.travelMode ?? null) as TravelMode | null,
+    travelFrom: item.travelFrom ?? null,
+    travelTo: item.travelTo ?? null,
+    bookingCode: item.bookingCode ?? null,
     parentId: item.parentId ?? null,
   };
 
@@ -236,9 +251,20 @@ function resolveItem(item: RawItem): ResolvedItem {
       atSpots: ac.spotLinks.map((l) => ({ id: l.spot.id, name: l.spot.name })),
     };
   }
+  const special = base.special;
   return {
-    ...base, kind: "custom", name: item.customTitle ?? "Mục tự thêm", href: null,
-    image: null, typeLabel: TYPE_LABELS.custom, categoryLabel: null, areaLabel: null,
+    ...base, kind: "custom",
+    name: special
+      ? specialTitle({ special, title: item.customTitle, travelMode: item.travelMode, travelFrom: item.travelFrom, travelTo: item.travelTo })
+      : (item.customTitle || "Mục tự thêm"),
+    href: null,
+    image: null,
+    typeLabel: special
+      ? special === "transport"
+        ? (travelModeOf(item.travelMode)?.label ?? SPECIAL_LABEL.transport)
+        : SPECIAL_LABEL[special]
+      : TYPE_LABELS.custom,
+    categoryLabel: null, areaLabel: null,
     lat: item.customLat, lng: item.customLng,
     durationText: null, bestTime: null, notice: null, openingHours: null,
   };
@@ -334,7 +360,7 @@ export type ItemView = ResolvedItem & {
   driveApprox: boolean;
   driveKm: number | null;
   legHidden: boolean;
-  /** Hoạt động đang ở TRONG nơi phía trên nó — vẽ thành mục con, không số. */
+  /** Thẻ hoạt động của nơi phía trên ("làm gì ở đây") — không giờ, không số, không chặng. */
   nested: boolean;
   /** Số thứ tự chỉ đếm ĐIỂM DỪNG (mục con không lấy số). */
   stopNo: number | null;
@@ -359,42 +385,52 @@ export type DayView = {
 export async function buildDayViews(trip: TripData): Promise<DayView[]> {
   return Promise.all(
     trip.days.map(async (day) => {
-      // Chỉ những mục CÓ toạ độ mới là điểm trên tuyến — việc (đặt xe, chờ người…)
-      // nằm giữa hai nơi không được cắt đôi chặng.
-      // Hoạt động đang lồng dưới nơi của nó cũng vậy: nó diễn ra TẠI nơi đó.
-      // Tắt tự tính thì KHÔNG gọi OSRM luôn — đỡ một lượt mạng cho mỗi chặng.
-      // Việc diễn ra TẠI nơi của nó: không có chặng tới nó, không nằm trên tuyến.
-      const anchors = day.items.map((i) =>
-        i.parentId ? day.items.findIndex((p) => p.id === i.parentId) : null,
+      // Mục con là THẺ "làm gì ở đây" của nơi cha: không giờ, không chặng — thời gian ở nơi đó
+      // là TỔNG, nằm ở chính nơi cha (cộng thêm giờ cho con là đếm hai lần).
+      const parentOf = day.items.map((i) =>
+        i.parentId ? day.items.findIndex((p) => p.id === i.parentId) : -1,
       );
+      const tops = day.items.filter((_, k) => parentOf[k] < 0);
+      // Tắt tự tính thì KHÔNG gọi OSRM luôn — đỡ một lượt mạng cho mỗi chặng.
       const legs = trip.autoTravel
         ? await getLegs(
-            day.items
-              .filter((i, k) => i.lat != null && i.lng != null && anchors[k] == null)
+            tops
+              .filter((i) => i.lat != null && i.lng != null)
               .map((i) => ({ id: i.id, lat: i.lat, lng: i.lng })),
           )
         : {};
-      const sched = scheduleDay(
-        day.startMin,
-        day.items.map((item, k) => ({ ...toScheduleInput(item), inPlace: anchors[k] != null })),
-        legMinutes(legs),
-        { travel: trip.autoTravel },
-      );
+      const sched = scheduleDay(day.startMin, tops.map(toScheduleInput), legMinutes(legs), {
+        travel: trip.autoTravel,
+      });
+      const byId = new Map(sched.items.map((s) => [s.id, s]));
 
       let stop = 0;
       const items: ItemView[] = day.items.map((item, i) => {
-        const s = sched.items[i];
-        const anchor = anchors[i];
+        const p = parentOf[i];
+        if (p >= 0) {
+          const host = byId.get(day.items[p].id)!;
+          return {
+            ...item,
+            nested: true,
+            stopNo: null,
+            atName: day.items[p].name,
+            arriveMin: host.arriveMin,
+            leaveMin: host.arriveMin,
+            effectiveStayMin: 0,
+            driveToNextMin: null,
+            driveApprox: false,
+            driveKm: null,
+            legHidden: true,
+            warnings: [],
+          };
+        }
+        const s = byId.get(item.id)!;
         return {
           ...item,
-          nested: anchor != null,
-          stopNo: anchor != null ? null : ++stop,
-          atName:
-            anchor != null
-              ? day.items[anchor].name
-              : item.kind === "activity"
-                ? (item.atSpots[0]?.name ?? null)
-                : null,
+          nested: false,
+          // Việc tự gõ (đặt xe, chờ người) không lấy số — cùng luật với groupStops().
+          stopNo: isTask(item) ? null : ++stop,
+          atName: item.kind === "activity" ? (item.atSpots[0]?.name ?? null) : null,
           arriveMin: s.arriveMin,
           leaveMin: s.leaveMin,
           effectiveStayMin: s.stayMin,
@@ -443,6 +479,7 @@ function toScheduleInput(item: ResolvedItem): ScheduleItemInput {
     lat: item.lat,
     lng: item.lng,
     customPlace: item.customPlace,
+    special: item.special,
   };
 }
 
