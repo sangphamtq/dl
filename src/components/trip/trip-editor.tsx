@@ -1,11 +1,12 @@
 "use client";
 
+import Image from "next/image";
+
 import {
   Fragment,
   useEffect,
   startTransition,
   useMemo,
-  useRef,
   useState,
   useTransition,
   type ReactNode,
@@ -38,6 +39,7 @@ import type {
   TripNoteRow,
   TripPackRow,
   TripExpenseRow,
+  MealPick,
 } from "@/lib/trip";
 import { TripNotes } from "@/components/trip/trip-notes";
 import { PackSuggestions, TripPacking } from "@/components/trip/trip-packing";
@@ -45,6 +47,7 @@ import { TripMoney } from "@/components/trip/trip-money";
 import { formatMinutes, fmtDuration, DEFAULT_STAY_MIN, isTask } from "@/lib/trip-time";
 import {
   addDay,
+  attachVenue,
   moveItem,
   removeDay,
   removeItem,
@@ -72,6 +75,8 @@ import { useTripLiveSync } from "@/components/trip/trip-live-sync";
 import { TripAddSearch, type AddPos, type AddTarget } from "@/components/trip/trip-add-search";
 import { insertAt, type DropAt } from "@/lib/trip-drop";
 import { TRAVEL_MODES, type TravelMode } from "@/lib/trip-special";
+import { TRAVEL_INK, TravelIcon } from "@/components/trip/travel-icon";
+import { VenuePicker, type Venue } from "@/components/trip/trip-venue-picker";
 import {
   DndContext,
   KeyboardSensor,
@@ -125,6 +130,7 @@ const STAY_PRESETS = [0, 15, 30, 45, 60, 90, 120, 180];
 export function TripEditor({
   trip,
   days,
+  mealPicks,
   backlog,
   notes,
   packing,
@@ -133,6 +139,8 @@ export function TripEditor({
 }: {
   trip: TripHeader;
   days: DayView[];
+  /** Gợi ý quán cho thẻ bữa ăn chưa có quán (`getMealPicks`). */
+  mealPicks: MealPick[];
   backlog: ResolvedItem[];
   notes: TripNoteRow[];
   packing: TripPackRow[];
@@ -334,6 +342,8 @@ export function TripEditor({
               {days.map((day) => (
                 <DayBlock
                   key={day.id}
+                  tripId={trip.id}
+                  mealPicks={mealPicks}
                   day={day}
                   isTemplate={trip.isTemplate}
                   fields={fields}
@@ -539,6 +549,8 @@ function BacklogRow({
 }
 
 function DayBlock({
+  tripId,
+  mealPicks,
   day,
   isTemplate,
   fields,
@@ -553,6 +565,8 @@ function DayBlock({
   onAdd,
   run,
 }: {
+  tripId: string;
+  mealPicks: MealPick[];
   day: DayView;
   isTemplate: boolean;
   fields: TripFields;
@@ -569,7 +583,6 @@ function DayBlock({
   onAdd: (pos?: AddPos) => void;
   run: (fn: () => Promise<{ ok: boolean; error?: string }>, done?: string) => void;
 }) {
-  const listRef = useRef<HTMLOListElement | null>(null);
   const tops = itemIds.map((id) => byId.get(id)).filter((x): x is ItemView => !!x);
   const [editing, setEditing] = useState<string | null>(null);
   const nameOf = (id: string) => byId.get(id)?.name ?? "mục này";
@@ -676,7 +689,7 @@ function DayBlock({
         day.warnings.map((w) => <Warning key={w.code} warning={w} />)}
 
       <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
-        <ol ref={listRef} className="relative mt-6 min-h-[4rem]">
+        <ol className="relative mt-6 min-h-[4rem]">
           {itemIds.length === 0 ? (
             <li className="flex flex-wrap items-center gap-x-2 gap-y-1 py-4 text-sm text-muted-foreground">
               {/* Ngày trống chưa có trục nên chưa có dấu + nào — lối thêm duy nhất là đây. */}
@@ -730,9 +743,20 @@ function DayBlock({
                           fields={fields}
                           actions={
                             <>
-                              {isPlace && tags.length === 0 && (
+                              {isPlace && fields.tags && tags.length === 0 && (
                                 <AddTagButton label={top.name} onClick={addTag} quiet />
                               )}
+                              {top.kind === "custom" && top.special === "checkin" && !top.address && (
+                                  // Mục tự gõ gắn được quán / chỗ ở của site — nói thẳng ra, đừng giấu trong ✎.
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditing(top.id)}
+                                    className="inline-flex h-7 shrink-0 items-center gap-1 rounded-[3px] px-1.5 text-xs font-medium text-primary-ink transition-colors hover:bg-primary/5"
+                                  >
+                                    <Glyph name="bed" className="size-3.5" />
+                                    Chọn chỗ ở
+                                  </button>
+                                )}
                               <ItemActions
                                 item={top}
                                 day={day}
@@ -747,7 +771,15 @@ function DayBlock({
                             </>
                           }
                           tags={
-                            tags.length > 0 ? (
+                            top.kind === "custom" && top.special === "meal" && !top.address ? (
+                              <MealPicksRow
+                                picks={mealPicks}
+                                onPick={(p) =>
+                                  run(() => attachVenue(top.id, { kind: "eatery", id: p.id }), `Đã chọn ${p.name}`)
+                                }
+                                onMore={() => setEditing(top.id)}
+                              />
+                            ) : fields.tags && tags.length > 0 ? (
                               <ActivityTags
                                 tags={tags}
                                 action={(t) => (
@@ -770,126 +802,35 @@ function DayBlock({
               });
             })()
           )}
-          {itemIds.length > 0 && (
-            <InsertMarks
-              listRef={listRef}
-              itemIds={itemIds}
-              slotIndexes={itemIds.map((_, k) => k + 1)}
-              onInsert={(k) => onAdd(topPos(k))}
-            />
-          )}
         </ol>
       </SortableContext>
+      {itemIds.length > 0 && (
+        // Lối thêm ở CUỐI ngày = MỐC KẾ TIẾP trên trục: cùng lưới với `RailItem` (cột giờ trống · ô mốc viền đứt có dấu + ·
+        // chữ), cả hàng là một nút. Chèn vào giữa thì dùng "Chèn trước / sau" trong ⋯ của thẻ.
+        <button
+          type="button"
+          onClick={() => onAdd(topPos(itemIds.length))}
+          className="group/add flex w-full items-center gap-2 py-1 text-left sm:gap-3"
+        >
+          <span aria-hidden className="w-11 shrink-0 sm:w-16" />
+          {/* Vạch đứt ngắn nối đáy trục tới ô + — ô là mốc TIẾP THEO của cùng một trục, không phải nút đứng riêng. */}
+          <span className="relative flex w-5 shrink-0 justify-center before:absolute before:bottom-full before:left-1/2 before:h-2 before:-translate-x-1/2 before:border-l-2 before:border-dashed before:border-foreground/20 sm:w-6">
+            <span className="grid size-[1.375rem] place-items-center rounded-[4px] border border-dashed border-foreground/35 bg-background text-muted-foreground transition-colors group-hover/add:border-solid group-hover/add:border-primary group-hover/add:bg-primary group-hover/add:text-primary-foreground">
+              <Glyph name="plus" className="size-3.5" />
+            </span>
+          </span>
+          <span className="text-[0.9375rem] font-medium text-muted-foreground transition-colors group-hover/add:text-foreground">
+            Thêm vào ngày {day.index + 1}
+          </span>
+        </button>
+      )}
       <ItemEditDialog
+        tripId={tripId}
         item={editing ? (byId.get(editing) ?? null) : null}
         onClose={() => setEditing(null)}
         run={run}
       />
     </section>
-  );
-}
-
-/**
- * Dấu + để chèn, đặt ĐÚNG GIỮA hai chấm số liền nhau trên trục. Khoảng cách giữa hai
- * chấm đổi theo nội dung từng mục (ghi chú, dòng di chuyển…) nên phải ĐO, CSS không
- * tính được. Rê vào một mục (bất kỳ chỗ nào trên nó) thì hiện dấu + ngay dưới nó.
- */
-function InsertMarks({
-  listRef,
-  itemIds,
-  slotIndexes,
-  onInsert,
-}: {
-  listRef: React.RefObject<HTMLOListElement | null>;
-  itemIds: string[];
-  /** Hàng thứ k (`[data-stop-row]`); chèn sau hàng đó = chỉ số `slotIndexes[k]`. */
-  slotIndexes: number[];
-  onInsert: (index: number) => void;
-}) {
-  const [slots, setSlots] = useState<{ x: number; y: number }[]>([]);
-  const [hovered, setHovered] = useState<number | null>(null);
-  const ids = itemIds.join(",");
-
-  // useEffect, KHÔNG useLayoutEffect: effect bố cục của con chạy TRƯỚC khi React gắn
-  // ref cho `<ol>` cha, nên lúc đó `listRef.current` còn null và không đo lại nữa.
-  useEffect(() => {
-    const list = listRef.current;
-    if (!list) return;
-    // Dấu + nằm GIỮA HAI HÀNG (dưới các việc của hàng trên), ngang trục — không giữa hai chấm
-    // số: việc của một nơi nằm ngay dưới nó, giữa hai chấm.
-    const rows = () => [...list.querySelectorAll<HTMLElement>("[data-stop-row]")];
-    const measure = () => {
-      const box = list.getBoundingClientRect();
-      const dot = list.querySelector<HTMLElement>("[data-rail-dot]")?.getBoundingClientRect();
-      if (!dot) return setSlots([]);
-      const x = dot.left + dot.width / 2 - box.left;
-      // Dấu + nằm GIỮA HAI CHẤM SỐ trên trục (① ↔ ②) — bấm vào chèn một nơi ngay sau hàng trên.
-      // Hàng cuối: giữa chấm của nó và đáy trục.
-      const rs = rows();
-      const dotY = (r: HTMLElement) => {
-        const d = r.querySelector<HTMLElement>("[data-rail-dot]")?.getBoundingClientRect();
-        return d ? d.top + d.height / 2 : r.getBoundingClientRect().top;
-      };
-      const next = rs.map((r, k) => ({
-        x,
-        y: (k < rs.length - 1 ? (dotY(r) + dotY(rs[k + 1])) / 2 : (dotY(r) + r.getBoundingClientRect().bottom) / 2) - box.top,
-      }));
-      setSlots((prev) =>
-        prev.length === next.length && prev.every((p, i) => p.x === next[i].x && p.y === next[i].y)
-          ? prev
-          : next,
-      );
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(list);
-
-    // Hàng k chiếm từ đỉnh của nó tới đỉnh hàng kế — trọn nơi, các việc, lẫn dòng "di chuyển".
-    const onMove = (e: MouseEvent) => {
-      const tops = rows().map((r) => r.getBoundingClientRect().top);
-      let k = 0;
-      while (k < tops.length - 1 && e.clientY >= tops[k + 1]) k++;
-      setHovered(k);
-    };
-    const onLeave = () => setHovered(null);
-    list.addEventListener("mousemove", onMove);
-    list.addEventListener("mouseleave", onLeave);
-    return () => {
-      ro.disconnect();
-      list.removeEventListener("mousemove", onMove);
-      list.removeEventListener("mouseleave", onLeave);
-    };
-  }, [listRef, ids]);
-
-  if (slots.length === 0) return null;
-
-  return (
-    <div aria-hidden={false} className="pointer-events-none absolute inset-0 [[data-trip-dragging]_&]:hidden">
-      {slots.map((slot, i) => {
-        // Chỉ hiện ở khe NGAY DƯỚI hàng đang rê.
-        const shown = hovered === i;
-        return (
-          <button
-            key={i}
-            type="button"
-            onClick={() => onInsert(slotIndexes[i] ?? itemIds.length)}
-            title="Chèn vào đây"
-            aria-label={
-              i < slots.length - 1
-                ? `Chèn một mục vào giữa mục ${i + 1} và ${i + 2}`
-                : `Thêm một mục sau mục ${i + 1}`
-            }
-            style={{ left: slot.x, top: slot.y }}
-            className={cn(
-              "pointer-events-auto absolute z-10 grid size-5 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-[3px] border border-border bg-background text-muted-foreground shadow-sm transition-opacity hover:border-primary/50 hover:text-primary-ink focus-visible:opacity-100",
-              shown ? "opacity-100" : "opacity-0",
-            )}
-          >
-            <Glyph name="plus" className="size-3.5" />
-          </button>
-        );
-      })}
-    </div>
   );
 }
 
@@ -907,7 +848,7 @@ function AddTagButton({ label, onClick, quiet }: { label: string; onClick: () =>
         "inline-flex h-8 shrink-0 items-center gap-1 rounded-[3px] px-2 text-sm font-medium text-muted-foreground transition-colors",
         quiet
           ? "opacity-0 transition-opacity hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-focus-within:opacity-100 group-hover:opacity-100 [@media(pointer:coarse)]:hidden"
-          : "border border-dashed border-border hover:border-primary/50 hover:text-primary-ink",
+          : "bg-background hover:bg-muted hover:text-foreground",
       )}
     >
       <Glyph name="plus" className="size-3.5" />
@@ -946,7 +887,10 @@ function SortableStop({
           className={cn(
             cardClass(lookOf(item)),
             isDragging && "border-foreground/25 shadow-[0_16px_32px_-12px_rgb(0_0_0/0.3)]",
-            "cursor-grab transition-[border-color,box-shadow] duration-150 hover:border-foreground/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing",
+            // Rê: nền ngả MỘT sắc + viền đậm một nấc — không bóng (thẻ đã có viền: mỗi khối một độ nổi), không nảy lên.
+            "cursor-grab transition-[border-color,background-color,box-shadow] duration-200 ease-out motion-reduce:transition-none",
+            "hover:bg-[color-mix(in_oklab,var(--color-foreground)_2%,var(--color-background))]",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing",
             // Nhấn xuống là thẻ NHẤC LÊN ngay (cùng bóng với bóng kéo) — trừ khi nhấn vào nút / link bên trong.
             "[&:active:not(:has(a:active,button:active))]:border-foreground/25 [&:active:not(:has(a:active,button:active))]:shadow-[0_16px_32px_-12px_rgb(0_0_0/0.3)]",
             // Nhấn giữ để kéo trên cảm ứng: đừng để iOS bôi đen chữ / bật menu sao chép.
@@ -971,6 +915,53 @@ function SortableStop({
   );
 }
 
+/**
+ * Hàng gợi ý trên THẺ BỮA ĂN chưa có quán: quán hợp ĐÚNG bữa đó ở điểm đến (`Eatery.meals[]`), bấm là gắn luôn
+ * (`attachVenue`) — khỏi mở hộp nào. "Quán khác…" mở hộp sửa ở ô chọn quán.
+ */
+function MealPicksRow({
+  picks,
+  onPick,
+  onMore,
+}: {
+  picks: MealPick[];
+  onPick: (p: MealPick) => void;
+  onMore: () => void;
+}) {
+  return (
+    <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+      {picks.length > 0 && <span className="mr-0.5 text-xs font-medium text-muted-foreground">Gợi ý</span>}
+      {picks.map((p) => (
+        <button
+          key={p.id}
+          type="button"
+          onClick={() => onPick(p)}
+          className={cn(
+            "inline-flex h-8 max-w-full items-center gap-1.5 rounded-[3px] border border-border bg-background pr-2.5 text-sm transition-colors hover:border-primary/50 hover:text-primary-ink",
+            p.image ? "pl-[3px]" : "pl-2.5",
+          )}
+        >
+          {/* Ảnh THẬT của quán hoặc không ảnh (`getMealPicks` không rơi về ảnh stock). */}
+          {p.image && (
+            <span className="relative size-6 shrink-0 overflow-hidden rounded-[2px] bg-muted">
+              <Image src={p.image} alt="" fill sizes="24px" className="object-cover" draggable={false} />
+            </span>
+          )}
+          <span className="truncate">{p.name}</span>
+        </button>
+      ))}
+      <button
+        type="button"
+        onClick={onMore}
+        className="inline-flex h-8 items-center gap-1 rounded-[3px] border border-dashed border-border px-2.5 text-sm text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary-ink"
+      >
+        <Glyph name="search" className="size-3.5" />
+        {picks.length > 0 ? "Quán khác…" : "Chọn quán"}
+      </button>
+    </div>
+  );
+}
+
 /** ⋯ cuối một thẻ hoạt động: tách thành dòng có giờ riêng, hoặc bỏ. */
 function TagActions({
   tag,
@@ -990,7 +981,7 @@ function TagActions({
         <button
           type="button"
           aria-label={`Tuỳ chọn cho ${tag.name}`}
-          className="-ml-1 grid h-full w-6 place-items-center rounded-r-[3px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="-ml-1 grid h-full w-6 place-items-center rounded-r-[3px] text-muted-foreground opacity-40 transition-[opacity,color,background-color] hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-hover/tag:opacity-100 data-[state=open]:opacity-100 [@media(pointer:coarse)]:opacity-100"
         >
           <Glyph name="more" className="size-3.5" />
         </button>
@@ -1045,22 +1036,25 @@ function ItemActions({
   host?: ItemView;
 }) {
   return (
-    <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 [@media(pointer:coarse)]:opacity-100">
+    // Viên nút NỔI trên thẻ (thẻ có ảnh nền ở đúng chỗ này): độ nổi bằng BÓNG, không viền — dark mode bóng không thấy nên
+    // đổi sang vòng 1px (mỗi theme vẫn chỉ một độ nổi). Nút TRƯỢT nhẹ vào khi rê; cảm ứng luôn hiện, đứng yên.
+    <div className="flex shrink-0 translate-x-1 items-center gap-px rounded-[4px] bg-background p-0.5 shadow-[0_1px_2px_rgb(0_0_0/0.08),0_3px_10px_-3px_rgb(0_0_0/0.18)] dark:shadow-none dark:ring-1 dark:ring-white/12 opacity-0 transition-[opacity,transform] duration-200 ease-out group-focus-within:translate-x-0 group-focus-within:opacity-100 group-hover:translate-x-0 group-hover:opacity-100 motion-reduce:transition-none [@media(pointer:coarse)]:translate-x-0 [@media(pointer:coarse)]:opacity-100">
       <button
         type="button"
         onClick={onEdit}
         aria-label={`Sửa ${item.name}`}
         title="Sửa tên, thời gian, ghi chú"
-        className="grid size-7 place-items-center rounded-[3px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        className="grid size-7 place-items-center rounded-[3px] text-foreground/80 transition-colors hover:bg-muted hover:text-foreground"
       >
-        <Glyph name="pencil" className="size-4" />
+        <Glyph name="pencil" className="size-[0.9375rem]" />
       </button>
+      <span aria-hidden className="h-4 w-px bg-border" />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
             type="button"
             aria-label={`Tuỳ chọn cho ${item.name}`}
-            className="grid size-7 place-items-center rounded-[3px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="grid size-7 place-items-center rounded-[3px] text-foreground/80 transition-colors hover:bg-muted hover:text-foreground data-[state=open]:bg-muted"
           >
             <Glyph name="more" className="size-4" />
           </button>
@@ -1274,10 +1268,12 @@ function StartTimePicker({
  * để đọc và kéo. Một nút Lưu gửi một lượt `updateItem` với đúng các trường đã đổi.
  */
 function ItemEditDialog({
+  tripId,
   item,
   onClose,
   run,
 }: {
+  tripId: string;
   item: ItemView | null;
   onClose: () => void;
   run: (fn: () => Promise<{ ok: boolean; error?: string }>, done?: string) => void;
@@ -1286,9 +1282,11 @@ function ItemEditDialog({
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [mode, setMode] = useState<TravelMode | null>(null);
+  // Gắn quán / chỗ ở của site cho bữa ăn, nhận / trả phòng tự gõ — hoặc bỏ gắn với mục site đang mang vai.
+  const [venue, setVenue] = useState<Venue | null>(null);
+  const [detach, setDetach] = useState(false);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
-  const [code, setCode] = useState("");
   const [note, setNote] = useState("");
   // null = theo mặc định của loại mục.
   const [stay, setStay] = useState<number | null>(null);
@@ -1298,9 +1296,10 @@ function ItemEditDialog({
     setName(item.name);
     setAddress(item.address ?? "");
     setMode(item.travelMode);
+    setVenue(null);
+    setDetach(false);
     setFrom(item.travelFrom ?? "");
     setTo(item.travelTo ?? "");
-    setCode(item.bookingCode ?? "");
     setNote(item.note ?? "");
     setStay(item.stayMin);
     setUntil("");
@@ -1332,12 +1331,25 @@ function ItemEditDialog({
         if (from.trim() !== (item.travelFrom ?? "")) patch.travelFrom = from.trim() || null;
         if (to.trim() !== (item.travelTo ?? "")) patch.travelTo = to.trim() || null;
       }
-      if (code.trim() !== (item.bookingCode ?? "")) patch.bookingCode = code.trim() || null;
     }
     const a = address.trim();
     if (item.kind === "custom" && a !== (item.address ?? "")) patch.customAddress = a || null;
+    if (venue) {
+      // Gắn quán / chỗ ở ⇒ địa chỉ & tên tự gõ không còn nghĩa; giữ phần còn lại của patch.
+      delete patch.customAddress;
+      if (item.special !== "meal") delete patch.customTitle;
+    }
     onClose();
-    if (Object.keys(patch).length > 0) run(() => updateItem(item.id, patch), "Đã lưu");
+    const id = item.id;
+    const link = venue ? { kind: venue.kind, id: venue.id } : null;
+    if (!venue && !detach && Object.keys(patch).length === 0) return;
+    run(async () => {
+      if (venue || detach) {
+        const res = await attachVenue(id, link);
+        if (!res.ok) return res;
+      }
+      return Object.keys(patch).length > 0 ? updateItem(id, patch) : { ok: true };
+    }, "Đã lưu");
   }
 
   const chip = (on: boolean) =>
@@ -1362,7 +1374,7 @@ function ItemEditDialog({
             </div>
 
             <div className="grid gap-5 px-5 py-4">
-              {item.kind === "custom" && (
+              {item.kind === "custom" && item.special !== "checkout" && (
                 <label className="grid gap-1.5">
                   <span className="text-sm font-medium">Tên</span>
                   <Input
@@ -1371,6 +1383,33 @@ function ItemEditDialog({
                     className="h-10 rounded-[4px]"
                   />
                 </label>
+              )}
+              {item.kind === "custom" && (item.special === "meal" || item.special === "checkin") && (
+                <div className="grid gap-1.5">
+                  <span className="text-sm font-medium">
+                    {item.special === "meal" ? "Gắn quán trên site" : "Gắn chỗ ở trên site"}{" "}
+                    <span className="font-normal text-muted-foreground">(có ảnh, giờ mở cửa, đường đi)</span>
+                  </span>
+                  <VenuePicker
+                    tripId={tripId}
+                    kind={item.special === "meal" ? "eatery" : "accommodation"}
+                    value={venue}
+                    onChange={setVenue}
+                  />
+                </div>
+              )}
+              {item.role && (item.kind === "eatery" || item.kind === "accommodation") && (
+                <div className="grid gap-2">
+                  <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <input
+                      type="checkbox"
+                      checked={detach}
+                      onChange={(e) => setDetach(e.target.checked)}
+                      className="size-4 accent-[var(--color-primary)]"
+                    />
+                    Bỏ gắn {item.kind === "eatery" ? "quán" : "chỗ ở"} này (về lại mục tự gõ)
+                  </label>
+                </div>
               )}
               {item.special === "transport" && (
                 <>
@@ -1386,7 +1425,7 @@ function ItemEditDialog({
                           mode === m.mode ? "border-primary/60 bg-primary/5 font-medium text-primary-ink" : "border-border hover:bg-muted",
                         )}
                       >
-                        <Glyph name={m.glyph} className="size-4" />
+                        <TravelIcon mode={m.mode} className={cn("size-5", TRAVEL_INK)} />
                         {m.label}
                       </button>
                     ))}
@@ -1403,15 +1442,7 @@ function ItemEditDialog({
                   </div>
                 </>
               )}
-              {(item.special === "transport" || item.special === "checkin" || item.special === "checkout") && (
-                <label className="grid gap-1.5">
-                  <span className="text-sm font-medium">
-                    {item.special === "transport" ? "Mã chuyến / mã vé" : "Mã đặt phòng"}
-                  </span>
-                  <Input value={code} onChange={(e) => setCode(e.target.value)} className="h-10 rounded-[4px]" />
-                </label>
-              )}
-              {item.kind === "custom" && item.special !== "transport" && item.special !== "rest" && (
+              {item.kind === "custom" && item.special !== "transport" && item.special !== "rest" && item.special !== "checkout" && (
                 <label className="grid gap-1.5">
                   <span className="text-sm font-medium">
                     Địa chỉ <span className="font-normal text-muted-foreground">(không bắt buộc)</span>

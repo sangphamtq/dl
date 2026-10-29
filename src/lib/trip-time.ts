@@ -134,7 +134,8 @@ export function effectiveStayMin(
   item: Pick<ScheduleItemInput, "kind" | "stayMin" | "durationText" | "lat" | "lng" | "customPlace" | "special">,
 ): number {
   if (item.stayMin != null) return Math.max(0, item.stayMin);
-  if (item.kind === "custom" && item.special) return SPECIAL_STAY[item.special];
+  // Vai cũng đổi thời lượng mặc định của mục site: chỗ ở "nhận phòng" là 15 phút, không phải mốc 0.
+  if (item.special) return SPECIAL_STAY[item.special];
   if (item.kind === "activity") {
     const parsed = parseDurationMin(item.durationText);
     if (parsed != null) return parsed;
@@ -172,7 +173,7 @@ export function scheduleDay(
         warnings.push({
           level: "high",
           code: "opensLater",
-          text: `Chưa mở lúc ${formatMinutes(arriveMin)} · mở ${formatMinutes(status.opensAt)}`,
+          text: `Chưa mở lúc ${formatMinutes(arriveMin)}, mở ${formatMinutes(status.opensAt)}`,
         });
       } else if (status.kind === "closed") {
         warnings.push({

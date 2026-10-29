@@ -13,6 +13,7 @@ import { placeAt, type DropAt } from "@/lib/trip-drop";
 import { isCatalogGroup, packGroupOf } from "@/lib/packing-suggestions";
 import { vnDayMinute } from "@/lib/trip-money";
 import { defaultTripTitle } from "@/lib/trip-title";
+import { resolveTripPlaceId } from "@/lib/trip";
 import { SPECIALS, TRAVEL_MODES, type TravelMode, type TripSpecial } from "@/lib/trip-special";
 
 /**
@@ -438,6 +439,74 @@ function targetData(target: ItemTarget): Record<string, unknown> {
   }
 }
 
+/** Vai của một mục site trong lịch: chỉ chỗ ở được nhận / trả phòng, chỉ quán được làm một bữa ăn. */
+export type VenueRole = { special: "checkin" | "checkout" | "meal"; title?: string | null };
+
+function roleOf(target: ItemTarget, role: VenueRole | null): { special: TripSpecial; title: string | null } | null {
+  if (!role) return null;
+  if (target.kind === "accommodation" && (role.special === "checkin" || role.special === "checkout"))
+    return { special: role.special, title: null };
+  if (target.kind === "eatery" && role.special === "meal")
+    return { special: "meal", title: null };
+  return null;
+}
+
+/**
+ * "Chọn quán" / "Chọn chỗ ở" cho một mục tự gõ (bữa ăn, nhận / trả phòng): biến nó thành mục SITE giữ nguyên vai, chỗ
+ * đứng, giờ, ghi chú — có ảnh, toạ độ, giờ mở cửa. Ngược lại (`venue = null`) thì về lại mục tự gõ.
+ */
+export async function attachVenue(
+  itemId: string,
+  venue: { kind: "eatery" | "accommodation"; id: string } | null,
+): Promise<ActionResult> {
+  const item = await prisma.tripItem.findUnique({
+    where: { id: itemId },
+    select: {
+      tripId: true, special: true, customTitle: true,
+      eatery: { select: { name: true } }, accommodation: { select: { name: true } },
+    },
+  });
+  if (!item) return { ok: false, error: "Không tìm thấy mục." };
+  try {
+    await editableTrip(item.tripId);
+  } catch (e) {
+    return fail(e);
+  }
+  const fits =
+    item.special === "meal" ? "eatery" : item.special === "checkin" || item.special === "checkout" ? "accommodation" : null;
+  if (!fits) return { ok: false, error: "Chỉ bữa ăn, nhận / trả phòng mới gắn quán hay chỗ ở được." };
+
+  let data: Prisma.TripItemUpdateInput;
+  if (venue) {
+    if (venue.kind !== fits) return { ok: false, error: fits === "eatery" ? "Bữa ăn chỉ gắn với quán ăn." : "Chỉ gắn chỗ ở." };
+    const exists =
+      venue.kind === "eatery"
+        ? await prisma.eatery.findFirst({ where: { id: venue.id, status: "published" }, select: { id: true } })
+        : await prisma.accommodation.findFirst({ where: { id: venue.id, status: "published" }, select: { id: true } });
+    if (!exists) return { ok: false, error: "Không tìm thấy nơi này." };
+    data = {
+      eatery: venue.kind === "eatery" ? { connect: { id: venue.id } } : { disconnect: true },
+      accommodation: venue.kind === "accommodation" ? { connect: { id: venue.id } } : { disconnect: true },
+      // Bữa ăn giữ nhãn bữa ở `customTitle`; nhận / trả phòng thì tên là tên chỗ ở.
+      customTitle: item.special === "meal" ? item.customTitle || "Bữa ăn" : null,
+      customAddress: null,
+      customPlace: false,
+      customLat: null,
+      customLng: null,
+    };
+  } else {
+    data = {
+      eatery: { disconnect: true },
+      accommodation: { disconnect: true },
+      customTitle: item.special === "meal" ? item.customTitle || "Bữa ăn" : (item.accommodation?.name ?? ""),
+    };
+  }
+  await prisma.tripItem.update({ where: { id: itemId }, data });
+  await bump(item.tripId);
+  refresh(item.tripId);
+  return { ok: true };
+}
+
 export async function addItem(
   target: ItemTarget,
   tripId?: string,
@@ -445,6 +514,8 @@ export async function addItem(
   at: DropAt = "end",
   /** Hoạt động: thành THẺ của nơi này. Thứ khác: đứng ngay sau nơi này. Chỉ khi có `tripId`. */
   parent: { id: string; at?: DropAt } | null = null,
+  /** VAI của mục site: nhận / trả phòng (chỗ ở), bữa ăn (quán — `title` = "Ăn trưa"…). */
+  role: VenueRole | null = null,
 ): Promise<
   ActionResult<{
     tripId: string;
@@ -475,9 +546,12 @@ export async function addItem(
 
   const data = targetData(target);
 
-  if (target.kind !== "custom") {
+  // Chống trùng CHỈ cho nút "Thêm vào lịch trình" ở trang chi tiết (không có `tripId`): bấm lại là báo "đã có", không
+  // nhân đôi. Trang soạn (có `tripId`) thì cho thêm lại — cùng một bãi biển sáng & chiều, cùng một quán hai bữa là bình thường.
+  if (target.kind !== "custom" && !tripId) {
+    // Trùng = cùng nơi VÀ cùng vai: nhận phòng + trả phòng cùng một chỗ ở là HAI mốc hợp lệ.
     const existing = await prisma.tripItem.findFirst({
-      where: { tripId: targetTripId, ...data },
+      where: { tripId: targetTripId, ...data, special: roleOf(target, role)?.special ?? null },
       select: { id: true },
     });
     if (existing) {
@@ -542,6 +616,7 @@ export async function addItem(
 
   const [item, trip, tripCount] = await Promise.all([
     prisma.$transaction(async (tx) => {
+      const r = roleOf(target, role);
       const created = await tx.tripItem.create({
         data: {
           tripId: targetTripId,
@@ -549,6 +624,8 @@ export async function addItem(
           parentId: scope.parentId,
           order: await nextOrder(tx, targetTripId, scope),
           ...data,
+          // Nhãn bữa ("Ăn trưa") nằm ở `customTitle` — tên hiện ra vẫn là tên quán (`resolveItem`).
+          ...(r ? { special: r.special, customTitle: r.special === "meal" ? r.title : null } : {}),
         },
         select: { id: true },
       });
@@ -614,6 +691,9 @@ export async function searchTripCandidates(
   } catch (e) {
     return fail(e);
   }
+
+  // Chuyến không gắn điểm đến ⇒ suy từ mục site đã có trong chuyến (`resolveTripPlaceId`).
+  if (!placeId) placeId = await resolveTripPlaceId(tripId);
 
   const q = rawQ.trim().slice(0, 80);
   if (!q && forItemId) {

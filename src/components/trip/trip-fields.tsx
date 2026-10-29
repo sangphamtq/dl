@@ -5,26 +5,30 @@ import { Glyph } from "@/components/site/glyphs";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
-export type TripField = "image" | "stay" | "hours" | "note" | "leg" | "warn";
+export type TripField = "icon" | "image" | "address" | "tags" | "stay" | "note" | "leg" | "warn";
 
 export type TripFields = Record<TripField, boolean>;
 
 export const ALL_ON: TripFields = {
+  icon: true,
   image: true,
+  address: true,
+  tags: true,
   stay: true,
-  hours: true,
   note: true,
   leg: true,
   warn: true,
 };
 
 const LABELS: { id: TripField; label: string; hint: string }[] = [
-  { id: "image", label: "Ảnh", hint: "Tắt thì còn ký hiệu loại nhỏ cạnh tên" },
+  { id: "icon", label: "Icon loại", hint: "Núi, bát, giường, phương tiện… đầu mỗi thẻ" },
+  { id: "image", label: "Ảnh", hint: "Ảnh của nơi, quán, chỗ ở" },
+  { id: "address", label: "Địa chỉ, khu vực", hint: "Cả dòng “tại …” của hoạt động" },
+  { id: "tags", label: "Thẻ hoạt động", hint: "Tắm biển, lướt ván… dưới mỗi nơi" },
   { id: "stay", label: "Thời gian ở lại", hint: "" },
-  { id: "hours", label: "Giờ mở cửa", hint: "" },
   { id: "note", label: "Ghi chú", hint: "Của từng mục và của ngày" },
   { id: "leg", label: "Chặng di chuyển", hint: "Thời gian giữa hai điểm" },
-  { id: "warn", label: "Cảnh báo", hint: "Chưa mở cửa, chặng dài, về muộn…" },
+  { id: "warn", label: "Cảnh báo", hint: "Chưa mở cửa, sắp đóng, chặng dài" },
 ];
 
 const KEY = "halivivu:trip-fields";

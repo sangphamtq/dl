@@ -26,6 +26,10 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-muted: var(--muted);
   --color-band: var(--band);
+  --color-kind-place: var(--kind-place);
+  --color-kind-travel: var(--kind-travel);
+  --color-kind-meal: var(--kind-meal);
+  --color-kind-stay: var(--kind-stay);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
@@ -75,6 +79,13 @@
   /* Nền dải xen kẽ của trang điểm đến. KHÔNG dùng `muted/60` (≈ #f4f2ef): xám
      ngả vàng nâu, cạnh ảnh màu tươi đọc ra như phủ bụi. */
   --band: #f7f6f2;
+  /* Màu LOẠI THẺ của lịch trình — tô ô icon + viền thẻ, không tô chữ thân / nền thẻ. Xếp theo ƯU TIÊN:
+     nơi (lý do của chuyến, họ màu primary) > lưu trú (chàm, ban đêm) = bữa ăn (mâm xôi, né đỏ lỗi & cam cảnh báo)
+     > di chuyển (xám lạnh gần trung tính — chỉ là đoạn nối). Nghỉ: không màu. */
+  --kind-place: oklch(0.52 0.11 150);
+  --kind-stay: oklch(0.5 0.12 278);
+  --kind-meal: oklch(0.53 0.13 345);
+  --kind-travel: oklch(0.52 0.025 250);
   --muted-foreground: #6f6e69;
   --accent: #ecf7ea;
   --accent-foreground: #1f4f13;
@@ -118,6 +129,10 @@
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
   --band: oklch(0.22 0 0);
+  --kind-place: oklch(0.78 0.12 150);
+  --kind-stay: oklch(0.78 0.1 278);
+  --kind-meal: oklch(0.78 0.11 345);
+  --kind-travel: oklch(0.75 0.025 250);
   --muted-foreground: oklch(0.708 0 0);
   --accent: oklch(0.32 0.06 145);
   --accent-foreground: oklch(0.985 0 0);

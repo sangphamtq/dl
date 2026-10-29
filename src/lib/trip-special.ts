@@ -4,17 +4,21 @@ import type { GlyphName } from "@/components/site/glyphs";
 export type TripSpecial = "transport" | "checkin" | "checkout" | "meal" | "rest";
 export type TravelMode = "plane" | "train" | "bus" | "car" | "motorbike" | "boat";
 
-export const SPECIALS: { special: TripSpecial; label: string; glyph: GlyphName; hint: string }[] = [
+/** Loại thêm được. `checkout` KHÔNG còn ở đây (biên tập: "không cần trả phòng") — dữ liệu cũ vẫn hiện, chỉ không thêm mới. */
+export const SPECIALS: { special: Exclude<TripSpecial, "checkout">; label: string; glyph: GlyphName; hint: string }[] = [
   { special: "transport", label: "Di chuyển", glyph: "bus", hint: "Máy bay, tàu, xe khách…" },
-  { special: "checkin", label: "Nhận phòng", glyph: "bed", hint: "Kèm mã đặt phòng" },
-  { special: "checkout", label: "Trả phòng", glyph: "bed", hint: "Kèm mã đặt phòng" },
-  { special: "meal", label: "Bữa ăn", glyph: "bowl", hint: "Chưa chọn quán" },
+  { special: "checkin", label: "Nhận phòng", glyph: "bed", hint: "Chọn chỗ ở trên site" },
+  { special: "meal", label: "Bữa ăn", glyph: "bowl", hint: "Chọn quán trên site" },
   { special: "rest", label: "Nghỉ", glyph: "clock", hint: "Nghỉ trưa, tự do" },
 ];
 
-export const SPECIAL_LABEL: Record<TripSpecial, string> = Object.fromEntries(
-  SPECIALS.map((s) => [s.special, s.label]),
-) as Record<TripSpecial, string>;
+export const SPECIAL_LABEL: Record<TripSpecial, string> = {
+  transport: "Di chuyển",
+  checkin: "Nhận phòng",
+  checkout: "Trả phòng",
+  meal: "Bữa ăn",
+  rest: "Nghỉ",
+};
 
 /** Thời lượng mặc định khi chưa chỉnh (`stayMin = null`). Nhận/trả phòng là MỐC ngắn. */
 export const SPECIAL_STAY: Record<TripSpecial, number> = {
@@ -34,7 +38,6 @@ export const TRAVEL_MODES: { mode: TravelMode; label: string; glyph: GlyphName }
   { mode: "boat", label: "Tàu, thuyền", glyph: "boat" },
 ];
 
-export const MEAL_PRESETS = ["Ăn sáng", "Ăn trưa", "Ăn tối", "Ăn vặt"];
 export const REST_PRESETS = ["Nghỉ trưa", "Tự do khám phá", "Nghỉ ở chỗ ở"];
 
 export function travelModeOf(mode: string | null | undefined) {
@@ -43,7 +46,7 @@ export function travelModeOf(mode: string | null | undefined) {
 
 export function specialGlyph(special: TripSpecial, mode?: string | null): GlyphName {
   if (special === "transport") return travelModeOf(mode)?.glyph ?? "route";
-  return SPECIALS.find((s) => s.special === special)!.glyph;
+  return special === "checkout" ? "bed" : SPECIALS.find((s) => s.special === special)!.glyph;
 }
 
 /**

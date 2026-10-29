@@ -10,7 +10,6 @@ import { cn } from "@/lib/utils";
 import { TOUCH_INPUT } from "@/lib/touch";
 import { fmtDuration } from "@/lib/trip-time";
 import {
-  MEAL_PRESETS,
   REST_PRESETS,
   SPECIALS,
   SPECIAL_LABEL,
@@ -24,9 +23,13 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { TRAVEL_INK, TravelIcon } from "@/components/trip/travel-icon";
+import { VenuePicker, type Venue } from "@/components/trip/trip-venue-picker";
 import {
   addCustomStop,
   addItem,
+  updateItem,
+  type VenueRole,
   searchTripCandidates,
   type TripCandidate,
 } from "@/app/(site)/lich-trinh/actions";
@@ -54,7 +57,8 @@ type CustomForm = {
   mode: TravelMode | null;
   from: string;
   to: string;
-  code: string;
+  /** Quán / chỗ ở của site cho bữa ăn, nhận / trả phòng — có thì thêm MỤC SITE mang vai, không thêm mục tự gõ. */
+  venue: Venue | null;
 };
 
 const KINDS_BY_MODE: Record<"place" | "doing" | "any", TripCandidate["kind"][]> = {
@@ -120,7 +124,7 @@ export function TripAddSearch({
       mode: special === "transport" ? "bus" : null,
       from: "",
       to: "",
-      code: "",
+      venue: null,
     });
   const [, start] = useTransition();
   const seq = useRef(0);
@@ -209,7 +213,6 @@ export function TripAddSearch({
       travelMode?: TravelMode | null;
       travelFrom?: string | null;
       travelTo?: string | null;
-      bookingCode?: string | null;
     },
     key = "custom",
     done?: () => void,
@@ -264,8 +267,26 @@ export function TripAddSearch({
       setAdded((s) => new Set(s).add(c.id));
       advance(res.data.itemId, c.name, !!asDoing);
       onAdded?.();
-      if (res.data.duplicate) toast(`${c.name} đã có trong lịch trình.`);
-      else toast.success(`Đã thêm ${c.name} vào ${target.label}`);
+      toast.success(`Đã thêm ${c.name} vào ${target.label}`);
+    });
+  }
+
+  /** Bữa ăn / nhận / trả phòng gắn quán / chỗ ở của site: thêm MỤC SITE mang vai. */
+  function addVenue(venue: Venue, role: VenueRole, stayMin: number | null, done: () => void) {
+    if (!target || adding) return;
+    setAdding("custom-form");
+    start(async () => {
+      const res = await addItem({ kind: venue.kind, id: venue.id }, tripId, target.dayId, pos.at ?? "end", null, role);
+      setAdding(null);
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      if (res.data.itemId && stayMin != null) await updateItem(res.data.itemId, { stayMin });
+      advance(res.data.itemId, venue.name, false);
+      onAdded?.();
+      done();
+      toast.success(`Đã thêm ${venue.name} vào ${target.label}`);
     });
   }
 
@@ -328,14 +349,14 @@ export function TripAddSearch({
   const results = grouped.map((g) => (
               <CommandGroup key={g.kind} heading={g.label} className="px-2">
                 {g.rows.map((c) => {
+                  // Đã có trong chuyến VẪN thêm được (sáng & chiều cùng một bãi, một quán hai bữa) — chỉ ghi chú cho biết.
                   const done = c.inTrip || added.has(c.id);
                   return (
                     <CommandItem
                       key={c.id}
                       value={`${c.kind}:${c.id}`}
-                      disabled={done}
                       onSelect={() => add(c)}
-                      className="group gap-3 rounded-[4px] px-2 py-2 data-[disabled=true]:opacity-100"
+                      className="group gap-3 rounded-[4px] px-2 py-2"
                     >
                       <Thumb filled>
                         {c.image ? (
@@ -345,25 +366,22 @@ export function TripAddSearch({
                         )}
                       </Thumb>
                       <span className="flex min-w-0 flex-1 flex-col">
-                        <span
-                          className={cn(
-                            "truncate text-sm font-medium",
-                            done ? "text-muted-foreground" : "text-foreground",
+                        <span className="truncate text-sm font-medium text-foreground">{c.name}</span>
+                        <span className="truncate text-xs text-muted-foreground">
+                          {done ? (
+                            <span className="inline-flex items-center gap-1">
+                              <Glyph name="tick" className="size-3 shrink-0" />
+                              Đã có trong chuyến
+                            </span>
+                          ) : (
+                            c.context
                           )}
-                        >
-                          {c.name}
                         </span>
-                        <span className="truncate text-xs text-muted-foreground">{c.context}</span>
                       </span>
                       {adding === c.id ? (
                         <Loader2 className="size-4 shrink-0 animate-spin text-muted-foreground" aria-hidden />
-                      ) : done ? (
-                        <span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
-                          <Glyph name="tick" className="size-3.5" />
-                          Đã có
-                        </span>
                       ) : (
-                        <AddHint />
+                        <AddHint again={done} />
                       )}
                     </CommandItem>
                   );
@@ -402,6 +420,10 @@ export function TripAddSearch({
             onSubmit={(e) => {
               e.preventDefault();
               const f = form;
+              if (f.venue && (f.special === "meal" || f.special === "checkin" || f.special === "checkout")) {
+                addVenue(f.venue, { special: f.special, title: f.title.trim() || null }, f.stay, () => setForm(null));
+                return;
+              }
               addCustom(
                 {
                   title: f.title.trim(),
@@ -411,7 +433,6 @@ export function TripAddSearch({
                   travelMode: f.mode,
                   travelFrom: f.from.trim() || null,
                   travelTo: f.to.trim() || null,
-                  bookingCode: f.code.trim() || null,
                 },
                 "custom-form",
                 () => setForm(null),
@@ -432,7 +453,7 @@ export function TripAddSearch({
                         aria-pressed={form.mode === m.mode}
                         className={cn(CHOICE, form.mode === m.mode ? CHOICE_ON : CHOICE_OFF)}
                       >
-                        <Glyph name={m.glyph} className="size-4" />
+                        <TravelIcon mode={m.mode} className={cn("size-5", TRAVEL_INK)} />
                         {m.label}
                       </button>
                     ))}
@@ -462,9 +483,23 @@ export function TripAddSearch({
               </>
             ) : (
               <>
-                {(form.special === "meal" || form.special === "rest") && (
+                {(form.special === "meal" || form.special === "checkin") && (
+                  <div className="grid gap-1.5">
+                    <span className="text-sm font-medium">
+                      {form.special === "meal" ? "Quán" : "Chỗ ở"}{" "}
+                      <span className="font-normal text-muted-foreground">(chọn trên site, hoặc gõ tay bên dưới)</span>
+                    </span>
+                    <VenuePicker
+                      tripId={tripId}
+                      kind={form.special === "meal" ? "eatery" : "accommodation"}
+                      value={form.venue}
+                      onChange={(venue) => setForm({ ...form, venue })}
+                    />
+                  </div>
+                )}
+                {form.special === "rest" && (
                   <div className="flex flex-wrap gap-1.5">
-                    {(form.special === "meal" ? MEAL_PRESETS : REST_PRESETS).map((t) => (
+                    {REST_PRESETS.map((t) => (
                       <button
                         key={t}
                         type="button"
@@ -477,9 +512,11 @@ export function TripAddSearch({
                     ))}
                   </div>
                 )}
+                {/* Đã chọn quán / chỗ ở: tên là tên của nơi đó — ô tiêu đề chỉ là bản lặp. */}
+                {!form.venue && form.special !== "checkout" && (
                 <label className="grid gap-1.5">
                   <span className="text-sm font-medium">
-                    {form.special === "checkin" || form.special === "checkout" ? "Chỗ ở" : "Tiêu đề"}
+                    {form.special === "checkin" ? "Hoặc gõ tên chỗ ở" : "Tiêu đề"}
                     {form.special && <span className="font-normal text-muted-foreground"> (không bắt buộc)</span>}
                   </span>
                   <Input
@@ -487,8 +524,8 @@ export function TripAddSearch({
                     value={form.title}
                     onChange={(e) => setForm({ ...form, title: e.target.value })}
                     placeholder={
-                      form.special === "checkin" || form.special === "checkout"
-                        ? `${SPECIAL_LABEL[form.special]} Sunny House…`
+                      form.special === "checkin"
+                        ? "Nhận phòng Sunny House…"
                         : form.special
                           ? SPECIAL_LABEL[form.special]
                           : "Nhà bạn Minh, ra sân bay, chờ xe…"
@@ -496,7 +533,8 @@ export function TripAddSearch({
                     className="h-10 rounded-[4px]"
                   />
                 </label>
-                {form.special !== "rest" && (
+                )}
+                {form.special !== "rest" && form.special !== "checkout" && !form.venue && (
                   <label className="grid gap-1.5">
                     <span className="text-sm font-medium">
                       Địa chỉ <span className="font-normal text-muted-foreground">(không bắt buộc)</span>
@@ -510,20 +548,6 @@ export function TripAddSearch({
                   </label>
                 )}
               </>
-            )}
-            {(form.special === "transport" || form.special === "checkin" || form.special === "checkout") && (
-              <label className="grid gap-1.5">
-                <span className="text-sm font-medium">
-                  {form.special === "transport" ? "Mã chuyến / mã vé" : "Mã đặt phòng"}{" "}
-                  <span className="font-normal text-muted-foreground">(không bắt buộc)</span>
-                </span>
-                <Input
-                  value={form.code}
-                  onChange={(e) => setForm({ ...form, code: e.target.value })}
-                  placeholder={form.special === "transport" ? "VN213, SE7…" : "BK-48213"}
-                  className="h-10 rounded-[4px]"
-                />
-              </label>
             )}
             <div className="grid gap-1.5">
               <span className="text-sm font-medium">{form.special === "transport" ? "Đi mất bao lâu" : "Bao lâu"}</span>
@@ -690,11 +714,11 @@ function Thumb({ filled, children }: { filled?: boolean; children: ReactNode }) 
   );
 }
 
-function AddHint() {
+function AddHint({ again }: { again?: boolean }) {
   return (
     <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-primary-ink opacity-0 group-hover:opacity-100 group-data-[selected=true]:opacity-100 [@media(pointer:coarse)]:opacity-100">
       <Glyph name="plus" className="size-3.5" />
-      Thêm
+      {again ? "Thêm lần nữa" : "Thêm"}
     </span>
   );
 }

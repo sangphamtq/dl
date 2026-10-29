@@ -6,6 +6,7 @@ import {
   getTripNotes,
   getTripPackItems,
   getTripExpenses,
+  getMealPicks,
 } from "@/lib/trip";
 import { getPlanningTripId } from "../../actions";
 import { TripEditor } from "@/components/trip/trip-editor";
@@ -27,12 +28,13 @@ export async function TripWorkspace({
     trip.ownerId === session.user.id || trip.memberIds.includes(session.user.id);
   if (!canEdit) notFound();
 
-  const [days, planningId, notes, packing, expenses] = await Promise.all([
+  const [days, planningId, notes, packing, expenses, mealPicks] = await Promise.all([
     buildDayViews(trip),
     getPlanningTripId(),
     getTripNotes(trip.id),
     getTripPackItems(trip.id, session.user.id),
     getTripExpenses(trip.id),
+    getMealPicks(trip.id),
   ]);
 
   return (
@@ -55,6 +57,7 @@ export async function TripWorkspace({
           people: trip.people,
         }}
         days={days}
+        mealPicks={mealPicks}
         backlog={trip.backlog}
         notes={notes}
         packing={packing}

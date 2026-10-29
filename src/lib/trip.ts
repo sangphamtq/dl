@@ -9,7 +9,13 @@ import {
   ACTIVITY_CATEGORY_LABELS,
   label,
 } from "@/lib/listing-labels";
-import { SPECIAL_LABEL, specialTitle, travelModeOf, type TravelMode, type TripSpecial } from "@/lib/trip-special";
+import {
+  SPECIAL_LABEL,
+  specialTitle,
+  travelModeOf,
+  type TravelMode,
+  type TripSpecial,
+} from "@/lib/trip-special";
 import { isTask, scheduleDay, type ScheduleItemInput, type TripItemKind, type TripWarning } from "@/lib/trip-time";
 import { getLegs, legMinutes } from "@/lib/trip-route";
 
@@ -42,12 +48,16 @@ export type ResolvedItem = {
   customPlace: boolean;
   /** Chỉ mục kind=custom: địa chỉ gõ tay (chưa geocode). */
   address: string | null;
-  /** Chỉ mục kind=custom: mục đặc biệt (di chuyển, nhận/trả phòng, bữa ăn, nghỉ). */
+  /** Mục đặc biệt. Mục tự thêm: di chuyển, nhận/trả phòng, bữa ăn, nghỉ. Mục site: VAI của chỗ ở / quán trong lịch. */
   special: TripSpecial | null;
+  /** Nhãn vai của mục SITE ("Ăn trưa", "Nhận phòng") — hiện trên tên; null với mục không có vai và mục tự thêm. */
+  role: string | null;
   travelMode: TravelMode | null;
   travelFrom: string | null;
   travelTo: string | null;
   bookingCode: string | null;
+  /** Trả phòng tự thêm: tên chỗ ở của lần NHẬN PHÒNG gần nhất trước nó — để thẻ khỏi chỉ ghi "Trả phòng". */
+  stayOf: string | null;
   /** Nơi mà hoạt động này là THẺ "làm gì ở đây" của nó (không giờ riêng); null = mục gốc. */
   parentId: string | null;
 };
@@ -193,10 +203,15 @@ function resolveItem(item: RawItem): ResolvedItem {
     customPlace: item.customPlace ?? false,
     address: item.customAddress ?? null,
     special: (item.special ?? null) as TripSpecial | null,
+    role:
+      item.special && (item.eateryId || item.accommodationId)
+        ? SPECIAL_LABEL[item.special as TripSpecial]
+        : null,
     travelMode: (item.travelMode ?? null) as TravelMode | null,
     travelFrom: item.travelFrom ?? null,
     travelTo: item.travelTo ?? null,
     bookingCode: item.bookingCode ?? null,
+    stayOf: null as string | null,
     parentId: item.parentId ?? null,
   };
 
@@ -204,7 +219,7 @@ function resolveItem(item: RawItem): ResolvedItem {
     const s = item.spot;
     return {
       ...base, kind: "spot", name: s.name, href: `/dia-diem/${s.slug}`,
-      image: coverUrl(s.images, s.slug, 200, 200),
+      image: coverUrl(s.images, s.slug, 400, 300),
       typeLabel: TYPE_LABELS.spot,
       categoryLabel: label(SPOT_CATEGORY_LABELS, s.category),
       areaLabel: areaOf(s.address, s.place?.name ?? null),
@@ -216,7 +231,7 @@ function resolveItem(item: RawItem): ResolvedItem {
     const e = item.eatery;
     return {
       ...base, kind: "eatery", name: e.name, href: null, // quán ăn không có trang riêng (popup)
-      image: coverUrl(e.images, e.slug, 200, 200),
+      image: coverUrl(e.images, e.slug, 400, 300),
       typeLabel: TYPE_LABELS.eatery,
       categoryLabel: label(EATERY_CATEGORY_LABELS, e.category),
       areaLabel: areaOf(e.address, e.place?.name ?? null),
@@ -228,7 +243,7 @@ function resolveItem(item: RawItem): ResolvedItem {
     const a = item.accommodation;
     return {
       ...base, kind: "accommodation", name: a.name, href: `/luu-tru/${a.slug}`,
-      image: coverUrl(a.images, a.slug, 200, 200),
+      image: coverUrl(a.images, a.slug, 400, 300),
       typeLabel: TYPE_LABELS.accommodation,
       categoryLabel: label(ACCOMMODATION_CATEGORY_LABELS, a.category),
       areaLabel: areaOf(a.address, a.place?.name ?? null),
@@ -241,7 +256,7 @@ function resolveItem(item: RawItem): ResolvedItem {
     const borrowed = ac.spotLinks[0]?.spot ?? null;
     return {
       ...base, kind: "activity", name: ac.name, href: `/hoat-dong/${ac.slug}`,
-      image: coverUrl(ac.images, ac.slug, 200, 200),
+      image: coverUrl(ac.images, ac.slug, 400, 300),
       typeLabel: TYPE_LABELS.activity,
       categoryLabel: label(ACTIVITY_CATEGORY_LABELS, ac.category),
       areaLabel: areaOf(borrowed?.address ?? null, ac.place?.name ?? null),
@@ -291,7 +306,7 @@ function flatten(list: ResolvedItem[]): ResolvedItem[] {
 }
 
 function shape(trip: RawTrip): TripData {
-  const items = trip.items.map(resolveItem);
+  const items = linkCheckouts(trip.items.map(resolveItem), trip.days.map((d) => d.id));
   return {
     id: trip.id,
     ownerId: trip.ownerId,
@@ -335,6 +350,67 @@ function shape(trip: RawTrip): TripData {
     backlog: flatten(items.filter((i) => i.dayId === null)),
     updatedAt: trip.updatedAt,
   };
+}
+
+/** Trả phòng tự thêm chưa ghi địa chỉ ⇒ mượn tên chỗ của lần nhận phòng gần nhất (theo thứ tự ngày rồi `order`). */
+function linkCheckouts(items: ResolvedItem[], dayIds: string[]): ResolvedItem[] {
+  const pos = new Map(dayIds.map((id, i) => [id, i]));
+  const timeline = items
+    .filter((i) => i.dayId && !i.parentId)
+    .sort((a, b) => pos.get(a.dayId!)! - pos.get(b.dayId!)! || a.order - b.order);
+  const stayOf = new Map<string, string>();
+  let last: string | null = null;
+  for (const i of timeline) {
+    if (i.special === "checkin") last = i.kind === "custom" ? i.address : i.name;
+    else if (i.special === "checkout" && i.kind === "custom" && !i.address && last) stayOf.set(i.id, last);
+  }
+  return stayOf.size ? items.map((i) => (stayOf.has(i.id) ? { ...i, stayOf: stayOf.get(i.id)! } : i)) : items;
+}
+
+/**
+ * Điểm đến để GỢI Ý của một chuyến: `Trip.placeId`, không có thì suy từ mục SITE đầu tiên đã có trong chuyến (chuyến tạo
+ * trống, hoặc tạo trước bước chọn nơi đến) — không thì mọi chỗ gợi ý để trống.
+ */
+export async function resolveTripPlaceId(tripId: string): Promise<string | null> {
+  const trip = await prisma.trip.findUnique({ where: { id: tripId }, select: { placeId: true } });
+  if (trip?.placeId) return trip.placeId;
+  const sel = { select: { placeId: true } } as const;
+  const it = await prisma.tripItem.findFirst({
+    where: { tripId, OR: [{ spotId: { not: null } }, { eateryId: { not: null } }, { accommodationId: { not: null } }] },
+    orderBy: [{ dayId: "asc" }, { order: "asc" }],
+    select: { spot: sel, eatery: sel, accommodation: sel },
+  });
+  return it?.spot?.placeId ?? it?.eatery?.placeId ?? it?.accommodation?.placeId ?? null;
+}
+
+export type MealPick = { id: string; name: string; image: string | null };
+
+const MEAL_PICKS = 3;
+
+/**
+ * Gợi ý quán cho THẺ BỮA ĂN chưa có quán: quán ở điểm đến (cả điểm đến con) theo thứ tự biên tập — KHÔNG lọc theo bữa
+ * (biên tập: bữa ăn không phân sáng / trưa / tối). Quán đã nằm trong chuyến xếp SAU — gợi ý là để thấy chỗ mới, không phải lặp chỗ đã chọn.
+ */
+export async function getMealPicks(tripId: string): Promise<MealPick[]> {
+  const placeId = await resolveTripPlaceId(tripId);
+  if (!placeId) return [];
+  const [rows, used] = await Promise.all([
+    prisma.eatery.findMany({
+      where: { status: "published", OR: [{ placeId }, { place: { parentId: placeId } }] },
+      orderBy: [{ isFeatured: "desc" }, { order: "asc" }, { popularity: "desc" }],
+      take: 30,
+      // Ảnh THẬT hoặc không ảnh — đừng `coverUrl()` (ảnh stock ngẫu nhiên dán tên quán còn sai hơn không có).
+      select: {
+        id: true, name: true,
+        images: { where: { kind: "gallery" }, orderBy: [{ isCover: "desc" }, { order: "asc" }], take: 1, select: { url: true } },
+      },
+    }),
+    prisma.tripItem.findMany({ where: { tripId, eateryId: { not: null } }, select: { eateryId: true } }),
+  ]);
+  const inTrip = new Set(used.map((u) => u.eateryId));
+  return [...rows.filter((r) => !inTrip.has(r.id)), ...rows.filter((r) => inTrip.has(r.id))]
+    .slice(0, MEAL_PICKS)
+    .map((r) => ({ id: r.id, name: r.name, image: r.images[0]?.url ?? null }));
 }
 
 export async function getTripById(id: string): Promise<TripData | null> {

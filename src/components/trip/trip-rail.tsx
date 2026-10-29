@@ -10,7 +10,8 @@ import { formatMinutes, fmtDuration, type TripWarning } from "@/lib/trip-time";
 import type { ItemView, ResolvedItem } from "@/lib/trip";
 import { isTask, stayLabel, type TripItemKind } from "@/lib/trip-time";
 import { ALL_ON, type TripFields } from "@/components/trip/trip-fields";
-import { specialGlyph } from "@/lib/trip-special";
+import { SPECIAL_LABEL, specialGlyph } from "@/lib/trip-special";
+import { KIND_INK, KindIcon, TRAVEL_INK, TravelIcon, type HeadKind } from "@/components/trip/travel-icon";
 
 const TYPE_GLYPH: Record<TripItemKind, GlyphName> = {
   spot: "mountain",
@@ -23,20 +24,41 @@ const TYPE_GLYPH: Record<TripItemKind, GlyphName> = {
 // Điện thoại: cột giờ HẸP (2.5rem, chữ nhỏ hơn) — giờ vẫn đứng bên trái chấm số như một bảng giờ, nhưng không
 // ăn mất một phần tư bề ngang như cột 3.25rem cũ. Khoảng cách tới trục cũng hẹp hơn (gap-2).
 const TIME = "w-11 shrink-0 pt-0.5 text-right text-[0.9375rem] font-semibold tabular-nums sm:w-16 sm:text-base";
+const HOUR_WARNINGS = new Set<TripWarning["code"]>(["closed", "opensLater", "closingSoon"]);
+
 const ROW_GAP = "gap-2 sm:gap-3";
 
 /**
  * Trục dọc 2px. Nét LIỀN = đang ở một chỗ (nơi + việc làm ở đó); nét ĐỨT = đang đi giữa hai
  * nơi (dòng "di chuyển") — nhìn trục là thấy ngày chia thành ở/đi.
  */
-function Rail({ node, dashed, below }: { node?: ReactNode; dashed?: boolean; below?: ReactNode }) {
+const LINE: Record<DotTone, string> = {
+  place: "w-0.5 bg-kind-place/35",
+  meal: "w-0.5 bg-kind-meal/35",
+  stay: "w-0.5 bg-kind-stay/35",
+  travel: "w-0.5 bg-kind-travel/30",
+  neutral: "w-0.5 bg-foreground/15",
+};
+
+function Rail({
+  node,
+  dashed,
+  below,
+  tone = "neutral",
+}: {
+  node?: ReactNode;
+  dashed?: boolean;
+  below?: ReactNode;
+  /** Đoạn trục của một mục nhuốm màu loại của mục đó — dọc trục thấy nhịp chơi / ăn / ở / đi. */
+  tone?: DotTone;
+}) {
   return (
     <div className="relative flex w-5 shrink-0 flex-col items-center sm:w-6">
       <span
         aria-hidden
         className={cn(
           "absolute inset-y-0 left-1/2 -translate-x-1/2",
-          dashed ? "border-l-2 border-dashed border-border" : "w-0.5 bg-border",
+          dashed ? "border-l-2 border-dashed border-foreground/20" : LINE[tone],
         )}
       />
       {node}
@@ -50,7 +72,7 @@ function Rail({ node, dashed, below }: { node?: ReactNode; dashed?: boolean; bel
  * Chỉ là chữ xám nhỏ, KHÔNG viền / không đậm (biên tập: "đơn giản hơn"); nền trắng chỉ để vạch trục ngắt sau chữ.
  */
 export const STAY_PILL =
-  "block whitespace-nowrap bg-background py-px text-xs leading-4 tabular-nums text-muted-foreground";
+  "block whitespace-nowrap bg-background py-px text-xs font-medium leading-4 tabular-nums text-foreground/70";
 
 /** "45′" · "1g30" · "0′" — nhãn gọn đủ chỗ trên trục. */
 export function stayShort(min: number): string {
@@ -80,6 +102,7 @@ function ItemBody({
   note,
   stay,
   name,
+  iconHead,
 }: {
   item: ItemView;
   fields: TripFields;
@@ -89,28 +112,46 @@ function ItemBody({
   stay?: ReactNode;
   /** Thay chỗ tên (trang soạn: ô sửa tên cho mục tự thêm). */
   name?: ReactNode;
+  /** Thẻ nơi ở trang soạn: ô icon đầu thẻ thay ô ảnh (ảnh lùi thành nền mờ bên phải — `RailItem`). */
+  iconHead?: boolean;
 }) {
   const warnings = fields.warn ? item.warnings : [];
-  // Hoạt động đứng riêng (không là thẻ của một nơi trong ngày): nói nó diễn ra ở đâu.
-  const at = item.kind === "activity" && !item.nested ? item.atName : null;
+
+  // Hoạt động đứng riêng (không là thẻ của một nơi trong ngày): nói nó diễn ra ở đâu. Thuộc nhóm "Địa chỉ" của Hiển thị.
+  const at = fields.address && item.kind === "activity" && !item.nested ? item.atName : null;
   const look = lookOf(item);
-  if (look !== "place")
+  if (look === "transport") return <TicketBody {...{ item, fields, grip, actions, name }} warnings={warnings} />;
+  if (item.kind === "custom")
     return <CompactBody {...{ item, fields, grip, actions, name, look }} warnings={warnings} />;
+  const tiled = isTiled(look);
+  const head = !fields.icon ? null : tiled ? look : iconHead ? headKindOf(item) : null;
+  const address = fields.address ? item.address : null;
+  // Bữa ăn / lưu trú: ô icon màu ở đầu thẻ (như thẻ Di chuyển) THAY ảnh — icon đã nói loại, khỏi nhãn vai trên tên.
+  const area = fields.address && look === "stay" ? item.areaLabel : null;
   return (
     // `data-row-part`: phần NỘI DUNG thấy được (không gồm đệm) — dấu + chèn giữa hai hàng đo
     // khoảng trắng thật từ đáy phần này tới chấm số hàng dưới.
     <div data-row-part>
     <div className="flex items-start gap-3">
-      {fields.image && <Thumb item={item} />}
+      {/* Thẻ của trang soạn / bữa ăn / lưu trú không bao giờ có ô ảnh nhỏ — ảnh ở nền; tắt icon thì đầu thẻ để trống. */}
+      {head ? <HeadTile look={head} /> : fields.image && !iconHead && !tiled && <Thumb item={item} />}
 
       <div className="min-w-0 flex-1">
+        {/* VAI của mục trong lịch ("Ăn trưa" ở quán này, "Nhận phòng" ở chỗ ở này) — nhãn nhỏ trên tên. */}
+        {item.role && !tiled && (
+          <p className="mb-0.5 flex items-center gap-1 text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+            <Glyph name={item.special === "meal" ? "bowl" : "bed"} className="size-3.5" />
+            {item.role}
+          </p>
+        )}
         <div className="flex items-start justify-between gap-1">
           <p
             className={cn(
-              "flex min-w-0 items-start gap-1.5 text-[1.0625rem] font-semibold leading-snug tracking-[-0.005em]",
+              "flex min-w-0 items-start gap-1.5 text-[1.0625rem] font-bold leading-snug tracking-[-0.01em] sm:text-lg",
             )}
           >
-            {!fields.image && (
+            {head && <InlineKindIcon look={head} />}
+            {fields.icon && !fields.image && !head && (
               <span className="mt-[0.2rem] shrink-0 text-muted-foreground">
                 <Glyph name={glyphOf(item)} className="size-3.5" />
                 <span className="sr-only">{item.typeLabel}</span>
@@ -139,20 +180,24 @@ function ItemBody({
           </div>
         </div>
 
-        {(fields.stay || (fields.hours && item.openingHours) || at || item.address || item.special) && (
+        {(fields.stay || at || area || address || item.bookingCode) && (
           <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
             {at && <span>tại {at}</span>}
-            {/* Mục đặc biệt: nói nó là GÌ (tên có thể là "Hà Nội – Sa Pa" hay "Ăn trưa") + mã đặt chỗ nếu có. */}
-            {item.special && item.typeLabel !== item.name && <span>{item.typeLabel}</span>}
+            {area && (
+              <span className="inline-flex min-w-0 items-start gap-1">
+                <Glyph name="pin" className="mt-[0.2rem] size-3.5 shrink-0" />
+                <span className="[overflow-wrap:anywhere]">{area}</span>
+              </span>
+            )}
             {item.bookingCode && (
               <span>
                 Mã <strong className="font-semibold tabular-nums text-foreground">{item.bookingCode}</strong>
               </span>
             )}
-            {item.address && (
+            {address && (
               <span className="inline-flex min-w-0 items-start gap-1">
                 <Glyph name="pin" className="mt-[0.2rem] size-3.5 shrink-0" />
-                <span className="[overflow-wrap:anywhere]">{item.address}</span>
+                <span className="[overflow-wrap:anywhere]">{address}</span>
               </span>
             )}
             {fields.stay &&
@@ -162,7 +207,6 @@ function ItemBody({
                   {stayLabel(item)}
                 </span>
               ))}
-            {fields.hours && item.openingHours && <span>Mở {item.openingHours}</span>}
           </p>
         )}
         {fields.note && !note && item.note && <NoteLine text={item.note} className="hidden sm:flex" />}
@@ -172,13 +216,86 @@ function ItemBody({
         Từ `sm`: bản trong cột chữ, ngay dưới tên. Hai bản, `display` chọn. */}
     {fields.note && (note ?? (item.note && <NoteLine text={item.note} className="sm:hidden" />))}
     {warnings.map((w, i) => (
-      <Warning key={`${w.code}-${i}`} warning={w} />
+      // Có icon đầu thẻ (từ `sm`) ⇒ cảnh báo thẳng cột chữ (icon w-7 + gap-3), không chạy ra dưới icon.
+      <Warning key={`${w.code}-${i}`} warning={w} hours={item.openingHours} className={head ? "sm:pl-10" : undefined} />
     ))}
     </div>
   );
 }
 
-/** Thân của mục KHÔNG phải nơi: không ảnh — icon loại thay chỗ ảnh; Di chuyển dựng thành một tấm vé. */
+/**
+ * THẺ VÉ (Di chuyển): ô icon phương tiện + "Hà Nội ┄┄┄ TP. Hồ Chí Minh". KHÔNG in giờ (cột giờ bên trái đã có, thời lượng ở
+ * nhãn dưới mốc trên trục) và không in tên phương tiện (icon nói).
+ */
+function TicketBody({
+  item,
+  fields,
+  grip,
+  actions,
+  name,
+  warnings,
+}: {
+  item: ItemView;
+  fields: TripFields;
+  grip?: ReactNode;
+  actions?: ReactNode;
+  name?: ReactNode;
+  warnings: TripWarning[];
+}) {
+  const mode = item.travelMode;
+  const ends = item.travelFrom || item.travelTo;
+  // Tiêu đề tự đặt khác tên ghép "A – B" thì vẫn hiện (vd. "Chuyến đêm").
+  const ownTitle = name ?? (ends && item.name !== [item.travelFrom, item.travelTo].filter(Boolean).join(" – ") ? item.name : null);
+  return (
+    <div data-row-part>
+      <div className="flex items-center gap-3">
+        {/* Dưới `sm` ô icon ăn mất 48px của một cột chữ vốn chỉ còn ~120px ⇒ icon nhỏ đứng trước tên điểm đi. */}
+        <span className={cn("hidden w-7 shrink-0 justify-center", fields.icon && "sm:flex", TRAVEL_INK)}>
+          {mode ? <TravelIcon mode={mode} className="size-6" /> : <Glyph name="route" className="size-5" />}
+          <span className="sr-only">{item.typeLabel}</span>
+        </span>
+
+        <div className="min-w-0 flex-1">
+          {ownTitle && <p className="truncate text-sm text-muted-foreground">{ownTitle}</p>}
+          {ends ? (
+            <>
+              {/* Dưới `sm` không đủ chỗ cho vạch nối, mà một chuỗi "A – B" bị bẻ thành 4 dòng ở 320px ⇒ hai đầu HAI DÒNG. */}
+              <p className="text-[1.0625rem] font-bold leading-snug break-words sm:hidden">
+                <span className="flex items-start gap-1.5">
+                  {fields.icon && mode && <TravelIcon mode={mode} className={cn("mt-px size-5 shrink-0", TRAVEL_INK)} />}
+                  <span className="min-w-0">{item.travelFrom ?? "…"}</span>
+                </span>
+                <span className={cn("block", fields.icon && mode && "pl-[1.625rem]")}>
+                  <span className="font-normal text-muted-foreground">đến </span>
+                  {item.travelTo ?? "…"}
+                </span>
+              </p>
+              <p className="hidden items-center gap-3 text-lg font-bold leading-snug tracking-[-0.01em] sm:flex">
+                <span className="min-w-0 truncate">{item.travelFrom ?? "…"}</span>
+                <span aria-hidden className="h-0 min-w-8 flex-1 border-t-2 border-dashed border-kind-travel/35" />
+                <span className="sr-only">đến</span>
+                <span className="min-w-0 truncate">{item.travelTo ?? "…"}</span>
+              </p>
+            </>
+          ) : (
+            <p className="text-[1.0625rem] font-bold leading-snug sm:text-lg">{name ?? item.name}</p>
+          )}
+        </div>
+
+        <div className="flex shrink-0 items-center gap-0.5 self-start">
+          {grip}
+          {actions}
+        </div>
+      </div>
+      {fields.note && item.note && <NoteLine text={item.note} className={fields.icon ? "sm:pl-10" : undefined} />}
+      {warnings.map((w, i) => (
+        <Warning key={`${w.code}-${i}`} warning={w} className={fields.icon ? "sm:pl-10" : undefined} />
+      ))}
+    </div>
+  );
+}
+
+/** Thân của mục tự thêm KHÔNG phải Di chuyển: không ảnh — icon loại đứng trần trước tên. */
 function CompactBody({
   item,
   fields,
@@ -193,71 +310,64 @@ function CompactBody({
   grip?: ReactNode;
   actions?: ReactNode;
   name?: ReactNode;
-  look: Exclude<ItemLook, "place">;
+  look: Exclude<ItemLook, "transport">;
   warnings: TripWarning[];
 }) {
-  const route = look === "transport" && item.travelFrom && item.travelTo;
-  // Nhãn loại CHỈ cho Di chuyển (tên phương tiện) — loại khác đã có icon nói thay ("Ăn trưa / Bữa ăn" là lặp).
-  const meta = [
-    look === "transport" && item.typeLabel !== item.name ? item.typeLabel : null,
-    route && item.name !== `${item.travelFrom} – ${item.travelTo}` ? item.name : null,
-  ].filter(Boolean) as string[];
+  const tiled = isTiled(look);
+  // Tên chỉ là nhãn loại ("Bữa ăn", "Nhận phòng" — icon đầu thẻ đã nói) ⇒ dòng chính nói thứ icon CHƯA nói: chỗ nào, hoặc
+  // chưa có chỗ.
+  const echo = tiled && !name && !!item.special && same(item.name, SPECIAL_LABEL[item.special]);
+  const address = fields.address ? item.address : null;
+  const where = address ?? item.stayOf;
+  const placeholder =
+    item.special === "meal" ? "Chưa chọn quán" : item.special === "checkin" ? "Chưa chọn chỗ ở" : "Chưa ghi chỗ ở";
+  const headline = echo ? (where ?? placeholder) : (name ?? item.name);
+  const showAddress = address && !(echo && where === address);
   return (
     <div data-row-part>
-      <div className={cn("flex gap-2.5", look === "transport" ? "items-center" : "items-start")}>
+      <div className="flex items-start gap-2.5">
         {/* Icon loại đứng TRẦN trước tên — không bọc ô nền (ô xám + icon là kiểu "thẻ mẫu" lặp ở mọi hàng). */}
-        <span className={cn("shrink-0 text-muted-foreground", look === "transport" ? "" : "mt-[0.2rem]")}>
-          <Glyph name={glyphOf(item)} className={look === "transport" ? "size-5" : "size-4"} />
-          <span className="sr-only">{item.typeLabel}</span>
-        </span>
+        {!fields.icon ? null : tiled ? (
+          <HeadTile look={look} />
+        ) : (
+          <span className="mt-[0.2rem] shrink-0 text-muted-foreground">
+            <Glyph name={glyphOf(item)} className="size-4" />
+            <span className="sr-only">{item.typeLabel}</span>
+          </span>
+        )}
 
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-1">
-            {route ? (
-              <>
-                {/* Tấm VÉ: hai đầu in đậm nối bằng vạch đứt — đọc ngay là "đi từ đâu tới đâu" (KHÔNG mũi tên, luật §3).
-                    Dưới `sm` không đủ chỗ cho vạch (320px cắt còn "H ┄ P…") ⇒ bản chữ thường, xuống dòng được. */}
-                <p className="min-w-0 flex-1 text-[1.0625rem] font-semibold leading-snug [overflow-wrap:anywhere] sm:hidden">
-                  {item.travelFrom} – {item.travelTo}
-                </p>
-                <p className="hidden min-w-0 flex-1 items-center gap-2 text-[1.0625rem] font-semibold leading-snug sm:flex">
-                  <span className="min-w-0 truncate">{item.travelFrom}</span>
-                  <span aria-hidden className="h-0 min-w-5 flex-1 border-t-2 border-dashed border-muted-foreground/35" />
-                  <span className="sr-only">đến</span>
-                  <span className="min-w-0 truncate">{item.travelTo}</span>
-                </p>
-              </>
-            ) : (
-              <p
-                className={cn(
-                  "line-clamp-2 min-w-0 leading-snug [overflow-wrap:anywhere]",
-                  look === "transport" ? "text-[1.0625rem] font-semibold" : "text-base font-medium",
-                  look === "rest" && "text-muted-foreground",
-                )}
-              >
-                {name ?? item.name}
-              </p>
-            )}
+            {fields.icon && tiled && <InlineKindIcon look={look} />}
+            <p
+              className={cn(
+                "line-clamp-2 min-w-0 flex-1 text-[1.0625rem] font-semibold leading-snug tracking-[-0.01em] [overflow-wrap:anywhere] sm:text-lg",
+                look === "rest" && "text-muted-foreground",
+                tiled && (echo && !where ? "font-medium text-muted-foreground" : "font-bold"),
+              )}
+            >
+              {headline}
+            </p>
             <div className="flex shrink-0 items-center gap-0.5">
               {grip}
               {actions}
             </div>
           </div>
 
-          {(meta.length > 0 || item.bookingCode || item.address) && (
+          {!echo && tiled && !address && item.special !== "checkout" && (
+            <p className="mt-0.5 text-sm text-muted-foreground">{placeholder}</p>
+          )}
+          {(item.bookingCode || showAddress) && (
             <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
-              {meta.map((m) => (
-                <span key={m}>{m}</span>
-              ))}
               {item.bookingCode && (
                 <span>
                   Mã <strong className="font-semibold tabular-nums text-foreground">{item.bookingCode}</strong>
                 </span>
               )}
-              {item.address && (
+              {showAddress && (
                 <span className="inline-flex min-w-0 items-start gap-1">
                   <Glyph name="pin" className="mt-[0.2rem] size-3.5 shrink-0" />
-                  <span className="[overflow-wrap:anywhere]">{item.address}</span>
+                  <span className="[overflow-wrap:anywhere]">{address}</span>
                 </span>
               )}
             </p>
@@ -266,7 +376,11 @@ function CompactBody({
         </div>
       </div>
       {warnings.map((w, i) => (
-        <Warning key={`${w.code}-${i}`} warning={w} />
+        <Warning
+          key={`${w.code}-${i}`}
+          warning={w}
+          className={!fields.icon ? undefined : tiled ? "sm:pl-[2.375rem]" : "pl-[1.625rem]"}
+        />
       ))}
     </div>
   );
@@ -286,19 +400,52 @@ function isBare(item: ItemView, fields: TripFields): boolean {
   return (
     !fields.image &&
     !fields.stay &&
-    !fields.hours &&
     !fields.note &&
     (!fields.warn || item.warnings.length === 0)
   );
 }
 
+type DotTone = "place" | "meal" | "stay" | "travel" | "neutral";
+
+/**
+ * Màu mốc trên trục — CÙNG màu loại với thẻ (`--kind-*`), để nhìn trục là thấy nhịp đi / chơi / ăn / ở. Ô số: viền + chữ màu
+ * loại, nền pha 10% vào nền trang (ĐỤC — mốc phải che được vạch trục). Chấm nhỏ: đặc màu loại. Lớp viết đủ chữ để Tailwind quét.
+ */
+const DOT_NUM: Record<DotTone, string> = {
+  place: "border-kind-place/70 bg-[color-mix(in_oklab,var(--kind-place)_10%,var(--background))] text-kind-place group-hover:border-kind-place",
+  meal: "border-kind-meal/70 bg-[color-mix(in_oklab,var(--kind-meal)_10%,var(--background))] text-kind-meal group-hover:border-kind-meal",
+  stay: "border-kind-stay/70 bg-[color-mix(in_oklab,var(--kind-stay)_10%,var(--background))] text-kind-stay group-hover:border-kind-stay",
+  travel: "border-kind-travel/70 bg-background text-kind-travel group-hover:border-kind-travel",
+  neutral: "border-foreground/45 bg-background text-foreground group-hover:border-foreground/80",
+};
+const DOT_SMALL: Record<DotTone, string> = {
+  place: "bg-kind-place/70 group-hover:bg-kind-place",
+  meal: "bg-kind-meal/70 group-hover:bg-kind-meal",
+  stay: "bg-kind-stay/70 group-hover:bg-kind-stay",
+  travel: "bg-kind-travel/70 group-hover:bg-kind-travel",
+  neutral: "bg-foreground/45 group-hover:bg-foreground/75",
+};
+
+function dotTone(item: ResolvedItem): DotTone {
+  const look = lookOf(item);
+  if (look === "meal" || look === "stay") return look;
+  if (look === "transport") return "travel";
+  if (look === "place") {
+    const k = headKindOf(item);
+    return k === "spot" || k === "activity" ? "place" : k;
+  }
+  return "neutral";
+}
+
 function RailDot({
   number,
   handleProps,
+  tone = "neutral",
 }: {
   /** null = mốc phụ (việc, bữa ăn, di chuyển…): chấm nhỏ, không số. Icon loại đã nằm trong thẻ — không lặp ở trục. */
   number: number | null;
   handleProps?: Record<string, unknown>;
+  tone?: DotTone;
 }) {
   const draggable = handleProps != null;
   return (
@@ -306,11 +453,14 @@ function RailDot({
       {...handleProps}
       data-rail-dot
       className={cn(
-        // Số mốc TRUNG TÍNH (viền xám, chữ đậm) — bản viền xanh rắc màu nhấn lên mọi hàng, trục thành một chuỗi hạt xanh.
-        "relative shrink-0 bg-background ring-4 ring-background",
+        "relative shrink-0 ring-4 ring-background transition-colors duration-200",
         number == null
-          ? "mt-[0.4rem] size-2.5 rounded-[2px] bg-muted-foreground/35"
-          : "mt-0.5 grid size-[1.375rem] place-items-center rounded-[4px] border border-foreground/20 text-[0.6875rem] font-bold tabular-nums text-foreground/80",
+          ? cn("mt-[0.4rem] size-2.5 rounded-[2px]", DOT_SMALL[tone])
+          : // Rê vào thẻ thì mốc của nó đậm lên — thấy ngay thẻ đang rê thuộc mốc nào trên trục.
+            cn(
+              "mt-0.5 grid size-[1.375rem] place-items-center rounded-[4px] border text-[0.6875rem] font-bold tabular-nums",
+              DOT_NUM[tone],
+            ),
         draggable &&
           "cursor-grab touch-none before:absolute before:-inset-2 before:content-[''] active:cursor-grabbing",
       )}
@@ -363,6 +513,26 @@ export function RailItem({
   fields?: TripFields;
 }) {
   const noTime = item.arriveMin < 0;
+  const look = lookOf(item);
+  const iconHead = !!card && look === "place";
+  // Ảnh của nơi / quán / chỗ ở LÙI thành nền mờ ở nửa phải thẻ: không ăn bề ngang của tên (kể cả 320px), vẫn cho thấy chỗ
+  // đó trông thế nào. Mục tự thêm không có ảnh ⇒ không nền.
+  const backdrop =
+    !!card && (look === "place" || look === "meal" || look === "stay") && fields.image && item.image;
+  // Dải thẻ hoạt động / gợi ý quán thẳng cột chữ khi đầu thẻ có icon (từ `sm`): icon w-7 + khoảng cách của từng thân thẻ.
+  const tagPad = !fields.icon
+    ? undefined
+    : iconHead
+      ? "sm:pl-10"
+      : isTiled(look) && item.kind === "custom"
+        ? "sm:pl-[2.375rem]"
+        : undefined;
+  const body = (
+    <>
+      <ItemBody {...{ item, grip, actions, note, name, iconHead }} fields={{ ...fields, stay: false }} />
+      {tags && <div className={tagPad}>{tags}</div>}
+    </>
+  );
 
   return (
     <Tag
@@ -386,28 +556,43 @@ export function RailItem({
             <RailDot
               number={number !== undefined ? number : (item.stopNo ?? index + 1)}
               handleProps={handleProps}
+              tone={dotTone(item)}
             />
           </span>
         }
         below={fields.stay ? (stay ?? <RailStay item={item} />) : null}
+        tone={dotTone(item)}
       />
       </div>
 
       {card ? (
         <div className="min-w-0 flex-1 pb-3">
           {card(
-            <>
-              <ItemBody {...{ item, grip, actions, note, name }} fields={{ ...fields, stay: false }} />
-              {tags}
-            </>,
+            backdrop ? (
+              <>
+                <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 w-1/2 sm:w-[42%]">
+                  <Image
+                    src={backdrop}
+                    alt=""
+                    fill
+                    draggable={false}
+                    sizes="(min-width: 640px) 240px, 150px"
+                    // Mờ dần về TRÁI (chỗ tên đứng) — mặt nạ chứ không phải lớp trắng phủ, để dark mode tự đúng.
+                    className="object-cover opacity-70 [mask-image:linear-gradient(to_right,transparent,black_85%)] dark:opacity-50"
+                  />
+                </div>
+                <div className="relative">{body}</div>
+              </>
+            ) : (
+              body
+            ),
           )}
         </div>
       ) : (
         // Tắt hết dòng phụ ⇒ mục chỉ còn một dòng tên, đệm 20px là quá thưa cho một danh sách.
         <div className={cn("min-w-0 flex-1", isBare(item, fields) ? "pb-3" : "pb-5")}>
           {/* Thời gian đã nằm trên trục ⇒ dòng thông tin dưới tên chỉ còn giờ mở cửa. */}
-          <ItemBody {...{ item, grip, actions, note, name }} fields={{ ...fields, stay: false }} />
-          {tags}
+          {body}
         </div>
       )}
     </Tag>
@@ -417,13 +602,20 @@ export function RailItem({
 /**
  * HÌNH của một mục — phân biệt bằng HÌNH, không bằng màu (màu đã khoá nghĩa ở §3: xanh = thời điểm, cam = cảnh báo).
  * - `place`: nơi của site — thẻ lớn có ảnh + số mốc, xương sống của ngày.
- * - `transport`: Di chuyển — thẻ kiểu VÉ: nền xám nhạt, "Hà Nội ┄┄ Sa Pa".
+ * - `transport`: Di chuyển — THẺ VÉ: ô icon phương tiện có màu, giờ đi ┄ thời lượng ┄ giờ đến (`TicketBody`).
  * - `minor`: mục tự thêm (nhận/trả phòng, bữa ăn, việc, nơi tự gõ) — thẻ gọn, icon nhỏ thay ảnh.
  * - `rest`: Nghỉ — viền đứt, nền trong suốt: một KHOẢNG TRỐNG của ngày.
  */
-export type ItemLook = "place" | "transport" | "minor" | "rest";
+export type ItemLook = "place" | "transport" | "minor" | "rest" | "meal" | "stay";
 
+/**
+ * - `meal` / `stay`: bữa ăn (tự thêm, hoặc quán mang vai bữa) và lưu trú (chỗ ở của site, nhận/trả phòng tự thêm) — ô icon
+ *   màu ở đầu thẻ như thẻ Di chuyển (`HeadTile`), thay cho ảnh.
+ */
 export function lookOf(item: ResolvedItem): ItemLook {
+  if (item.special === "meal" && (item.kind === "custom" || item.kind === "eatery")) return "meal";
+  if (item.kind === "accommodation") return "stay";
+  if (item.kind === "custom" && (item.special === "checkin" || item.special === "checkout")) return "stay";
   if (item.kind !== "custom") return "place";
   if (item.special === "transport") return "transport";
   if (item.special === "rest") return "rest";
@@ -432,14 +624,25 @@ export function lookOf(item: ResolvedItem): ItemLook {
   return "minor";
 }
 
-/** Khung THẺ ở trang soạn theo hình của mục. Cùng đệm ở mọi hình — giờ và mốc trên trục canh theo đệm đó. */
+/**
+ * Khung THẺ ở trang soạn theo hình của mục. Cùng đệm ở mọi hình — giờ và mốc trên trục canh theo đệm đó.
+ * - Mọi thẻ: viền trung tính; Nơi / Bữa ăn / Lưu trú rê vào thì viền ngả màu loại. KHÔNG vạch màu mép trái.
+ *   Lớp tĩnh viết đủ chữ để Tailwind quét được.
+ * - Nghỉ: viền đứt, nền trong suốt — một KHOẢNG TRỐNG của ngày.
+ */
+const LOOK_CARD: Record<ItemLook, string> = {
+  // Viền TRUNG TÍNH lúc đứng yên — loại đã nói bằng icon + mốc + đoạn trục; viền chỉ nhuốm màu loại khi rê vào.
+  // `relative overflow-hidden`: ảnh nền mờ neo theo khung và bị góc bo cắt.
+  place: "relative overflow-hidden border-foreground/12 hover:border-kind-place/50",
+  meal: "relative overflow-hidden border-foreground/12 hover:border-kind-meal/50",
+  stay: "relative overflow-hidden border-foreground/12 hover:border-kind-stay/50",
+  transport: "border-foreground/12 hover:border-foreground/30",
+  minor: "border-foreground/12 hover:border-foreground/30",
+  rest: "border-dashed border-foreground/20 bg-transparent hover:border-foreground/40",
+};
+
 export function cardClass(look: ItemLook): string {
-  return cn(
-    "rounded-[6px] border px-3 py-2.5",
-    look === "rest" ? "border-dashed border-border bg-transparent" : "border-border",
-    look === "transport" && "bg-muted/50",
-    (look === "place" || look === "minor") && "bg-background",
-  );
+  return cn("rounded-[6px] border bg-background px-3 py-2.5", LOOK_CARD[look]);
 }
 
 /**
@@ -465,12 +668,12 @@ export function ActivityTags({
         <li
           key={t.id}
           className={cn(
-            "group/tag inline-flex h-8 min-w-0 max-w-full items-center rounded-[3px] border border-border bg-background text-sm transition-colors",
-            t.href && "hover:border-primary/50",
+            "group/tag inline-flex h-8 min-w-0 max-w-full items-center rounded-[4px] border border-foreground/12 bg-background text-sm transition-colors",
+            t.href && "hover:border-kind-place/50",
           )}
         >
           <span className="inline-flex min-w-0 items-center gap-1.5 pl-2 pr-2">
-            <Glyph name="compass" className="size-3.5 shrink-0 text-muted-foreground" />
+            <Glyph name="compass" className="size-3.5 shrink-0 text-kind-place" />
             {t.href ? (
               <Link href={t.href} draggable={false} className="truncate font-medium hover:text-primary-ink">
                 {t.name}
@@ -555,6 +758,35 @@ export function RailLeg({
   );
 }
 
+function isTiled(look: ItemLook): look is "meal" | "stay" {
+  return look === "meal" || look === "stay";
+}
+
+function same(a: string, b: string): boolean {
+  return a.trim().toLocaleLowerCase("vi") === b.trim().toLocaleLowerCase("vi");
+}
+
+/** Ô icon đầu thẻ bữa ăn / lưu trú — cùng khuôn với ô phương tiện của thẻ Di chuyển. Dưới `sm` nhường chỗ cho chữ. */
+function headKindOf(item: ResolvedItem): HeadKind {
+  if (item.kind === "eatery") return "meal";
+  if (item.kind === "accommodation") return "stay";
+  return item.kind === "activity" ? "activity" : "spot";
+}
+
+function HeadTile({ look }: { look: HeadKind }) {
+  // Icon TRẦN màu loại, không ô nền: màu đã có ở mốc + đoạn trục ngay bên trái, thêm một ô màu nữa là nói lần thứ ba.
+  return (
+    <span className="mt-0.5 hidden w-7 shrink-0 justify-center sm:flex">
+      <KindIcon kind={look} className={cn("size-6", KIND_INK[look])} />
+    </span>
+  );
+}
+
+/** Điện thoại: icon nhỏ đứng trước tên thay cho ô icon. */
+function InlineKindIcon({ look }: { look: HeadKind }) {
+  return <KindIcon kind={look} className={cn("mt-px size-5 shrink-0 sm:hidden", KIND_INK[look])} />;
+}
+
 function glyphOf(item: ResolvedItem): GlyphName {
   if (item.kind === "custom" && item.special) return specialGlyph(item.special, item.travelMode);
   return isTask(item) ? "note" : TYPE_GLYPH[item.kind];
@@ -609,11 +841,15 @@ export function Thumb({
 
 export function Warning({
   warning,
+  hours,
   className,
 }: {
   warning: TripWarning;
+  /** Giờ mở cửa của mục — CHỈ in khi cảnh báo nói về giờ, ngay trong dòng cảnh báo (không có dòng giờ riêng trên thẻ). */
+  hours?: string | null;
   className?: string;
 }) {
+  const showHours = hours && HOUR_WARNINGS.has(warning.code);
   const high = warning.level === "high";
   const glyph: GlyphName = warning.level === "info" ? "info" : "warn";
   return (
@@ -628,7 +864,10 @@ export function Warning({
       )}
     >
       <Glyph name={glyph} className="mt-px size-3.5 shrink-0" />
-      {warning.text}
+      <span className="flex min-w-0 flex-wrap gap-x-3">
+        <span>{warning.text}</span>
+        {showHours && <span className="font-normal opacity-75">Giờ mở {hours}</span>}
+      </span>
     </p>
   );
 }

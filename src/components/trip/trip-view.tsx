@@ -234,7 +234,7 @@ export function TripView({
                               index={stop.first}
                               number={stop.no}
                               fields={fields}
-                              tags={<ActivityTags tags={stop.tags} />}
+                              tags={fields.tags ? <ActivityTags tags={stop.tags} /> : null}
                             />
                           </StopRow>
                           {fields.leg && k < all.length - 1 && <RailLeg item={stop.item} />}
