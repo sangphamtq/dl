@@ -848,7 +848,8 @@ function AddTagButton({ label, onClick, quiet }: { label: string; onClick: () =>
         "inline-flex h-8 shrink-0 items-center gap-1 rounded-[3px] px-2 text-sm font-medium text-muted-foreground transition-colors",
         quiet
           ? "opacity-0 transition-opacity hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-focus-within:opacity-100 group-hover:opacity-100 [@media(pointer:coarse)]:hidden"
-          : "bg-background hover:bg-muted hover:text-foreground",
+          : // Nền ĐỤC trắng: vô hình trên thẻ trơn, nhưng vẫn đọc được khi rơi vào vùng ảnh nền.
+            "bg-background hover:bg-[color-mix(in_oklab,var(--color-foreground)_7%,var(--color-background))] hover:text-foreground",
       )}
     >
       <Glyph name="plus" className="size-3.5" />
@@ -886,13 +887,12 @@ function SortableStop({
           aria-label={`${item.name}, giữ và kéo để đổi chỗ`}
           className={cn(
             cardClass(lookOf(item)),
-            isDragging && "border-foreground/25 shadow-[0_16px_32px_-12px_rgb(0_0_0/0.3)]",
+            isDragging && "bg-background shadow-[0_16px_32px_-12px_rgb(0_0_0/0.3)]",
             // Rê: nền ngả MỘT sắc + viền đậm một nấc — không bóng (thẻ đã có viền: mỗi khối một độ nổi), không nảy lên.
-            "cursor-grab transition-[border-color,background-color,box-shadow] duration-200 ease-out motion-reduce:transition-none",
-            "hover:bg-[color-mix(in_oklab,var(--color-foreground)_2%,var(--color-background))]",
+            "cursor-grab transition-[background-color,box-shadow] duration-200 ease-out motion-reduce:transition-none",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing",
             // Nhấn xuống là thẻ NHẤC LÊN ngay (cùng bóng với bóng kéo) — trừ khi nhấn vào nút / link bên trong.
-            "[&:active:not(:has(a:active,button:active))]:border-foreground/25 [&:active:not(:has(a:active,button:active))]:shadow-[0_16px_32px_-12px_rgb(0_0_0/0.3)]",
+            "[&:active:not(:has(a:active,button:active))]:bg-background [&:active:not(:has(a:active,button:active))]:shadow-[0_16px_32px_-12px_rgb(0_0_0/0.3)]",
             // Nhấn giữ để kéo trên cảm ứng: đừng để iOS bôi đen chữ / bật menu sao chép.
             "[@media(pointer:coarse)]:select-none [@media(pointer:coarse)]:[-webkit-touch-callout:none]",
           )}
@@ -937,7 +937,7 @@ function MealPicksRow({
           type="button"
           onClick={() => onPick(p)}
           className={cn(
-            "inline-flex h-8 max-w-full items-center gap-1.5 rounded-[3px] border border-border bg-background pr-2.5 text-sm transition-colors hover:border-primary/50 hover:text-primary-ink",
+            "inline-flex h-8 max-w-full items-center gap-1.5 rounded-[4px] pr-2.5 text-sm transition-colors bg-[color-mix(in_oklab,var(--color-foreground)_7%,var(--color-background))] hover:bg-[color-mix(in_oklab,var(--color-foreground)_11%,var(--color-background))]",
             p.image ? "pl-[3px]" : "pl-2.5",
           )}
         >
@@ -953,7 +953,7 @@ function MealPicksRow({
       <button
         type="button"
         onClick={onMore}
-        className="inline-flex h-8 items-center gap-1 rounded-[3px] border border-dashed border-border px-2.5 text-sm text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary-ink"
+        className="inline-flex h-8 items-center gap-1 rounded-[4px] px-2.5 text-sm text-muted-foreground transition-colors hover:bg-[color-mix(in_oklab,var(--color-foreground)_7%,var(--color-background))] hover:text-foreground"
       >
         <Glyph name="search" className="size-3.5" />
         {picks.length > 0 ? "Quán khác…" : "Chọn quán"}

@@ -626,23 +626,25 @@ export function lookOf(item: ResolvedItem): ItemLook {
 
 /**
  * Khung THẺ ở trang soạn theo hình của mục. Cùng đệm ở mọi hình — giờ và mốc trên trục canh theo đệm đó.
- * - Mọi thẻ: viền trung tính; Nơi / Bữa ăn / Lưu trú rê vào thì viền ngả màu loại. KHÔNG vạch màu mép trái.
+ * - Mọi thẻ: KHÔNG viền, KHÔNG nền; rê vào mới có nền nhạt (`CARD_HOVER`). KHÔNG vạch màu mép trái.
  *   Lớp tĩnh viết đủ chữ để Tailwind quét được.
  * - Nghỉ: viền đứt, nền trong suốt — một KHOẢNG TRỐNG của ngày.
  */
+// KHÔNG viền, KHÔNG nền: thẻ là chữ trơn trên tờ trắng — trục + icon + giờ đã đủ tách từng mục. Nền nhạt CHỈ hiện khi rê
+// (để biết thẻ bấm / kéo được). Nhấn / kéo thì nền trắng + bóng (`SortableStop`).
+const CARD_HOVER = "hover:bg-[color-mix(in_oklab,var(--color-foreground)_3.5%,var(--color-background))]";
 const LOOK_CARD: Record<ItemLook, string> = {
-  // Viền TRUNG TÍNH lúc đứng yên — loại đã nói bằng icon + mốc + đoạn trục; viền chỉ nhuốm màu loại khi rê vào.
   // `relative overflow-hidden`: ảnh nền mờ neo theo khung và bị góc bo cắt.
-  place: "relative overflow-hidden border-foreground/12 hover:border-kind-place/50",
-  meal: "relative overflow-hidden border-foreground/12 hover:border-kind-meal/50",
-  stay: "relative overflow-hidden border-foreground/12 hover:border-kind-stay/50",
-  transport: "border-foreground/12 hover:border-foreground/30",
-  minor: "border-foreground/12 hover:border-foreground/30",
-  rest: "border-dashed border-foreground/20 bg-transparent hover:border-foreground/40",
+  place: cn("relative overflow-hidden", CARD_HOVER),
+  meal: cn("relative overflow-hidden", CARD_HOVER),
+  stay: cn("relative overflow-hidden", CARD_HOVER),
+  transport: CARD_HOVER,
+  minor: CARD_HOVER,
+  rest: CARD_HOVER,
 };
 
 export function cardClass(look: ItemLook): string {
-  return cn("rounded-[6px] border bg-background px-3 py-2.5", LOOK_CARD[look]);
+  return cn("rounded-[6px] px-3 py-2.5", LOOK_CARD[look]);
 }
 
 /**
@@ -668,8 +670,9 @@ export function ActivityTags({
         <li
           key={t.id}
           className={cn(
-            "group/tag inline-flex h-8 min-w-0 max-w-full items-center rounded-[4px] border border-foreground/12 bg-background text-sm transition-colors",
-            t.href && "hover:border-kind-place/50",
+            // Chip ĐẶC, không viền: đậm hơn tấm thẻ một nấc (đọc được cả trên thẻ, trên ảnh nền và trên trang xem nền trắng).
+            "group/tag inline-flex h-8 min-w-0 max-w-full items-center rounded-[4px] bg-[color-mix(in_oklab,var(--color-foreground)_7%,var(--color-background))] text-sm transition-colors",
+            t.href && "hover:bg-[color-mix(in_oklab,var(--color-foreground)_11%,var(--color-background))]",
           )}
         >
           <span className="inline-flex min-w-0 items-center gap-1.5 pl-2 pr-2">
@@ -712,7 +715,13 @@ export function StopRow({
       style={style}
       data-stop-row={rowId ?? ""}
       // Đang kéo: chính hàng này đi theo tay — nổi lên trên các hàng nó trượt qua.
-      className={cn("group/stop relative grid bg-background", dragging && "z-20")}
+      // Vạch ngăn MẢNH giữa hai hàng, chỉ trong CỘT THẺ (lùi đúng cột giờ + trục + hai khoảng cách: 5rem / 7rem từ `sm`) —
+      // thẻ không viền không nền nên cần một nhịp ngăn nhẹ. Hàng cuối ngày và hàng đang kéo không có.
+      className={cn(
+        "group/stop relative grid bg-background",
+        "after:pointer-events-none after:absolute after:bottom-1 after:left-20 after:right-0 after:h-px after:bg-foreground/[0.08] last:after:hidden sm:after:left-28",
+        dragging && "z-20 after:hidden",
+      )}
     >
       {/* `grid`: ô con kéo hết chiều cao — trục không đứt. */}
       <div className="grid min-w-0">{children}</div>

@@ -222,7 +222,7 @@ Chỉ **trang soạn** đóng khung thẻ (bấm/kéo được); trang xem dùng
 | 3 | Di chuyển | `--kind-travel` | xám lạnh (C 0,025) | chỉ là đoạn nối |
 | — | Nghỉ · việc tự gõ | — | trung tính | khoảng trống / việc phụ |
 
-- Màu **chỉ** ở: icon đầu thẻ · mốc · đoạn trục · viền thẻ **khi rê**. **Không tô chữ thân, không tô nền thẻ, không vạch
+- Màu **chỉ** ở: icon đầu thẻ · mốc · đoạn trục. **Không tô chữ thân, không tô nền thẻ, không vạch
   mép.** Đây là ngoại lệ có chủ ý của luật "màu mang nghĩa" (§3 CLAUDE.md) — mỗi màu nói đúng một LOẠI.
 - Thẻ, icon, mốc, trục lấy màu từ cùng nguồn (`lookOf` → `headKindOf` → `dotTone`) nên luôn khớp nhau.
 - ⚠️ Turbopack đôi khi không dựng lại CSS khi chỉ đổi token trong `globals.css` — chạm nội dung file để ép.
@@ -254,8 +254,14 @@ Chỉ **trang soạn** đóng khung thẻ (bấm/kéo được); trang xem dùng
 | `minor` | việc / nơi tự gõ khác | `CompactBody` |
 | `rest` | Nghỉ — viền đứt, nền trong suốt (một khoảng trống của ngày) | `CompactBody` |
 
-- Viền lúc đứng yên **trung tính** `foreground/12`; rê ⇒ `kind-*/50` (nơi/ăn/ở) hoặc `foreground/30` + nền ngả 2%. Không
-  bóng khi rê (bóng dành cho lúc nhấn/kéo).
+- ⚠️ **Thẻ KHÔNG viền, KHÔNG nền** (biên tập: "ít border", rồi "bỏ cả nền xám"): thẻ là chữ trơn trên tờ trắng — trục, icon,
+  giờ đã đủ tách từng mục. Nền nhạt **chỉ khi rê** (`CARD_HOVER`, foreground pha 3,5% — ĐỤC bằng `color-mix`); nhấn/kéo ⇒
+  `bg-background` + bóng (`SortableStop`) để thẻ đang kéo không trong suốt. Chip hoạt động & gợi ý quán: **đặc 7%** không viền
+  (rê 11%); "+ Hoạt động" nền trắng đục (vô hình trên thẻ, đọc được trên ảnh nền). Đã thử và BỎ: viền trung tính + viền ngả
+  màu loại khi rê · tấm nền xám 3,5% thường trực.
+- **Vạch ngăn mảnh giữa hai hàng** (`StopRow` `::after`, `foreground/8%`, 1px): chỉ trong CỘT THẺ (`left-20` / `sm:left-28` =
+  cột giờ + trục + hai khoảng cách — cùng số với hàng thêm), không cắt qua cột giờ và trục; hàng cuối ngày (`last:`) và hàng
+  đang kéo không có. Có ở cả trang soạn lẫn trang xem.
 - **Icon đầu thẻ TRẦN** 24px trong cột `w-7` (`HeadTile`), màu loại — bộ icon **đặc hai lớp** riêng (`KindIcon`: núi ·
   la bàn · bát · giường; `TravelIcon`: 6 phương tiện) trong `travel-icon.tsx`, khác bộ nét mảnh `glyphs.tsx`. Dưới `sm`
   thành icon nhỏ trước tên (`InlineKindIcon`).
@@ -428,7 +434,7 @@ Biến cookie "chuyến đang lên lịch" (vô hình) thành một **vật th�
 - Thẻ ⋯ → **Tách thành dòng có giờ riêng** (tour, đặt chỗ); dòng hoạt động ⋯ → **Gắn vào {nơi}** (nơi gần nhất phía trên,
   không thì phía dưới). Thẻ không kéo được — đi theo hàng. Bỏ một nơi thì thẻ của nó đứng ra thành mục gốc.
 - "+ Hoạt động": nơi chưa có thẻ ⇒ nút trơn cạnh ⋯ chỉ hiện khi rê (cảm ứng: menu ⋯); đã có ⇒ chữ trơn cuối dải. ⚠️ Đừng
-  giữ chỗ ẩn ở nơi chưa có thẻ (mỗi hàng dài thêm ~36px). Chip: viền `foreground/12`, la bàn `kind-place`, ⋯ mờ 40% tới khi rê.
+  giữ chỗ ẩn ở nơi chưa có thẻ (mỗi hàng dài thêm ~36px). Chip đặc không viền, la bàn `kind-place`, ⋯ mờ 40% tới khi rê.
 - Đọc ra luôn **PHẲNG** (`flatten()`): gốc rồi ngay sau là con — tính giờ, bản đồ, trang xem không phải biết về cây.
   `order` của gốc đếm trong ngày, của con đếm trong cha.
 
