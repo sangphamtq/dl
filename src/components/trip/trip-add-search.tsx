@@ -27,6 +27,7 @@ import { TRAVEL_INK, TravelIcon } from "@/components/trip/travel-icon";
 import { VenuePicker, type Venue } from "@/components/trip/trip-venue-picker";
 import {
   addCustomStop,
+  addCustomTag,
   addItem,
   updateItem,
   type VenueRole,
@@ -245,6 +246,25 @@ export function TripAddSearch({
     });
   }
 
+  /** "Làm gì ở X": chữ tự gõ thành THẺ của chính nơi X (không giờ) — không tách ra thành dòng riêng. */
+  function addTag(title: string) {
+    const parent = pos.parent;
+    if (!target || !parent || adding) return;
+    setAdding("custom");
+    start(async () => {
+      const res = await addCustomTag(tripId, parent.id, title);
+      setAdding(null);
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      setQ("");
+      advance(res.data.itemId, title, true);
+      onAdded?.();
+      toast.success(`Đã thêm “${title}” vào ${parent.name}`);
+    });
+  }
+
   function add(c: TripCandidate) {
     if (!target || adding) return;
     setAdding(c.id);
@@ -298,7 +318,21 @@ export function TripAddSearch({
   // Gõ đúng tên việc mẫu thì dòng chung "Thêm “…”" chỉ là bản sao kém hơn (thiếu thời lượng).
   const exactTask = matchedTasks.some((t) => fold(t.title) === fold(term));
 
-  const customRow = term ? (
+  const doingParent = mode === "doing" ? pos.parent : null;
+  const customRow = term && doingParent ? (
+    <CommandGroup heading={strong ? "Không thấy đúng hoạt động?" : "Tự thêm"} className={cn("px-2", strong && "border-t border-border/60")}>
+      <CommandItem value="custom" onSelect={() => addTag(term)} className="group gap-3 rounded-[4px] px-2 py-2">
+        <Thumb>
+          {adding === "custom" ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Glyph name="plus" className="size-5" />}
+        </Thumb>
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="truncate text-sm font-medium text-foreground">Thêm “{term}”</span>
+          <span className="truncate text-xs text-muted-foreground">Thẻ của {doingParent.name}, không tính giờ riêng</span>
+        </span>
+        <AddHint />
+      </CommandItem>
+    </CommandGroup>
+  ) : term ? (
     <CommandGroup
       heading={strong ? "Không thấy đúng thứ cần thêm?" : "Tự thêm"}
       className={cn("px-2", strong && "border-t border-border/60")}
@@ -410,7 +444,7 @@ export function TripAddSearch({
                 ? `${SPECIAL_LABEL[form.special]}: điền phần cần, bỏ trống phần không cần.`
                 : "Một mục của riêng chuyến này. Có địa chỉ thì nó được đánh số như một điểm dừng."
               : mode === "doing"
-                ? "Hoạt động thành thẻ của nơi này, không tính giờ riêng. Mục tự thêm thành một dòng có giờ ngay sau."
+                ? "Chỉ các hoạt động diễn ra ở nơi này. Gõ tên để tự thêm — cũng thành thẻ của nơi này, không tính giờ riêng."
                 : "Tìm địa điểm, quán ăn, chỗ ở trên site, hoặc gõ để tự thêm một mục."}
           </DialogDescription>
         </div>
@@ -585,7 +619,7 @@ export function TripAddSearch({
             <CommandInput
               value={q}
               onValueChange={setQ}
-              placeholder="Tìm trên site, hoặc gõ để tự thêm…"
+              placeholder={mode === "doing" ? "Tìm hoạt động ở đây, hoặc gõ để tự thêm…" : "Tìm trên site, hoặc gõ để tự thêm…"}
               className={cn("h-12", TOUCH_INPUT)}
             />
             {loading && (
@@ -598,7 +632,12 @@ export function TripAddSearch({
 
           <CommandList className="max-h-[min(60vh,28rem)] border-t border-border/60">
             {mode === "doing" && results}
-            {!term && (
+            {mode === "doing" && !term && !loading && grouped.length === 0 && (
+              <p className="px-4 py-6 text-center text-sm text-muted-foreground">
+                Chưa có hoạt động nào của site ở {pos.parent?.name ?? "nơi này"}. Gõ tên để tự thêm.
+              </p>
+            )}
+            {mode !== "doing" && !term && (
               <CommandGroup heading="Hay dùng" className="px-2">
                 <div className="flex flex-wrap gap-1.5 px-2 pb-2 pt-0.5">
                   {TASKS.map((t) => (
@@ -621,7 +660,7 @@ export function TripAddSearch({
                 <FormOpener onSelect={() => openForm("")} />
               </CommandGroup>
             )}
-            {!term && (
+            {mode !== "doing" && !term && (
               <CommandGroup heading="Mục đặc biệt" className="px-2">
                 <div className="flex flex-wrap gap-1.5 px-2 pb-2 pt-0.5">
                   {SPECIALS.map((sp) => (

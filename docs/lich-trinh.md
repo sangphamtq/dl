@@ -155,9 +155,10 @@ Khung dùng chung cho **cả ba** trang (soạn · chia sẻ · mẫu) — `comp
    14rem, thu gọn 2.5rem      tờ TRẮNG trên nền band             gấp được
 ```
 
-- **Header site ở chế độ `underlay`** trên trang soạn (`chromeFor`, `lib/site-chrome.ts`): `absolute`, tông sáng, cuộn đi
-  cùng trang. ⚠️ `tao` bị loại khỏi `TRIP_DETAIL`/`TRIP_EDITOR`. Đổi hero của `/lich-trinh` thì sửa kèm danh sách
-  `overlay` ở cùng file.
+- **Header site = thanh TRẮNG dính trên đầu như mọi trang** (`chromeFor` trong `lib/site-chrome.ts` chỉ còn `overlay`; chế
+  độ "chìm" `underlay` và header không dính ở trang lịch trình đã bỏ — biên tập: "header đang chìm"). ⚠️ Mọi thứ dính ở trang
+  lịch trình lùi đúng `h-16` của header từ `lg`: thanh ngày `lg:top-16`; cột trái / phải / bảng công cụ `lg:top-22` +
+  `calc(100dvh-7rem)`. Đổi hero của `/lich-trinh` thì sửa kèm danh sách `overlay`.
 - **Đầu trang kiểu Notion, không ảnh**: tên chuyến to (`TitleField`, sửa tại chỗ — rê có nền, đang sửa viền + quầng
   `primary`; ⚠️ giữ `size={1}` và lớp đo `min-w-0 overflow-hidden`, không thì tràn 320px) + **hàng thuộc tính** không viền
   (`PROP`): chip **nơi đến** (link), **ngày đi** (`MonthGrid` tự dựng, tuần bắt đầu thứ Hai, tô cả khoảng ngày), **số
@@ -172,10 +173,22 @@ Khung dùng chung cho **cả ba** trang (soạn · chia sẻ · mẫu) — `comp
   `TRIP_SECTIONS` — `/ghi-chu` vẫn vào được).
   · ⚠️ Tay kéo/nút của mục trong khay **nổi đè mép phải** khi rê (`absolute`), không ẩn bằng `opacity` tại chỗ.
 - **Cột phải = Ghi chú chuyến** (`TripNotes compact`) — mã đặt phòng, số tài xế là thứ cần tra NGAY lúc xếp lịch.
-- **Thanh ngày** (`trip-day-strip.tsx`): chỉ `NGÀY 2` (không lặp ngày tháng — tiêu đề ngày đã có), chữ + gạch chân cam,
-  chấm đỏ khi ngày có mục chưa mở cửa, bấm thì cuộn tới ngày đó; kèm nút **Hiển thị** (§6e). **Mọi ngày render hết.**
-- **Đầu ngày** (`DayHeading`): chữ lớn nhất = danh tính ngày ("Ngày 1" font display + ngày tháng nhỏ; mẫu có tên ngày thì
-  nhãn micro cam + tên). **Vạch cam ngắn** ở lề trái = ngày đang mở (đích của mọi lối thêm) — không chạy hết chiều cao.
+- **Thanh công cụ ngày** = thanh ngày + nút Hiển thị, cùng chất liệu khay `TOOLBAR_TRAY` (foreground 5%, `trip-fields.tsx`)
+  nên đọc ra MỘT thanh (`items-stretch gap-2`).
+- **Thanh ngày** (`trip-day-strip.tsx`) = **DẢI PHÂN ĐOẠN TRẢI HẾT BỀ NGANG**: các ngày chia đều (`flex-1`, tối thiểu 5.5rem,
+  nhiều ngày thì cuộn ngang), chữ canh giữa; ngày đang chọn là ô TRẮNG nổi nhẹ (bóng; dark mode vòng 1px) — không gạch chân,
+  không viền từng ô. Mỗi ô hai dòng: **"Ngày 2"**
+  + dòng phụ: ngày lịch rút gọn **"T7 7/11"** (`shortDate()` từ `dateLabel`), chưa định ngày ⇒ "N điểm dừng" / "Trống". Chấm
+  đỏ khi có mục chưa mở cửa. Bấm ⇒ cuộn tới ngày đó (và MỞ nếu đang thu gọn). Nút **Hiển thị** ở mép phải.
+  ⚠️ **Ngày lịch chỉ hiện ở thanh ngày** — đầu ngày bên dưới KHÔNG lặp (biên tập: "ngày chỉ hiện ở một nơi"); thanh dính
+  nên lúc nào cũng thấy. Đã thử và BỎ: nhãn `MICRO` in hoa một dòng · ô hai dòng gạch chân cam.
+- **Thu gọn từng ngày** (`trip-collapse.ts`, `useCollapsedDays(tripId)`): bấm **CẢ HÀNG đầu ngày** (hoặc nút ▾ — lối bàn
+  phím) ở trang soạn lẫn trang xem; thứ bấm được bên trong hàng (giờ bắt đầu, ⋯, ô tên ngày của mẫu) bị bỏ qua bằng
+  `closest("button, a, input…")`. Ngày thu gọn chỉ còn đầu ngày + MỘT dòng tóm tắt (`DayCollapsedSummary`: "5 điểm dừng" đậm + tên các mục,
+  cắt một dòng; bấm để mở). Lưu `localStorage` theo chuyến (`halivivu:trip-collapsed:<id>`) — sở thích XEM, không vào DB.
+  ⚠️ `read` trả CÙNG một Set khi chuỗi lưu không đổi (`useSyncExternalStore`). Ngày thu gọn không dựng `SortableContext`.
+- **Đầu ngày** (`DayHeading`): ▾ thu gọn + chữ lớn nhất = danh tính ngày ("Ngày 1" font display — KHÔNG ngày tháng; mẫu có
+  tên ngày thì nhãn micro `warm-ink` "NGÀY 1" + tên). **Vạch cam ngắn** ở lề trái = ngày đang mở (đích của mọi lối thêm) — không chạy hết chiều cao.
   Giờ bắt đầu (`StartTimePicker`: lưới 24 giờ + :00/:15/:30/:45, gõ "420" ⇒ 4:20) và giờ kết thúc gộp **một câu**.
 - **Bản đồ là MỘT MỤC riêng** (`/[id]/ban-do`), vẽ **một** ngày. ⚠️ Dựng **có điều kiện** (`{tab === "ban-do" && …}`) —
   Leaflet trong `display:none` dựng ở 0×0. ⚠️ `trip-map.tsx` bọc **`isolate`** (z-index 400–1000 của Leaflet đè Sheet/Dialog).
@@ -195,7 +208,7 @@ Khung dùng chung cho **cả ba** trang (soạn · chia sẻ · mẫu) — `comp
 | **Menu chuyến** · **ô chưa xếp ngày** | cột trái | `TripSideNav` / `TripSectionTabs`, `BacklogList` |
 | **Cột ghi chú** | cột phải tab Lịch trình | `TripNotes compact` |
 | **Thanh ngày** · **Hiển thị** | NGÀY 1 · NGÀY 2…, dính khi cuộn | `TripDayStrip`, `TripFieldsMenu` |
-| **Đầu ngày** | "Ngày 1 Thứ 6, 6/11", vạch cam, giờ bắt đầu/kết thúc, ⋯ | `DayHeading`, `StartTimePicker` |
+| **Đầu ngày** | ▾ thu gọn, "Ngày 1", vạch cam, giờ bắt đầu/kết thúc, ⋯ | `DayHeading`, `StartTimePicker`, `DayCollapsedSummary` |
 | **Dòng thời gian** · **hàng** | danh sách mục một ngày · cột giờ + trục + thẻ | `DayBlock`, `StopRow`/`RailItem` |
 | **Trục** · **mốc** · **nhãn thời lượng** | vạch dọc · ô số / chấm nhỏ · "1g30" dưới mốc | `Rail`, `RailDot`, `RailStay` |
 | **Thẻ** | khối nội dung bên phải trục (§6a) | `cardClass`, `ItemBody`, `CompactBody`, `TicketBody` |
@@ -345,7 +358,11 @@ khay chưa xếp ngày không kéo (nút **+ → Xếp vào Ngày N**).
 
 ## 6e. Menu *Hiển thị* — ẩn/hiện từng thông tin
 
-`components/trip/trip-fields.tsx`, nút ở thanh ngày: **Icon loại · Ảnh · Địa chỉ, khu vực · Thẻ hoạt động · Thời gian ở
+`components/trip/trip-fields.tsx`. **Nút**: khay cùng chất liệu thanh ngày, icon SVG riêng `ViewIcon` (hai thanh trượt —
+đọc ra "chỉnh", không phải "xem"; đã BỎ icon con mắt), chữ "Hiển thị" (ẩn dưới `sm`), số mục đang ẩn trong ô đặc `R_BADGE`.
+**Bảng**: đầu bảng tiêu đề + cặp **Ẩn hết / Hiện hết** dạng phân đoạn (cái đang đúng thì mờ); mỗi dòng = glyph + tên + gợi
+ý + **công tắc VUÔNG** tự dựng (`Toggle`, bo 4px — KHÔNG dùng `ui/switch` vì nó `rounded-full`), cả dòng là `role="switch"`.
+Các tuỳ chọn: **Icon loại · Ảnh · Địa chỉ, khu vực · Thẻ hoạt động · Thời gian ở
 lại · Ghi chú · Chặng di chuyển · Cảnh báo** + **Ẩn tất cả / Hiện lại tất cả**. Chỉ **giờ đến + tên** luôn hiện; mọi tuỳ
 chọn mặc định BẬT (`ALL_ON`) — thêm trường mới thì thêm vào `ALL_ON`, bản lưu cũ thiếu khoá sẽ tự nhận giá trị bật.
 
@@ -427,10 +444,14 @@ Biến cookie "chuyến đang lên lịch" (vô hình) thành một **vật th�
 
 **Hoạt động thành THẺ của một nơi** (`parentId`) — đo trên dữ liệu thật: chỉ 11/72 nơi có việc con, giờ nơi + giờ việc thì
 **đếm hai lần**. Nên:
-- Thời gian ở một nơi là **TỔNG**; mục con là thẻ **"làm gì ở đây"** — chỉ HOẠT ĐỘNG của site, không giờ, không số, không
-  chặng (`ActivityTags`). Chỉ **địa điểm / nơi tự gõ** có thẻ (`parentScope()` chặn chỗ khác).
-- **Tự gắn**: thêm một hoạt động mà nơi của nó (`SpotActivity`) đã có trong ngày ⇒ server gắn thành thẻ. Hộp "Làm gì ở X"
-  gợi ý đúng các hoạt động ở X (`forItemId`).
+- Thời gian ở một nơi là **TỔNG**; mục con là thẻ **"làm gì ở đây"** — hoạt động của site **hoặc thẻ TỰ GÕ**
+  (`addCustomTag`: `customTitle` + `parentId`, `stayMin = 0`), không giờ, không số, không chặng (`ActivityTags`). Chỉ
+  **địa điểm / nơi tự gõ** có thẻ (`parentScope()` chặn chỗ khác).
+- ⚠️ **Hộp "Làm gì ở X" (nút + Hoạt động) CHỈ có hoạt động của đúng X** — `searchTripCandidates(…, forItemId)` lọc
+  `SpotActivity` của X theo chữ gõ (bỏ dấu, `slugifyVi`), **không bao giờ** rơi xuống tìm toàn site; X không phải `Spot` ⇒
+  không có kết quả nào, chỉ còn lối tự gõ. Gõ chữ ⇒ **"Thêm “…”" thành THẺ của X**, không tách thành dòng có giờ. Chế độ này
+  ẩn "Hay dùng", "Mục đặc biệt" và form địa chỉ / thời lượng.
+- **Tự gắn**: thêm một hoạt động mà nơi của nó (`SpotActivity`) đã có trong ngày ⇒ server gắn thành thẻ.
 - Thẻ ⋯ → **Tách thành dòng có giờ riêng** (tour, đặt chỗ); dòng hoạt động ⋯ → **Gắn vào {nơi}** (nơi gần nhất phía trên,
   không thì phía dưới). Thẻ không kéo được — đi theo hàng. Bỏ một nơi thì thẻ của nó đứng ra thành mục gốc.
 - "+ Hoạt động": nơi chưa có thẻ ⇒ nút trơn cạnh ⋯ chỉ hiện khi rê (cảm ứng: menu ⋯); đã có ⇒ chữ trơn cuối dải. ⚠️ Đừng
@@ -527,7 +548,7 @@ ghi chú / đồ mang theo / chi phí · cộng tác nhiều người.
 
 Sửa kèm ở nơi khác: `Place.lat/lng` (schema + CMS) · `Image.tripId` + `lib/owner.ts` + route uploadthing · `RESERVED_SLUGS`
 có `lich-trinh` · `sw.js` (`NEVER_CACHE`, nhớ tăng `VERSION`) · `sitemap.ts` · token `--kind-*` + `.dl-trip-pin` /
-`.dl-trip-ghost` trong `globals.css` · `lib/site-chrome.ts` (`underlay`, loại `tao`).
+`.dl-trip-ghost` trong `globals.css` · `lib/site-chrome.ts` (header trang lịch trình là thanh trắng dính, §6).
 
 ## 13. Còn thiếu / cố ý chưa làm
 

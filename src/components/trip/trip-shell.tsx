@@ -16,17 +16,15 @@ type Pane = "days" | "aside" | "map";
 // khối nhờ nền + bo góc.
 const SHELL = "mx-auto w-full max-w-7xl px-4 sm:px-6";
 
-// Hai cột ngoài dính cách mép trên 1.5rem, bằng đúng phần đệm dọc của khung:
-// ở các trang lịch trình, header của site cố ý KHÔNG dính (xem lib/site-chrome
-// → TRIP_DETAIL) nên không phải chừa 4rem cho nó.
-const STICKY = "lg:sticky lg:top-6 lg:h-[calc(100dvh-3rem)]";
+// Hai cột ngoài dính cách đáy header (h-16, dính từ lg) thêm 1.5rem.
+const STICKY = "lg:sticky lg:top-22 lg:h-[calc(100dvh-7rem)]";
 
 // Cột trái và bảng công cụ phải là KHỐI NỀN, không phải một dải chữ trôi cạnh
 // cột giữa: bỏ hết viền rồi thì nền là thứ duy nhất còn nói được "đây là hai
 // vùng khác nhau". Ôm sát nội dung (`self-start`) chứ không kéo dài hết màn —
 // ở mấy mục chỉ có 5 hàng nav, một mảng nền cao 100dvh đọc ra như trang lỗi.
 const PANEL =
-  "rounded-[6px] lg:sticky lg:top-6 lg:max-h-[calc(100dvh-3rem)] lg:self-start";
+  "rounded-[6px] lg:sticky lg:top-22 lg:max-h-[calc(100dvh-7rem)] lg:self-start";
 
 const RIGHT_ICONS = { map: "pin", backpack: "bag", note: "note" } as const;
 
@@ -134,8 +132,7 @@ export function TripShell({
       style={{ "--trip-pane-bar": panes.length > 1 ? "2.5rem" : "0px" } as React.CSSProperties}
     >
       {banner ? (
-        // lg:pt chừa 4rem cho header site nằm đè lên dải này (`underlay` ở lib/site-chrome).
-        <div className={cn(SHELL, "pb-2 pt-5 sm:pb-4 sm:pt-8 lg:pt-[5.5rem]")}>{header}</div>
+        <div className={cn(SHELL, "pb-2 pt-5 sm:pb-4 sm:pt-8")}>{header}</div>
       ) : (
         <div className={cn(SHELL, "pt-5 sm:pt-8")}>{header}</div>
       )}
@@ -286,7 +283,7 @@ export function TripShell({
         {right && (
           <div
             className={cn(
-              "mt-8 flex flex-col lg:sticky lg:top-6 lg:mt-0 lg:max-h-[calc(100dvh-3rem)] lg:self-start",
+              "mt-8 flex flex-col lg:sticky lg:top-22 lg:mt-0 lg:max-h-[calc(100dvh-7rem)] lg:self-start",
               pane !== "map" && "hidden lg:flex",
             )}
           >

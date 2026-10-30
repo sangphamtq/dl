@@ -16,10 +16,12 @@ import { cloneTrip } from "@/app/(site)/lich-trinh/actions";
 import { TripMap } from "@/components/trip/trip-map";
 import { TripShell } from "@/components/trip/trip-shell";
 import { TripDayStrip } from "@/components/trip/trip-day-strip";
+import { useCollapsedDays } from "@/components/trip/trip-collapse";
 import { TripFieldsMenu, useTripFields } from "@/components/trip/trip-fields";
 import {
   ActivityTags,
   DayHeading,
+  DayCollapsedSummary,
   MICRO,
   RailItem,
   RailLeg,
@@ -49,12 +51,14 @@ export function TripView({
   const router = useRouter();
   const [pending, start] = useTransition();
   const [activeDayId, setActiveDayId] = useState(days[0]?.id ?? "");
+  const [collapsedDays, setDayCollapsed] = useCollapsedDays(trip.id);
 
   const fields = useTripFields();
   const activeDay = days.find((d) => d.id === activeDayId) ?? days[0] ?? null;
   const totalItems = days.reduce((s, d) => s + d.items.length, 0);
 
   function pickDay(id: string) {
+    setDayCollapsed(id, false);
     setActiveDayId(id);
     document.getElementById(`day-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -183,11 +187,11 @@ export function TripView({
       }
       main={
         <>
-          <div className="sticky top-0 z-20 flex items-center gap-3 border-b border-border/60 bg-background pb-1 pt-1">
+          <div className="sticky top-0 z-20 flex items-stretch gap-2 border-b border-border/60 bg-background py-2 lg:top-16">
             <div className="min-w-0 flex-1">
               <TripDayStrip days={days} activeId={activeDay?.id ?? null} onPick={pickDay} />
             </div>
-            <div className="shrink-0 pb-2">
+            <div className="flex shrink-0">
               <TripFieldsMenu />
             </div>
           </div>
@@ -203,7 +207,10 @@ export function TripView({
                 <DayHeading
                   index={day.index}
                   title={day.title}
-                  dateLabel={day.dateLabel}
+                  collapse={{
+                    open: !collapsedDays.has(day.id),
+                    onToggle: () => setDayCollapsed(day.id, !collapsedDays.has(day.id)),
+                  }}
                   span={
                     day.items.length > 0
                       ? `${formatMinutes(day.startMin)} – ${formatMinutes(day.endMin)}`
@@ -211,6 +218,10 @@ export function TripView({
                   }
                 />
 
+                {collapsedDays.has(day.id) ? (
+                  <DayCollapsedSummary items={day.items} onOpen={() => setDayCollapsed(day.id, false)} />
+                ) : (
+                  <>
                 {fields.note && day.note && (
                   <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted-foreground">
                     {day.note}
@@ -242,6 +253,8 @@ export function TripView({
                       ))}
                     </ol>
                   </div>
+                )}
+                  </>
                 )}
               </section>
             ))}

@@ -883,55 +883,82 @@ export function Warning({
 
 export const MICRO = "text-[0.6875rem] font-semibold uppercase tracking-[0.14em]";
 
+/**
+ * Đầu ngày. Ngày LỊCH ("T6 6/11") chỉ nằm ở thanh ngày (dính trên đầu, luôn thấy) — KHÔNG lặp ở đây.
+ * `collapse`: nút ▾ trước tên + bấm tên cũng thu gọn / mở ngày (trang soạn và trang xem).
+ */
 export function DayHeading({
   index,
   title,
   titleNode,
-  dateLabel,
   span,
   right,
   active = false,
+  collapse,
 }: {
   index: number;
   title: string | null;
   titleNode?: ReactNode;
-  dateLabel: string | null;
   span: string | null;
   right?: ReactNode;
   active?: boolean;
+  collapse?: { open: boolean; onToggle: () => void };
 }) {
   const named = titleNode !== undefined || Boolean(title);
   const DISPLAY =
     "font-[family-name:var(--font-display)] font-bold leading-tight tracking-tight";
+  const toggle = collapse && (
+    <button
+      type="button"
+      onClick={collapse.onToggle}
+      aria-expanded={collapse.open}
+      aria-label={collapse.open ? `Thu gọn ngày ${index + 1}` : `Mở ngày ${index + 1}`}
+      className="-ml-1 grid size-7 shrink-0 place-items-center rounded-[4px] text-muted-foreground transition-colors group-hover/dayhead:bg-muted group-hover/dayhead:text-foreground"
+    >
+      <Glyph
+        name="chevron-down"
+        className={cn("size-4 transition-transform duration-200", !collapse.open && "-rotate-90")}
+      />
+    </button>
+  );
+  const dayName = <>Ngày {index + 1}</>;
 
   return (
-    <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
+    // CẢ HÀNG đầu ngày bấm được để thu gọn / mở (biên tập yêu cầu) — trừ thứ tự bấm được bên trong (giờ bắt đầu, ⋯, ô sửa
+    // tên ngày của mẫu…), chúng giữ việc của mình. Bàn phím đi qua nút ▾ (cùng việc), nên hàng không cần `role`.
+    <div
+      onClick={
+        collapse
+          ? (e) => {
+              if ((e.target as HTMLElement).closest("button, a, input, textarea, select, [role=menu], [role=dialog]")) return;
+              collapse.onToggle();
+            }
+          : undefined
+      }
+      className={cn(
+        "flex flex-wrap items-center justify-between gap-x-4 gap-y-2",
+        collapse && "group/dayhead cursor-pointer select-none",
+      )}
+    >
       {/* Vạch "ngày đang mở" nằm trên khối tên chứ không trên section: cao tiêu đề
           đổi theo khổ chữ và theo có/không tên ngày, đặt số cứng là lệch. */}
       <div
         className={cn(
-          "relative min-w-0",
+          "relative flex min-w-0 items-center gap-1.5",
           active &&
             "before:absolute before:inset-y-0 before:-left-3 before:w-[3px] before:rounded-[2px] before:bg-warm",
         )}
       >
+        {toggle}
         {named ? (
-          <>
-            <span className={cn(MICRO, "flex items-center gap-x-4 text-warm")}>
-              Ngày {index + 1}
-              {dateLabel && <span className="text-muted-foreground">{dateLabel}</span>}
-            </span>
+          <div className="min-w-0">
+            <span className={cn(MICRO, "block text-warm-ink")}>{dayName}</span>
             {titleNode ?? (
               <h2 className={cn(DISPLAY, "mt-1 text-2xl sm:text-[1.75rem]")}>{title}</h2>
             )}
-          </>
-        ) : (
-          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <h2 className={cn(DISPLAY, "text-2xl sm:text-[1.75rem]")}>Ngày {index + 1}</h2>
-            {dateLabel && (
-              <span className="text-sm text-muted-foreground">{dateLabel}</span>
-            )}
           </div>
+        ) : (
+          <h2 className={cn(DISPLAY, "text-2xl sm:text-[1.75rem]")}>{dayName}</h2>
         )}
       </div>
 
@@ -942,5 +969,23 @@ export function DayHeading({
         {right}
       </div>
     </div>
+  );
+}
+
+/** Dòng tóm tắt của một ngày đang thu gọn: số điểm dừng + tên các mục (cắt một dòng). Bấm để mở lại. */
+export function DayCollapsedSummary({ items, onOpen }: { items: ItemView[]; onOpen: () => void }) {
+  const tops = items.filter((i) => !i.nested);
+  const stops = tops.filter((i) => i.stopNo != null).length;
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="mt-2 flex w-full min-w-0 items-baseline gap-x-4 rounded-[4px] py-1 text-left text-sm text-muted-foreground transition-colors hover:text-foreground"
+    >
+      <span className="shrink-0 font-semibold tabular-nums text-foreground">
+        {tops.length ? `${stops} điểm dừng` : "Chưa có mục nào"}
+      </span>
+      <span className="min-w-0 truncate">{tops.map((i) => i.name).join(", ")}</span>
+    </button>
   );
 }

@@ -15,6 +15,7 @@ import { vnDayMinute } from "@/lib/trip-money";
 import { defaultTripTitle } from "@/lib/trip-title";
 import { resolveTripPlaceId } from "@/lib/trip";
 import { SPECIALS, TRAVEL_MODES, type TravelMode, type TripSpecial } from "@/lib/trip-special";
+import { slugifyVi } from "@/lib/provinces";
 
 /**
  * Như `ActionResult` nhưng có thêm `stale`: thao tác bị từ chối vì lịch trình đã
@@ -679,7 +680,7 @@ const CANDIDATE_TABLES = [
 export async function searchTripCandidates(
   tripId: string,
   rawQ: string,
-  /** "Làm gì ở X": ô trống thì gợi ý đúng các hoạt động diễn ra ở nơi X. */
+  /** "Làm gì ở X" (nút + Hoạt động): CHỈ các hoạt động diễn ra ở đúng nơi X — kể cả khi có chữ, không tìm toàn site. */
   forItemId?: string,
 ): Promise<TripActionResult<{ items: TripCandidate[] }>> {
   let placeId: string | null;
@@ -696,13 +697,14 @@ export async function searchTripCandidates(
   if (!placeId) placeId = await resolveTripPlaceId(tripId);
 
   const q = rawQ.trim().slice(0, 80);
-  if (!q && forItemId) {
+  if (forItemId) {
     const host = await prisma.tripItem.findFirst({
       where: { id: forItemId, tripId },
       select: { spotId: true, spot: { select: { name: true } } },
     });
-    if (host?.spotId) {
-      const links = await prisma.spotActivity.findMany({
+    // Nơi tự gõ / quán / chỗ ở: không có hoạt động nào của site gắn với nó — chỉ còn lối tự gõ một thẻ.
+    if (!host?.spotId) return { ok: true, data: { items: [] } };
+    const links = await prisma.spotActivity.findMany({
         where: { spotId: host.spotId, activity: { status: "published" } },
         orderBy: { order: "asc" },
         select: {
@@ -716,10 +718,13 @@ export async function searchTripCandidates(
           },
         },
       });
+      const needle = slugifyVi(q);
       return {
         ok: true,
         data: {
-          items: links.map(({ activity: a }) => ({
+          items: links
+            .filter(({ activity: a }) => !needle || slugifyVi(a.name).includes(needle))
+            .map(({ activity: a }) => ({
             kind: "activity" as const,
             id: a.id,
             name: a.name,
@@ -730,7 +735,6 @@ export async function searchTripCandidates(
           })),
         },
       };
-    }
   }
   if (!q && !placeId) return { ok: true, data: { items: [] } };
   const like = `%${q}%`;
@@ -867,6 +871,48 @@ export async function addCustomStop(
       select: { id: true },
     });
     if (at !== "end") await placeItem(tx, tripId, scope, item.id, at);
+    await tx.trip.update({ where: { id: tripId }, data: { version: { increment: 1 } } });
+    return item.id;
+  });
+
+  refresh(tripId);
+  return { ok: true, data: { itemId } };
+}
+
+/**
+ * Thẻ "làm gì ở đây" TỰ GÕ ("Ngắm hoàng hôn") gắn thẳng vào một nơi — cùng hình với thẻ hoạt động của site: không giờ, không
+ * số, không chặng (thời gian ở nơi đó là TỔNG, nằm ở nơi). Lối vào: hộp "Làm gì ở X" gõ chữ không trùng hoạt động nào.
+ */
+export async function addCustomTag(
+  tripId: string,
+  parentId: string,
+  rawTitle: string,
+): Promise<TripActionResult<{ itemId: string }>> {
+  const title = clip(rawTitle ?? "", MAX_TITLE);
+  if (!title) return { ok: false, error: "Gõ tên hoạt động." };
+  let scope: Scope;
+  try {
+    await editableTrip(tripId);
+    const s = await parentScope(tripId, parentId);
+    if (typeof s === "string") return { ok: false, error: s };
+    scope = s;
+  } catch (e) {
+    return fail(e);
+  }
+
+  const itemId = await prisma.$transaction(async (tx) => {
+    const item = await tx.tripItem.create({
+      data: {
+        tripId,
+        dayId: scope.dayId,
+        parentId,
+        order: await nextOrder(tx, tripId, scope),
+        customTitle: title,
+        // 0 = thẻ không mang giờ (cùng dấu với thẻ hoạt động đã chuyển bằng script).
+        stayMin: 0,
+      },
+      select: { id: true },
+    });
     await tx.trip.update({ where: { id: tripId }, data: { version: { increment: 1 } } });
     return item.id;
   });

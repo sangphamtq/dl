@@ -58,10 +58,12 @@ import { TripMap } from "@/components/trip/trip-map";
 import { stayLabel } from "@/lib/trip-time";
 import { TripShell } from "@/components/trip/trip-shell";
 import { TripDayStrip } from "@/components/trip/trip-day-strip";
+import { useCollapsedDays } from "@/components/trip/trip-collapse";
 import { TripFieldsMenu, useTripFields, type TripFields } from "@/components/trip/trip-fields";
 import {
   ActivityTags,
   DayHeading,
+  DayCollapsedSummary,
   RailItem,
   RailLeg,
   cardClass,
@@ -154,6 +156,7 @@ export function TripEditor({
     : null;
   const [pending, start] = useTransition();
   const [activeDayId, setActiveDayId] = useState(days[0]?.id ?? "");
+  const [collapsedDays, setDayCollapsed] = useCollapsedDays(trip.id);
 
   const [staleDays, setStaleDays] = useState<string[]>([]);
   const [addTarget, setAddTarget] = useState<AddTarget | null>(null);
@@ -164,6 +167,8 @@ export function TripEditor({
 
   function pickDay(id: string) {
     setActiveDayId(id);
+    // Chọn một ngày đang thu gọn trên thanh ngày ⇒ mở nó ra (cuộn tới một dòng tóm tắt thì vô nghĩa).
+    setDayCollapsed(id, false);
     document.getElementById(`day-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
@@ -328,11 +333,11 @@ export function TripEditor({
           <>
           <div className={cn(tab === null ? undefined : "hidden")}>
             {/* Dưới lg neo ngay DƯỚI thanh chọn khung nhìn (cũng dính `top-0`) — không thì dải ngày chui xuống dưới nó. */}
-            <div className="sticky top-[var(--trip-pane-bar,0px)] z-20 flex items-center gap-3 border-b border-border/60 bg-background pb-1 pt-1 lg:top-0">
+            <div className="sticky top-[var(--trip-pane-bar,0px)] z-20 flex items-stretch gap-2 border-b border-border/60 bg-background py-2 lg:top-16">
               <div className="min-w-0 flex-1">
                 <TripDayStrip days={days} activeId={activeDay?.id ?? null} onPick={pickDay} />
               </div>
-              <div className="shrink-0 pb-2">
+              <div className="flex shrink-0">
                 {/* Tắt tự tính thì không có chặng nào để hiện/ẩn. */}
                 <TripFieldsMenu omit={trip.autoTravel ? [] : ["leg"]} />
               </div>
@@ -354,6 +359,8 @@ export function TripEditor({
                   dayCount={days.length}
                   allDays={days}
                   active={day.id === activeDay?.id}
+                  collapsed={collapsedDays.has(day.id)}
+                  onCollapse={(shut) => setDayCollapsed(day.id, shut)}
                   // Nhấn vào một thẻ là chạy cái này NGAY trong khung hình nhấn chuột: đặt lại state ở đây dựng lại
                   // cả trang soạn (kể cả các tab ẩn) ⇒ cú kéo khựng lúc vừa cầm lên. Chỉ đặt khi ĐỔI ngày, và không gấp.
                   onFocus={() => {
@@ -561,6 +568,8 @@ function DayBlock({
   dayCount,
   allDays,
   active,
+  collapsed,
+  onCollapse,
   onFocus,
   onAdd,
   run,
@@ -579,6 +588,9 @@ function DayBlock({
   dayCount: number;
   allDays: DayView[];
   active: boolean;
+  /** Ngày đang thu gọn (`useCollapsedDays`): chỉ còn đầu ngày + một dòng tóm tắt. */
+  collapsed: boolean;
+  onCollapse: (shut: boolean) => void;
   onFocus: () => void;
   onAdd: (pos?: AddPos) => void;
   run: (fn: () => Promise<{ ok: boolean; error?: string }>, done?: string) => void;
@@ -627,8 +639,8 @@ function DayBlock({
             </h2>
           ) : undefined
         }
-        dateLabel={day.dateLabel}
         span={null}
+        collapse={{ open: !collapsed, onToggle: () => onCollapse(!collapsed) }}
         right={
           <div className="flex items-center gap-1">
             <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
@@ -672,6 +684,10 @@ function DayBlock({
         }
       />
 
+      {collapsed ? (
+        <DayCollapsedSummary items={tops} onOpen={() => onCollapse(false)} />
+      ) : (
+        <>
       {isTemplate && fields.note && (
         <div className="mt-2 max-w-prose">
           <InlineEdit
@@ -823,6 +839,8 @@ function DayBlock({
             Thêm vào ngày {day.index + 1}
           </span>
         </button>
+      )}
+        </>
       )}
       <ItemEditDialog
         tripId={tripId}
