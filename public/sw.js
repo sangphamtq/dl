@@ -1,5 +1,5 @@
 // Đổi bất cứ gì trong file này thì PHẢI tăng VERSION, nếu không cache cũ không bị dọn.
-const VERSION = "v3";
+const VERSION = "v4";
 const SHELL_CACHE = `halivivu-shell-${VERSION}`;
 const STATIC_CACHE = `halivivu-static-${VERSION}`;
 const PAGES_CACHE = `halivivu-pages-${VERSION}`;
@@ -25,7 +25,12 @@ const NEVER_CACHE = [
 
 const LIMITS = { [PAGES_CACHE]: 50, [IMAGES_CACHE]: 80 };
 
-const isPrivate = (pathname) => NEVER_CACHE.some((p) => pathname.startsWith(p));
+// Khớp ĐÚNG đường dẫn (không phải tiền tố): `/lich-trinh` là trang gộp có khối "Chuyến của bạn" khi đã đăng nhập,
+// nhưng `/lich-trinh/[slug]` (mẫu công khai) vẫn phải cache được để xem offline.
+const NEVER_CACHE_EXACT = ["/lich-trinh"];
+
+const isPrivate = (pathname) =>
+  NEVER_CACHE_EXACT.includes(pathname) || NEVER_CACHE.some((p) => pathname.startsWith(p));
 
 const isImmutable = (pathname) =>
   pathname.startsWith("/_next/static/") || pathname.startsWith("/fonts/");

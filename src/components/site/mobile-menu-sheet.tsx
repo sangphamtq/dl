@@ -48,7 +48,7 @@ const NAV = [
 const MINE = [
   { href: "/thong-bao", label: "Thông báo", Icon: Bell, badgeUnread: true },
   { href: "/tai-khoan/da-den", label: "Đã đến", Icon: MapPinCheck },
-  { href: "/lich-trinh/cua-toi", label: "Lịch trình", Icon: Route },
+  { href: "/lich-trinh", label: "Lịch trình", Icon: Route },
 ];
 
 export function MobileMenuSheet({

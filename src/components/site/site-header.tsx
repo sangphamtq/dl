@@ -10,7 +10,6 @@ import { MobileNav } from "./mobile-nav";
 import { UserMenu } from "./user-menu";
 import { NotificationBell } from "./notification-bell";
 import { DaDenNavLink } from "./da-den-nav-link";
-import { LichTrinhNavLink } from "./lich-trinh-nav-link";
 import { HeaderSearch } from "./header-search";
 import { SiteNav, type NavEntry, type NavLink } from "./site-nav";
 import { HeaderChrome } from "./header-chrome";
@@ -25,7 +24,7 @@ const NAV: NavEntry[] = [
   },
   {
     href: "/lich-trinh",
-    label: "Lịch trình mẫu",
+    label: "Lịch trình",
     exclude: ["/lich-trinh/cua-toi", "/lich-trinh/s"],
   },
   { href: "/blog", label: "Cẩm nang" },
@@ -98,9 +97,6 @@ export async function SiteHeader({
               <span aria-hidden className="mx-1.5 h-6 w-px bg-foreground/25" />
               <div className="flex items-center gap-0.5">
                 <DaDenNavLink />
-                <div className="hidden sm:flex">
-                  <LichTrinhNavLink />
-                </div>
                 <NotificationBell
                   initialUnread={unread}
                   userId={user.id}

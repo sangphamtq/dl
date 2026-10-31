@@ -73,11 +73,11 @@ export function CreateTripForm({
   return (
     <form onSubmit={submit} className="mx-auto max-w-2xl px-4 py-8 sm:px-6 sm:py-12">
       <Link
-        href="/lich-trinh/cua-toi"
+        href="/lich-trinh"
         className={cn(MICRO, "inline-flex items-center gap-1 text-muted-foreground transition-colors hover:text-foreground")}
       >
         <Glyph name="back" className="size-3.5" />
-        Lịch trình của tôi
+        Lịch trình
       </Link>
       <h1 className="mt-5 font-[family-name:var(--font-display)] text-[clamp(1.75rem,4vw,2.5rem)] font-bold leading-tight tracking-tight">
         Bạn định đi đâu?
@@ -165,7 +165,7 @@ export function CreateTripForm({
 
       <div className="mt-10 flex items-center justify-end gap-2 border-t border-border pt-5">
         <Button asChild variant="ghost" className="rounded-[4px]">
-          <Link href="/lich-trinh/cua-toi">Huỷ</Link>
+          <Link href="/lich-trinh">Huỷ</Link>
         </Button>
         <Button type="submit" disabled={pending} className="h-11 rounded-[4px] px-5">
           {pending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Glyph name="plus" className="size-4" />}

@@ -63,14 +63,17 @@ Ranh giới **CÔNG KHAI vs RIÊNG TƯ** nằm ngay trong đường dẫn:
 
 | Route | Ai xem | Index |
 |---|---|---|
-| `/lich-trinh` | công khai — danh sách mẫu | ✅ |
+| `/lich-trinh` | **TRANG GỘP**: khối "Chuyến của bạn" (đã đăng nhập; khách thấy lời mời tạo) + danh sách mẫu (công khai) | ✅ |
 | `/lich-trinh/[slug]` | công khai — một mẫu | ✅ SEO chính |
-| `/lich-trinh/cua-toi` | chủ — chuyến của tôi | noindex |
+| ~~`/lich-trinh/cua-toi`~~ | **308 → `/lich-trinh`** (`next.config.ts`, chỉ đúng đường dẫn này) | — |
 | `/lich-trinh/cua-toi/tao` | chủ — **trang tạo chuyến** (§6h) | noindex |
 | `/lich-trinh/cua-toi/[id]` · `/[id]/[muc]` | chủ — trang soạn · bản đồ · đồ mang theo · chi phí | noindex |
 | `/lich-trinh/s/[shareId]` | ai có link — chỉ đọc | noindex |
 
-- Cả nhánh riêng tư dưới **một** tiền tố `/cua-toi` ⇒ `sw.js` chặn cache bằng một dòng `NEVER_CACHE`.
+- Cả nhánh riêng tư dưới **một** tiền tố `/cua-toi` ⇒ `sw.js` chặn cache bằng một dòng `NEVER_CACHE`. ⚠️ `/lich-trinh` (trang
+  gộp, có danh sách chuyến riêng) chặn bằng `NEVER_CACHE_EXACT` — khớp ĐÚNG đường dẫn, để `/lich-trinh/[slug]` vẫn cache
+  được (sw `v4`). Mọi link "Lịch trình của tôi" (header, menu, manifest, nút quay lại) trỏ `/lich-trinh`; `revalidatePath`
+  của chuyến người dùng là `/lich-trinh`.
 - URL cũ redirect **vĩnh viễn**: `/lich-trinh/mau[/slug]` ở `next.config.ts`; `/lich-trinh/[cuid]` → `/cua-toi/[id]`
   tra trong `[slug]/page.tsx` (config không phân biệt được slug với cuid).
 - ⚠️ `cua-toi` · `s` · `mau` là **slug dành riêng** của mẫu (`RESERVED_TRIP_SLUGS`, `lib/slug.ts`, kiểm ở CMS). Route
@@ -479,25 +482,31 @@ Biến cookie "chuyến đang lên lịch" (vô hình) thành một **vật th�
 - Trang `/diem-den/[slug]` hiện "Gợi ý lịch trình" lọc theo `Trip.placeId`.
 - ⚠️ `trip-ta-xua` cố ý chỉ 2N1Đ / 6 mục — đừng "làm dày" cho cân với Phan Thiết.
 
-### 7a. Trang `/lich-trinh` — mẫu đầy đủ + cửa tự xếp
+### 7a. Trang `/lich-trinh` — TRANG GỘP: chuyến của bạn + lịch trình mẫu
 
 ```
 Hero: ẢNH TRÀN VIỀN + "LỊCH TRÌNH" in hoa giãn chữ + 2 nút kính ("Chọn điểm đến" · "Đo chuyến trên bản đồ")
-[đã đăng nhập] dải trạng thái tràn viền nền primary/5: (avatar) Bạn đang lên lịch trình <tên> … n ngày n mục Tiếp tục →
-Lịch trình mẫu — MỘT MẪU MỘT HÀNG (ảnh trái | nhãn nơi · số ngày · số điểm dừng / tên / tóm tắt / từng ngày), divide-y
+Chuyến của bạn   1 chuyến  3 ngày  14 mục                                         [+ Tạo lịch trình]
+  ┌ ảnh 22rem ┐ Phan Thiết  3 ngày  14 mục / TÊN / Ngày 1 … 12 điểm dừng / Khởi hành …  Sửa …   ⋯   ← THẺ DẪN, hết bề ngang
+  [thẻ ảnh 16:10] [thẻ ảnh] [thẻ ảnh]                                                                ← các chuyến còn lại, 3 cột
+Lịch trình mẫu   Do biên tập soạn — mở một mẫu rồi nhân bản…
+  [Tất cả][1 ngày][2 ngày]…                                                          [Nổi bật ▾]
+  [ảnh 16:9 / nơi  số ngày  điểm dừng / TÊN / tóm tắt 2 dòng / ─ Ngày 1 … (≤3) ]  × 2 cột
 ```
 
-- Phong cách lấy nguyên `/diem-den` (`--font-display`, `MICRO`, `lib/radius.ts`); nút kính là `hero-link.tsx` dùng chung.
-- Dải trạng thái: **avatar + câu ngôi thứ hai viết thường** (không nhãn `MICRO` — đọc ra như metadata của mẫu); không phải
-  một thẻ trong cột (nó lặp hình một hàng mẫu).
-- Hàng mẫu: **cả hàng là link**; tên là CHỮ ở cột phải (không đè lên ảnh ~19rem); ảnh `sm:h-full` + `min-h`, không tỉ lệ cố
-  định; danh sách ngày trải hết cột phải, tóm tắt giữ `max-w-2xl`; **không kẻ nét dưới từng ngày**.
-- **Ảnh mẫu**: bìa riêng → bìa của điểm dừng đầu tiên có ảnh → **để trống** (nền `muted`). ⚠️ **Không `coverUrl()`** (mẫu Tà
-  Xùa săn mây từng nhận ảnh bờ biển bão tố). Ảnh hero **không trùng** ảnh mẫu bên dưới; nền tối `bg-[#0b1a12]` dưới ảnh.
-- ⚠️ Đổi hero thì đổi kèm `lib/site-chrome.ts` (header chìm chữ trắng); hero cần `lg:pt-[7rem]`.
-- Mọi khối **trải hết bề ngang với số thẻ THẬT** — đừng khai số cột lớn hơn số thẻ.
-- Đã gỡ (đừng dựng lại khi chưa hỏi): bộ duyệt tìm/lọc/sắp xếp (8 ô điều khiển cho 2 mẫu; `trip-browser.tsx` trong git) ·
-  khối "Tự xếp chuyến của bạn" và dải "Đo trên bản đồ" (lặp hai nút hero) · hàng 2 cột · dải dòng thời gian ngang.
+- **Tiêu đề khối chữ thường đậm** (`SECTION_TITLE` trong `my-trips.tsx`, dùng chung hai khối) — chữ in hoa giãn chỉ dành
+  cho hero. Dữ kiện phụ là chữ thường, số in đậm (không `MICRO` in hoa giãn).
+- **Chuyến của bạn** (đã đăng nhập, `MyTrips`): chuyến đang lên lịch (không thì sửa gần nhất) là **thẻ DẪN nằm ngang hết bề
+  rộng** kèm từng ngày (≤5, "+N ngày nữa"); còn lại **lưới thẻ ảnh** 16:10 (3 cột từ `lg`) — dữ kiện, tên, các điểm dừng (1
+  dòng), khởi hành + sửa lúc. ⋯ (`TripCardMenu`) nổi góc phải ảnh. Khách: `MyTripsGuest` (khối nền band + cùng nút Tạo).
+- **Lịch trình mẫu**: **lưới 2 cột**, ảnh **16:9** trên, chữ dưới; tóm tắt `line-clamp-2`; từng ngày tối đa **3 dòng**
+  (trang chi tiết mẫu mới là chỗ đọc đủ). Rê ⇒ tên đổi màu + ảnh phóng nhẹ (trang danh sách giữ zoom).
+- Việc của BẠN đứng TRƯỚC mẫu (người có chuyến dở cần đường quay lại); khối này thay dải "Bạn đang lên lịch trình …" cũ.
+  Header gọi mục này là **"Lịch trình"**.
+- **Ảnh mẫu**: bìa riêng → bìa của điểm dừng đầu tiên có ảnh → **ô nền trơn ghi tên nơi** (⚠️ KHÔNG `coverUrl()` — mẫu Tà Xùa từng nhận ảnh bờ biển bão). Ảnh hero **không trùng** ảnh mẫu bên
+  dưới; nền tối `bg-[#0b1a12]` dưới ảnh. ⚠️ Đổi hero thì đổi kèm `lib/site-chrome.ts` (`overlay`); hero cần `lg:pt-[7rem]`.
+- Đã thử và BỎ: hàng ngang mỗi mẫu một dòng (ảnh trái, từng ngày bên phải) + tiêu đề khối in hoa giãn chữ · bộ duyệt
+  tìm/lọc/sắp xếp nhiều ô · khối "Tự xếp chuyến" / "Đo trên bản đồ" lặp nút hero · dải dòng thời gian ngang.
 
 ## 8. Chia sẻ
 
@@ -512,7 +521,7 @@ Khuôn `StayShare`: công tắc + **mã QR** + copy link (`trip-share.tsx`). B�
 | 2 | **`Place` không có `lat/lng`** | Thêm `Place.lat/lng` + `pnpm backfill:place-coords`: 31/31 điểm đến có toạ độ, tỉnh gần như chưa (nhập tay ở CMS). |
 | 3 | **"Ước tính chi phí"** | **BỎ** — `Eatery`/`Accommodation` cố ý không có `priceRange`, mọi con số sẽ sai vô hình. (Chi phí THỰC do người dùng nhập là chuyện khác — xem [lich-trinh-cong-cu-nhom.md](lich-trinh-cong-cu-nhom.md).) |
 | 4 | **Offline** | Chưa làm (§13). |
-| 5 | **`BottomNav`** | **Không** thêm tab — lối vào ở header (`lich-trinh-nav-link.tsx`) + ngăn nổi. |
+| 5 | **`BottomNav`** | **Không** thêm tab. Lối vào: chữ **"Lịch trình"** trên menu header (MỘT lối duy nhất trên header — nút icon riêng đã gỡ vì trùng trang sau khi gộp) · mục "Lịch trình" trong menu tài khoản · ngăn nổi `TripDock` (quay lại chuyến đang làm). |
 | 6 | **Nút "Thêm" trên lưới thẻ** | Chỉ ở trang chi tiết + popup. |
 
 ## 10. Tình trạng

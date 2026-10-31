@@ -124,9 +124,9 @@ export function UserMenu({ user, provinces, homeProvince }: Props) {
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link href="/lich-trinh/cua-toi">
+            <Link href="/lich-trinh">
               <Route className="size-4" aria-hidden />
-              Lịch trình của tôi
+              Lịch trình
             </Link>
           </DropdownMenuItem>
           {isStaff && (

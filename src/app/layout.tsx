@@ -47,12 +47,6 @@ export async function generateMetadata(): Promise<Metadata> {
       title: s.siteName,
       statusBarStyle: "default",
     },
-    // ⚠️ KHÔNG khai `icons` ở đây. Khai một khoá bất kỳ trong đó là ĐÈ LÊN cả
-    // bộ file convention, nên bản trước — chỉ khai `apple` — làm HTML mất sạch
-    // `<link rel="icon">`: `src/app/icon.png` có tồn tại nhưng chẳng ai trỏ
-    // tới, trình duyệt rơi về favicon mặc định. Nay cả hai đều là file
-    // convention (`src/app/icon.png`, `src/app/apple-icon.png`), Next tự sinh
-    // thẻ link kèm hash — cũng là thứ đường dẫn viết tay không có.
   };
 }
 

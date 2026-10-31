@@ -59,11 +59,11 @@ export function TripTopbar({
     <header>
       <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
         <Link
-          href="/lich-trinh/cua-toi"
+          href="/lich-trinh"
           className={cn(MICRO, "inline-flex items-center gap-1 text-muted-foreground transition-colors hover:text-foreground")}
         >
           <Glyph name="back" className="size-3.5" />
-          Lịch trình của tôi
+          Lịch trình
         </Link>
 
         <div className="flex items-center gap-2.5">

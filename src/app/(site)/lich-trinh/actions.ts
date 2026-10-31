@@ -114,7 +114,7 @@ function refreshTripPaths(tripId: string) {
 }
 
 function refresh(tripId: string, slug?: string | null) {
-  revalidatePath("/lich-trinh/cua-toi");
+  revalidatePath("/lich-trinh");
   refreshTripPaths(tripId);
   if (slug) revalidatePath(`/lich-trinh/${slug}`);
 }
@@ -135,7 +135,7 @@ export async function setPlanningTrip(tripId: string): Promise<ActionResult> {
     return { ok: false, error: (e as Error).message };
   }
   await rememberPlanning(tripId);
-  revalidatePath("/lich-trinh/cua-toi");
+  revalidatePath("/lich-trinh");
   return { ok: true };
 }
 
@@ -241,7 +241,7 @@ export async function createTrip(input: NewTripInput = {}): Promise<ActionResult
     select: { id: true },
   });
   await rememberPlanning(trip.id);
-  revalidatePath("/lich-trinh/cua-toi");
+  revalidatePath("/lich-trinh");
   return { ok: true, data: { id: trip.id } };
 }
 
@@ -347,7 +347,7 @@ export async function deleteTrip(tripId: string): Promise<ActionResult> {
   const store = await cookies();
   if (store.get(ACTIVE_TRIP_COOKIE)?.value === tripId) store.delete(ACTIVE_TRIP_COOKIE);
 
-  revalidatePath("/lich-trinh/cua-toi");
+  revalidatePath("/lich-trinh");
   return { ok: true };
 }
 
@@ -1352,7 +1352,7 @@ export async function cloneTrip(
   });
 
   await rememberPlanning(created);
-  revalidatePath("/lich-trinh/cua-toi");
+  revalidatePath("/lich-trinh");
   return { ok: true, data: { id: created } };
 }
 
@@ -1926,7 +1926,7 @@ export async function startTripFromRoute(
   });
 
   await rememberPlanning(trip.id);
-  revalidatePath("/lich-trinh/cua-toi");
+  revalidatePath("/lich-trinh");
   return { ok: true, data: { id: trip.id } };
 }
 
@@ -2069,7 +2069,7 @@ export async function leaveTrip(tripId: string): Promise<ActionResult> {
   const store = await cookies();
   if (store.get(ACTIVE_TRIP_COOKIE)?.value === tripId) store.delete(ACTIVE_TRIP_COOKIE);
 
-  revalidatePath("/lich-trinh/cua-toi");
+  revalidatePath("/lich-trinh");
   return { ok: true };
 }
 

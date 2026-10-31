@@ -187,9 +187,10 @@ Cả `Spot` lẫn `Activity` đều có hai trường (`Json`, helper ở `lib/t
 - **Slug** không dấu nối bằng `-`, **duy nhất trong từng loại**; trùng tên thì gắn địa danh.
   ⚠️ **Tiền tố là từ khoá dành riêng** — `RESERVED_SLUGS` / `RESERVED_TRIP_SLUGS` trong
   `src/lib/slug.ts`.
-- **`/lich-trinh` chia theo CÔNG KHAI vs RIÊNG TƯ**: mẫu ở tầng một (có index, đích SEO), mọi
-  thứ của người dùng dưới **một** tiền tố `/lich-trinh/cua-toi` (noindex, `sw.js` chặn cache
-  bằng đúng một dòng). URL cũ đều có redirect vĩnh viễn.
+- **`/lich-trinh` chia theo CÔNG KHAI vs RIÊNG TƯ**: mẫu ở tầng một (có index, đích SEO), trang
+  soạn / tạo chuyến dưới **một** tiền tố `/lich-trinh/cua-toi` (noindex, `sw.js` chặn cache).
+  ⚠️ **Danh sách "chuyến của tôi" GỘP vào chính `/lich-trinh`** (khối đầu, khi đã đăng nhập);
+  `/lich-trinh/cua-toi` redirect 308 về đó, `sw.js` chặn cache đúng đường dẫn `/lich-trinh`.
 
 ## Trang điểm đến — layout chung của các tab con
 
