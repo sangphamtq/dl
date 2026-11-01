@@ -4,16 +4,15 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
+import { LoginButton } from "./login-button";
 import {
   Bell,
   BookOpen,
   CalendarDays,
   ChevronRight,
-  Info,
   LayoutDashboard,
   LogOut,
   MapPinCheck,
-  Route,
   Search,
 } from "@/components/icons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -40,15 +39,13 @@ type NavData = {
 };
 
 const NAV = [
-  { href: "/lich-trinh", label: "Lịch trình mẫu", Icon: CalendarDays },
+  { href: "/lich-trinh", label: "Lịch trình", Icon: CalendarDays },
   { href: "/blog", label: "Cẩm nang", Icon: BookOpen },
-  { href: "/gioi-thieu", label: "Giới thiệu", Icon: Info },
 ];
 
 const MINE = [
   { href: "/thong-bao", label: "Thông báo", Icon: Bell, badgeUnread: true },
   { href: "/tai-khoan/da-den", label: "Đã đến", Icon: MapPinCheck },
-  { href: "/lich-trinh", label: "Lịch trình", Icon: Route },
 ];
 
 export function MobileMenuSheet({
@@ -198,13 +195,11 @@ export function MobileMenuSheet({
               )}
             </>
           ) : (
-            <Link
-              href="/login"
-              onClick={close}
-              className="flex h-11 items-center justify-center rounded-lg bg-warm text-sm font-semibold text-warm-foreground shadow-sm shadow-warm/25 transition hover:bg-warm/90"
-            >
-              Đăng nhập
-            </Link>
+            // Mở HỘP đăng nhập (cùng hộp với header), nổi TRÊN menu. ⚠️ Đừng đóng menu trước: nút này nằm trong nội dung menu,
+            // menu đóng là nó unmount và hộp đăng nhập biến theo.
+            <LoginButton
+              className="flex h-11 w-full items-center justify-center rounded-[6px] bg-brand text-sm font-semibold text-brand-foreground transition hover:bg-brand/90"
+            />
           )}
 
           {loaded && data && (

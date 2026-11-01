@@ -160,7 +160,7 @@ export function TripShare({
             type="button"
             aria-label={`Chia sẻ ${title}`}
             className={cn(
-              "inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[4px] border px-4 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 max-[359px]:px-2.5",
+              "inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[6px] border px-4 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 max-[359px]:px-2.5",
               "border-border/60 bg-background/70 backdrop-blur-sm hover:bg-muted focus-visible:ring-ring",
             )}
           >
@@ -182,13 +182,13 @@ export function TripShare({
               onChange={(e) => setEmail(e.target.value)}
               placeholder="email@gmail.com"
               aria-label="Email người muốn mời"
-              className="h-9 rounded-[4px]"
+              className="h-9 rounded-[6px]"
             />
             <Button
               type="submit"
               variant="outline"
               disabled={pending || !email.trim()}
-              className="h-9 shrink-0 rounded-[4px] px-3"
+              className="h-9 shrink-0 rounded-[6px] px-3"
             >
               {pending ? (
                 <Loader2 className="size-4 animate-spin" aria-hidden />
@@ -229,7 +229,7 @@ export function TripShare({
                     onClick={() => remove(m)}
                     disabled={pending}
                     aria-label={`Gỡ ${m.name ?? m.email}`}
-                    className="grid size-7 shrink-0 place-items-center rounded-[3px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    className="grid size-7 shrink-0 place-items-center rounded-[4px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                   >
                     <Glyph name="close" className="size-4" />
                   </button>
@@ -280,13 +280,13 @@ export function TripShare({
 
           {on && url && (
             <>
-              <div className="mt-3 flex justify-center rounded-[6px] bg-white p-3">
+              <div className="mt-3 flex justify-center rounded-[10px] bg-white p-3">
                 <QRCodeSVG value={url} size={132} marginSize={0} />
               </div>
               <button
                 type="button"
                 onClick={copy}
-                className="mt-2 flex w-full items-center gap-2 rounded-[4px] px-2.5 py-2 text-sm transition-colors hover:bg-muted"
+                className="mt-2 flex w-full items-center gap-2 rounded-[6px] px-2.5 py-2 text-sm transition-colors hover:bg-muted"
               >
                 {copied ? (
                   <Glyph name="tick" className="size-4 text-primary" />

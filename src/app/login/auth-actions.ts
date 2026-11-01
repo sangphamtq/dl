@@ -6,10 +6,6 @@ export async function signInGoogle(redirectTo?: string) {
   await signIn("google", { redirectTo: redirectTo || "/" });
 }
 
-export async function signInFacebook(redirectTo?: string) {
-  await signIn("facebook", { redirectTo: redirectTo || "/" });
-}
-
 export async function signInDev(
   redirectTo: string | undefined,
   formData: FormData,

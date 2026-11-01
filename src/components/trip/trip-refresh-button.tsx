@@ -31,7 +31,7 @@ export function TripRefreshButton({ sync }: { sync: TripSync }) {
       title={behind ? "Có người vừa sửa — bấm để tải bản mới nhất" : "Tải lại nội dung mới nhất"}
       aria-label={behind ? "Có thay đổi mới — tải bản mới nhất" : "Cập nhật nội dung mới nhất"}
       className={cn(
-        "relative inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[4px] border px-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-70 sm:px-3",
+        "relative inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[6px] border px-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-70 sm:px-3",
         behind
           ? "border-primary/50 bg-primary/5 text-primary-ink hover:bg-primary/10"
           : "border-border/60 bg-background/70 text-foreground hover:bg-muted",

@@ -8,6 +8,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { CommandPalette } from "./command-palette";
+import { HEADER_ICON_BTN } from "@/lib/header-ui";
 
 export function HeaderSearch() {
   const [open, setOpen] = useState(false);
@@ -31,9 +32,9 @@ export function HeaderSearch() {
             type="button"
             aria-label="Tìm kiếm"
             onClick={() => setOpen(true)}
-            className="grid size-10 shrink-0 place-items-center rounded-full text-foreground transition-colors hover:bg-foreground/10"
+            className={HEADER_ICON_BTN}
           >
-            <NavIcon name="search" active={open} className="size-[1.35rem]" />
+            <NavIcon name="search" active={false} className="size-[1.15rem]" />
           </button>
         </TooltipTrigger>
         <TooltipContent>Tìm kiếm</TooltipContent>

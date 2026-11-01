@@ -406,10 +406,10 @@ export function TripDock({ initial }: { initial: TripBag }) {
                 <button
                   type="button"
                   onClick={() => setAddTarget({ dayId: null, label: "danh sách chưa xếp" })}
-                  className="flex h-9 w-full items-center gap-2 rounded-[4px] border border-border bg-background px-3 text-sm text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+                  className="flex h-9 w-full items-center gap-2 rounded-[6px] border border-border bg-background px-3 text-sm text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
                 >
                   <Glyph name="search" className="size-4 shrink-0" />
-                  Tìm hoặc tự thêm mục…
+                  <span className="min-w-0 truncate">Tìm hoặc tự thêm mục…</span>
                 </button>
               </div>
             )}
@@ -643,7 +643,7 @@ function GroupHeading({
           onClick={onAdd}
           aria-label={`Thêm vào ${label}`}
           title={`Thêm vào ${label}`}
-          className="-mr-1.5 ml-auto grid size-7 place-items-center rounded-[3px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="-mr-1.5 ml-auto grid size-7 place-items-center rounded-[4px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
           <Plus className="size-4" aria-hidden />
         </button>

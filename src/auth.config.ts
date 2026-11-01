@@ -1,16 +1,16 @@
 import type { NextAuthConfig } from "next-auth";
 import type { UserRole } from "@/generated/prisma/client";
 import Google from "next-auth/providers/google";
-import Facebook from "next-auth/providers/facebook";
 
 // Cấu hình edge-safe: KHÔNG import giá trị Prisma/adapter ở đây.
 // (import type bị xoá khi compile → an toàn cho edge.)
 // Dùng chung cho proxy.ts (edge middleware) và auth.ts (Node, có adapter).
-// Provider tự đọc env: AUTH_GOOGLE_ID/SECRET, AUTH_FACEBOOK_ID/SECRET.
+// Provider tự đọc env: AUTH_GOOGLE_ID/SECRET. Đăng nhập Facebook ĐÃ BỎ (2026-11-02).
 export const authConfig = {
   providers: [
-    Google,
-    Facebook({ allowDangerousEmailAccountLinking: true }),
+    // Nối theo email: người từng vào bằng Facebook đăng nhập Google cùng email thì về đúng tài khoản cũ (Google đã xác minh
+    // email nên an toàn). Bỏ cờ này là họ gặp lỗi OAuthAccountNotLinked.
+    Google({ allowDangerousEmailAccountLinking: true }),
   ],
   pages: {
     signIn: "/login",

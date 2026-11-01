@@ -21,6 +21,8 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       { source: "/lich-trinh/mau", destination: "/lich-trinh", permanent: true },
+      // Trang Giới thiệu đã gỡ — link cũ (sitemap, chỗ đã chia sẻ) về trang chủ thay vì 404.
+      { source: "/gioi-thieu", destination: "/", permanent: true },
       // Trang gộp: "chuyến của tôi" nay là khối đầu của /lich-trinh. Chỉ đúng đường dẫn này — /cua-toi/[id], /cua-toi/tao giữ nguyên.
       { source: "/lich-trinh/cua-toi", destination: "/lich-trinh", permanent: true },
       { source: "/lich-trinh/mau/:slug", destination: "/lich-trinh/:slug", permanent: true },

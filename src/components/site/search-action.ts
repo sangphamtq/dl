@@ -14,6 +14,8 @@ export type SearchHit = {
   href: string;
   context?: string;
   image: string;
+  /** Loại ("Điểm đến", "Địa điểm"…) — hiện cạnh từng kết quả và trên thẻ "Phù hợp nhất". */
+  kind?: string;
 };
 
 export type SearchGroup = {
@@ -28,13 +30,14 @@ export async function searchSite(q: string): Promise<SearchGroup[]> {
   if (!q.trim()) return [];
   const groups = await searchAll(q, PER_GROUP);
 
-  const toHit = (prefix: string, it: SearchItem): SearchHit => {
+  const toHit = (prefix: string, kind: string, it: SearchItem): SearchHit => {
     const province = prefix === "diem-den" && !!it.isProvince;
     return {
       name: it.name,
       href: `/${prefix}/${it.slug}`,
       context: it.context ?? (province ? "Tỉnh, thành phố" : undefined),
       image: it.image ?? coverUrl([], it.slug, THUMB, THUMB),
+      kind: province ? "Tỉnh" : kind,
     };
   };
 
@@ -52,7 +55,7 @@ export async function searchSite(q: string): Promise<SearchGroup[]> {
   return groups
     .map((g, i) => ({
       label: g.label,
-      items: g.items.slice(0, taken[i]).map((it) => toHit(g.prefix, it)),
+      items: g.items.slice(0, taken[i]).map((it) => toHit(g.prefix, g.label, it)),
     }))
     .filter((g) => g.items.length > 0);
 }
@@ -64,5 +67,6 @@ export async function getSuggestions(): Promise<SearchHit[]> {
     href: `/diem-den/${it.slug}`,
     context: it.context,
     image: it.image ?? coverUrl([], it.slug, THUMB, THUMB),
+    kind: "Điểm đến",
   }));
 }

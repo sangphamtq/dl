@@ -8,6 +8,7 @@ export type NavIconName =
   | "menu"
   | "bell"
   | "checkin"
+  | "province"
   | "route"
   | "overview"
   | "spot"
@@ -62,11 +63,19 @@ const OUTLINE: Record<NavIconName, React.ReactNode> = {
       <path d="M4 16.8h16" />
     </>
   ),
+  // MỘT nét khép kín: vòm tròn → thân thẳng → loe mềm ra mép đáy (không vạch đáy rời, không núm) + nhịp lắc là một cung
+  // nhỏ. Cao 4.8–19.4, khớp kính lúp và ghim.
   bell: (
     <>
-      <path d="M6.4 16.1V9.9a5.6 5.6 0 0 1 11.2 0v6.2" />
-      <path d="M4.7 16.1h14.6" />
-      <path d="M10.1 18.9a2.05 2.05 0 0 0 3.8 0" />
+      <path d="M5.4 16.6h13.2c-1.25-1.2-1.8-2.7-1.8-4.4V10a4.8 4.8 0 0 0-9.6 0v2.2c0 1.7-.55 3.2-1.8 4.4Z" />
+      <path d="M10.2 19.4a2 2 0 0 0 3.6 0" />
+    </>
+  ),
+  // "Tỉnh của bạn" = nơi mình CẮM CỜ: cán cờ + lá cờ đuôi én. Cao 4–20.4, khớp các icon cùng cụm.
+  province: (
+    <>
+      <path d="M6.2 20.4V4" />
+      <path d="M6.2 4.8h11.2l-2.4 3.5 2.4 3.5H6.2" />
     </>
   ),
   checkin: (
@@ -163,8 +172,14 @@ const FILLED: Record<NavIconName, React.ReactNode> = {
   ),
   bell: (
     <>
-      <path d="M12 3.5a6.2 6.2 0 0 0-6.2 6.2v5.45H4.9a.95.95 0 0 0 0 1.9h14.2a.95.95 0 0 0 0-1.9h-.9V9.7A6.2 6.2 0 0 0 12 3.5Z" />
-      <path d="M9.9 19.05a2.1 2.1 0 0 0 4.2 0Z" />
+      <path d="M4.5 16.6c0-.3.12-.55.33-.75 1.12-1.08 1.62-2.4 1.62-3.95V10a5.55 5.55 0 0 1 11.1 0v1.9c0 1.55.5 2.87 1.62 3.95.42.4.12 1.15-.47 1.15H5.3a.8.8 0 0 1-.8-.4Z" />
+      <path d="M9.7 18.9a.6.6 0 0 1 .55-.85h3.5a.6.6 0 0 1 .55.85 2.55 2.55 0 0 1-4.6 0Z" />
+    </>
+  ),
+  province: (
+    <>
+      <rect x="5.35" y="3.2" width="1.7" height="18" rx=".85" />
+      <path d="M6.2 4h11.2a.8.8 0 0 1 .66 1.25L16 8.3l2.06 3.05a.8.8 0 0 1-.66 1.25H6.2Z" />
     </>
   ),
   checkin: (

@@ -351,10 +351,10 @@ export function FoodSection({
           showCloseButton={false}
           className={cn(
             "w-full max-w-none gap-0 overflow-hidden border-0 p-0 shadow-2xl",
-            "top-auto bottom-0 left-0 max-h-[92dvh] translate-x-0 translate-y-0 rounded-t-[6px]",
+            "top-auto bottom-0 left-0 max-h-[92dvh] translate-x-0 translate-y-0 rounded-t-[10px]",
             "data-[state=open]:slide-in-from-bottom-6 data-[state=closed]:slide-out-to-bottom-6",
             "sm:bottom-auto sm:top-1/2 sm:left-1/2 sm:max-h-[88vh] sm:-translate-x-1/2 sm:-translate-y-1/2",
-            "sm:max-w-[min(64rem,calc(100vw-3rem))] sm:rounded-b-[6px]",
+            "sm:max-w-[min(64rem,calc(100vw-3rem))] sm:rounded-b-[10px]",
             "sm:data-[state=open]:slide-in-from-bottom-0 sm:data-[state=closed]:slide-out-to-bottom-0",
           )}
         >

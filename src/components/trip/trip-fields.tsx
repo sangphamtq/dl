@@ -99,13 +99,13 @@ function Toggle({ on }: { on: boolean }) {
     <span
       aria-hidden
       className={cn(
-        "relative inline-flex h-[1.125rem] w-8 shrink-0 items-center rounded-[4px] p-0.5 transition-colors duration-150",
+        "relative inline-flex h-[1.125rem] w-8 shrink-0 items-center rounded-[6px] p-0.5 transition-colors duration-150",
         on ? "bg-primary" : "bg-foreground/15",
       )}
     >
       <span
         className={cn(
-          "block size-3.5 rounded-[3px] bg-background shadow-[0_1px_2px_rgb(0_0_0/0.2)] transition-transform duration-150",
+          "block size-3.5 rounded-[4px] bg-background shadow-[0_1px_2px_rgb(0_0_0/0.2)] transition-transform duration-150",
           on && "translate-x-[0.875rem]",
         )}
       />
@@ -127,33 +127,33 @@ export function TripFieldsMenu({ omit = [] }: { omit?: TripField[] }) {
           type="button"
           aria-label={hidden ? `Hiển thị — đang ẩn ${hidden} thông tin` : "Hiển thị"}
           className={cn(
-            "inline-flex h-full shrink-0 items-center gap-2 rounded-[6px] px-3 text-sm font-medium text-foreground/80 transition-colors hover:bg-[color-mix(in_oklab,var(--color-foreground)_9%,var(--color-background))] hover:text-foreground data-[state=open]:bg-[color-mix(in_oklab,var(--color-foreground)_9%,var(--color-background))] sm:px-3.5",
+            "inline-flex h-full shrink-0 items-center gap-2 rounded-[10px] px-3 text-sm font-medium text-foreground/80 transition-colors hover:bg-[color-mix(in_oklab,var(--color-foreground)_9%,var(--color-background))] hover:text-foreground data-[state=open]:bg-[color-mix(in_oklab,var(--color-foreground)_9%,var(--color-background))] sm:px-3.5",
             TOOLBAR_TRAY,
           )}
         >
           <ViewIcon className="size-5" />
           <span className="hidden sm:inline">Hiển thị</span>
           {hidden > 0 && (
-            <span className="grid h-[1.125rem] min-w-[1.125rem] place-items-center rounded-[3px] bg-foreground px-1 text-[0.6875rem] font-semibold tabular-nums leading-none text-background">
+            <span className="grid h-[1.125rem] min-w-[1.125rem] place-items-center rounded-[4px] bg-foreground px-1 text-[0.6875rem] font-semibold tabular-nums leading-none text-background">
               {hidden}
             </span>
           )}
         </button>
       </PopoverTrigger>
 
-      <PopoverContent align="end" sideOffset={8} className="w-[min(22rem,calc(100vw-2rem))] rounded-[6px] p-0">
+      <PopoverContent align="end" sideOffset={8} className="w-[min(22rem,calc(100vw-2rem))] rounded-[10px] p-0">
         <div className="flex items-start justify-between gap-3 border-b border-border/60 px-4 pb-3 pt-3.5">
           <div className="min-w-0">
             <p className="text-sm font-semibold tracking-tight">Hiện gì trên mỗi mục</p>
             <p className="mt-0.5 text-xs text-muted-foreground">Giờ đến và tên luôn hiện.</p>
           </div>
           {/* Hai lối tắt dạng phân đoạn — cái đang đúng với trạng thái hiện tại thì mờ đi. */}
-          <div className={cn("inline-flex shrink-0 rounded-[4px] p-0.5 text-xs font-medium", TOOLBAR_TRAY)}>
+          <div className={cn("inline-flex shrink-0 rounded-[6px] p-0.5 text-xs font-medium", TOOLBAR_TRAY)}>
             <button
               type="button"
               disabled={hidden === options.length}
               onClick={() => setAll(false)}
-              className="rounded-[3px] px-2 py-1 transition-colors enabled:hover:bg-background disabled:text-muted-foreground/50"
+              className="rounded-[4px] px-2 py-1 transition-colors enabled:hover:bg-background disabled:text-muted-foreground/50"
             >
               Ẩn hết
             </button>
@@ -161,7 +161,7 @@ export function TripFieldsMenu({ omit = [] }: { omit?: TripField[] }) {
               type="button"
               disabled={hidden === 0}
               onClick={() => setAll(true)}
-              className="rounded-[3px] px-2 py-1 transition-colors enabled:hover:bg-background disabled:text-muted-foreground/50"
+              className="rounded-[4px] px-2 py-1 transition-colors enabled:hover:bg-background disabled:text-muted-foreground/50"
             >
               Hiện hết
             </button>
@@ -178,7 +178,7 @@ export function TripFieldsMenu({ omit = [] }: { omit?: TripField[] }) {
                   role="switch"
                   aria-checked={on}
                   onClick={() => write({ ...fields, [f.id]: !on })}
-                  className="flex w-full items-center gap-3 rounded-[4px] px-2.5 py-2 text-left transition-colors hover:bg-muted"
+                  className="flex w-full items-center gap-3 rounded-[6px] px-2.5 py-2 text-left transition-colors hover:bg-muted"
                 >
                   <Glyph
                     name={f.glyph}

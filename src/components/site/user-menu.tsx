@@ -4,16 +4,9 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
-import {
-  LayoutDashboard,
-  LogOut,
-  MapPinCheck,
-  MapPin,
-  Check,
-  Route,
-} from "@/components/icons";
+import { Check } from "@/components/icons";
+import { NavIcon } from "./nav-icons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { removeDiacritics } from "@/lib/slug";
 import {
@@ -32,9 +25,7 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuSub,
   DropdownMenuSubContent,
@@ -44,6 +35,24 @@ import {
 import { setHomeProvince } from "./home-province-actions";
 
 const STAFF = ["admin", "editor"];
+
+/**
+ * Menu tài khoản — gọn, một chất liệu với cụm icon header: thẻ danh tính (avatar lớn + tên + email) · mục dùng CHUNG bộ
+ * NavIcon nét mảnh của header (không Lucide, không ô icon tô màu) · rê / phím = nền xám nhạt (không mượn `accent` xanh) ·
+ * Đăng xuất là chữ thường ở đáy (KHÔNG tô đỏ — đó là một lối ra, không phải một thao tác nguy hiểm).
+ * Bo theo bộ chung: khung `R_CARD` 10px, mục 6px.
+ */
+const ITEM =
+  "h-9 gap-3 rounded-[6px] px-2.5 text-sm text-foreground focus:bg-foreground/[0.06] focus:text-foreground data-[state=open]:bg-foreground/[0.06] [&_svg:not([class*='text-'])]:text-foreground/60";
+
+function LogoutIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" aria-hidden className={className}>
+      <path d="M14.5 4.5H17a2.5 2.5 0 0 1 2.5 2.5v10a2.5 2.5 0 0 1-2.5 2.5h-2.5" />
+      <path d="M10 8.2 6.2 12l3.8 3.8M6.5 12h8.3" />
+    </svg>
+  );
+}
 
 type Props = {
   user: {
@@ -68,9 +77,10 @@ export function UserMenu({ user, provinces, homeProvince }: Props) {
           <DropdownMenuTrigger asChild>
             <button
               aria-label="Tài khoản"
+              // Ảnh đại diện giữ tròn (quy ước chung của avatar, không phải một khối của site); viền mảnh tách khỏi nền hero.
               className="rounded-full outline-none ring-offset-2 ring-offset-background transition focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <Avatar className="size-9">
+              <Avatar className="size-8 ring-1 ring-foreground/15 transition-shadow hover:ring-2 hover:ring-foreground/25">
                 {user.image && (
                   <AvatarImage src={user.image} alt={user.name ?? "Avatar"} />
                 )}
@@ -81,69 +91,61 @@ export function UserMenu({ user, provinces, homeProvince }: Props) {
         </TooltipTrigger>
         {!open && <TooltipContent>Tài khoản</TooltipContent>}
       </Tooltip>
-      <DropdownMenuContent align="end" className="w-60">
-        <DropdownMenuGroup>
-          <DropdownMenuLabel>
-            <div className="flex flex-col">
-              <span className="flex items-center gap-1.5">
-                <span className="truncate text-sm font-medium">
-                  {user.name ?? "Tài khoản"}
-                </span>
-                {isStaff && (
-                  <Badge
-                    className={cn(
-                      "shrink-0 border-transparent px-1.5 text-[0.7rem] font-semibold",
-                      user.role === "admin"
-                        ? "bg-primary/10 text-primary"
-                        : "bg-muted text-muted-foreground",
-                    )}
-                  >
-                    {user.role === "admin" ? "Admin" : "Editor"}
-                  </Badge>
-                )}
-              </span>
-              {user.email && (
-                <span className="truncate text-xs font-normal text-muted-foreground">
-                  {user.email}
+      <DropdownMenuContent
+        align="end"
+        sideOffset={10}
+        className="w-64 rounded-[10px] border-border/70 p-1.5 shadow-[0_16px_40px_-12px_rgb(0_0_0/0.22)]"
+      >
+        {/* Thẻ danh tính — không phải mục bấm được, nên không có nền rê. */}
+        <div className="flex items-center gap-3 px-2.5 pb-3 pt-2">
+          <Avatar className="size-10 ring-1 ring-foreground/10">
+            {user.image && <AvatarImage src={user.image} alt="" />}
+            <AvatarFallback>{initial}</AvatarFallback>
+          </Avatar>
+          <div className="min-w-0">
+            <p className="flex items-center gap-2">
+              <span className="truncate text-[0.9375rem] font-semibold leading-tight">{user.name ?? "Tài khoản"}</span>
+              {isStaff && (
+                <span className="shrink-0 rounded-[4px] bg-foreground/[0.06] px-1.5 py-px text-[0.6875rem] font-medium text-muted-foreground">
+                  {user.role === "admin" ? "Admin" : "Biên tập"}
                 </span>
               )}
-            </div>
-          </DropdownMenuLabel>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <HomeProvinceSubmenu
-            provinces={provinces}
-            value={homeProvince}
-            onDone={() => setOpen(false)}
-          />
-          <DropdownMenuItem asChild>
-            <Link href="/tai-khoan/da-den">
-              <MapPinCheck className="size-4" aria-hidden />
-              Nơi đã đến
+            </p>
+            {user.email && <p className="mt-0.5 truncate text-xs text-muted-foreground">{user.email}</p>}
+          </div>
+        </div>
+
+        <DropdownMenuSeparator className="mx-1 my-1 bg-border/70" />
+
+        <DropdownMenuItem asChild className={ITEM}>
+          <Link href="/lich-trinh">
+            <NavIcon name="route" active={false} className="size-[1.125rem]" />
+            Lịch trình
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild className={ITEM}>
+          <Link href="/tai-khoan/da-den">
+            <NavIcon name="checkin" active={false} className="size-[1.125rem]" />
+            Nơi đã đến
+          </Link>
+        </DropdownMenuItem>
+        <HomeProvinceSubmenu provinces={provinces} value={homeProvince} onDone={() => setOpen(false)} />
+        {isStaff && (
+          <DropdownMenuItem asChild className={ITEM}>
+            <Link href="/cms">
+              <NavIcon name="overview" active={false} className="size-[1.125rem]" />
+              Quản trị
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href="/lich-trinh">
-              <Route className="size-4" aria-hidden />
-              Lịch trình
-            </Link>
-          </DropdownMenuItem>
-          {isStaff && (
-            <DropdownMenuItem asChild>
-              <Link href="/cms">
-                <LayoutDashboard className="size-4" aria-hidden />
-                Quản trị (CMS)
-              </Link>
-            </DropdownMenuItem>
-          )}
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
+        )}
+
+        <DropdownMenuSeparator className="mx-1 my-1 bg-border/70" />
+
         <DropdownMenuItem
-          variant="destructive"
+          className={cn(ITEM, "text-muted-foreground focus:text-foreground")}
           onClick={() => signOut({ callbackUrl: "/login" })}
         >
-          <LogOut className="size-4" aria-hidden />
+          <LogoutIcon className="size-[1.125rem]" />
           Đăng xuất
         </DropdownMenuItem>
       </DropdownMenuContent>
@@ -175,20 +177,14 @@ function HomeProvinceSubmenu({
 
   return (
     <DropdownMenuSub>
-      <DropdownMenuSubTrigger className={cn(pending && "opacity-70")}>
-        <MapPin className="size-4" aria-hidden />
+      <DropdownMenuSubTrigger className={cn(ITEM, pending && "opacity-70")}>
+        <NavIcon name="province" active={false} className="size-[1.125rem]" />
         <span className="flex-1">Tỉnh của bạn</span>
-        <span
-          className={cn(
-            "max-w-[6.5rem] truncate text-xs",
-            selected ? "text-muted-foreground" : "text-muted-foreground/60",
-          )}
-        >
-          {selected ?? "Chọn"}
-        </span>
+        <span className="max-w-[6.5rem] truncate text-xs text-muted-foreground">{selected ?? "Chưa chọn"}</span>
       </DropdownMenuSubTrigger>
       <DropdownMenuSubContent
-        className="w-64 p-0"
+        sideOffset={6}
+        className="w-64 rounded-[10px] border-border/70 p-0 shadow-[0_16px_40px_-12px_rgb(0_0_0/0.22)]"
         onKeyDown={(e) => e.stopPropagation()}
       >
         <Command

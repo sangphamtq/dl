@@ -9,6 +9,7 @@ import { ablyEnabled } from "@/lib/ably";
 import { MobileNav } from "./mobile-nav";
 import { UserMenu } from "./user-menu";
 import { NotificationBell } from "./notification-bell";
+import { LoginButton } from "./login-button";
 import { DaDenNavLink } from "./da-den-nav-link";
 import { HeaderSearch } from "./header-search";
 import { SiteNav, type NavEntry, type NavLink } from "./site-nav";
@@ -28,7 +29,6 @@ const NAV: NavEntry[] = [
     exclude: ["/lich-trinh/cua-toi", "/lich-trinh/s"],
   },
   { href: "/blog", label: "Cẩm nang" },
-  { href: "/gioi-thieu", label: "Giới thiệu" },
 ];
 
 const MOBILE_LINKS: NavLink[] = NAV as NavLink[];
@@ -89,12 +89,12 @@ export async function SiteHeader({
         <SiteNav entries={NAV} className="hidden lg:ml-3 lg:flex xl:ml-6" />
 
         <TooltipProvider delayDuration={300}>
-        <div className="flex flex-1 items-center justify-end gap-1">
+        {/* Cụm phải: nhóm icon (tìm · đã đến · thông báo) · avatar — tách bằng KHOẢNG TRẮNG, không vạch dọc. */}
+        <div className="flex flex-1 items-center justify-end gap-0.5">
           <HeaderSearch />
 
           {user ? (
             <>
-              <span aria-hidden className="mx-1.5 h-6 w-px bg-foreground/25" />
               <div className="flex items-center gap-0.5">
                 <DaDenNavLink />
                 <NotificationBell
@@ -103,10 +103,7 @@ export async function SiteHeader({
                   realtimeEnabled={ablyEnabled()}
                 />
               </div>
-              <span
-                aria-hidden
-                className="mx-1.5 h-6 w-px bg-foreground/25"
-              />
+              <span className="ml-2 flex">
               <UserMenu
                 user={{
                   name: user.name,
@@ -117,14 +114,12 @@ export async function SiteHeader({
                 provinces={provinceNames}
                 homeProvince={homeProvince}
               />
+              </span>
             </>
           ) : (
-            <Link
-              href="/login"
-              className="ml-1.5 inline-flex h-10 items-center rounded-lg bg-brand px-4.5 text-sm font-semibold text-brand-foreground shadow-[inset_0_1px_0_rgb(255_255_255/0.22),0_1px_2px_rgb(0_0_0/0.18)] transition-[background-color,transform] duration-200 [text-shadow:none] hover:bg-brand/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-transparent active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100"
-            >
-              Đăng nhập
-            </Link>
+            <LoginButton
+              className="ml-2 inline-flex h-9 items-center rounded-[10px] bg-brand px-4 text-sm font-semibold text-brand-foreground shadow-[inset_0_1px_0_rgb(255_255_255/0.22),0_1px_2px_rgb(0_0_0/0.18)] transition-[background-color,transform] duration-200 [text-shadow:none] hover:bg-brand/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-transparent active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100"
+            />
           )}
         </div>
         </TooltipProvider>

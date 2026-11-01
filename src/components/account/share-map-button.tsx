@@ -46,7 +46,7 @@ const CIRCLE_R = 13;
 const ITEM_GAP = 12;
 const MICRO = "text-[0.6rem] font-semibold uppercase tracking-[0.14em]";
 
-const LIST_FONT = "'MaliShare', 'Be Vietnam Pro', system-ui, sans-serif";
+const LIST_FONT = "'MaliShare', system-ui, sans-serif";
 
 function escapeXml(s: string): string {
   return s.replace(/[&<>]/g, (c) =>
@@ -201,7 +201,7 @@ function buildShareCard(
   const wmY = contentBottom + 64;
   const H = wmY + 36;
 
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="'Be Vietnam Pro', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif">
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif">
   <defs>
     <style>${fontCss}</style>
     <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">

@@ -285,13 +285,13 @@ export function TripEditor({
             <button
               type="button"
               onClick={() => setAddTarget({ dayId: null, label: "danh sách chưa xếp" })}
-              className="mb-1.5 flex h-9 w-full items-center gap-2.5 rounded-[4px] bg-muted/70 px-2.5 text-sm text-foreground/60 transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="mb-1.5 flex h-9 w-full items-center gap-2.5 rounded-[6px] bg-muted/70 px-2.5 text-sm text-foreground/60 transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <Glyph name="search" className="size-4 shrink-0" />
-              Tìm hoặc tự thêm mục…
+              <span className="min-w-0 truncate">Tìm hoặc tự thêm mục…</span>
             </button>
             {backlog.length === 0 ? (
-              <div className="rounded-[6px] border border-dashed px-3 py-6 text-center">
+              <div className="rounded-[10px] border border-dashed px-3 py-6 text-center">
                 <p className="text-sm leading-relaxed text-muted-foreground">
                   Chưa có mục nào chờ xếp. Bấm{" "}
                   <strong className="font-medium text-foreground">Thêm vào lịch trình</strong> ở
@@ -375,7 +375,7 @@ export function TripEditor({
                 variant="outline"
                 onClick={() => run(() => addDay(trip.id))}
                 disabled={pending}
-                className="mt-2 w-full rounded-[4px] border-dashed"
+                className="mt-2 w-full rounded-[6px] border-dashed"
               >
                 <Glyph name="plus" className="size-4" />
                 Thêm ngày {days.length + 1}
@@ -501,7 +501,7 @@ function BacklogRow({
   run: (fn: () => Promise<{ ok: boolean; error?: string }>, done?: string) => void;
 }) {
   return (
-    <li className="group relative flex min-w-0 items-center gap-2.5 rounded-[4px] px-1.5 py-1.5 transition-colors focus-within:bg-muted hover:bg-muted">
+    <li className="group relative flex min-w-0 items-center gap-2.5 rounded-[6px] px-1.5 py-1.5 transition-colors focus-within:bg-muted hover:bg-muted">
       <Thumb item={item} size="sm" />
 
       <div className="min-w-0 flex-1">
@@ -517,7 +517,7 @@ function BacklogRow({
           <button
             type="button"
             aria-label={`Xếp ${item.name} vào ngày`}
-            className="grid size-6 shrink-0 place-items-center rounded-[3px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="grid size-6 shrink-0 place-items-center rounded-[4px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <Glyph name="plus" className="size-4" />
           </button>
@@ -662,7 +662,7 @@ function DayBlock({
                   <button
                     type="button"
                     aria-label={`Tuỳ chọn ngày ${day.index + 1}`}
-                    className="grid size-8 place-items-center rounded-[3px] text-muted-foreground transition-colors hover:bg-muted"
+                    className="grid size-8 place-items-center rounded-[4px] text-muted-foreground transition-colors hover:bg-muted"
                   >
                     <Glyph name="more" className="size-4" />
                   </button>
@@ -712,7 +712,7 @@ function DayBlock({
               <button
                 type="button"
                 onClick={() => onAdd({ mode: "place" })}
-                className="inline-flex h-8 items-center gap-1.5 rounded-[4px] border border-border px-2.5 font-medium text-foreground transition-colors hover:border-primary/50 hover:text-primary-ink"
+                className="inline-flex h-8 items-center gap-1.5 rounded-[6px] border border-border px-2.5 font-medium text-foreground transition-colors hover:border-primary/50 hover:text-primary-ink"
               >
                 <Glyph name="plus" className="size-4" />
                 Thêm vào ngày {day.index + 1}
@@ -767,7 +767,7 @@ function DayBlock({
                                   <button
                                     type="button"
                                     onClick={() => setEditing(top.id)}
-                                    className="inline-flex h-7 shrink-0 items-center gap-1 rounded-[3px] px-1.5 text-xs font-medium text-primary-ink transition-colors hover:bg-primary/5"
+                                    className="inline-flex h-7 shrink-0 items-center gap-1 rounded-[4px] px-1.5 text-xs font-medium text-primary-ink transition-colors hover:bg-primary/5"
                                   >
                                     <Glyph name="bed" className="size-3.5" />
                                     Chọn chỗ ở
@@ -831,7 +831,7 @@ function DayBlock({
           <span aria-hidden className="w-11 shrink-0 sm:w-16" />
           {/* Vạch đứt ngắn nối đáy trục tới ô + — ô là mốc TIẾP THEO của cùng một trục, không phải nút đứng riêng. */}
           <span className="relative flex w-5 shrink-0 justify-center before:absolute before:bottom-full before:left-1/2 before:h-2 before:-translate-x-1/2 before:border-l-2 before:border-dashed before:border-foreground/20 sm:w-6">
-            <span className="grid size-[1.375rem] place-items-center rounded-[4px] border border-dashed border-foreground/35 bg-background text-muted-foreground transition-colors group-hover/add:border-solid group-hover/add:border-primary group-hover/add:bg-primary group-hover/add:text-primary-foreground">
+            <span className="grid size-[1.375rem] place-items-center rounded-[6px] border border-dashed border-foreground/35 bg-background text-muted-foreground transition-colors group-hover/add:border-solid group-hover/add:border-primary group-hover/add:bg-primary group-hover/add:text-primary-foreground">
               <Glyph name="plus" className="size-3.5" />
             </span>
           </span>
@@ -863,7 +863,7 @@ function AddTagButton({ label, onClick, quiet }: { label: string; onClick: () =>
       onClick={onClick}
       aria-label={`Thêm hoạt động ở ${label}`}
       className={cn(
-        "inline-flex h-8 shrink-0 items-center gap-1 rounded-[3px] px-2 text-sm font-medium text-muted-foreground transition-colors",
+        "inline-flex h-8 shrink-0 items-center gap-1 rounded-[4px] px-2 text-sm font-medium text-muted-foreground transition-colors",
         quiet
           ? "opacity-0 transition-opacity hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-focus-within:opacity-100 group-hover:opacity-100 [@media(pointer:coarse)]:hidden"
           : // Nền ĐỤC trắng: vô hình trên thẻ trơn, nhưng vẫn đọc được khi rơi vào vùng ảnh nền.
@@ -955,13 +955,13 @@ function MealPicksRow({
           type="button"
           onClick={() => onPick(p)}
           className={cn(
-            "inline-flex h-8 max-w-full items-center gap-1.5 rounded-[4px] pr-2.5 text-sm transition-colors bg-[color-mix(in_oklab,var(--color-foreground)_7%,var(--color-background))] hover:bg-[color-mix(in_oklab,var(--color-foreground)_11%,var(--color-background))]",
+            "inline-flex h-8 max-w-full items-center gap-1.5 rounded-[6px] pr-2.5 text-sm transition-colors bg-[color-mix(in_oklab,var(--color-foreground)_7%,var(--color-background))] hover:bg-[color-mix(in_oklab,var(--color-foreground)_11%,var(--color-background))]",
             p.image ? "pl-[3px]" : "pl-2.5",
           )}
         >
           {/* Ảnh THẬT của quán hoặc không ảnh (`getMealPicks` không rơi về ảnh stock). */}
           {p.image && (
-            <span className="relative size-6 shrink-0 overflow-hidden rounded-[2px] bg-muted">
+            <span className="relative size-6 shrink-0 overflow-hidden rounded-[3px] bg-muted">
               <Image src={p.image} alt="" fill sizes="24px" className="object-cover" draggable={false} />
             </span>
           )}
@@ -971,7 +971,7 @@ function MealPicksRow({
       <button
         type="button"
         onClick={onMore}
-        className="inline-flex h-8 items-center gap-1 rounded-[4px] px-2.5 text-sm text-muted-foreground transition-colors hover:bg-[color-mix(in_oklab,var(--color-foreground)_7%,var(--color-background))] hover:text-foreground"
+        className="inline-flex h-8 items-center gap-1 rounded-[6px] px-2.5 text-sm text-muted-foreground transition-colors hover:bg-[color-mix(in_oklab,var(--color-foreground)_7%,var(--color-background))] hover:text-foreground"
       >
         <Glyph name="search" className="size-3.5" />
         {picks.length > 0 ? "Quán khác…" : "Chọn quán"}
@@ -999,7 +999,7 @@ function TagActions({
         <button
           type="button"
           aria-label={`Tuỳ chọn cho ${tag.name}`}
-          className="-ml-1 grid h-full w-6 place-items-center rounded-r-[3px] text-muted-foreground opacity-40 transition-[opacity,color,background-color] hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-hover/tag:opacity-100 data-[state=open]:opacity-100 [@media(pointer:coarse)]:opacity-100"
+          className="-ml-1 grid h-full w-6 place-items-center rounded-r-[4px] text-muted-foreground opacity-40 transition-[opacity,color,background-color] hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-hover/tag:opacity-100 data-[state=open]:opacity-100 [@media(pointer:coarse)]:opacity-100"
         >
           <Glyph name="more" className="size-3.5" />
         </button>
@@ -1056,13 +1056,13 @@ function ItemActions({
   return (
     // Viên nút NỔI trên thẻ (thẻ có ảnh nền ở đúng chỗ này): độ nổi bằng BÓNG, không viền — dark mode bóng không thấy nên
     // đổi sang vòng 1px (mỗi theme vẫn chỉ một độ nổi). Nút TRƯỢT nhẹ vào khi rê; cảm ứng luôn hiện, đứng yên.
-    <div className="flex shrink-0 translate-x-1 items-center gap-px rounded-[4px] bg-background p-0.5 shadow-[0_1px_2px_rgb(0_0_0/0.08),0_3px_10px_-3px_rgb(0_0_0/0.18)] dark:shadow-none dark:ring-1 dark:ring-white/12 opacity-0 transition-[opacity,transform] duration-200 ease-out group-focus-within:translate-x-0 group-focus-within:opacity-100 group-hover:translate-x-0 group-hover:opacity-100 motion-reduce:transition-none [@media(pointer:coarse)]:translate-x-0 [@media(pointer:coarse)]:opacity-100">
+    <div className="flex shrink-0 translate-x-1 items-center gap-px rounded-[6px] bg-background p-0.5 shadow-[0_1px_2px_rgb(0_0_0/0.08),0_3px_10px_-3px_rgb(0_0_0/0.18)] dark:shadow-none dark:ring-1 dark:ring-white/12 opacity-0 transition-[opacity,transform] duration-200 ease-out group-focus-within:translate-x-0 group-focus-within:opacity-100 group-hover:translate-x-0 group-hover:opacity-100 motion-reduce:transition-none [@media(pointer:coarse)]:translate-x-0 [@media(pointer:coarse)]:opacity-100">
       <button
         type="button"
         onClick={onEdit}
         aria-label={`Sửa ${item.name}`}
         title="Sửa tên, thời gian, ghi chú"
-        className="grid size-7 place-items-center rounded-[3px] text-foreground/80 transition-colors hover:bg-muted hover:text-foreground"
+        className="grid size-7 place-items-center rounded-[4px] text-foreground/80 transition-colors hover:bg-muted hover:text-foreground"
       >
         <Glyph name="pencil" className="size-[0.9375rem]" />
       </button>
@@ -1072,7 +1072,7 @@ function ItemActions({
           <button
             type="button"
             aria-label={`Tuỳ chọn cho ${item.name}`}
-            className="grid size-7 place-items-center rounded-[3px] text-foreground/80 transition-colors hover:bg-muted hover:text-foreground data-[state=open]:bg-muted"
+            className="grid size-7 place-items-center rounded-[4px] text-foreground/80 transition-colors hover:bg-muted hover:text-foreground data-[state=open]:bg-muted"
           >
             <Glyph name="more" className="size-4" />
           </button>
@@ -1197,7 +1197,7 @@ function StartTimePicker({
         <button
           type="button"
           aria-label={`${label}: ${formatMinutes(startMin)}`}
-          className="inline-flex items-center gap-1.5 rounded-[3px] px-1 py-0.5 font-medium tabular-nums text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="inline-flex items-center gap-1.5 rounded-[4px] px-1 py-0.5 font-medium tabular-nums text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Glyph name="sunrise" className="size-4 shrink-0 text-muted-foreground" />
           {formatMinutes(startMin)}
@@ -1221,7 +1221,7 @@ function StartTimePicker({
               onClick={() => apply(hr * 60 + m)}
               aria-pressed={hr === h}
               className={cn(
-                "h-8 rounded-[4px] text-sm tabular-nums transition-colors",
+                "h-8 rounded-[6px] text-sm tabular-nums transition-colors",
                 hr === h ? "bg-primary font-semibold text-primary-foreground" : "bg-muted hover:bg-muted/70",
                 // Khung giờ hay dùng (5–21h) đậm hơn — mắt tìm nhanh hơn trong lưới 24 ô.
                 hr !== h && (hr < 5 || hr > 21) && "text-muted-foreground",
@@ -1241,7 +1241,7 @@ function StartTimePicker({
               onClick={() => apply(h * 60 + q)}
               aria-pressed={q === m}
               className={cn(
-                "h-8 rounded-[4px] text-sm tabular-nums transition-colors",
+                "h-8 rounded-[6px] text-sm tabular-nums transition-colors",
                 q === m ? "bg-primary font-semibold text-primary-foreground" : "bg-muted hover:bg-muted/70",
               )}
             >
@@ -1266,9 +1266,9 @@ function StartTimePicker({
             inputMode="numeric"
             placeholder="Giờ lẻ, vd 4:20"
             aria-label="Giờ bắt đầu khác (giờ:phút)"
-            className="h-9 rounded-[4px] tabular-nums"
+            className="h-9 rounded-[6px] tabular-nums"
           />
-          <Button type="submit" variant="outline" disabled={draftMin == null} className="h-9 shrink-0 rounded-[4px] px-3">
+          <Button type="submit" variant="outline" disabled={draftMin == null} className="h-9 shrink-0 rounded-[6px] px-3">
             Đặt
           </Button>
         </form>
@@ -1372,13 +1372,13 @@ function ItemEditDialog({
 
   const chip = (on: boolean) =>
     cn(
-      "h-9 rounded-[4px] text-sm tabular-nums transition-colors",
+      "h-9 rounded-[6px] text-sm tabular-nums transition-colors",
       on ? "bg-primary font-semibold text-primary-foreground" : "bg-muted hover:bg-muted/70",
     );
 
   return (
     <Dialog open={!!item} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="gap-0 rounded-[6px] p-0 sm:max-w-md">
+      <DialogContent className="gap-0 rounded-[10px] p-0 sm:max-w-md">
         {item && (
           <form onSubmit={save}>
             <div className="border-b border-border/60 px-5 pb-3 pt-5">
@@ -1398,7 +1398,7 @@ function ItemEditDialog({
                   <Input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="h-10 rounded-[4px]"
+                    className="h-10 rounded-[6px]"
                   />
                 </label>
               )}
@@ -1439,7 +1439,7 @@ function ItemEditDialog({
                         onClick={() => setMode(m.mode)}
                         aria-pressed={mode === m.mode}
                         className={cn(
-                          "inline-flex h-8 items-center gap-1.5 rounded-[4px] border px-2.5 text-sm transition-colors",
+                          "inline-flex h-8 items-center gap-1.5 rounded-[6px] border px-2.5 text-sm transition-colors",
                           mode === m.mode ? "border-primary/60 bg-primary/5 font-medium text-primary-ink" : "border-border hover:bg-muted",
                         )}
                       >
@@ -1451,11 +1451,11 @@ function ItemEditDialog({
                   <div className="grid grid-cols-2 gap-2">
                     <label className="grid gap-1.5">
                       <span className="text-sm font-medium">Từ</span>
-                      <Input value={from} onChange={(e) => setFrom(e.target.value)} className="h-10 rounded-[4px]" />
+                      <Input value={from} onChange={(e) => setFrom(e.target.value)} className="h-10 rounded-[6px]" />
                     </label>
                     <label className="grid gap-1.5">
                       <span className="text-sm font-medium">Đến</span>
-                      <Input value={to} onChange={(e) => setTo(e.target.value)} className="h-10 rounded-[4px]" />
+                      <Input value={to} onChange={(e) => setTo(e.target.value)} className="h-10 rounded-[6px]" />
                     </label>
                   </div>
                 </>
@@ -1469,7 +1469,7 @@ function ItemEditDialog({
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     placeholder="Số nhà, đường, phường…"
-                    className="h-10 rounded-[4px]"
+                    className="h-10 rounded-[6px]"
                   />
                 </label>
               )}
@@ -1490,12 +1490,12 @@ function ItemEditDialog({
                 </div>
                 {/* Giờ + phút — không bắt người dùng tự quy "2 tiếng rưỡi" ra 150 phút. */}
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center rounded-[4px] bg-muted">
+                  <div className="flex items-center rounded-[6px] bg-muted">
                     <button
                       type="button"
                       onClick={() => setStay(Math.max(0, hours - 1) * 60 + mins)}
                       aria-label="Bớt một giờ"
-                      className="grid size-9 place-items-center rounded-[4px] text-lg leading-none hover:bg-muted/70"
+                      className="grid size-9 place-items-center rounded-[6px] text-lg leading-none hover:bg-muted/70"
                     >
                       −
                     </button>
@@ -1504,7 +1504,7 @@ function ItemEditDialog({
                       type="button"
                       onClick={() => setStay(Math.min(23, hours + 1) * 60 + mins)}
                       aria-label="Thêm một giờ"
-                      className="grid size-9 place-items-center rounded-[4px] text-lg leading-none hover:bg-muted/70"
+                      className="grid size-9 place-items-center rounded-[6px] text-lg leading-none hover:bg-muted/70"
                     >
                       +
                     </button>
@@ -1517,7 +1517,7 @@ function ItemEditDialog({
                         onClick={() => setStay(hours * 60 + q)}
                         aria-pressed={q === mins}
                         className={cn(
-                          "h-9 rounded-[4px] text-xs tabular-nums transition-colors",
+                          "h-9 rounded-[6px] text-xs tabular-nums transition-colors",
                           q === mins ? "bg-foreground font-semibold text-background" : "bg-muted hover:bg-muted/70",
                         )}
                       >
@@ -1540,7 +1540,7 @@ function ItemEditDialog({
                       inputMode="numeric"
                       placeholder="17:00"
                       aria-label={doing ? "Làm đến lúc (giờ:phút)" : "Ở đến lúc (giờ:phút)"}
-                      className="h-9 w-20 rounded-[4px] text-center tabular-nums"
+                      className="h-9 w-20 rounded-[6px] text-center tabular-nums"
                     />
                     {untilDur != null && (
                       <span className="text-xs tabular-nums text-muted-foreground">= {fmtDuration(untilDur)}</span>
@@ -1568,16 +1568,16 @@ function ItemEditDialog({
                   onChange={(e) => setNote(e.target.value)}
                   placeholder="Đến sớm cho đỡ nắng, nhớ mang tiền mặt…"
                   rows={3}
-                  className="resize-none rounded-[4px]"
+                  className="resize-none rounded-[6px]"
                 />
               </label>
             </div>
 
             <div className="flex justify-end gap-2 border-t border-border/60 px-5 py-3">
-              <Button type="button" variant="ghost" onClick={onClose} className="rounded-[4px]">
+              <Button type="button" variant="ghost" onClick={onClose} className="rounded-[6px]">
                 Huỷ
               </Button>
-              <Button type="submit" className="rounded-[4px]">
+              <Button type="submit" className="rounded-[6px]">
                 Lưu
               </Button>
             </div>
@@ -1638,7 +1638,7 @@ function InlineEdit({
     return multiline ? (
       <Textarea {...shared} rows={2} className={cn("mt-1.5 min-h-0 resize-none text-xs", TOUCH_INPUT)} />
     ) : (
-      <Input {...shared} className="mt-1 h-9 rounded-[4px]" />
+      <Input {...shared} className="mt-1 h-9 rounded-[6px]" />
     );
   }
 

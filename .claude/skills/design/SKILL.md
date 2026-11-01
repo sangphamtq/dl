@@ -17,14 +17,17 @@ trên**, không phải mặc định nên dùng.
 
 | Hằng | | Dùng cho |
 |---|---|---|
-| `R_CARD` | **6px** | thẻ ảnh, ô lớn, khối bao |
-| `R_CTRL` | **4px** | chip, ô nhập, nút, tab, mũi tên, khung bọc |
-| `R_BADGE` | **3px** | huy hiệu, badge đếm, nút icon nhỏ (cao 18–24px) |
+| `R_CARD` | **10px** | thẻ ảnh, ô lớn, khối bao, hộp thoại |
+| `R_CTRL` | **6px** | chip, ô nhập, nút, tab, mũi tên, khung bọc, dòng trong danh sách |
+| `R_BADGE` | **4px** | huy hiệu, badge đếm, nút icon nhỏ (cao 18–24px), ảnh nhỏ trong dòng |
+
+Thang **10 / 6 / 4** (nâng một nấc từ 6 / 4 / 3 ngày 2026-11-01 — biên tập chọn theo hộp tìm kiếm ⌘K). Chi tiết rất nhỏ
+(ô màu, chấm trên trục) dùng **3px**. Số ghi thẳng (`rounded-[6px]`…) và `border-radius` trong `globals.css` theo cùng thang.
 
 - **Phần tử càng nhỏ lấy bán kính càng nhỏ** — cùng một số trên chip 34px sẽ đọc ra
   tròn hơn hẳn trên thẻ ảnh 288px.
 - **Đừng khai thang bo góc trong `globals.css`.** Cần số riêng thì ghi thẳng
-  (`rounded-[6px]`).
+  (`rounded-[10px]`).
 - Hằng nằm ở **`src/lib/radius.ts`**, ghép bằng `cn()` — đừng rắc số cứng và đừng
   khai lại trong từng component. File đó không có `"use client"` nên Server
   Component lẫn Client Component đều import được.
@@ -46,13 +49,16 @@ trên**, không phải mặc định nên dùng.
 
 ## Chữ
 
-Ba font, **tất cả khai ở `app/layout.tsx`** — đừng khai font riêng trong từng trang.
+Hai họ chữ (Gilroy cho chữ thân + tiêu đề, Mali cho nhãn viết tay), **khai ở `app/layout.tsx`** — đừng khai font riêng trong từng trang.
+Font tự host (Gilroy) để ở `src/app/fonts/<tên>/`, đổi sang **WOFF2** và chỉ giữ độ đậm site dùng — KHÔNG để vào `public/`
+(mất tải trước + font dự phòng cùng kích thước của `next/font`). ⚠️ Gilroy rộng hơn Cabin: chữ trong ô cao cố định (ô tìm,
+chip) phải `truncate`, không thì xuống dòng.
 Không dùng serif.
 
 | Biến | Font | Dùng cho |
 |---|---|---|
-| `--font-sans` | Cabin | chữ thân, mặc định |
-| `--font-display` | Be Vietnam Pro | tiêu đề, kể cả kiểu **in hoa giãn chữ** ở hero/section |
+| `--font-sans` | **SVN-Gilroy** (tự host, `next/font/local`, `src/app/fonts/gilroy/*.woff2`, 400–700) | chữ thân, mặc định |
+| `--font-display` | **SVN-Gilroy** (trỏ về `--font-sans` trong `globals.css`; Be Vietnam Pro đã bỏ) | tiêu đề, kể cả kiểu **in hoa giãn chữ** ở hero/section |
 | `--font-rounded` | Mali | nhãn viết tay (tên tỉnh trên thẻ…) |
 
 Thêm font mới thì phải có **subset `vietnamese`** — kiểm trước bằng cách gọi

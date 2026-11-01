@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { CheckCheck } from "@/components/icons";
 import { NavIcon } from "./nav-icons";
 import { cn } from "@/lib/utils";
+import { HEADER_ICON_BTN } from "@/lib/header-ui";
 import { initials, timeAgo } from "@/lib/format";
 import { notifMessage } from "@/lib/notification-labels";
 import {
@@ -146,16 +147,11 @@ export function NotificationBell({
             <button
               type="button"
               aria-label="Thông báo"
-              className={cn(
-                "relative grid size-10 place-items-center rounded-full transition-colors",
-                open
-                  ? "bg-primary/10 text-primary"
-                  : "text-foreground hover:bg-muted",
-              )}
+              className={HEADER_ICON_BTN}
             >
-              <NavIcon name="bell" active={open} className="size-[1.15rem]" />
+              <NavIcon name="bell" active={false} className="size-[1.15rem]" />
               {unread > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 grid min-w-4 place-items-center rounded-full bg-warm px-1 text-[0.625rem] font-semibold leading-4 text-warm-foreground ring-2 ring-background">
+                <span className="absolute -right-1 -top-1 grid h-[1.125rem] min-w-[1.125rem] place-items-center rounded-[6px] bg-warm px-1 text-[0.625rem] font-semibold tabular-nums leading-none text-warm-foreground ring-2 ring-background [text-shadow:none]">
                   {unread > 9 ? "9+" : unread}
                 </span>
               )}

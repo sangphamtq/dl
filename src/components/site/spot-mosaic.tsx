@@ -212,7 +212,7 @@ function AllTile({
               PRINTS[i],
             )}
           >
-            <span className="relative block h-full w-full overflow-hidden rounded-[2px] bg-neutral-200">
+            <span className="relative block h-full w-full overflow-hidden rounded-[3px] bg-neutral-200">
               <Image src={src} alt="" fill sizes="180px" className="object-cover" />
             </span>
           </span>

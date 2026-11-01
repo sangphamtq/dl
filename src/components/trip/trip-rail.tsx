@@ -455,10 +455,10 @@ function RailDot({
       className={cn(
         "relative shrink-0 ring-4 ring-background transition-colors duration-200",
         number == null
-          ? cn("mt-[0.4rem] size-2.5 rounded-[2px]", DOT_SMALL[tone])
+          ? cn("mt-[0.4rem] size-2.5 rounded-[3px]", DOT_SMALL[tone])
           : // Rê vào thẻ thì mốc của nó đậm lên — thấy ngay thẻ đang rê thuộc mốc nào trên trục.
             cn(
-              "mt-0.5 grid size-[1.375rem] place-items-center rounded-[4px] border text-[0.6875rem] font-bold tabular-nums",
+              "mt-0.5 grid size-[1.375rem] place-items-center rounded-[6px] border text-[0.6875rem] font-bold tabular-nums",
               DOT_NUM[tone],
             ),
         draggable &&
@@ -644,7 +644,7 @@ const LOOK_CARD: Record<ItemLook, string> = {
 };
 
 export function cardClass(look: ItemLook): string {
-  return cn("rounded-[6px] px-3 py-2.5", LOOK_CARD[look]);
+  return cn("rounded-[10px] px-3 py-2.5", LOOK_CARD[look]);
 }
 
 /**
@@ -671,7 +671,7 @@ export function ActivityTags({
           key={t.id}
           className={cn(
             // Chip ĐẶC, không viền: đậm hơn tấm thẻ một nấc (đọc được cả trên thẻ, trên ảnh nền và trên trang xem nền trắng).
-            "group/tag inline-flex h-8 min-w-0 max-w-full items-center rounded-[4px] bg-[color-mix(in_oklab,var(--color-foreground)_7%,var(--color-background))] text-sm transition-colors",
+            "group/tag inline-flex h-8 min-w-0 max-w-full items-center rounded-[6px] bg-[color-mix(in_oklab,var(--color-foreground)_7%,var(--color-background))] text-sm transition-colors",
             t.href && "hover:bg-[color-mix(in_oklab,var(--color-foreground)_11%,var(--color-background))]",
           )}
         >
@@ -913,7 +913,7 @@ export function DayHeading({
       onClick={collapse.onToggle}
       aria-expanded={collapse.open}
       aria-label={collapse.open ? `Thu gọn ngày ${index + 1}` : `Mở ngày ${index + 1}`}
-      className="-ml-1 grid size-7 shrink-0 place-items-center rounded-[4px] text-muted-foreground transition-colors group-hover/dayhead:bg-muted group-hover/dayhead:text-foreground"
+      className="-ml-1 grid size-7 shrink-0 place-items-center rounded-[6px] text-muted-foreground transition-colors group-hover/dayhead:bg-muted group-hover/dayhead:text-foreground"
     >
       <Glyph
         name="chevron-down"
@@ -946,7 +946,7 @@ export function DayHeading({
         className={cn(
           "relative flex min-w-0 items-center gap-1.5",
           active &&
-            "before:absolute before:inset-y-0 before:-left-3 before:w-[3px] before:rounded-[2px] before:bg-warm",
+            "before:absolute before:inset-y-0 before:-left-3 before:w-[3px] before:rounded-[3px] before:bg-warm",
         )}
       >
         {toggle}
@@ -980,7 +980,7 @@ export function DayCollapsedSummary({ items, onOpen }: { items: ItemView[]; onOp
     <button
       type="button"
       onClick={onOpen}
-      className="mt-2 flex w-full min-w-0 items-baseline gap-x-4 rounded-[4px] py-1 text-left text-sm text-muted-foreground transition-colors hover:text-foreground"
+      className="mt-2 flex w-full min-w-0 items-baseline gap-x-4 rounded-[6px] py-1 text-left text-sm text-muted-foreground transition-colors hover:text-foreground"
     >
       <span className="shrink-0 font-semibold tabular-nums text-foreground">
         {tops.length ? `${stops} điểm dừng` : "Chưa có mục nào"}

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NavIcon } from "./nav-icons";
-import { cn } from "@/lib/utils";
+import { HEADER_ICON_BTN } from "@/lib/header-ui";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 export function DaDenNavLink() {
@@ -17,14 +17,9 @@ export function DaDenNavLink() {
           href="/tai-khoan/da-den"
           aria-label="Nơi đã đến"
           aria-current={active ? "page" : undefined}
-          className={cn(
-            "grid size-10 place-items-center rounded-full transition-colors",
-            active
-              ? "bg-primary/10 text-primary"
-              : "text-foreground hover:bg-muted",
-          )}
+          className={HEADER_ICON_BTN}
         >
-          <NavIcon name="checkin" active={active} className="size-[1.15rem]" />
+          <NavIcon name="checkin" active={false} className="size-[1.15rem]" />
         </Link>
       </TooltipTrigger>
       <TooltipContent>Nơi đã đến</TooltipContent>

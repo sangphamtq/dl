@@ -252,7 +252,7 @@ diem-den/[placeSlug]/
 
 Trước khi dựng/chỉnh giao diện: theo **skill `design`** (`.claude/skills/design/SKILL.md`).
 
-- **Bo góc — bộ số nhỏ dùng chung toàn site**: `R_CARD` 6px · `R_CTRL` 4px · `R_BADGE` 3px
+- **Bo góc — bộ số nhỏ dùng chung toàn site**: `R_CARD` 10px · `R_CTRL` 6px · `R_BADGE` 4px (chi tiết rất nhỏ 3px)
   (`lib/radius.ts`; CSS ghi số trực tiếp). KHÔNG `rounded-full`/`xl`/`2xl`/`3xl`.
 - **KHÔNG dùng `·` làm dải phân cách** — ngăn bằng khoảng trắng rộng, mốc mỗi mẩu là số/từ
   khoá in đậm.

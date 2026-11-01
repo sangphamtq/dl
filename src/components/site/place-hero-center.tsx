@@ -24,9 +24,9 @@ const MICRO = "text-[0.72rem] font-medium uppercase tracking-[0.1em]";
 const DT = `${MICRO} text-white/75`;
 
 const BAR_TYPE = "text-[0.6rem] font-semibold uppercase tracking-[0.14em]";
-const BAR_BTN = `h-9 gap-2 whitespace-nowrap rounded-[4px] px-3 sm:px-4 ${BAR_TYPE}`;
+const BAR_BTN = `h-9 gap-2 whitespace-nowrap rounded-[6px] px-3 sm:px-4 ${BAR_TYPE}`;
 
-const BAR_BTN_COLLAPSE = `size-9 shrink-0 justify-center rounded-full border border-white/45 hover:border-white sm:h-9 sm:w-auto sm:justify-start sm:gap-2 sm:whitespace-nowrap sm:rounded-[4px] sm:border-white/50 sm:px-4 sm:hover:border-white ${BAR_TYPE}`;
+const BAR_BTN_COLLAPSE = `size-9 shrink-0 justify-center rounded-full border border-white/45 hover:border-white sm:h-9 sm:w-auto sm:justify-start sm:gap-2 sm:whitespace-nowrap sm:rounded-[6px] sm:border-white/50 sm:px-4 sm:hover:border-white ${BAR_TYPE}`;
 
 const CIRCLE =
   "grid size-9 shrink-0 place-items-center rounded-full border border-white/45 transition-colors hover:border-white";

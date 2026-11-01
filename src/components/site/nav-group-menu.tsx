@@ -13,6 +13,12 @@ type Column = { href: string; title: string; desc?: string; badge?: string };
 const WARM_BADGE =
   "h-4 shrink-0 border-transparent bg-warm/15 px-1 text-[0.6rem] font-semibold leading-none text-warm";
 
+/**
+ * Chữ của một mục menu header: KHÔNG gạch chân, hiệu ứng NHẸ — mục thường ĐỦ màu chữ; rê vào chỉ NHẠT đi một nấc (không đổi
+ * độ đậm); đang ở trang đó thì đậm vừa (500). Đã thử và BỎ: rê/đang ở = 600 ("nặng quá") · mục thường nhạt 70% ("mờ").
+ * ⚠️ Đổi độ đậm làm chữ rộng ra ⇒ các mục bên cạnh bị xô. Một bản chữ đậm ẨN (`h-0 invisible`) nằm cùng cột giữ sẵn bề rộng
+ * lúc đậm, nên rê qua không làm menu nhảy.
+ */
 export function NavLabel({
   children,
   active,
@@ -21,15 +27,20 @@ export function NavLabel({
   active: boolean;
 }) {
   return (
-    <span
-      className={cn(
-        "relative py-1 after:absolute after:inset-x-1.5 after:-bottom-px after:h-px after:bg-current after:transition-opacity after:duration-200 after:content-['']",
-        active
-          ? "after:opacity-100"
-          : "after:opacity-0 group-hover/nav:after:opacity-40",
-      )}
-    >
-      {children}
+    <span className="inline-flex flex-col items-center py-1">
+      <span
+        className={cn(
+          "transition-colors duration-200",
+          active
+            ? "font-medium text-foreground"
+            : "font-normal text-foreground group-hover/nav:text-foreground/65",
+        )}
+      >
+        {children}
+      </span>
+      <span aria-hidden className="invisible h-0 overflow-hidden font-medium">
+        {children}
+      </span>
     </span>
   );
 }

@@ -20,7 +20,7 @@ function navClick(e: React.MouseEvent<HTMLAnchorElement>, href: string) {
 }
 
 const rowBase =
-  "flex h-9 items-center gap-3 rounded-[4px] px-2.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+  "flex h-9 items-center gap-3 rounded-[6px] px-2.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 function Row({
   section,
@@ -114,7 +114,7 @@ export function TripSectionTabs({ tripId, className }: { tripId: string; classNa
     // Icon TRÊN chữ: bốn mục chia đều bề ngang và vừa tới 320px — xếp ngang icon + chữ thì cần ~420px, mục
     // cuối bị đẩy khỏi màn hình mà không ai biết là còn.
     <nav aria-label="Mục của lịch trình" className={className}>
-      <div className="grid grid-flow-col auto-cols-fr gap-1 rounded-[6px] bg-foreground/[0.05] p-1">
+      <div className="grid grid-flow-col auto-cols-fr gap-1 rounded-[10px] bg-foreground/[0.05] p-1">
         {TRIP_NAV.map((s) => {
           const active = s.token === token;
           const href = tripSectionHref(tripId, s.token);
@@ -126,7 +126,7 @@ export function TripSectionTabs({ tripId, className }: { tripId: string; classNa
               onClick={(e) => navClick(e, href)}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-[4px] px-1 py-1.5 text-[0.75rem] leading-tight transition-colors",
+                "flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-[6px] px-1 py-1.5 text-[0.75rem] leading-tight transition-colors",
                 active
                   ? "bg-background font-semibold text-foreground shadow-[0_1px_2px_rgb(0_0_0/0.08)]"
                   : "font-medium text-foreground/65",

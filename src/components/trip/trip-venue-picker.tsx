@@ -48,7 +48,7 @@ export function VenuePicker({
 
   if (value)
     return (
-      <div className="flex items-center gap-3 rounded-[4px] border border-primary/40 bg-primary/5 p-2">
+      <div className="flex items-center gap-3 rounded-[6px] border border-primary/40 bg-primary/5 p-2">
         <Pic image={value.image} kind={kind} />
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-semibold">{value.name}</span>
@@ -58,7 +58,7 @@ export function VenuePicker({
           type="button"
           onClick={() => onChange(null)}
           aria-label={`Bỏ chọn ${value.name}`}
-          className="grid size-8 shrink-0 place-items-center rounded-[3px] text-muted-foreground hover:bg-muted hover:text-foreground"
+          className="grid size-8 shrink-0 place-items-center rounded-[4px] text-muted-foreground hover:bg-muted hover:text-foreground"
         >
           <Glyph name="close" className="size-4" />
         </button>
@@ -72,7 +72,7 @@ export function VenuePicker({
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder={kind === "eatery" ? "Tìm quán trên site…" : "Tìm chỗ ở trên site…"}
-          className="h-10 rounded-[4px] pr-9"
+          className="h-10 rounded-[6px] pr-9"
         />
         {loading && (
           <Loader2 className="absolute right-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground" aria-hidden />
@@ -87,7 +87,7 @@ export function VenuePicker({
                 onClick={() =>
                   onChange({ kind, id: r.id, name: r.name, image: r.image, context: r.context })
                 }
-                className="flex w-full items-center gap-3 rounded-[4px] px-1.5 py-1.5 text-left transition-colors hover:bg-muted"
+                className="flex w-full items-center gap-3 rounded-[6px] px-1.5 py-1.5 text-left transition-colors hover:bg-muted"
               >
                 <Pic image={r.image} kind={kind} />
                 <span className="min-w-0 flex-1">
@@ -110,7 +110,7 @@ export function VenuePicker({
 
 function Pic({ image, kind }: { image: string | null; kind: Venue["kind"] }) {
   return (
-    <span className={cn("relative grid size-9 shrink-0 place-items-center overflow-hidden rounded-[3px] bg-muted")}>
+    <span className={cn("relative grid size-9 shrink-0 place-items-center overflow-hidden rounded-[4px] bg-muted")}>
       {image ? (
         <Image src={image} alt="" fill sizes="36px" className="object-cover" />
       ) : (

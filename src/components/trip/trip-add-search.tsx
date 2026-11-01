@@ -321,7 +321,7 @@ export function TripAddSearch({
   const doingParent = mode === "doing" ? pos.parent : null;
   const customRow = term && doingParent ? (
     <CommandGroup heading={strong ? "Không thấy đúng hoạt động?" : "Tự thêm"} className={cn("px-2", strong && "border-t border-border/60")}>
-      <CommandItem value="custom" onSelect={() => addTag(term)} className="group gap-3 rounded-[4px] px-2 py-2">
+      <CommandItem value="custom" onSelect={() => addTag(term)} className="group gap-3 rounded-[6px] px-2 py-2">
         <Thumb>
           {adding === "custom" ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Glyph name="plus" className="size-5" />}
         </Thumb>
@@ -342,7 +342,7 @@ export function TripAddSearch({
           key={t.title}
           value={`task:${t.title}`}
           onSelect={() => addCustom({ title: t.title, stayMin: t.stayMin }, `task:${t.title}`)}
-          className="group gap-3 rounded-[4px] px-2 py-2"
+          className="group gap-3 rounded-[6px] px-2 py-2"
         >
           <Thumb>
             {adding === `task:${t.title}` ? (
@@ -362,7 +362,7 @@ export function TripAddSearch({
         <CommandItem
           value="custom"
           onSelect={() => addCustom({ title: term })}
-          className="group gap-3 rounded-[4px] px-2 py-2"
+          className="group gap-3 rounded-[6px] px-2 py-2"
         >
           <Thumb>
             {adding === "custom" ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Glyph name="plus" className="size-5" />}
@@ -390,7 +390,7 @@ export function TripAddSearch({
                       key={c.id}
                       value={`${c.kind}:${c.id}`}
                       onSelect={() => add(c)}
-                      className="group gap-3 rounded-[4px] px-2 py-2"
+                      className="group gap-3 rounded-[6px] px-2 py-2"
                     >
                       <Thumb filled>
                         {c.image ? (
@@ -426,7 +426,7 @@ export function TripAddSearch({
   return (
     <Dialog open={open} onOpenChange={close}>
       <DialogContent
-        className="top-[12vh] translate-y-0 gap-0 overflow-hidden rounded-[6px] p-0 sm:max-w-xl"
+        className="top-[12vh] translate-y-0 gap-0 overflow-hidden rounded-[10px] p-0 sm:max-w-xl"
         showCloseButton={false}
       >
         <div className="border-b border-border/60 px-4 pb-1 pt-4">
@@ -501,7 +501,7 @@ export function TripAddSearch({
                       value={form.from}
                       onChange={(e) => setForm({ ...form, from: e.target.value })}
                       placeholder="Hà Nội"
-                      className="h-10 rounded-[4px]"
+                      className="h-10 rounded-[6px]"
                     />
                   </label>
                   <label className="grid gap-1.5">
@@ -510,7 +510,7 @@ export function TripAddSearch({
                       value={form.to}
                       onChange={(e) => setForm({ ...form, to: e.target.value })}
                       placeholder="Sa Pa"
-                      className="h-10 rounded-[4px]"
+                      className="h-10 rounded-[6px]"
                     />
                   </label>
                 </div>
@@ -564,7 +564,7 @@ export function TripAddSearch({
                           ? SPECIAL_LABEL[form.special]
                           : "Nhà bạn Minh, ra sân bay, chờ xe…"
                     }
-                    className="h-10 rounded-[4px]"
+                    className="h-10 rounded-[6px]"
                   />
                 </label>
                 )}
@@ -577,7 +577,7 @@ export function TripAddSearch({
                       value={form.address}
                       onChange={(e) => setForm({ ...form, address: e.target.value })}
                       placeholder="Số nhà, đường, phường…"
-                      className="h-10 rounded-[4px]"
+                      className="h-10 rounded-[6px]"
                     />
                   </label>
                 )}
@@ -600,13 +600,13 @@ export function TripAddSearch({
               </div>
             </div>
             <div className="flex items-center justify-between gap-3">
-              <Button type="button" variant="ghost" onClick={() => setForm(null)} className="rounded-[4px]">
+              <Button type="button" variant="ghost" onClick={() => setForm(null)} className="rounded-[6px]">
                 Quay lại tìm
               </Button>
               <Button
                 type="submit"
                 disabled={(!form.special && !form.title.trim()) || adding !== null}
-                className="rounded-[4px]"
+                className="rounded-[6px]"
               >
                 {adding === "custom-form" ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Glyph name="plus" className="size-4" />}
                 Thêm
@@ -645,7 +645,7 @@ export function TripAddSearch({
                       key={t.title}
                       value={`task:${t.title}`}
                       onSelect={() => addCustom({ title: t.title, stayMin: t.stayMin }, `task:${t.title}`)}
-                      className="h-8 gap-1.5 rounded-[4px] border border-border px-2.5 py-0 text-sm"
+                      className="h-8 gap-1.5 rounded-[6px] border border-border px-2.5 py-0 text-sm"
                     >
                       {adding === `task:${t.title}` ? (
                         <Loader2 className="size-3.5 animate-spin" aria-hidden />
@@ -668,7 +668,7 @@ export function TripAddSearch({
                       key={sp.special}
                       value={`special:${sp.special}`}
                       onSelect={() => openForm("", sp.special)}
-                      className="h-9 gap-1.5 rounded-[4px] border border-border px-2.5 py-0 text-sm"
+                      className="h-9 gap-1.5 rounded-[6px] border border-border px-2.5 py-0 text-sm"
                     >
                       <Glyph name={sp.glyph} className="size-4 text-muted-foreground" />
                       {sp.label}
@@ -697,7 +697,7 @@ export function TripAddSearch({
   );
 }
 
-const CHOICE = "inline-flex h-8 items-center gap-1.5 rounded-[4px] border px-2.5 text-sm transition-colors";
+const CHOICE = "inline-flex h-8 items-center gap-1.5 rounded-[6px] border px-2.5 text-sm transition-colors";
 const CHOICE_ON = "border-primary/60 bg-primary/5 font-medium text-primary-ink";
 const CHOICE_OFF = "border-border hover:bg-muted";
 
@@ -726,7 +726,7 @@ const DURATIONS: { label: string; min: number | null }[] = [
 
 function FormOpener({ onSelect }: { onSelect: () => void }) {
   return (
-    <CommandItem value="custom-form" onSelect={onSelect} className="group gap-3 rounded-[4px] px-2 py-2">
+    <CommandItem value="custom-form" onSelect={onSelect} className="group gap-3 rounded-[6px] px-2 py-2">
       <Thumb>
         <Glyph name="sliders" className="size-5" />
       </Thumb>

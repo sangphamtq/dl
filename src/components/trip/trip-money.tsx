@@ -113,7 +113,7 @@ export function TripMoney({
   ] as const;
 
   const openForm = (
-    <Button onClick={() => setFormOpen(true)} className="h-11 w-full rounded-[6px] text-[0.9375rem]">
+    <Button onClick={() => setFormOpen(true)} className="h-11 w-full rounded-[10px] text-[0.9375rem]">
       <Glyph name="plus" className="size-4" />
       Ghi khoản chi
     </Button>
@@ -140,7 +140,7 @@ export function TripMoney({
           setEditing(null);
         }}
       >
-        <DialogContent className="max-h-[92dvh] overflow-y-auto rounded-[6px] p-0 sm:max-w-[34rem]">
+        <DialogContent className="max-h-[92dvh] overflow-y-auto rounded-[10px] p-0 sm:max-w-[34rem]">
           <DialogHeader className="px-5 pt-5">
             <DialogTitle className="font-[family-name:var(--font-display)] text-xl">
               {editing ? "Sửa khoản chi" : "Ghi khoản chi"}
@@ -167,7 +167,7 @@ export function TripMoney({
       {/* HÀNG TÓM TẮT: tiêu bao nhiêu · quỹ còn bao nhiêu. Sổ chi tiết (kể cả "ai trả ai") trải hết bề ngang
           bên dưới — bảng chia cần chỗ cho nhiều cột. */}
       <div className={cn("mt-6 grid items-stretch gap-3", !solo && "sm:grid-cols-2")}>
-        <section className="flex flex-col rounded-[6px] bg-band p-4">
+        <section className="flex flex-col rounded-[10px] bg-band p-4">
           <h2 className={cn(MICRO, "text-foreground/60")}>Tổng đã chi</h2>
           {/* Số trần, `tabular-nums` — KHÔNG biểu đồ tròn: một cái bánh chia màu chỉ vẽ lại đúng mấy con số
               này, mà lại đòi thêm một bảng chú giải. */}
@@ -197,7 +197,7 @@ export function TripMoney({
           <h2 className="text-base font-semibold">Sổ chi tiêu</h2>
           {/* Một chỗ, ba cách xem cùng một sổ. */}
           {!solo && spending.length > 0 && (
-            <div role="tablist" aria-label="Cách xem" className="flex max-w-full overflow-x-auto rounded-[6px] bg-muted p-1">
+            <div role="tablist" aria-label="Cách xem" className="flex max-w-full overflow-x-auto rounded-[10px] bg-muted p-1">
               {VIEWS.map(([v, label]) => (
                 <button
                   key={v}
@@ -206,7 +206,7 @@ export function TripMoney({
                   aria-selected={view === v}
                   onClick={() => setView(v)}
                   className={cn(
-                    "shrink-0 whitespace-nowrap rounded-[4px] px-2.5 py-1.5 text-sm font-medium transition-colors sm:px-3.5",
+                    "shrink-0 whitespace-nowrap rounded-[6px] px-2.5 py-1.5 text-sm font-medium transition-colors sm:px-3.5",
                     view === v
                       ? "bg-background text-foreground shadow-[0_1px_2px_rgb(0_0_0/0.08)]"
                       : "text-foreground/60 hover:text-foreground",
@@ -220,7 +220,7 @@ export function TripMoney({
         </div>
 
         {spending.length === 0 ? (
-          <div className="mt-3 rounded-[6px] bg-band px-5 py-8 text-center">
+          <div className="mt-3 rounded-[10px] bg-band px-5 py-8 text-center">
             <p className="text-sm font-medium">Chưa ghi khoản nào</p>
             <p className="mx-auto mt-1 max-w-sm text-sm leading-relaxed text-muted-foreground">
               Ghi ngay khi có người ứng tiền: tiền phòng, tiền xăng, bữa ăn ai đó trả cả bàn.
@@ -355,7 +355,7 @@ function FundCard({
   }
 
   return (
-    <section className="rounded-[6px] bg-band p-4">
+    <section className="rounded-[10px] bg-band p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className={cn(MICRO, "text-foreground/60")}>Quỹ chung</h2>
@@ -401,7 +401,7 @@ function FundCard({
                       <button
                         type="button"
                         aria-label={`Các lần góp của ${person?.name ?? "người này"}`}
-                        className="grid size-6 shrink-0 place-items-center rounded-[3px] text-muted-foreground opacity-0 transition-[opacity,background-color] hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-hover/ct:opacity-100 data-[state=open]:opacity-100 [@media(pointer:coarse)]:opacity-100"
+                        className="grid size-6 shrink-0 place-items-center rounded-[4px] text-muted-foreground opacity-0 transition-[opacity,background-color] hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-hover/ct:opacity-100 data-[state=open]:opacity-100 [@media(pointer:coarse)]:opacity-100"
                       >
                         <Glyph name="more" className="size-4" />
                       </button>
@@ -442,7 +442,7 @@ function KeeperPicker({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="inline-flex items-center gap-1.5 rounded-[4px] px-1.5 py-0.5 font-medium text-foreground transition-colors hover:bg-muted"
+          className="inline-flex items-center gap-1.5 rounded-[6px] px-1.5 py-0.5 font-medium text-foreground transition-colors hover:bg-muted"
         >
           <Face person={keeper} size="xs" />
           {keeper?.name ?? "Chưa chọn"}
@@ -460,7 +460,7 @@ function KeeperPicker({
               if (p.id !== keeper?.id) run(() => setFundKeeper(tripId, p.id));
             }}
             className={cn(
-              "flex w-full items-center gap-2.5 rounded-[4px] px-2 py-1.5 text-left text-sm transition-colors hover:bg-muted",
+              "flex w-full items-center gap-2.5 rounded-[6px] px-2 py-1.5 text-left text-sm transition-colors hover:bg-muted",
               p.id === keeper?.id && "bg-muted font-medium",
             )}
           >
@@ -509,7 +509,7 @@ function ContributeButton({
         <button
           type="button"
           disabled={pending}
-          className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-[4px] border border-border bg-background px-2.5 text-xs font-medium transition-colors hover:border-primary/40"
+          className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-[6px] border border-border bg-background px-2.5 text-xs font-medium transition-colors hover:border-primary/40"
         >
           <Glyph name="plus" className="size-3.5" />
           {first ? "Lập quỹ" : "Góp quỹ"}
@@ -517,7 +517,7 @@ function ContributeButton({
       </PopoverTrigger>
       <PopoverContent align="end" className="w-72 p-3">
         <form onSubmit={submit} className="grid gap-3">
-          <div role="tablist" className="flex rounded-[4px] bg-muted p-0.5 text-xs">
+          <div role="tablist" className="flex rounded-[6px] bg-muted p-0.5 text-xs">
             {(
               [
                 ["each", "Mỗi người góp"],
@@ -531,7 +531,7 @@ function ContributeButton({
                 aria-selected={mode === v}
                 onClick={() => setMode(v)}
                 className={cn(
-                  "flex-1 rounded-[3px] py-1 font-medium transition-colors",
+                  "flex-1 rounded-[4px] py-1 font-medium transition-colors",
                   mode === v ? "bg-background shadow-[0_1px_2px_rgb(0_0_0/0.08)]" : "text-foreground/60",
                 )}
               >
@@ -549,7 +549,7 @@ function ContributeButton({
                   onClick={() => setWho(p.id)}
                   aria-pressed={who === p.id}
                   className={cn(
-                    "flex items-center gap-2 rounded-[4px] px-2 py-1 text-left text-sm transition-colors hover:bg-muted",
+                    "flex items-center gap-2 rounded-[6px] px-2 py-1 text-left text-sm transition-colors hover:bg-muted",
                     who === p.id && "bg-muted font-medium",
                   )}
                 >
@@ -560,7 +560,7 @@ function ContributeButton({
             </div>
           )}
 
-          <label className="flex h-10 items-center rounded-[4px] border border-input bg-background pl-3 pr-2 focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50">
+          <label className="flex h-10 items-center rounded-[6px] border border-input bg-background pl-3 pr-2 focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50">
             <input
               autoFocus
               value={raw}
@@ -579,7 +579,7 @@ function ContributeButton({
               {people.length} người × {formatVnd(amount)} = {formatVnd(amount * people.length)}
             </p>
           )}
-          <Button type="submit" disabled={!amount || pending} className="h-9 rounded-[4px]">
+          <Button type="submit" disabled={!amount || pending} className="h-9 rounded-[6px]">
             Ghi vào quỹ
           </Button>
         </form>
@@ -671,7 +671,7 @@ function ExpenseRow({
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
-          className="flex min-w-0 flex-1 items-center gap-3 rounded-[4px] text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="flex min-w-0 flex-1 items-center gap-3 rounded-[6px] text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           {/* Cột giờ chi (theo giờ VN) — trống khi không nhớ giờ, để tên các khoản vẫn dóng một mép. */}
           <span className="w-10 shrink-0 self-start pt-0.5 text-xs font-medium tabular-nums text-muted-foreground">
@@ -716,7 +716,7 @@ function ExpenseRow({
               type="button"
               disabled={pending}
               aria-label={`Tuỳ chọn cho ${e.title}`}
-              className="grid size-7 shrink-0 place-items-center rounded-[3px] text-muted-foreground opacity-0 transition-[opacity,background-color] hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-hover/exp:opacity-100 data-[state=open]:opacity-100 [@media(pointer:coarse)]:opacity-100"
+              className="grid size-7 shrink-0 place-items-center rounded-[4px] text-muted-foreground opacity-0 transition-[opacity,background-color] hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-hover/exp:opacity-100 data-[state=open]:opacity-100 [@media(pointer:coarse)]:opacity-100"
             >
               <Glyph name="more" className="size-4" />
             </button>
@@ -811,7 +811,7 @@ function PersonRow({
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="flex w-full min-w-0 items-center gap-3 rounded-[4px] text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="flex w-full min-w-0 items-center gap-3 rounded-[6px] text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <Face person={person} />
         <div className="min-w-0 flex-1">
@@ -866,7 +866,7 @@ function ShareTable({ spending, people }: { spending: TripExpenseRow[]; people: 
 
   return (
     <section className="mt-3">
-      <div className="overflow-x-auto rounded-[6px]">
+      <div className="overflow-x-auto rounded-[10px]">
         <table className="w-full border-collapse text-sm tabular-nums">
           <thead>
             <tr className="border-b border-border/70 bg-band text-xs text-foreground/65">
@@ -954,7 +954,7 @@ function DeletedLog({ removed, pending, run }: { removed: TripExpenseRow[]; pend
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="flex items-center gap-2 rounded-[4px] py-1 text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="flex items-center gap-2 rounded-[6px] py-1 text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <Glyph
           name="chevron-down"
@@ -984,7 +984,7 @@ function DeletedLog({ removed, pending, run }: { removed: TripExpenseRow[]; pend
                 type="button"
                 onClick={() => run(() => restoreExpense(e.id))}
                 disabled={pending}
-                className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-[4px] px-2 text-xs font-medium text-foreground/75 transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-[6px] px-2 text-xs font-medium text-foreground/75 transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <RotateCcw className="size-3.5" aria-hidden />
                 Khôi phục
@@ -1163,7 +1163,7 @@ function ExpenseForm({
         <div className="mt-1.5 flex flex-col gap-2">
         <label
           className={cn(
-            "flex h-16 w-full items-center gap-1 rounded-[6px] border border-border bg-background px-4 transition-[border-color,box-shadow]",
+            "flex h-16 w-full items-center gap-1 rounded-[10px] border border-border bg-background px-4 transition-[border-color,box-shadow]",
             FIELD_FOCUS,
           )}
         >
@@ -1172,7 +1172,7 @@ function ExpenseForm({
               type="button"
               onClick={() => setDigits("")}
               aria-label="Xoá số tiền"
-              className="-ml-1.5 grid size-7 shrink-0 place-items-center rounded-[4px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="-ml-1.5 grid size-7 shrink-0 place-items-center rounded-[6px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
               <Glyph name="close" className="size-4" />
             </button>
@@ -1196,7 +1196,7 @@ function ExpenseForm({
               type="button"
               onClick={() => setDigits(String(nghin + d))}
               aria-label={`Cộng ${d} nghìn`}
-              className="h-[1.875rem] min-w-[3rem] rounded-[4px] border border-border bg-background px-2 text-[0.8125rem] font-medium tabular-nums transition-colors hover:border-primary/50 active:bg-muted"
+              className="h-[1.875rem] min-w-[3rem] rounded-[6px] border border-border bg-background px-2 text-[0.8125rem] font-medium tabular-nums transition-colors hover:border-primary/50 active:bg-muted"
             >
               +{d}k
             </button>
@@ -1209,7 +1209,7 @@ function ExpenseForm({
         <FieldLabel>Chi cho việc gì</FieldLabel>
         <label
           className={cn(
-            "mt-1.5 flex h-11 items-center rounded-[6px] border border-border bg-background px-3.5 transition-[border-color,box-shadow]",
+            "mt-1.5 flex h-11 items-center rounded-[10px] border border-border bg-background px-3.5 transition-[border-color,box-shadow]",
             FIELD_FOCUS,
           )}
         >
@@ -1228,7 +1228,7 @@ function ExpenseForm({
               type="button"
               onClick={() => setTitle(t)}
               className={cn(
-                "h-8 rounded-[4px] px-2.5 text-[0.8125rem] transition-colors",
+                "h-8 rounded-[6px] px-2.5 text-[0.8125rem] transition-colors",
                 title === t ? "bg-foreground text-background" : "bg-muted text-foreground/75 hover:text-foreground",
               )}
             >
@@ -1238,7 +1238,7 @@ function ExpenseForm({
           <button
             type="button"
             onClick={() => setMoreHints((v) => !v)}
-            className="h-8 rounded-[4px] px-2 text-[0.8125rem] font-medium text-primary-ink hover:underline"
+            className="h-8 rounded-[6px] px-2 text-[0.8125rem] font-medium text-primary-ink hover:underline"
           >
             {moreHints ? "Thu gọn" : `+${TITLE_HINTS.length - TITLE_FIRST} gợi ý khác`}
           </button>
@@ -1275,7 +1275,7 @@ function ExpenseForm({
             <span className="text-xs text-muted-foreground">Lúc</span>
             <label
               className={cn(
-                "flex h-10 w-24 items-center rounded-[6px] border border-border bg-background px-3 transition-[border-color,box-shadow]",
+                "flex h-10 w-24 items-center rounded-[10px] border border-border bg-background px-3 transition-[border-color,box-shadow]",
                 FIELD_FOCUS,
                 time !== "" && timeMin == null && "border-warm",
               )}
@@ -1303,7 +1303,7 @@ function ExpenseForm({
             <FieldLabel>Ai trả</FieldLabel>
             <div className="mt-1.5 flex flex-wrap gap-1.5">
               <Choice selected={paidById === FUND} onClick={() => setPaidById(FUND)}>
-                <span className="grid size-6 place-items-center rounded-[4px] bg-muted">
+                <span className="grid size-6 place-items-center rounded-[6px] bg-muted">
                   <Glyph name="wallet" className="size-3.5" />
                 </span>
                 Quỹ chung
@@ -1320,7 +1320,7 @@ function ExpenseForm({
           <div>
             <div className="flex items-center justify-between gap-3">
               <FieldLabel>Chia cho</FieldLabel>
-              <div role="tablist" aria-label="Cách chia" className="flex rounded-[4px] bg-muted p-0.5 text-xs">
+              <div role="tablist" aria-label="Cách chia" className="flex rounded-[6px] bg-muted p-0.5 text-xs">
                 {(
                   [
                     ["even", "Chia đều"],
@@ -1334,7 +1334,7 @@ function ExpenseForm({
                     aria-selected={mode === v}
                     onClick={() => setMode(v)}
                     className={cn(
-                      "rounded-[3px] px-2.5 py-1 font-medium transition-colors",
+                      "rounded-[4px] px-2.5 py-1 font-medium transition-colors",
                       mode === v
                         ? "bg-background text-foreground shadow-[0_1px_2px_rgb(0_0_0/0.08)]"
                         : "text-foreground/60 hover:text-foreground",
@@ -1375,7 +1375,7 @@ function ExpenseForm({
                       </span>
                       <label
                         className={cn(
-                          "flex h-10 w-36 shrink-0 items-center rounded-[6px] border border-border bg-background pl-3 pr-2.5 transition-[border-color,box-shadow]",
+                          "flex h-10 w-36 shrink-0 items-center rounded-[10px] border border-border bg-background pl-3 pr-2.5 transition-[border-color,box-shadow]",
                           FIELD_FOCUS,
                         )}
                       >
@@ -1428,7 +1428,7 @@ function ExpenseForm({
         </>
       )}
 
-      <Button type="submit" disabled={pending || !canSubmit} className="h-12 w-full rounded-[6px] text-base">
+      <Button type="submit" disabled={pending || !canSubmit} className="h-12 w-full rounded-[10px] text-base">
         {amount > 0 ? (
           <>
             Ghi khoản <span className="tabular-nums">{formatVnd(amount)}</span>
@@ -1484,7 +1484,7 @@ function Choice({
       onClick={onClick}
       aria-pressed={selected}
       className={cn(
-        "inline-flex h-10 items-center gap-2 rounded-[6px] border pl-1.5 pr-3 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        "inline-flex h-10 items-center gap-2 rounded-[10px] border pl-1.5 pr-3 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         selected
           ? "border-primary bg-primary/[0.08] font-medium text-foreground"
           : "border-border bg-background text-foreground/75 hover:border-foreground/25 hover:text-foreground",

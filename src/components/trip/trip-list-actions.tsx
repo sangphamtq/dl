@@ -31,7 +31,7 @@ export function NewTripButton() {
   return (
     <Button
       asChild
-      className="h-11 rounded-[4px] bg-warm px-5 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-warm-foreground hover:bg-warm/90"
+      className="h-11 rounded-[6px] bg-warm px-5 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-warm-foreground hover:bg-warm/90"
     >
       <Link href="/lich-trinh/cua-toi/tao">
         <Glyph name="plus" className="size-4" />

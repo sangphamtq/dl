@@ -182,7 +182,7 @@ function NoteCard({
   const edited = n.updatedAt.getTime() - n.createdAt.getTime() > 1000;
   return (
     // Thẻ KHÔNG bấm được (sửa qua menu ⋯) ⇒ khai bằng NỀN, không viền — chữ bôi đen chép được.
-    <li className="group/note flex flex-col rounded-[6px] bg-band">
+    <li className="group/note flex flex-col rounded-[10px] bg-band">
       <p
         className={cn(
           "whitespace-pre-wrap break-words leading-relaxed",
@@ -210,7 +210,7 @@ function NoteCard({
               type="button"
               disabled={pending}
               aria-label="Tuỳ chọn ghi chú"
-              className="-mr-1.5 ml-auto grid size-7 shrink-0 place-items-center rounded-[3px] text-muted-foreground opacity-0 transition-[opacity,background-color] hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-hover/note:opacity-100 data-[state=open]:opacity-100 [@media(pointer:coarse)]:opacity-100"
+              className="-mr-1.5 ml-auto grid size-7 shrink-0 place-items-center rounded-[4px] text-muted-foreground opacity-0 transition-[opacity,background-color] hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-hover/note:opacity-100 data-[state=open]:opacity-100 [@media(pointer:coarse)]:opacity-100"
             >
               <Glyph name="more" className="size-4" />
             </button>
@@ -293,7 +293,7 @@ function NoteForm({
         if (dirty) onSubmit(body);
       }}
       className={cn(
-        "rounded-[6px] border bg-background transition-[border-color,box-shadow]",
+        "rounded-[10px] border bg-background transition-[border-color,box-shadow]",
         open
           ? "border-primary/50 shadow-[0_0_0_3px_color-mix(in_oklab,var(--color-primary)_12%,transparent)]"
           : "border-border hover:border-foreground/25",
@@ -348,7 +348,7 @@ function NoteForm({
                 onCancel();
               }}
               disabled={pending}
-              className="h-8 rounded-[4px] px-3"
+              className="h-8 rounded-[6px] px-3"
             >
               Huỷ
             </Button>
@@ -356,7 +356,7 @@ function NoteForm({
               type="submit"
               onMouseDown={(e) => e.preventDefault()}
               disabled={pending || !dirty}
-              className="h-8 rounded-[4px] px-3"
+              className="h-8 rounded-[6px] px-3"
             >
               {pending && <Loader2 className="size-4 animate-spin" aria-hidden />}
               {submitLabel}

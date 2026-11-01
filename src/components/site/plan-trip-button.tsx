@@ -249,7 +249,7 @@ export function PlanTripButton({
         onClick={onClick}
         disabled={pending}
         className={cn(
-          "rounded-[4px] bg-warm text-warm-foreground hover:bg-warm/90",
+          "rounded-[6px] bg-warm text-warm-foreground hover:bg-warm/90",
           className,
         )}
       >

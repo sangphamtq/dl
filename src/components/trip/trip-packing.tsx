@@ -122,7 +122,7 @@ function StateMark({ state }: { state: PackState }) {
     <span
       aria-hidden
       className={cn(
-        "grid size-5 shrink-0 place-items-center rounded-[4px] border-[1.5px] transition-colors",
+        "grid size-5 shrink-0 place-items-center rounded-[6px] border-[1.5px] transition-colors",
         state === "none" && "border-border bg-background",
         state === "ready" && "border-primary bg-background text-primary",
         state === "packed" && "border-primary bg-primary text-primary-foreground",
@@ -168,7 +168,7 @@ function Section({
             type="button"
             onClick={() => setOpen((v) => !v)}
             aria-expanded={open}
-            className="-ml-1 flex flex-wrap items-baseline gap-x-2.5 rounded-[4px] px-1 text-left text-base font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="-ml-1 flex flex-wrap items-baseline gap-x-2.5 rounded-[6px] px-1 text-left text-base font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <Chevron open={open} className="size-4 self-center" />
             {title}
@@ -298,7 +298,7 @@ function GroupBlock({
               type="button"
               onClick={() => setOpen((v) => !v)}
               aria-expanded={open}
-              className="-ml-1 flex items-center gap-1.5 rounded-[3px] px-1 text-xs font-semibold text-foreground/80 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="-ml-1 flex items-center gap-1.5 rounded-[4px] px-1 text-xs font-semibold text-foreground/80 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <Chevron open={open} className="size-3.5" />
               {label}
@@ -313,7 +313,7 @@ function GroupBlock({
             <button
               type="button"
               aria-label={`Tuỳ chọn nhóm ${label}`}
-              className="grid size-6 place-items-center rounded-[3px] text-muted-foreground opacity-0 transition-[opacity,background-color] hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-hover/grp:opacity-100 data-[state=open]:opacity-100 [@media(pointer:coarse)]:opacity-100"
+              className="grid size-6 place-items-center rounded-[4px] text-muted-foreground opacity-0 transition-[opacity,background-color] hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-hover/grp:opacity-100 data-[state=open]:opacity-100 [@media(pointer:coarse)]:opacity-100"
             >
               <Glyph name="more" className="size-4" />
             </button>
@@ -401,7 +401,7 @@ function InlineText({
       }}
       aria-label={ariaLabel}
       className={cn(
-        "-ml-1.5 min-w-0 flex-1 rounded-[4px] bg-background px-1.5 outline-none shadow-[0_0_0_1.5px_color-mix(in_oklab,var(--color-primary)_70%,transparent),0_0_0_4px_color-mix(in_oklab,var(--color-primary)_14%,transparent)]",
+        "-ml-1.5 min-w-0 flex-1 rounded-[6px] bg-background px-1.5 outline-none shadow-[0_0_0_1.5px_color-mix(in_oklab,var(--color-primary)_70%,transparent),0_0_0_4px_color-mix(in_oklab,var(--color-primary)_14%,transparent)]",
         className,
         TOUCH_INPUT,
       )}
@@ -442,7 +442,7 @@ function AddRow({
         setDraft("");
         run(() => addPackItem(tripId, name, scope, group));
       }}
-      className="flex items-center gap-3 rounded-[4px] px-1 transition-colors focus-within:bg-muted/60 hover:bg-muted/40"
+      className="flex items-center gap-3 rounded-[6px] px-1 transition-colors focus-within:bg-muted/60 hover:bg-muted/40"
     >
       <Glyph name="plus" className={cn("shrink-0 text-muted-foreground", small ? "size-3.5" : "size-4")} />
       <input
@@ -505,7 +505,7 @@ function PackRow({
         aria-label={`${item.name}: ${STATE_LABEL[state]}. Bấm để chuyển sang ${STATE_LABEL[NEXT[state]]}`}
         title={STATE_LABEL[state]}
         // Vùng bấm 36px dù ô vẽ ra chỉ 20px — dễ trúng trên điện thoại.
-        className="-ml-2 grid size-9 shrink-0 place-items-center rounded-[4px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="-ml-2 grid size-9 shrink-0 place-items-center rounded-[6px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <StateMark state={state} />
       </button>
@@ -556,7 +556,7 @@ function RowMenu({
           type="button"
           disabled={pending}
           aria-label={`Tuỳ chọn cho ${item.name}`}
-          className="grid size-7 shrink-0 place-items-center rounded-[3px] text-muted-foreground opacity-0 transition-[opacity,background-color] hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-hover/pack:opacity-100 data-[state=open]:opacity-100 [@media(pointer:coarse)]:opacity-100"
+          className="grid size-7 shrink-0 place-items-center rounded-[4px] text-muted-foreground opacity-0 transition-[opacity,background-color] hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-hover/pack:opacity-100 data-[state=open]:opacity-100 [@media(pointer:coarse)]:opacity-100"
         >
           <Glyph name="more" className="size-4" />
         </button>
@@ -620,7 +620,7 @@ function AssigneePicker({
           disabled={pending}
           aria-label={item.assignee ? `Đổi người mang ${item.name}` : `Chọn người mang ${item.name}`}
           className={cn(
-            "flex h-7 shrink-0 items-center gap-1.5 rounded-[4px] px-1.5 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            "flex h-7 shrink-0 items-center gap-1.5 rounded-[6px] px-1.5 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
             item.assignee
               ? "text-muted-foreground hover:bg-muted hover:text-foreground"
               : "border border-dashed border-warm/60 text-warm-ink hover:bg-warm/10",
@@ -651,7 +651,7 @@ function AssigneePicker({
             type="button"
             onClick={() => pick(p.id)}
             className={cn(
-              "flex w-full items-center gap-2.5 rounded-[4px] px-2 py-1.5 text-left text-sm transition-colors hover:bg-muted",
+              "flex w-full items-center gap-2.5 rounded-[6px] px-2 py-1.5 text-left text-sm transition-colors hover:bg-muted",
               item.assignee?.id === p.id && "bg-muted font-medium",
             )}
           >
@@ -666,7 +666,7 @@ function AssigneePicker({
           <button
             type="button"
             onClick={() => pick(null)}
-            className="mt-1 flex w-full items-center gap-2.5 rounded-[4px] px-2 py-1.5 pt-2.5 text-left text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="mt-1 flex w-full items-center gap-2.5 rounded-[6px] px-2 py-1.5 pt-2.5 text-left text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <Glyph name="close" className="size-4 shrink-0" />
             Bỏ gán
@@ -789,7 +789,7 @@ function ScopeButton({
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-[4px] px-2.5 py-1 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        "inline-flex items-center gap-1.5 rounded-[6px] px-2.5 py-1 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         active ? "bg-foreground font-medium text-background" : "text-foreground/75 hover:bg-muted hover:text-foreground",
       )}
     >
@@ -836,7 +836,7 @@ function Group({
             }, 320);
         }}
         aria-expanded={open}
-        className="flex w-full items-center gap-2 rounded-[4px] px-1 py-2 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="flex w-full items-center gap-2 rounded-[6px] px-1 py-2 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <Glyph name="chevron-down"
           className={cn(
@@ -873,14 +873,14 @@ function Group({
                   tabIndex={open ? 0 : -1}
                   onClick={() => onClick(name)}
                   className={cn(
-                    "flex w-full items-center gap-2.5 rounded-[4px] px-2 py-1.5 text-left text-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    "flex w-full items-center gap-2.5 rounded-[6px] px-2 py-1.5 text-left text-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                     on ? "text-foreground/60" : "text-foreground",
                   )}
                 >
                   <span
                     aria-hidden
                     className={cn(
-                      "grid size-[1.125rem] shrink-0 place-items-center rounded-[3px] border transition-colors",
+                      "grid size-[1.125rem] shrink-0 place-items-center rounded-[4px] border transition-colors",
                       on ? "border-primary bg-primary text-primary-foreground" : "border-border",
                     )}
                   >

@@ -37,7 +37,7 @@ export function TripDayStrip({
     // DẢI PHÂN ĐOẠN: các ngày nằm trong MỘT khay nền nhạt, ngày đang chọn là ô TRẮNG nổi nhẹ (kiểu segmented control) —
     // không gạch chân, không viền từng ô. Ngày lịch chỉ hiện Ở ĐÂY (đầu ngày bên dưới không lặp lại).
     // TRẢI HẾT bề ngang: các ngày chia đều (`flex-1`), nhiều ngày quá thì mỗi ô giữ tối thiểu 5.5rem và cuộn ngang.
-    <div ref={railRef} className={cn("hide-scrollbar overflow-x-auto rounded-[6px]", TOOLBAR_TRAY)}>
+    <div ref={railRef} className={cn("hide-scrollbar overflow-x-auto rounded-[10px]", TOOLBAR_TRAY)}>
       <div className="flex w-full gap-0.5 p-1">
         {days.map((day) => {
           const on = day.id === activeId;
@@ -56,7 +56,7 @@ export function TripDayStrip({
               onClick={() => onPick(day.id)}
               aria-pressed={on}
               className={cn(
-                "relative flex min-w-[5.5rem] flex-1 flex-col items-center rounded-[4px] px-3 py-1.5 text-center transition-[background-color,box-shadow,color] duration-150",
+                "relative flex min-w-[5.5rem] flex-1 flex-col items-center rounded-[6px] px-3 py-1.5 text-center transition-[background-color,box-shadow,color] duration-150",
                 on
                   ? "bg-background text-foreground shadow-[0_1px_2px_rgb(0_0_0/0.08),0_1px_6px_-2px_rgb(0_0_0/0.12)] dark:shadow-none dark:ring-1 dark:ring-white/10"
                   : "text-muted-foreground hover:bg-background/50 hover:text-foreground",

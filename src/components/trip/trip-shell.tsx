@@ -24,7 +24,7 @@ const STICKY = "lg:sticky lg:top-22 lg:h-[calc(100dvh-7rem)]";
 // vùng khác nhau". Ôm sát nội dung (`self-start`) chứ không kéo dài hết màn —
 // ở mấy mục chỉ có 5 hàng nav, một mảng nền cao 100dvh đọc ra như trang lỗi.
 const PANEL =
-  "rounded-[6px] lg:sticky lg:top-22 lg:max-h-[calc(100dvh-7rem)] lg:self-start";
+  "rounded-[10px] lg:sticky lg:top-22 lg:max-h-[calc(100dvh-7rem)] lg:self-start";
 
 const RIGHT_ICONS = { map: "pin", backpack: "bag", note: "note" } as const;
 
@@ -45,7 +45,7 @@ const COLS: Record<string, string> = {
 };
 
 const ICON_BTN =
-  "grid shrink-0 place-items-center rounded-[3px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground";
+  "grid shrink-0 place-items-center rounded-[4px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground";
 
 function CollapseButton({ onClick }: { onClick: () => void }) {
   return (
@@ -239,7 +239,7 @@ export function TripShell({
                 <div className="flex h-6 items-center gap-2 lg:pl-2.5">
                   <h2 className={cn(MICRO, "min-w-0 truncate text-foreground/60")}>{asideTitle}</h2>
                   {asideCount != null && asideCount > 0 && (
-                    <span className="rounded-[3px] bg-muted px-1.5 text-[0.6875rem] font-semibold leading-5 tabular-nums text-muted-foreground">
+                    <span className="rounded-[4px] bg-muted px-1.5 text-[0.6875rem] font-semibold leading-5 tabular-nums text-muted-foreground">
                       {asideCount}
                     </span>
                   )}
@@ -256,7 +256,7 @@ export function TripShell({
                     className={cn(
                       "mt-2.5",
                       banner &&
-                        "rounded-[6px] bg-background p-2 shadow-[0_1px_2px_rgb(0_0_0/0.04),0_4px_16px_-4px_rgb(0_0_0/0.06)]",
+                        "rounded-[10px] bg-background p-2 shadow-[0_1px_2px_rgb(0_0_0/0.04),0_4px_16px_-4px_rgb(0_0_0/0.06)]",
                     )}
                   >
                     {aside}
@@ -274,7 +274,7 @@ export function TripShell({
             // Tờ trắng: dưới lg tràn hết bề ngang (lề âm = lề khung), từ lg là tấm bo góc + bóng mềm.
             // Chỉ BÓNG, không viền — mỗi khối khai độ nổi một lần.
             banner &&
-              "-mx-4 bg-background px-4 pb-10 sm:-mx-6 sm:px-6 lg:mx-0 lg:rounded-[6px] lg:px-8 lg:pt-2 lg:shadow-[0_1px_2px_rgb(0_0_0/0.04),0_4px_16px_-4px_rgb(0_0_0/0.06)]",
+              "-mx-4 bg-background px-4 pb-10 sm:-mx-6 sm:px-6 lg:mx-0 lg:rounded-[10px] lg:px-8 lg:pt-2 lg:shadow-[0_1px_2px_rgb(0_0_0/0.04),0_4px_16px_-4px_rgb(0_0_0/0.06)]",
           )}
         >
           {main}
@@ -308,7 +308,7 @@ export function TripShell({
                 tờ trắng + bóng mềm như cột lịch — nền xám mờ trên nền `band` đọc ra nhạt nhoà. */}
             <div
               className={cn(
-                "flex min-h-0 flex-auto flex-col rounded-[6px]",
+                "flex min-h-0 flex-auto flex-col rounded-[10px]",
                 banner
                   ? "bg-background lg:shadow-[0_1px_2px_rgb(0_0_0/0.04),0_4px_16px_-4px_rgb(0_0_0/0.06)]"
                   : "bg-muted/40",

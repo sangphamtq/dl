@@ -132,7 +132,7 @@ export function TripView({
               <Button
                 onClick={clone}
                 disabled={pending}
-                className="mt-7 h-11 rounded-[4px] bg-warm px-6 text-base text-warm-foreground shadow-lg shadow-black/20 hover:bg-warm/90"
+                className="mt-7 h-11 rounded-[6px] bg-warm px-6 text-base text-warm-foreground shadow-lg shadow-black/20 hover:bg-warm/90"
               >
                 {pending ? (
                   <Loader2 className="size-4 animate-spin" aria-hidden />

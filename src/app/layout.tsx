@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import { Be_Vietnam_Pro, Cabin, Mali } from "next/font/google";
+import { Mali } from "next/font/google";
+import localFont from "next/font/local";
 import { Toaster } from "sonner";
 import { getSettings } from "@/lib/settings";
 import { BackToTop } from "@/components/site/back-to-top";
@@ -9,16 +10,18 @@ import { PwaRegister } from "@/components/site/pwa-register";
 import { InstallPrompt } from "@/components/site/install-prompt";
 import "./globals.css";
 
-const cabin = Cabin({
+// MỘT họ chữ cho cả site: SVN-Gilroy — chữ thân (`--font-sans`) VÀ tiêu đề (`--font-display` trỏ về đây trong globals.css,
+// Be Vietnam Pro đã bỏ). SVN-Gilroy (bản Việt hoá — đủ dấu tiếng Việt), tự host từ `app/fonts/gilroy/` qua `next/font/local`.
+// Chỉ 4 độ đậm site dùng (400–700), WOFF2. Cần độ đậm khác thì thêm file + một dòng ở đây; đừng để trình duyệt tự "giả đậm".
+// ⚠️ Gilroy là font thương mại — giấy phép web phải có trước khi lên production.
+const gilroy = localFont({
   variable: "--font-sans",
-  subsets: ["latin", "vietnamese"],
-  display: "swap",
-});
-
-const display = Be_Vietnam_Pro({
-  variable: "--font-display",
-  subsets: ["latin", "vietnamese"],
-  weight: ["400", "500", "600", "700", "800"],
+  src: [
+    { path: "./fonts/gilroy/gilroy-400.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/gilroy/gilroy-500.woff2", weight: "500", style: "normal" },
+    { path: "./fonts/gilroy/gilroy-600.woff2", weight: "600", style: "normal" },
+    { path: "./fonts/gilroy/gilroy-700.woff2", weight: "700", style: "normal" },
+  ],
   display: "swap",
 });
 
@@ -60,7 +63,7 @@ export default async function RootLayout({
   return (
     <html
       lang="vi"
-      className={`${cabin.variable} ${display.variable} ${mali.variable} h-full antialiased`}
+      className={`${gilroy.variable} ${mali.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         {children}

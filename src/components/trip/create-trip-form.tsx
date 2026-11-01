@@ -117,7 +117,7 @@ export function CreateTripForm({
                   onClick={() => setDest(on ? null : d)}
                   aria-pressed={on}
                   className={cn(
-                    "inline-flex h-8 items-center gap-1 rounded-[4px] border px-2.5 text-sm transition-colors",
+                    "inline-flex h-8 items-center gap-1 rounded-[6px] border px-2.5 text-sm transition-colors",
                     on
                       ? "border-primary bg-primary font-medium text-primary-foreground"
                       : "border-border hover:border-primary/50 hover:text-primary-ink",
@@ -157,17 +157,17 @@ export function CreateTripForm({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder={autoTitle}
-            className="h-11 rounded-[4px]"
+            className="h-11 rounded-[6px]"
           />
           <span className="text-xs text-muted-foreground">Để trống thì đặt là “{autoTitle}”.</span>
         </label>
       </section>
 
       <div className="mt-10 flex items-center justify-end gap-2 border-t border-border pt-5">
-        <Button asChild variant="ghost" className="rounded-[4px]">
+        <Button asChild variant="ghost" className="rounded-[6px]">
           <Link href="/lich-trinh">Huỷ</Link>
         </Button>
-        <Button type="submit" disabled={pending} className="h-11 rounded-[4px] px-5">
+        <Button type="submit" disabled={pending} className="h-11 rounded-[6px] px-5">
           {pending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Glyph name="plus" className="size-4" />}
           Tạo lịch trình
         </Button>
@@ -204,7 +204,7 @@ function Picker({
         <PopoverTrigger asChild>
           <button
             type="button"
-            className="flex h-11 w-full items-center gap-2.5 rounded-[4px] border border-border bg-background px-3 text-left text-[0.9375rem] transition-colors hover:border-foreground/30 data-[state=open]:border-primary/50"
+            className="flex h-11 w-full items-center gap-2.5 rounded-[6px] border border-border bg-background px-3 text-left text-[0.9375rem] transition-colors hover:border-foreground/30 data-[state=open]:border-primary/50"
           >
             <Glyph name={icon} className="size-4 shrink-0 text-muted-foreground" />
             <span className={cn("min-w-0 flex-1 truncate", value ? "font-medium" : "text-muted-foreground")}>
@@ -218,7 +218,7 @@ function Picker({
             type="button"
             onClick={onClear}
             aria-label={`Bỏ chọn ${value}`}
-            className="absolute right-1.5 top-1/2 grid size-8 -translate-y-1/2 place-items-center rounded-[3px] text-muted-foreground hover:bg-muted hover:text-foreground"
+            className="absolute right-1.5 top-1/2 grid size-8 -translate-y-1/2 place-items-center rounded-[4px] text-muted-foreground hover:bg-muted hover:text-foreground"
           >
             <Glyph name="close" className="size-4" />
           </button>
@@ -238,10 +238,10 @@ function Picker({
                   onPick(it.key, it.label);
                   setOpen(false);
                 }}
-                className="gap-2.5 rounded-[4px] py-2"
+                className="gap-2.5 rounded-[6px] py-2"
               >
                 {it.image !== undefined && (
-                  <span className="relative size-8 shrink-0 overflow-hidden rounded-[3px] bg-muted">
+                  <span className="relative size-8 shrink-0 overflow-hidden rounded-[4px] bg-muted">
                     {it.image && <Image src={it.image} alt="" fill sizes="32px" className="object-cover" />}
                   </span>
                 )}
@@ -282,7 +282,7 @@ function Stepper<T extends number | null>({
   return (
     <div className="grid gap-1.5">
       <span className="text-sm font-semibold">{label}</span>
-      <div className="flex h-10 items-center rounded-[4px] border border-border">
+      <div className="flex h-10 items-center rounded-[6px] border border-border">
         <button
           type="button"
           onClick={() => onChange(Math.max(min, v - 1))}
@@ -319,7 +319,7 @@ function DatePicker({ value, days, onChange }: { value: string; days: number; on
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="flex h-10 w-full items-center gap-2 rounded-[4px] border border-border bg-background px-3 text-left text-sm transition-colors hover:border-foreground/30 data-[state=open]:border-primary/50"
+          className="flex h-10 w-full items-center gap-2 rounded-[6px] border border-border bg-background px-3 text-left text-sm transition-colors hover:border-foreground/30 data-[state=open]:border-primary/50"
         >
           <Glyph name="calendar" className="size-4 shrink-0 text-muted-foreground" />
           {start && end ? (

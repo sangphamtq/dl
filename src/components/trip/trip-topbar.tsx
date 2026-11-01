@@ -157,7 +157,7 @@ export function TripTopbar({
 
 /** Một "thuộc tính" của chuyến: icon + giá trị, bấm để chỉnh. Không viền — rê vào / đang mở mới có nền. */
 const PROP =
-  "inline-flex h-8 items-center gap-1.5 rounded-[4px] px-2 text-sm text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring data-[state=open]:bg-muted";
+  "inline-flex h-8 items-center gap-1.5 rounded-[6px] px-2 text-sm text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring data-[state=open]:bg-muted";
 const PROP_ICON = "size-4 shrink-0 text-muted-foreground";
 
 const WEEKDAY = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
@@ -276,7 +276,7 @@ export function MonthGrid({
           type="button"
           onClick={() => shift(-1)}
           aria-label="Tháng trước"
-          className="grid size-8 place-items-center rounded-[4px] text-muted-foreground hover:bg-muted hover:text-foreground"
+          className="grid size-8 place-items-center rounded-[6px] text-muted-foreground hover:bg-muted hover:text-foreground"
         >
           <Glyph name="back" className="size-4" />
         </button>
@@ -287,7 +287,7 @@ export function MonthGrid({
           type="button"
           onClick={() => shift(1)}
           aria-label="Tháng sau"
-          className="grid size-8 place-items-center rounded-[4px] text-muted-foreground hover:bg-muted hover:text-foreground"
+          className="grid size-8 place-items-center rounded-[6px] text-muted-foreground hover:bg-muted hover:text-foreground"
         >
           <Glyph name="forward" className="size-4" />
         </button>
@@ -305,7 +305,7 @@ export function MonthGrid({
               type="button"
               onClick={() => onPick(d)}
               className={cn(
-                "h-8 rounded-[4px] text-sm tabular-nums transition-colors",
+                "h-8 rounded-[6px] text-sm tabular-nums transition-colors",
                 value && isoDay(d) === isoDay(value)
                   ? "bg-primary font-semibold text-primary-foreground"
                   : inSpan(d)
@@ -373,7 +373,7 @@ function PartyChip({
             onClick={() => step(-1)}
             disabled={draft <= 1}
             aria-label="Bớt một người"
-            className="grid size-9 place-items-center rounded-[4px] border border-border text-lg leading-none hover:bg-muted disabled:opacity-40"
+            className="grid size-9 place-items-center rounded-[6px] border border-border text-lg leading-none hover:bg-muted disabled:opacity-40"
           >
             −
           </button>
@@ -383,7 +383,7 @@ function PartyChip({
             onClick={() => step(1)}
             disabled={draft >= 99}
             aria-label="Thêm một người"
-            className="grid size-9 place-items-center rounded-[4px] border border-border hover:bg-muted disabled:opacity-40"
+            className="grid size-9 place-items-center rounded-[6px] border border-border hover:bg-muted disabled:opacity-40"
           >
             <Glyph name="plus" className="size-4" />
           </button>
