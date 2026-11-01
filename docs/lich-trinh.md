@@ -221,7 +221,7 @@ Khung dùng chung cho **cả ba** trang (soạn · chia sẻ · mẫu) — `comp
 | **Dòng chặng** | "25 phút di chuyển  18 km" giữa hai thẻ | `RailLeg` |
 | **Hàng thêm** | ô "+" viền đứt + "Thêm vào ngày N" cuối trục | trong `DayBlock` |
 | **Hộp thêm** · **hộp sửa** | popup tìm/thêm · popup từ ✎ | `TripAddSearch`, `ItemEditDialog` |
-| **Ngăn nổi** | nút tròn giữa cạnh phải ở trang khác | `TripDock` |
+| **Ngăn nổi** | nút tròn trong cụm nút nổi góc dưới–phải ở trang khác | `TripDock` |
 
 ## 6a. Ngôn ngữ thị giác — dòng thời gian & thẻ
 
@@ -386,21 +386,28 @@ chọn mặc định BẬT (`ALL_ON`) — thêm trường mới thì thêm vào 
 
 Biến cookie "chuyến đang lên lịch" (vô hình) thành một **vật thể thường trực**.
 
-- **Một dạng duy nhất**: viên tròn **44px ở giữa cạnh phải** (dải đáy đã đông: `BottomNav`, `PeerBar`, `BackToTop`, lời mời
-  cài app), huy hiệu số **mục chưa xếp ngày** (0 thì không có). Nghĩa do `aria-label` + `title` gánh. Chưa đăng nhập vẫn hiện
+- **Một dạng duy nhất**: viên tròn **44px trong CỤM NÚT NỔI góc dưới–phải** (`FabStack` + `FabSlot order={10}`, ngay trên nút
+  lên đầu trang; cụm tự nâng lên trên `PeerBar`), huy hiệu số **mục chưa xếp ngày** (0 thì không có). Nghĩa do `aria-label` + `title` gánh. Chưa đăng nhập vẫn hiện
   (là cửa vào). Đã thử và BỎ: viên đổi hình theo trạng thái · cho kéo chính cái nút.
 - **Ngăn hiện CẢ LỊCH TRÌNH**: Chưa xếp ngày → từng ngày kèm mục → + Thêm ngày; tiêu đề nhóm `sticky`, nhãn "Ngày 2 · Tên".
   Mục trong túi: "Xếp ngày ▾" + thùng rác; mục trong ngày: chỉ "…". Ô tìm (chính `TripAddSearch`) dưới tên chuyến + nút
   **+** đầu từng nhóm. Đổi chuyến ngay trên tiêu đề.
-- **Kéo–thả trong ngăn** (giữa túi ↔ ngày): dùng **chung `applyMove`/`BACKLOG`/`dayKey`**. ⚠️ `data-vaul-no-drag` trên vùng
-  danh sách · ⚠️ `DndContext`/`DragOverlay` **ngoài** `DrawerContent` (vaul đặt `transform` ⇒ `fixed` lệch gốc toạ độ) ·
-  grip nhìn thấy được (không kéo cả hàng) · vùng rỗng vẫn là `DropZone`.
+- **Kéo–thả trong ngăn CHỈ đổi thứ tự trong CÙNG một nhóm** (một ngày, hoặc "Chưa xếp ngày") — biên tập: kéo trong ngày phải
+  mượt. `collide` = `closestCenter` lọc các mục cùng nhóm, khoá trục ngang (`lockX`); **không `DragOverlay`, không
+  `onDragOver`** — chính hàng đi theo tay, nhấc lên bằng nền + bóng. Chuyển ngày dùng nút "Xếp ngày" / ⋯ → "Chuyển sang". Nhóm
+  rỗng là ô chữ tĩnh (không còn `DropZone`). Đổi thứ tự không toast. Vẫn dùng chung `applyMove`/`BACKLOG`/`dayKey` của
+  `trip-dnd.ts`. ⚠️ `data-vaul-no-drag` trên vùng danh sách; grip nhìn thấy được (không kéo cả hàng).
 - ⚠️ `syncedSig` giữ chữ ký **bản server đã nhận gần nhất**, không phải của bàn cục bộ; đồng bộ **trong render**; cờ kéo là
   state `activeId`; `ItemRow` ở **cấp module** (khai trong render ⇒ unmount mỗi lần ⇒ menu vừa mở đóng ngay).
 - Dữ liệu ở client (`getTripBag`) ⇒ hộp thêm nhận `onAdded`, ngăn phát `tripBagChanged`. Hộp (Radix) lồng trên ngăn (vaul):
   Esc chỉ đóng hộp.
 - Cố ý **không** có giờ ước tính/cảnh báo (nhân đôi trang soạn thì sớm muộn lệch) ⇒ nút "Mở lịch trình →".
-- Trượt từ **đáy** dưới `lg`, nép **phải** từ `lg` — một `Drawer` đổi `direction`. Ẩn ở `/lich-trinh` `/ban-do` `/cms`
+- Trượt từ **đáy** dưới `lg`; từ `lg` là **tấm nổi** cách mép 12px, bo 16px (không dán sát cạnh phải) — một `Drawer` đổi
+  `direction`. Đầu ngăn: nhãn nhỏ "Đang lên lịch" + **tên chuyến chữ lớn** (bấm để đổi chuyến) + nút ×. ⚠️ **Ngăn KHÔNG thống kê** (biên tập: bớt số liệu): không "N ngày N mục", không số mục cạnh tên nhóm / trong menu
+  chuyển ngày / chọn chuyến; dòng loại dưới tên chỉ cho mục KHÔNG ảnh (di chuyển, tự thêm), bỏ "kèm N hoạt động".
+  Nhóm là chữ thường đậm vừa (chấm cam ở "Chưa xếp ngày" khi còn mục chờ); hàng không vạch ngăn, rê ⇒ nền nhạt + tay cầm
+  rõ lên. Nút nổi cùng khuôn nút "lên đầu trang" (bóng, không viền, icon `NavIcon route`). Mục đặc biệt để trống tên ghép tên
+  bằng `specialTitle` (`bagItem` trong `actions.ts`) như trang soạn — trước đó di chuyển hiện tên rỗng. Ẩn ở `/lich-trinh` `/ban-do` `/cms`
   `/sale` `/login` `/offline`.
 
 ## 6g. Thêm mục — hộp thêm, mục tự thêm, mục đặc biệt, hoạt động

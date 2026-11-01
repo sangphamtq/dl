@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Glyph, type GlyphName } from "@/components/site/glyphs";
+import { Glyph } from "@/components/site/glyphs";
 import { cn } from "@/lib/utils";
 import { R_BADGE, R_CTRL } from "@/lib/radius";
 import { PROVINCE_COUNT, PROVINCE_NAME_BY_SLUG } from "@/lib/provinces";
@@ -22,7 +22,6 @@ const REGION_GROUPS = REGIONS.map((r) => ({
     .sort((a, b) => a.name.localeCompare(b.name, "vi")),
 }));
 
-const MICRO = "text-[0.6rem] font-semibold uppercase tracking-[0.14em]";
 
 export function DaDenBoard({
   initialVisited,
@@ -76,125 +75,112 @@ export function DaDenBoard({
     });
   }
 
+  const regionStats = REGION_GROUPS.map((r) => ({
+    label: r.label,
+    done: r.provinces.filter((p) => visited.has(p.slug)).length,
+    all: r.provinces.length,
+  }));
+
   return (
     <>
-      <div className="mt-6 flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
+      {/* ĐẦU TRANG: tiêu đề + nút bên phải; dưới là KHỐI TỔNG KẾT — số lớn + thanh tiến độ + ba miền, mỗi miền một thanh nhỏ. */}
+      <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
         <div>
-          <p className="flex items-baseline gap-2">
-            <span className="font-[family-name:var(--font-display)] text-5xl font-bold tabular-nums leading-none tracking-tight text-foreground sm:text-6xl">
-              {total}
-            </span>
-            <span className="text-lg font-medium text-muted-foreground">
-              / {PROVINCE_COUNT} tỉnh thành
-            </span>
+          <h1 className="font-[family-name:var(--font-display)] text-[clamp(1.75rem,3.2vw,2.5rem)] font-semibold leading-tight tracking-tight">
+            Nơi bạn đã đến
+          </h1>
+          <p className="mt-1.5 text-[0.9375rem] text-muted-foreground">
+            Bấm vào tỉnh trên bản đồ hoặc trong danh sách để đánh dấu.
           </p>
-
-          <div className="mt-3.5 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
-            <Stat glyph="route">
-              <N>{percent}%</N> bản đồ đã tô
-            </Stat>
-            {left > 0 && (
-              <Stat glyph="pin">
-                còn <N>{left}</N> nơi chưa tới
-              </Stat>
-            )}
-          </div>
         </div>
-
         <div className="flex flex-wrap items-center gap-2">
-          <MapCustomizeButton
-            visited={[...visited]}
-            total={total}
-            opts={opts}
-            accountName={accountName}
-            onSaved={setOpts}
-          />
-          <MapExportButton
-            visited={[...visited]}
-            total={total}
-            opts={opts}
-          />
+          <MapCustomizeButton visited={[...visited]} total={total} opts={opts} accountName={accountName} onSaved={setOpts} />
+          <MapExportButton visited={[...visited]} total={total} opts={opts} />
         </div>
       </div>
 
-      <div
-        className={cn(R_BADGE, "mt-5 h-2 w-full overflow-hidden bg-muted")}
-        role="progressbar"
-        aria-valuenow={total}
-        aria-valuemin={0}
-        aria-valuemax={PROVINCE_COUNT}
-        aria-label={`Đã đến ${total} trên ${PROVINCE_COUNT} tỉnh thành`}
-      >
-        <div
-          className="h-full transition-[width] duration-300 ease-out motion-reduce:transition-none"
-          style={{
-            width: `${(total / PROVINCE_COUNT) * 100}%`,
-            backgroundColor: accent,
-          }}
-        />
+      {/* TỔNG KẾT — một dải: số lớn bên trái, thanh tiến độ trải phần còn lại với % và số còn lại ở hai đầu.
+          Không thống kê riêng từng miền (số từng miền đã nằm ở tiêu đề mỗi nhóm trong danh sách). */}
+      <div className="mt-8 flex flex-col gap-4 border-y border-border py-5 sm:flex-row sm:items-center sm:gap-8">
+        <p className="flex shrink-0 items-baseline gap-2">
+          <span className="font-[family-name:var(--font-display)] text-6xl font-bold tabular-nums leading-none tracking-tight">
+            {total}
+          </span>
+          <span className="text-lg font-medium text-muted-foreground">/ {PROVINCE_COUNT} tỉnh thành</span>
+        </p>
+        <div className="min-w-0 flex-1">
+          <p className="flex items-baseline justify-between gap-4 text-sm text-muted-foreground">
+            <span>
+              <N>{percent}%</N> bản đồ đã tô
+            </span>
+            {left > 0 ? (
+              <span>
+                còn <N>{left}</N> nơi chưa tới
+              </span>
+            ) : (
+              <span className="font-medium text-foreground">Đã đi hết 34 tỉnh thành</span>
+            )}
+          </p>
+          <Bar value={total} max={PROVINCE_COUNT} accent={accent} label={`Đã đến ${total} trên ${PROVINCE_COUNT} tỉnh thành`} thick />
+        </div>
       </div>
 
-      <p className="mt-3 text-sm text-muted-foreground">
-        Bấm vào tỉnh trên bản đồ hoặc trong danh sách để đánh dấu đã đến.
-      </p>
-
-      <div className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:gap-14">
+      <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,27rem)] lg:gap-12">
+        {/* Bản đồ đứng TRỰC TIẾP trên nền trang (không tấm nền — các tỉnh chưa đến vốn đã xám nhạt, thêm nền là chìm), dính khi
+            cuộn danh sách. */}
         <div className="lg:sticky lg:top-24 lg:self-start">
           <VietnamMap
             visited={visited}
             accent={accent}
-            className="mx-auto w-full max-w-[34rem]"
-            onToggle={(slug) =>
-              toggle(slug, PROVINCE_NAME_BY_SLUG[slug] ?? slug)
-            }
+            className="mx-auto w-full max-w-[32rem]"
+            onToggle={(slug) => toggle(slug, PROVINCE_NAME_BY_SLUG[slug] ?? slug)}
           />
         </div>
 
-        {/* Tên tỉnh giữ font viết tay (Mali): đây đúng vai "nhãn viết tay" mà
-            skill `design` dành cho font đó, và nó là chữ DUY NHẤT của trang
-            khớp với tấm ảnh chia sẻ — ảnh cũng nhúng Mali cho checklist. Tiêu
-            đề miền thì KHÔNG: nhãn cấu trúc dùng bộ chữ chung. */}
-        <div>
-          <h2 className={cn(MICRO, "text-muted-foreground")}>
-            Đánh dấu theo miền
-          </h2>
-
-          <div className="mt-4 space-y-7">
-            {REGION_GROUPS.map((region) => {
-              const done = region.provinces.filter((p) =>
-                visited.has(p.slug),
-              ).length;
-              return (
-                <section key={region.label}>
-                  <h3 className="flex items-baseline gap-2 border-b border-border pb-2">
-                    <span className={cn(MICRO, "text-foreground")}>
-                      {region.label}
-                    </span>
-                    <span className="ml-auto text-xs tabular-nums text-muted-foreground">
-                      <b className="font-semibold text-foreground">{done}</b>/
-                      {region.provinces.length}
-                    </span>
-                  </h3>
-
-                  <ul className="mt-1.5 columns-2 gap-x-4 [&>li]:break-inside-avoid">
-                    {region.provinces.map(({ slug, name }) => (
-                      <li key={slug}>
-                        <ProvinceRow
-                          name={name}
-                          on={visited.has(slug)}
-                          accent={accent}
-                          onClick={() => toggle(slug, name)}
-                        />
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              );
-            })}
-          </div>
+        {/* Tên tỉnh giữ font viết tay (Mali) — chữ DUY NHẤT của trang khớp tấm ảnh chia sẻ. Ô đánh dấu VUÔNG + tick trần (không
+            đổi hình: ảnh xuất ra vẽ đúng hình này — `checklistItem` trong share-map-button). */}
+        <div className="space-y-8">
+          {REGION_GROUPS.map((region, ri) => (
+            <section key={region.label}>
+              <h2 className="flex items-baseline gap-2">
+                <span className="font-[family-name:var(--font-display)] text-lg font-semibold tracking-tight">
+                  {region.label}
+                </span>
+                <span className="ml-auto text-sm tabular-nums text-muted-foreground">
+                  <b className="font-semibold text-foreground">{regionStats[ri].done}</b>/{regionStats[ri].all}
+                </span>
+              </h2>
+              <ul className="mt-2.5 grid grid-cols-2 gap-1">
+                {region.provinces.map(({ slug, name }) => (
+                  <li key={slug}>
+                    <ProvinceRow name={name} on={visited.has(slug)} accent={accent} onClick={() => toggle(slug, name)} />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
         </div>
       </div>
     </>
+  );
+}
+
+/** Thanh tiến độ: rãnh xám + phần đã đến tô `accent` (mảng — không bao giờ tô chữ bằng accent). */
+function Bar({ value, max, accent, label, thick }: { value: number; max: number; accent: string; label: string; thick?: boolean }) {
+  return (
+    <div
+      className={cn("mt-2 w-full overflow-hidden rounded-[4px] bg-foreground/[0.07]", thick ? "h-2.5" : "h-1.5")}
+      role="progressbar"
+      aria-valuenow={value}
+      aria-valuemin={0}
+      aria-valuemax={max}
+      aria-label={label}
+    >
+      <div
+        className="h-full rounded-[4px] transition-[width] duration-500 ease-out motion-reduce:transition-none"
+        style={{ width: `${max ? (value / max) * 100 : 0}%`, backgroundColor: accent }}
+      />
+    </div>
   );
 }
 
@@ -214,9 +200,10 @@ function ProvinceRow({
       type="button"
       onClick={onClick}
       aria-pressed={on}
+      // Đã đến: KHÔNG tô nền dòng (biên tập) — ô tick đặc màu + tên đậm là đủ.
       className={cn(
         R_CTRL,
-        "group flex w-full items-center gap-2.5 py-1.5 pr-2 text-left transition-colors hover:bg-muted/60",
+        "group flex h-10 w-full items-center gap-2.5 px-2.5 text-left transition-colors hover:bg-foreground/[0.04]",
       )}
     >
       <span
@@ -224,7 +211,7 @@ function ProvinceRow({
         className={cn(
           R_BADGE,
           "grid size-[1.125rem] shrink-0 place-items-center border transition-colors",
-          on ? "text-white" : "border-border group-hover:border-foreground/40",
+          on ? "text-white" : "border-foreground/25 bg-background group-hover:border-foreground/50",
         )}
       >
         {on && <Glyph name="tick" className="size-3" />}
@@ -233,30 +220,12 @@ function ProvinceRow({
         style={{ fontFamily: "var(--font-rounded)" }}
         className={cn(
           "truncate text-[0.9375rem] leading-tight transition-colors",
-          on ? "font-semibold text-foreground" : "text-muted-foreground",
+          on ? "font-semibold text-foreground" : "text-foreground/75",
         )}
       >
         {name}
       </span>
     </button>
-  );
-}
-
-function Stat({
-  glyph,
-  children,
-}: {
-  glyph: GlyphName;
-  children: React.ReactNode;
-}) {
-  return (
-    <span className="inline-flex items-center gap-1.5">
-      <Glyph
-        name={glyph}
-        className="size-[1.05rem] shrink-0 text-muted-foreground/70"
-      />
-      {children}
-    </span>
   );
 }
 

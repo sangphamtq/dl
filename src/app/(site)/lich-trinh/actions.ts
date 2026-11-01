@@ -14,7 +14,7 @@ import { isCatalogGroup, packGroupOf } from "@/lib/packing-suggestions";
 import { vnDayMinute } from "@/lib/trip-money";
 import { defaultTripTitle } from "@/lib/trip-title";
 import { resolveTripPlaceId } from "@/lib/trip";
-import { SPECIALS, TRAVEL_MODES, type TravelMode, type TripSpecial } from "@/lib/trip-special";
+import { SPECIALS, SPECIAL_LABEL, TRAVEL_MODES, specialTitle, type TravelMode, type TripSpecial } from "@/lib/trip-special";
 import { slugifyVi } from "@/lib/provinces";
 
 /**
@@ -2188,6 +2188,10 @@ const bagSelect = {
       dayId: true,
       parentId: true,
       customTitle: true,
+      special: true,
+      travelMode: true,
+      travelFrom: true,
+      travelTo: true,
       spot: { select: { slug: true, name: true, images: bagImages } },
       eatery: { select: { slug: true, name: true, images: bagImages } },
       accommodation: { select: { slug: true, name: true, images: bagImages } },
@@ -2231,10 +2235,14 @@ function bagItem(item: BagRow): TripBagItem {
       image: coverUrl(item.activity.images, item.activity.slug, 120, 120),
       href: `/hoat-dong/${item.activity.slug}`,
     };
+  // Mục đặc biệt để trống tên (`customTitle = ""`) ⇒ ghép tên lúc đọc như trang soạn ("Hà Nội – Phan Thiết", "Bữa ăn").
+  const special = (item.special ?? null) as TripSpecial | null;
   return {
     id: item.id,
-    name: item.customTitle ?? "Mục tự thêm",
-    typeLabel: "Tự thêm",
+    name: special
+      ? specialTitle({ special, title: item.customTitle, travelMode: item.travelMode, travelFrom: item.travelFrom, travelTo: item.travelTo })
+      : item.customTitle || "Mục tự thêm",
+    typeLabel: special ? SPECIAL_LABEL[special] : "Tự thêm",
     image: null,
     href: null,
   };

@@ -65,14 +65,31 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
   const [suggestions, setSuggestions] = useState<SearchHit[]>([]);
   const reqId = useRef(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [sugLoaded, setSugLoaded] = useState(false);
   const loadedSug = useRef(false);
 
+  // Gợi ý tải TRƯỚC, lúc trình duyệt rảnh sau khi trang dựng xong (hộp này luôn nằm sẵn trong header) — đợi tới lúc mở
+  // hộp mới hỏi thì lần mở đầu hộp nở ra giữa chừng ("giật"). Mở hộp sớm hơn lúc rảnh thì hỏi ngay lúc mở.
   useEffect(() => {
-    if (!open || loadedSug.current) return;
-    loadedSug.current = true;
-    getSuggestions()
-      .then((s) => setSuggestions(s))
-      .catch(() => {});
+    const load = () => {
+      if (loadedSug.current) return;
+      loadedSug.current = true;
+      getSuggestions()
+        .then((s) => setSuggestions(s))
+        .catch(() => {})
+        .finally(() => setSugLoaded(true));
+    };
+    if (open) {
+      load();
+      return;
+    }
+    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
+    if (w.requestIdleCallback) {
+      const id = w.requestIdleCallback(load, { timeout: 4000 });
+      return () => w.cancelIdleCallback?.(id);
+    }
+    const t = setTimeout(load, 1500);
+    return () => clearTimeout(t);
   }, [open]);
 
   useEffect(() => {
@@ -169,6 +186,19 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
             </div>
 
             <CommandList className={cn("max-h-[min(64vh,34rem)] px-2 pb-2", HEADING)}>
+              {/* Chưa có dữ liệu (mở hộp trước lúc tải sẵn xong): GIỮ CHỖ bằng chip xám đúng cỡ — hộp mở ra đã đúng chiều cao,
+                  không nở thêm khi dữ liệu về. */}
+              {!term && !sugLoaded && suggestions.length === 0 && (
+                <div aria-hidden className="px-1 pb-3 pt-3">
+                  <div className="mb-2.5 ml-2 h-4 w-28 animate-pulse rounded-[4px] bg-muted" />
+                  <div className="flex flex-wrap gap-1.5">
+                    {[6.5, 7.5, 7, 6, 7, 5.5].map((w, i) => (
+                      <span key={i} className="h-10 animate-pulse rounded-[10px] bg-foreground/[0.04]" style={{ width: `${w}rem` }} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {!term && suggestions.length > 0 && (
                 // GỢI Ý = CHIP nhỏ (ảnh vuông 28px + tên, KHÔNG tên tỉnh), xuống dòng tự do — hộp mở ra gọn, chỗ chính dành cho ô gõ.
                 <CommandGroup heading="Điểm đến nổi bật">

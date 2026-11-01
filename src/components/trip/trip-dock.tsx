@@ -14,14 +14,16 @@ import {
   GripVertical,
   MoreHorizontal,
   Plus,
-  Route,
   Trash2,
   Undo2,
+  XIcon,
 } from "@/components/icons";
+import { NavIcon } from "@/components/site/nav-icons";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
+  DrawerClose,
   DrawerContent,
   DrawerDescription,
   DrawerTitle,
@@ -35,18 +37,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  closestCorners,
+  closestCenter,
   DndContext,
-  DragOverlay,
   KeyboardSensor,
   PointerSensor,
   TouchSensor,
-  useDroppable,
   useSensor,
   useSensors,
+  type CollisionDetection,
   type DragEndEvent,
-  type DragOverEvent,
   type DragStartEvent,
+  type Modifier,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -56,6 +57,10 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { LoginDrawer } from "@/components/site/login-drawer";
+import { useCollapsedDays } from "@/components/trip/trip-collapse";
+import { FabSlot } from "@/components/site/fab-stack";
+import { FAB_BTN } from "@/lib/fab-ui";
+import { MENU_CONTENT, MENU_ITEM, MENU_ITEM_DANGER, MENU_LABEL, MENU_SEP } from "@/lib/menu-ui";
 import { Glyph } from "@/components/site/glyphs";
 import { TripAddSearch, type AddTarget } from "@/components/trip/trip-add-search";
 import { applyMove, BACKLOG, dayIdOf, dayKey, type Board } from "@/components/trip/trip-dnd";
@@ -82,13 +87,15 @@ const HIDDEN_ON = [
   "/offline",
 ];
 
+const lockX: Modifier = ({ transform }) => ({ ...transform, x: 0 });
+
 function dayNo(d: { index: number }): string {
   return `Ngày ${d.index + 1}`;
 }
 
 function dayLabel(d: { index: number; title: string | null }): string {
   const t = d.title?.trim();
-  return t ? `${dayNo(d)} · ${t}` : dayNo(d);
+  return t ? `${dayNo(d)}  ${t}` : dayNo(d);
 }
 
 function boardOf(bag: TripBag): Board {
@@ -122,6 +129,9 @@ export function TripDock({ initial }: { initial: TripBag }) {
     setOpen(false);
     router.push("/lich-trinh/cua-toi/tao");
   };
+
+  // Thu gọn từng nhóm (Chưa xếp ngày = "backlog", mỗi ngày = id ngày) — khoá riêng `dock:` để không đụng trang soạn.
+  const [collapsed, setCollapsed] = useCollapsedDays(`dock:${bag.trip?.id ?? "none"}`);
 
   const hidden = HIDDEN_ON.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
@@ -220,7 +230,6 @@ export function TripDock({ initial }: { initial: TripBag }) {
   }
 
   const backlogIds = board[BACKLOG] ?? [];
-  const activeItem = activeId ? (byId.get(activeId) ?? null) : null;
 
   function moveTo(it: TripBagItem, dayId: string | null, at: DropAt, label: string) {
     act(async () => {
@@ -251,40 +260,37 @@ export function TripDock({ initial }: { initial: TripBag }) {
     setActiveId(String(e.active.id));
   }
 
-  function onDragOver(e: DragOverEvent) {
-    if (!e.over) return;
-    const a = String(e.active.id);
-    const from = containerOf(board, a);
-    const to = containerOf(board, String(e.over.id));
-    if (from && to && from !== to) setBoard((prev) => applyMove(prev, a, String(e.over!.id)));
-  }
+  // Kéo CHỈ đổi thứ tự trong CÙNG một ngày (hoặc trong "Chưa xếp ngày"): dò va chạm chỉ trong vùng của mục đang kéo,
+  // nên không có bước "đổi vùng giữa chừng" (thứ làm danh sách nhảy). Chuyển ngày dùng menu "Xếp ngày" / ⋯.
+  const collide: CollisionDetection = (args) => {
+    const home = containerOf(board, String(args.active.id));
+    const mates = home ? board[home] : [];
+    return closestCenter({
+      ...args,
+      droppableContainers: args.droppableContainers.filter((c) => mates.includes(String(c.id))),
+    });
+  };
 
   function onDragEnd(e: DragEndEvent) {
     const id = String(e.active.id);
     setActiveId(null);
     if (!e.over || !bag.trip) return;
 
+    const container = containerOf(board, id);
+    if (!container || containerOf(board, String(e.over.id)) !== container || e.over.id === id) return;
+
     const next = applyMove(board, id, String(e.over.id));
     setBoard(next);
     setSyncedSig(serverSig);
-
-    const container = Object.keys(next).find((k) => next[k].includes(id));
-    if (!container) return;
     const dayId = container === BACKLOG ? null : dayIdOf(container);
 
-    const item = byId.get(id);
+    // Đổi thứ tự là việc nhỏ: KHÔNG toast (bản cũ báo "Đã xếp … vào …" sau mỗi lần thả — ồn).
     start(async () => {
       const res = await moveItem(id, dayId, dropAt(next[container], id));
       if (!res.ok) {
         toast(res.error);
         syncBoard(await refresh());
         return;
-      }
-      if (item) {
-        const d = dayId ? bag.days.find((x) => x.id === dayId) : null;
-        toast.success(
-          d ? `Đã xếp ${item.name} vào ${dayLabel(d)}` : `Đã bỏ ${item.name} khỏi ngày`,
-        );
       }
       syncBoard(await refresh());
       tripBagChanged();
@@ -302,33 +308,33 @@ export function TripDock({ initial }: { initial: TripBag }) {
 
   return (
     <>
-      <button
-        ref={fabRef}
-        type="button"
-        onClick={() => show(true)}
-        aria-label={count > 0 ? `Lịch trình — ${count} mục chưa xếp ngày` : "Lịch trình"}
-        title="Lịch trình"
-        className={cn(
-          "fixed right-3 top-[62%] z-40 grid size-11 place-items-center rounded-full border border-border/60 bg-background/85 text-foreground shadow-lg shadow-black/10 backdrop-blur transition-all duration-200 hover:border-primary/40 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:right-4",
-          bump && "scale-110",
-        )}
-      >
-        <Route className="size-5" aria-hidden />
-        {count > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 grid size-4.5 place-items-center rounded-full bg-primary px-1 text-[10px] font-semibold leading-none text-primary-foreground ring-2 ring-background">
-            {count}
-          </span>
-        )}
-      </button>
+      <FabSlot order={10}>
+        <button
+          ref={fabRef}
+          type="button"
+          onClick={() => show(true)}
+          aria-label={count > 0 ? `Lịch trình — ${count} mục chưa xếp ngày` : "Lịch trình"}
+          title="Lịch trình"
+          // Nằm trong CỤM NÚT NỔI góc dưới–phải (`FabSlot`), cùng khuôn `FAB_BTN` với nút lên đầu trang.
+          className={cn(FAB_BTN, "transition-transform duration-200 hover:-translate-y-0.5", bump && "scale-110")}
+        >
+          <NavIcon name="route" active={false} className="size-5" />
+          {count > 0 && (
+            <span className="absolute -right-1 -top-1 grid h-[1.125rem] min-w-[1.125rem] place-items-center rounded-[5px] bg-primary px-1 text-[0.625rem] font-semibold tabular-nums leading-none text-primary-foreground ring-2 ring-background">
+              {count}
+            </span>
+          )}
+        </button>
+      </FabSlot>
 
       {/* `id` CỐ ĐỊNH: dnd-kit tự sinh id tăng dần cho `aria-describedby`, số
           trên server và trên client lệch nhau → hydration mismatch. */}
       <DndContext
         id="trip-dock-dnd"
         sensors={sensors}
-        collisionDetection={closestCorners}
+        collisionDetection={collide}
+        modifiers={[lockX]}
         onDragStart={onDragStart}
-        onDragOver={onDragOver}
         onDragEnd={onDragEnd}
         onDragCancel={() => {
           setActiveId(null);
@@ -336,11 +342,14 @@ export function TripDock({ initial }: { initial: TripBag }) {
         }}
       >
       <Drawer open={open} onOpenChange={show} direction={side}>
-        <DrawerContent className="lg:max-w-md lg:rounded-l-3xl">
+        {/* Từ lg: tấm NỔI cách mép 12px, bo 16px (không dán sát cạnh phải); dưới lg trượt từ đáy, bo 16px. */}
+        <DrawerContent className="border-0 shadow-[0_24px_64px_-16px_rgb(0_0_0/0.35)] data-[vaul-drawer-direction=bottom]:rounded-t-[16px] data-[vaul-drawer-direction=right]:inset-y-3 data-[vaul-drawer-direction=right]:right-3 data-[vaul-drawer-direction=right]:rounded-[16px] lg:max-w-[26rem] dark:ring-1 dark:ring-white/10">
           <div className="flex min-h-0 flex-1 flex-col">
-            <div className="flex items-start justify-between gap-3 px-4 pb-3 pt-3 lg:pt-5">
+            <div className="flex items-start justify-between gap-3 px-5 pb-3 pt-3 lg:pt-5">
               <div className="min-w-0 flex-1">
-                <DrawerTitle className="text-base">Lịch trình</DrawerTitle>
+                <DrawerTitle className="text-xs font-medium text-muted-foreground">
+                  {hasTrip ? "Đang lên lịch" : "Lịch trình"}
+                </DrawerTitle>
                 {hasTrip ? (
                   <>
                     <DrawerDescription className="sr-only">
@@ -355,16 +364,19 @@ export function TripDock({ initial }: { initial: TripBag }) {
                     <DropdownMenuTrigger asChild>
                       <button
                         type="button"
-                        className="-ml-1 mt-0.5 flex max-w-full items-center gap-1 rounded-md px-1 py-0.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                        // Tên chuyến LÀ tiêu đề (chữ lớn), bấm để đổi chuyến.
+                        className="-ml-1.5 mt-0.5 flex max-w-full items-center gap-1.5 rounded-[6px] px-1.5 py-0.5 text-left transition-colors hover:bg-foreground/[0.05]"
                       >
-                        <span className="truncate">{bag.trip!.title}</span>
-                        <ChevronDown className="size-3.5 shrink-0" aria-hidden />
+                        <span className="truncate font-[family-name:var(--font-display)] text-xl font-semibold tracking-tight">
+                          {bag.trip!.title}
+                        </span>
+                        <ChevronDown className="size-4 shrink-0 text-muted-foreground" aria-hidden />
                       </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="w-64">
-                      <DropdownMenuLabel>Đang lên lịch cho</DropdownMenuLabel>
+                    <DropdownMenuContent align="start" sideOffset={6} className={cn("w-64", MENU_CONTENT)}>
+                      <DropdownMenuLabel className={MENU_LABEL}>Đang lên lịch cho</DropdownMenuLabel>
                       {(trips ?? []).map((t) => (
-                        <DropdownMenuItem
+                        <DropdownMenuItem className={MENU_ITEM}
                           key={t.id}
                           onSelect={() =>
                             act(async () => {
@@ -375,15 +387,11 @@ export function TripDock({ initial }: { initial: TripBag }) {
                           }
                         >
                           <span className="min-w-0 flex-1 truncate">{t.title}</span>
-                          {t.id === bag.trip!.id ? (
-                            <Check className="size-4 text-primary" aria-hidden />
-                          ) : (
-                            <span className="text-xs text-muted-foreground">{t.count}</span>
-                          )}
+                          {t.id === bag.trip!.id && <Check className="size-4 text-primary" aria-hidden />}
                         </DropdownMenuItem>
                       ))}
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onSelect={newTrip}>
+                      <DropdownMenuSeparator className={MENU_SEP} />
+                      <DropdownMenuItem className={MENU_ITEM} onSelect={newTrip}>
                         <Plus className="size-4" aria-hidden />
                         Chuyến mới
                       </DropdownMenuItem>
@@ -396,17 +404,23 @@ export function TripDock({ initial }: { initial: TripBag }) {
                   </DrawerDescription>
                 )}
               </div>
-              {pending && (
-                <Loader2 className="mt-1 size-4 shrink-0 animate-spin text-muted-foreground" aria-hidden />
-              )}
+              <div className="flex shrink-0 items-center gap-1">
+                {pending && <Loader2 className="size-4 animate-spin text-muted-foreground" aria-hidden />}
+                <DrawerClose
+                  aria-label="Đóng"
+                  className="grid size-9 place-items-center rounded-[10px] bg-foreground/[0.05] text-foreground/70 transition-colors hover:bg-foreground/[0.1] hover:text-foreground"
+                >
+                  <XIcon className="size-[1.125rem]" />
+                </DrawerClose>
+              </div>
             </div>
 
             {hasTrip && (
-              <div className="px-4 pb-2">
+              <div className="px-5 pb-3">
                 <button
                   type="button"
                   onClick={() => setAddTarget({ dayId: null, label: "danh sách chưa xếp" })}
-                  className="flex h-9 w-full items-center gap-2 rounded-[6px] border border-border bg-background px-3 text-sm text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+                  className="flex h-10 w-full items-center gap-2.5 rounded-[10px] bg-foreground/[0.05] px-3 text-sm text-muted-foreground transition-colors hover:bg-foreground/[0.08] hover:text-foreground"
                 >
                   <Glyph name="search" className="size-4 shrink-0" />
                   <span className="min-w-0 truncate">Tìm hoặc tự thêm mục…</span>
@@ -414,7 +428,7 @@ export function TripDock({ initial }: { initial: TripBag }) {
               </div>
             )}
 
-            <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-2">
+            <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-2">
               {!bag.authed ? (
                 <Empty
                   title="Đăng nhập để bắt đầu"
@@ -448,9 +462,7 @@ export function TripDock({ initial }: { initial: TripBag }) {
                 <div className="pb-1" data-vaul-no-drag>
                   {total === 0 && (
                     <p className="pt-2 text-sm leading-relaxed text-muted-foreground">
-                      Chưa có mục nào. Tìm ở ô phía trên, bấm <strong className="font-semibold text-foreground">+</strong>{" "}
-                      cạnh một ngày để thêm thẳng vào ngày đó, hoặc bấm “Thêm vào lịch trình” ở
-                      trang một địa điểm.
+                      Chưa có mục nào. Tìm ở ô phía trên để thêm.
                     </p>
                   )}
                   <section>
@@ -458,13 +470,16 @@ export function TripDock({ initial }: { initial: TripBag }) {
                       label="Chưa xếp ngày"
                       count={backlogIds.length}
                       highlight
+                      open={!collapsed.has("backlog")}
+                      onToggle={() => setCollapsed("backlog", !collapsed.has("backlog"))}
                       onAdd={() => setAddTarget({ dayId: null, label: "danh sách chưa xếp" })}
                     />
+                    {!collapsed.has("backlog") && (
                     <SortableContext items={backlogIds} strategy={verticalListSortingStrategy}>
                       {backlogIds.length === 0 ? (
-                        <DropZone id={BACKLOG} label="Kéo vào đây để bỏ khỏi ngày" />
+                        <EmptyGroup label="Không còn mục nào chờ xếp." />
                       ) : (
-                        <ul className="divide-y divide-border/60">
+                        <ul className="space-y-0.5">
                           {backlogIds.map((id: string) => {
                             const it = byId.get(id);
                             return it ? (
@@ -476,7 +491,6 @@ export function TripDock({ initial }: { initial: TripBag }) {
                                 pending={pending}
                                 onNavigate={() => setOpen(false)}
                                 onMove={(dayId, at, label) => moveTo(it, dayId, at, label)}
-                                onAddDay={addDayNow}
                                 onRemove={() => removeNow(it)}
                               />
                             ) : null;
@@ -484,6 +498,7 @@ export function TripDock({ initial }: { initial: TripBag }) {
                         </ul>
                       )}
                     </SortableContext>
+                    )}
                   </section>
 
                   {bag.days.map((d) => {
@@ -493,13 +508,16 @@ export function TripDock({ initial }: { initial: TripBag }) {
                         <GroupHeading
                           label={dayLabel(d)}
                           count={ids.length}
+                          open={!collapsed.has(d.id)}
+                          onToggle={() => setCollapsed(d.id, !collapsed.has(d.id))}
                           onAdd={() => setAddTarget({ dayId: d.id, label: dayNo(d) })}
                         />
+                        {!collapsed.has(d.id) && (
                         <SortableContext items={ids} strategy={verticalListSortingStrategy}>
                           {ids.length === 0 ? (
-                            <DropZone id={dayKey(d.id)} label="Kéo một mục vào ngày này" />
+                            <EmptyGroup label="Chưa có mục nào. Bấm + để thêm." />
                           ) : (
-                            <ul className="divide-y divide-border/60">
+                            <ul className="space-y-0.5">
                               {ids.map((id: string, idx: number) => {
                                 const it = byId.get(id);
                                 return it ? (
@@ -518,14 +536,14 @@ export function TripDock({ initial }: { initial: TripBag }) {
                                       })
                                     }
                                     onMove={(dayId, at, label) => moveTo(it, dayId, at, label)}
-                                    onAddDay={addDayNow}
-                                    onRemove={() => removeNow(it)}
+                                        onRemove={() => removeNow(it)}
                                   />
                                 ) : null;
                               })}
                             </ul>
                           )}
                         </SortableContext>
+                        )}
                       </section>
                     );
                   })}
@@ -534,7 +552,7 @@ export function TripDock({ initial }: { initial: TripBag }) {
                     type="button"
                     disabled={pending}
                     onClick={addDayNow}
-                    className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-border py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
+                    className="mt-4 flex h-10 w-full items-center justify-center gap-1.5 rounded-[10px] border border-dashed border-foreground/20 text-sm font-medium text-muted-foreground transition-colors hover:border-foreground/35 hover:text-foreground disabled:opacity-50"
                   >
                     <Plus className="size-4" aria-hidden />
                     Thêm ngày {bag.days.length + 1}
@@ -544,16 +562,13 @@ export function TripDock({ initial }: { initial: TripBag }) {
             </div>
 
             {hasTrip && (
-              <div className="border-t border-border/60 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-                <Button asChild className="w-full" onClick={() => setOpen(false)}>
+              <div className="border-t border-border/60 px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+                <Button asChild className="h-11 w-full rounded-[10px] text-[0.9375rem]" onClick={() => setOpen(false)}>
                   <Link href={`/lich-trinh/cua-toi/${bag.trip!.id}`}>
-                    Mở lịch trình
+                    Mở lịch trình đầy đủ
                     <ChevronRight className="size-4" aria-hidden />
                   </Link>
                 </Button>
-                <p className="mt-2 text-center text-xs text-muted-foreground">
-                  {bag.days.length} ngày · {bag.scheduledCount} mục đã xếp
-                </p>
               </div>
             )}
           </div>
@@ -561,25 +576,6 @@ export function TripDock({ initial }: { initial: TripBag }) {
         </DrawerContent>
       </Drawer>
 
-      <DragOverlay dropAnimation={null} className="z-[60]">
-        {activeItem ? (
-          <div className="flex max-w-[15rem] items-center gap-3 rounded-xl border border-border/60 bg-background/95 px-3 py-2 shadow-xl backdrop-blur">
-            <span className="relative size-9 shrink-0 overflow-hidden rounded-lg bg-muted">
-              {activeItem.image && (
-                <Image
-                  src={activeItem.image}
-                  alt=""
-                  fill
-                  sizes="36px"
-                  draggable={false}
-                  className="object-cover"
-                />
-              )}
-            </span>
-            <span className="truncate text-sm font-medium">{activeItem.name}</span>
-          </div>
-        ) : null}
-      </DragOverlay>
       </DndContext>
 
       {bag.trip && (
@@ -603,47 +599,48 @@ export function TripDock({ initial }: { initial: TripBag }) {
   );
 }
 
-function DropZone({ id, label }: { id: string; label: string }) {
-  const { setNodeRef, isOver } = useDroppable({ id });
-  return (
-    <p
-      ref={setNodeRef}
-      className={cn(
-        "mb-1 rounded-xl border border-dashed px-3 py-4 text-center text-sm transition-colors",
-        isOver
-          ? "border-primary bg-primary/5 text-primary"
-          : "border-border/60 text-muted-foreground",
-      )}
-    >
-      {label}
-    </p>
-  );
+function EmptyGroup({ label }: { label: string }) {
+  return <p className="mb-1 rounded-[10px] bg-foreground/[0.03] px-3 py-3.5 text-center text-sm text-muted-foreground">{label}</p>;
 }
 
 function GroupHeading({
   label,
   count,
   highlight,
+  open,
+  onToggle,
   onAdd,
 }: {
   label: string;
   count: number;
   highlight?: boolean;
+  open: boolean;
+  onToggle: () => void;
   onAdd?: () => void;
 }) {
   return (
-    <h3 className="sticky top-0 z-10 -mx-4 flex items-center gap-2 bg-background/95 px-4 pb-1 pt-2.5 text-xs font-semibold uppercase tracking-wide backdrop-blur">
-      <span className={highlight ? "text-primary-ink" : "text-muted-foreground"}>{label}</span>
-      <span className="font-normal normal-case tracking-normal text-muted-foreground">
-        {count} mục
-      </span>
+    // Tiêu đề nhóm = nút thu gọn / mở (cả dòng bấm được, ▾ xoay khi gập); "+" bên phải vẫn là nút riêng.
+    <h3 className="sticky top-0 z-10 -mx-5 flex items-center gap-1 bg-background/95 px-5 pb-1.5 pt-4 backdrop-blur">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className="-ml-1.5 flex min-w-0 flex-1 items-center gap-2 rounded-[6px] px-1.5 py-1 text-left transition-colors hover:bg-foreground/[0.04]"
+      >
+        <ChevronDown
+          className={cn("size-4 shrink-0 text-muted-foreground transition-transform duration-200", !open && "-rotate-90")}
+          aria-hidden
+        />
+        {highlight && count > 0 && <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-warm" />}
+        <span className="truncate text-sm font-semibold">{label}</span>
+      </button>
       {onAdd && (
         <button
           type="button"
           onClick={onAdd}
           aria-label={`Thêm vào ${label}`}
           title={`Thêm vào ${label}`}
-          className="-mr-1.5 ml-auto grid size-7 place-items-center rounded-[4px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="-mr-1.5 grid size-8 shrink-0 place-items-center rounded-[6px] text-muted-foreground transition-colors hover:bg-foreground/[0.06] hover:text-foreground"
         >
           <Plus className="size-4" aria-hidden />
         </button>
@@ -658,7 +655,6 @@ function ItemRow({
   days,
   pending,
   onMove,
-  onAddDay,
   onRemove,
   onNavigate,
   onInsert,
@@ -668,7 +664,6 @@ function ItemRow({
   days: TripBagDay[];
   pending: boolean;
   onMove: (dayId: string | null, at: DropAt, label: string) => void;
-  onAddDay: () => void;
   onRemove: () => void;
   onNavigate: () => void;
   /** 0 = phía trước, 1 = phía sau. Chỉ có ở mục đã xếp ngày — trong danh sách chưa xếp thứ tự không mang nghĩa gì. */
@@ -684,8 +679,10 @@ function ItemRow({
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={cn(
-        "flex touch-manipulation items-center gap-1.5 py-2.5",
-        isDragging && "opacity-40",
+        // Hàng không vạch ngăn: rê vào thì nền nhạt + tay cầm hiện (cảm ứng: tay cầm luôn hiện).
+        "group/row relative -mx-2 flex touch-manipulation items-center gap-1.5 rounded-[10px] px-1.5 py-2 transition-colors hover:bg-foreground/[0.035]",
+        // Không DragOverlay: chính hàng đi theo tay (trục dọc), nhấc lên bằng nền + bóng.
+        isDragging && "z-20 bg-background shadow-[0_12px_32px_-10px_rgb(0_0_0/0.3)]",
       )}
     >
       <button
@@ -693,12 +690,12 @@ function ItemRow({
         {...attributes}
         {...listeners}
         aria-label={`Kéo để xếp lại ${item.name}`}
-        className="grid size-7 shrink-0 cursor-grab touch-none place-items-center rounded-md text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground active:cursor-grabbing"
+        className="grid size-7 shrink-0 cursor-grab touch-none place-items-center rounded-[6px] text-muted-foreground/40 transition-colors group-hover/row:text-muted-foreground hover:text-foreground active:cursor-grabbing"
       >
         <GripVertical className="size-4" aria-hidden />
       </button>
 
-      <span className="relative size-11 shrink-0 overflow-hidden rounded-xl bg-muted">
+      <span className="relative size-11 shrink-0 overflow-hidden rounded-[8px] bg-muted">
         {item.image ? (
           <Image src={item.image} alt="" fill sizes="44px" draggable={false} className="object-cover" />
         ) : (
@@ -715,14 +712,15 @@ function ItemRow({
             href={item.href}
             onClick={onNavigate}
             draggable={false}
-            className="block truncate text-sm font-medium hover:text-primary"
+            className="block truncate text-[0.9375rem] font-medium transition-colors hover:text-primary-ink"
           >
             {item.name}
           </Link>
         ) : (
-          <span className="block truncate text-sm font-medium">{item.name}</span>
+          <span className="block truncate text-[0.9375rem] font-medium">{item.name}</span>
         )}
-        <span className="block text-xs text-muted-foreground">{item.typeLabel}</span>
+        {/* Dòng loại chỉ cho mục KHÔNG ảnh (tự thêm, di chuyển…) — mục có ảnh thì ảnh đã nói; bỏ cả "kèm N hoạt động". */}
+        {!item.image && <span className="block text-xs text-muted-foreground">{item.typeLabel}</span>}
       </span>
 
       <DropdownMenu>
@@ -732,7 +730,7 @@ function ItemRow({
               type="button"
               disabled={pending}
               aria-label={`Tuỳ chọn cho ${item.name}`}
-              className="grid size-8 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
+              className="grid size-8 shrink-0 place-items-center rounded-[6px] text-muted-foreground transition-colors hover:bg-foreground/[0.06] hover:text-foreground disabled:opacity-50 data-[state=open]:bg-foreground/[0.06]"
             >
               <MoreHorizontal className="size-4" aria-hidden />
             </button>
@@ -740,76 +738,57 @@ function ItemRow({
             <button
               type="button"
               disabled={pending}
-              className="flex h-8 shrink-0 items-center gap-1 rounded-full border border-border/60 px-2.5 text-xs font-medium transition-colors hover:bg-muted disabled:opacity-50"
+              className="flex h-8 shrink-0 items-center gap-1 rounded-[6px] bg-foreground/[0.05] px-2.5 text-xs font-medium transition-colors hover:bg-foreground/[0.09] disabled:opacity-50 data-[state=open]:bg-foreground/[0.09]"
             >
               Xếp ngày
               <ChevronDown className="size-3.5" aria-hidden />
             </button>
           )}
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuContent align="end" sideOffset={6} className={cn("w-60", MENU_CONTENT)}>
           {onInsert && (
             <>
-              <DropdownMenuItem onSelect={() => onInsert(0)}>
+              <DropdownMenuItem className={MENU_ITEM} onSelect={() => onInsert(0)}>
                 <Plus className="size-4" aria-hidden />
                 Thêm phía trước
               </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => onInsert(1)}>
+              <DropdownMenuItem className={MENU_ITEM} onSelect={() => onInsert(1)}>
                 <Plus className="size-4" aria-hidden />
                 Thêm phía sau
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel>Chuyển sang</DropdownMenuLabel>
+              <DropdownMenuSeparator className={MENU_SEP} />
+              <DropdownMenuLabel className={MENU_LABEL}>Chuyển sang</DropdownMenuLabel>
             </>
           )}
           {days.map((d) => (
-            <DropdownMenuItem
+            <DropdownMenuItem className={MENU_ITEM}
               key={d.id}
               disabled={d.id === currentDayId}
               onSelect={() => onMove(d.id, "end", dayLabel(d))}
             >
               <span className="min-w-0 flex-1 truncate">{dayLabel(d)}</span>
-              {d.id === currentDayId ? (
-                <Check className="size-4 text-primary" aria-hidden />
-              ) : (
-                <span className="text-xs text-muted-foreground">{d.items.length}</span>
-              )}
+              {d.id === currentDayId && <Check className="size-4 text-primary" aria-hidden />}
             </DropdownMenuItem>
           ))}
-          <DropdownMenuSeparator />
+          {/* "Thêm ngày mới" đã bỏ khỏi menu — nút "Thêm ngày N" ở cuối ngăn đã làm việc đó. */}
           {currentDayId && (
-            <DropdownMenuItem onSelect={() => onMove(null, "start", "chưa xếp ngày")}>
-              <Undo2 className="size-4" aria-hidden />
-              Bỏ khỏi ngày
-            </DropdownMenuItem>
-          )}
-          <DropdownMenuItem onSelect={onAddDay}>
-            <Plus className="size-4" aria-hidden />
-            Thêm ngày mới
-          </DropdownMenuItem>
-          {current && (
             <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive" onSelect={onRemove}>
-                <Trash2 className="size-4" aria-hidden />
-                Bỏ khỏi lịch trình
+              <DropdownMenuSeparator className={MENU_SEP} />
+              <DropdownMenuItem className={MENU_ITEM} onSelect={() => onMove(null, "start", "chưa xếp ngày")}>
+                <Undo2 className="size-4" aria-hidden />
+                Bỏ khỏi ngày
               </DropdownMenuItem>
             </>
           )}
+          {/* Xoá nằm TRONG menu cho cả mục chưa xếp ngày (không còn nút thùng rác riêng ở hàng). */}
+          <DropdownMenuSeparator className={MENU_SEP} />
+          <DropdownMenuItem variant="destructive" className={MENU_ITEM_DANGER} onSelect={onRemove}>
+            <Trash2 className="size-4" aria-hidden />
+            Bỏ khỏi lịch trình
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {!current && (
-        <button
-          type="button"
-          disabled={pending}
-          aria-label={`Bỏ ${item.name} khỏi lịch trình`}
-          onClick={onRemove}
-          className="grid size-8 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
-        >
-          <Trash2 className="size-4" aria-hidden />
-        </button>
-      )}
     </li>
   );
 }
@@ -825,10 +804,8 @@ function Empty({
 }) {
   return (
     <div className="flex flex-col items-center gap-3 px-2 py-10 text-center">
-      <span className="grid size-12 place-items-center rounded-full bg-muted text-muted-foreground">
-        <Route className="size-5" aria-hidden />
-      </span>
-      <p className="text-sm font-semibold">{title}</p>
+      <NavIcon name="route" active={false} className="size-7 text-muted-foreground/60" />
+      <p className="font-[family-name:var(--font-display)] text-lg font-semibold tracking-tight">{title}</p>
       <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">{body}</p>
       <div className="pt-1">{action}</div>
     </div>

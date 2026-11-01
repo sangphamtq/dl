@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 import { Toaster } from "sonner";
 import { getSettings } from "@/lib/settings";
 import { BackToTop } from "@/components/site/back-to-top";
+import { FabStack } from "@/components/site/fab-stack";
 import { BottomNav } from "@/components/site/bottom-nav";
 import { AnalyticsProvider } from "@/components/site/analytics-provider";
 import { PwaRegister } from "@/components/site/pwa-register";
@@ -68,6 +69,8 @@ export default async function RootLayout({
       <body className="min-h-full flex flex-col">
         {children}
         <BottomNav />
+        {/* Cụm nút nổi góc dưới–phải; nút gắn vào qua `FabSlot`. */}
+        <FabStack />
         <BackToTop />
         <Toaster richColors position="top-center" />
         <AnalyticsProvider />

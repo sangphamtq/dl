@@ -87,7 +87,7 @@ export function getRecentNotifications(userId: string, take = 15) {
       excerpt: true,
       isRead: true,
       createdAt: true,
-      actor: { select: { name: true } },
+      actor: { select: { name: true, image: true } },
     },
   });
 }

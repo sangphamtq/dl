@@ -11,6 +11,7 @@ const EMPTY: ReadonlySet<string> = new Set();
 const cache = new Map<string, { raw: string | null; set: ReadonlySet<string> }>();
 const listeners = new Set<() => void>();
 
+// Ngăn nổi gọi với khoá `dock:<tripId>` ⇒ thu gọn RIÊNG với trang soạn (gập một ngày ở ngăn không gập nó ở trang soạn).
 const keyOf = (tripId: string) => `halivivu:trip-collapsed:${tripId}`;
 
 function read(tripId: string): ReadonlySet<string> {

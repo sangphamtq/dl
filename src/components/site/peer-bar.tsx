@@ -60,6 +60,22 @@ export function PeerBar({
   const dockRef = useRef<HTMLAnchorElement>(null);
   const railBoxRef = useRef<HTMLDivElement>(null);
   const dockBoxRef = useRef<HTMLDivElement>(null);
+  const barRef = useRef<HTMLDivElement>(null);
+
+  // Ghi chiều cao thanh đáy vào `--peer-bar-h` để CỤM NÚT NỔI (`FabStack`) đứng TRÊN thanh thay vì đè lên nó.
+  useEffect(() => {
+    const el = barRef.current;
+    if (!el) return;
+    const root = document.documentElement;
+    const set = () => root.style.setProperty("--peer-bar-h", `${el.offsetHeight + 12}px`);
+    set();
+    const ro = new ResizeObserver(set);
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      root.style.removeProperty("--peer-bar-h");
+    };
+  });
 
   // Cuộn CHÍNH hai dải này bằng `scrollTop`/`scrollLeft`, KHÔNG dùng `scrollIntoView`: panel
   // nằm trong khối `fixed`, trình duyệt sẽ cuộn luôn CẢ TRANG để nó "lọt tầm nhìn".
@@ -172,7 +188,7 @@ export function PeerBar({
     <>
       <div aria-hidden className="h-20" />
       <div className="pointer-events-none fixed inset-x-0 bottom-[calc(0.75rem+var(--bottom-nav-h))] z-40 flex justify-center px-3">
-        <div className="pointer-events-auto flex max-w-[calc(100vw-1.5rem)] items-center gap-2 rounded-2xl border border-border/60 bg-background/80 p-1.5 shadow-xl shadow-black/5 backdrop-blur-xl">
+        <div ref={barRef} className="pointer-events-auto flex max-w-[calc(100vw-1.5rem)] items-center gap-2 rounded-2xl border border-border/60 bg-background/80 p-1.5 shadow-xl shadow-black/5 backdrop-blur-xl">
           <div
             ref={dockBoxRef}
             className="flex min-w-0 items-center gap-1.5 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"

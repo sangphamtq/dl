@@ -24,12 +24,10 @@ import { PlaceHeroCenter } from "@/components/site/place-hero-center";
 import { PlaceTabs } from "@/components/site/place-tabs";
 import { ReviewsSection, type ReviewListItem } from "@/components/site/place-reviews";
 import { summarizeReviews } from "@/lib/review-meta";
-import { PeerBar } from "@/components/site/peer-bar";
 import { Glyph } from "@/components/site/glyphs";
 import { R_CARD } from "@/lib/radius";
 
 import { ticketPriceLabel } from "@/lib/tickets";
-import { getDestinationPeerGroups } from "@/lib/peers";
 import {
   getPlaceCounts,
   buildPlaceTabs,
@@ -417,8 +415,6 @@ export default async function PlaceDetailPage({
     ReturnType<typeof getPlaceCommunityDigest>
   >;
 
-  const peerGroups = await getDestinationPeerGroups();
-
   const transportPost = TRANSPORT_ENABLED ? null : await getTransportArticle(place.id);
 
   const isProvince = place.kind === "province";
@@ -723,13 +719,6 @@ export default async function PlaceDetailPage({
         />
         </div>
       </main>
-
-      <PeerBar
-        groups={peerGroups}
-        currentSlug={place.slug}
-        prefix="diem-den"
-        title="Điểm đến"
-      />
     </div>
   );
 }

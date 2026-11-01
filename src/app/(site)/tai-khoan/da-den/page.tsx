@@ -36,9 +36,6 @@ export default async function DaDenPage() {
     <div className="flex flex-1 flex-col">
       <main className="flex-1">
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14">
-          <h1 className="font-[family-name:var(--font-display)] text-[clamp(1.375rem,2.8vw,2rem)] font-normal uppercase leading-[1.2] tracking-[0.1em] text-foreground sm:tracking-[0.14em]">
-            Nơi bạn đã đến
-          </h1>
 
           <DaDenBoard
             initialVisited={initialVisited}

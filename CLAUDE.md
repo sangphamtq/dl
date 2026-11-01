@@ -198,11 +198,11 @@ Cả `Spot` lẫn `Activity` đều có hai trường (`Json`, helper ở `lib/t
 diem-den/[placeSlug]/
 ├─ page.tsx      ← Tổng quan: hero LỚN (NGOÀI group)
 ├─ ban-do/       ← cũng ngoài group (bản đồ 100dvh)
-└─ (tabs)/ layout.tsx (PlaceTabs + PeerBar, dựng MỘT lần) · loading.tsx · [loai]/ · cong-dong/
+└─ (tabs)/ layout.tsx (PlaceTabs, dựng MỘT lần; thanh chuyển điểm đến `PeerBar` ĐÃ GỠ khỏi trang điểm đến) · loading.tsx · [loai]/ · cong-dong/
 ```
 
 - Đổi tab thì Next chỉ tải lại `page`, **layout không dựng lại** → `getPlaceHero`,
-  `getPlaceCounts`, `getVisitors`, `getReviewSummary`, `getDestinationPeerGroups` hết chạy
+  `getPlaceCounts`, `getVisitors`, `getReviewSummary`, hết chạy
   lại. Hai hàm đầu bọc **`cache()`** vì layout và page cùng cần trong một request.
 - **Tab con KHÔNG có hero** — danh tính gộp vào thanh tab (`PlaceTabs` nhận prop `place`).
   Truyền `place` cũng có nghĩa là **bỏ mục "Tổng quan" khỏi dải tab**. **Không có nút "đã
@@ -234,14 +234,16 @@ diem-den/[placeSlug]/
     này **dùng chung với cụm icon bên phải header**.
   · **Né thanh công cụ trình duyệt**: đo bằng `visualViewport` → `--browser-bottom-chrome`,
     cộng vào **PADDING** chứ không phải `bottom`; che > 160px thì coi là bàn phím ảo, bỏ qua.
-  · ⚠️ **Thêm phần tử `fixed` bám đáy mới thì cộng `var(--bottom-nav-h)` vào `bottom`** — bám
-    đáy–PHẢI thì cộng thêm **`var(--trip-dock-h)`**.
+  · ⚠️ **Thêm phần tử `fixed` bám đáy mới thì cộng `var(--bottom-nav-h)` vào `bottom`.** Nút nổi góc
+    đáy–PHẢI thì KHÔNG tự `fixed`: gắn vào **cụm nút nổi** (`FabStack` ở root layout, `<FabSlot order>` +
+    khuôn `FAB_BTN` trong `lib/fab-ui.ts`) — cụm tự xếp cột, tự nâng lên trên `PeerBar` (`--peer-bar-h`).
   · **Ẩn ở** `/cms` `/sale` `/login` `/offline` (`HIDDEN_ON` — giữ đồng bộ với
     `install-prompt.tsx` và `NEVER_CACHE` trong `sw.js`).
   · ⚠️ Không đọc session: **root layout không được gọi `auth()`** (sẽ phá `force-static` của
     `/offline`).
-- **`TripDock`** — nút nổi ở mọi trang công khai, viên tròn 44px **giữa cạnh phải** (tránh dải
-  đáy vốn đã đông, nhờ vậy không thanh nào phải chừa chỗ). Ẩn ở `/lich-trinh` `/ban-do` `/cms`
+- **`TripDock`** — nút nổi ở mọi trang công khai, viên tròn 44px trong **cụm nút nổi góc dưới–phải**
+  (`FabStack`: Lịch trình `order 10` ở trên, Lên đầu trang `order 100` sát đáy; nút ẩn thì thu chiều cao
+  về 0 nên nút trên trượt xuống). Ẩn ở `/lich-trinh` `/ban-do` `/cms`
   `/sale` `/login` `/offline`.
   · ⚠️ `DndContext`/`DragOverlay` phải nằm **ngoài** `DrawerContent` (vaul đặt `transform` lên
     panel ⇒ `position: fixed` bên trong lệch gốc toạ độ); vùng danh sách cần `data-vaul-no-drag`.

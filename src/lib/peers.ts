@@ -1,32 +1,10 @@
 import { prisma } from "@/lib/prisma";
-import { REGION_LABELS, regionOf } from "@/lib/regions";
 
 export type PeerItem = {
   slug: string;
   name: string;
   images: { url: string; isCover: boolean }[];
 };
-
-export async function getDestinationPeerGroups(): Promise<
-  { label: string; items: PeerItem[] }[]
-> {
-  const all = await prisma.place.findMany({
-    where: { status: "published", kind: "destination" },
-    orderBy: [{ isFeatured: "desc" }, { name: "asc" }],
-    select: {
-      slug: true,
-      name: true,
-      parent: { select: { slug: true } },
-      images: { where: { isCover: true }, take: 1, select: { url: true, isCover: true } },
-    },
-  });
-  return REGION_LABELS.map((label) => ({
-    label,
-    items: all
-      .filter((d) => regionOf(d.parent?.slug) === label)
-      .map((d) => ({ slug: d.slug, name: d.name, images: d.images })),
-  })).filter((g) => g.items.length > 0);
-}
 
 export async function getListingPeers(
   model: "spot" | "activity" | "accommodation",

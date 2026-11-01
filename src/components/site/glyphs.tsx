@@ -54,7 +54,8 @@ export type GlyphName =
   | "more"
   | "info"
   | "grip"
-  | "trash";
+  | "trash"
+  | "heart";
 
 const SHAPES: Record<GlyphName, React.ReactNode> = {
   pin: (
@@ -248,6 +249,9 @@ const SHAPES: Record<GlyphName, React.ReactNode> = {
       <path d="M4.2 8.4V6.8a1.8 1.8 0 0 1 1.8-1.8h9.4" />
       <circle cx="16" cy="14.1" r="1.1" />
     </>
+  ),
+  heart: (
+    <path d="M12 19.4 5 12.5a4.25 4.25 0 0 1 6-6l1 1 1-1a4.25 4.25 0 0 1 6 6l-7 6.9Z" />
   ),
   message: (
     <path d="M3 12.6V8.2a3.6 3.6 0 0 1 3.6-3.6h10.8A3.6 3.6 0 0 1 21 8.2v4.4a3.6 3.6 0 0 1-3.6 3.6h-6L6.9 20.05a.6.6 0 0 1-.99-.52l.69-3.33A3.6 3.6 0 0 1 3 12.6Z" />

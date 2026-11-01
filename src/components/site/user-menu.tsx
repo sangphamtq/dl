@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { Check } from "@/components/icons";
 import { NavIcon } from "./nav-icons";
+import { MENU_CONTENT, MENU_ITEM, MENU_SEP } from "@/lib/menu-ui";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { removeDiacritics } from "@/lib/slug";
@@ -42,8 +43,7 @@ const STAFF = ["admin", "editor"];
  * Đăng xuất là chữ thường ở đáy (KHÔNG tô đỏ — đó là một lối ra, không phải một thao tác nguy hiểm).
  * Bo theo bộ chung: khung `R_CARD` 10px, mục 6px.
  */
-const ITEM =
-  "h-9 gap-3 rounded-[6px] px-2.5 text-sm text-foreground focus:bg-foreground/[0.06] focus:text-foreground data-[state=open]:bg-foreground/[0.06] [&_svg:not([class*='text-'])]:text-foreground/60";
+const ITEM = MENU_ITEM;
 
 function LogoutIcon({ className }: { className?: string }) {
   return (
@@ -94,7 +94,7 @@ export function UserMenu({ user, provinces, homeProvince }: Props) {
       <DropdownMenuContent
         align="end"
         sideOffset={10}
-        className="w-64 rounded-[10px] border-border/70 p-1.5 shadow-[0_16px_40px_-12px_rgb(0_0_0/0.22)]"
+        className={cn("w-64", MENU_CONTENT)}
       >
         {/* Thẻ danh tính — không phải mục bấm được, nên không có nền rê. */}
         <div className="flex items-center gap-3 px-2.5 pb-3 pt-2">
@@ -115,7 +115,7 @@ export function UserMenu({ user, provinces, homeProvince }: Props) {
           </div>
         </div>
 
-        <DropdownMenuSeparator className="mx-1 my-1 bg-border/70" />
+        <DropdownMenuSeparator className={MENU_SEP} />
 
         <DropdownMenuItem asChild className={ITEM}>
           <Link href="/lich-trinh">
@@ -139,7 +139,7 @@ export function UserMenu({ user, provinces, homeProvince }: Props) {
           </DropdownMenuItem>
         )}
 
-        <DropdownMenuSeparator className="mx-1 my-1 bg-border/70" />
+        <DropdownMenuSeparator className={MENU_SEP} />
 
         <DropdownMenuItem
           className={cn(ITEM, "text-muted-foreground focus:text-foreground")}

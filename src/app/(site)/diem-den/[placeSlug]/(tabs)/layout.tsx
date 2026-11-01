@@ -1,9 +1,7 @@
 import { notFound } from "next/navigation";
 import { getPlaceHero, getPlaceCounts, buildPlaceTabs } from "@/lib/place-meta";
-import { getDestinationPeerGroups } from "@/lib/peers";
 import { isStaffViewer } from "@/lib/preview";
 import { PlaceTabs } from "@/components/site/place-tabs";
-import { PeerBar } from "@/components/site/peer-bar";
 
 export default async function PlaceTabsLayout({
   children,
@@ -23,10 +21,7 @@ export default async function PlaceTabsLayout({
   // Không còn nút "đã đến"/chia sẻ ở đây nên layout cũng KHÔNG cần phiên đăng
   // nhập lẫn truy vấn check-in — hai hành động đó là cấp ĐIỂM ĐẾN, sống ở trang
   // Tổng quan.
-  const [counts, peerGroups] = await Promise.all([
-    getPlaceCounts(place.id),
-    getDestinationPeerGroups(),
-  ]);
+  const counts = await getPlaceCounts(place.id);
 
   return (
     <div className="flex flex-1 flex-col">
@@ -41,13 +36,6 @@ export default async function PlaceTabsLayout({
         />
         {children}
       </main>
-
-      <PeerBar
-        groups={peerGroups}
-        currentSlug={place.slug}
-        prefix="diem-den"
-        title="Điểm đến"
-      />
     </div>
   );
 }
